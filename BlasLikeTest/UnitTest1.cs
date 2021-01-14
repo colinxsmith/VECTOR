@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Blas;
+using System;
 namespace BlasLikeTest
 {
     [TestClass]
@@ -284,6 +285,61 @@ namespace BlasLikeTest
             double[] min = { 1 }, max = { 1 };
             BlasLike.dxminmax(a.Length, a, 1, max, min);
             Assert.IsTrue(max[0] == 10 && min[0] == 1, $"max is {max}, min is {min}");
+        }
+        [TestMethod]
+        public unsafe void Test_detagen()
+        {
+            double[] x = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+            double alpha = 0;
+            long iswap = 0;
+            int itrans = 0;
+            fixed (double* xx = x)
+                BlasLike.detagen(x.Length / 2, &alpha, xx + 1, 2, &iswap, &itrans);
+            Assert.IsTrue(alpha == 10 && iswap == 9 && itrans == 1, $"alpha={alpha}, iswap={iswap}, itrans={itrans}, lm_rooteps={BlasLike.lm_rooteps}");
+        }
+        [TestMethod]
+        public unsafe void Test_dswap()
+        {
+            double[] a = { 1, 2, 3, 4 };
+            double[] b = { 11, 12, 13, 14 };
+            fixed (double* pa = a)
+            fixed (double* pb = b)
+                BlasLike.dswap(a.Length / 2, pa, 2, pb, 1);
+            Assert.IsTrue(a[0] == 11 && a[1] == 2 && a[2] == 12 && a[3] == 4 && b[0] == 1 && b[1] == 3 && b[2] == 13 && b[3] == 14, $"{a[0]},{a[1]},{a[2]},{a[3]}  {b[0]},{b[1]},{b[2]},{b[3]}");
+        }
+        [TestMethod]
+        public unsafe void Test_dswapvec()
+        {
+            double[] a = { 1, 2, 3, 4 };
+            double[] b = { 11, 12, 13, 14 };
+            fixed (double* pa = a)
+            fixed (double* pb = b)
+                BlasLike.dswapvec(a.Length, pa, pb);
+            Assert.IsTrue(a[0] == 11 && a[1] == 12 && a[2] == 13 && a[3] == 14 && b[0] == 1 && b[1] == 2 && b[2] == 3 && b[3] == 4, $"{a[0]},{a[1]},{a[2]},{a[3]}  {b[0]},{b[1]},{b[2]},{b[3]}");
+        }
+        [TestMethod]
+        public unsafe void Test_delm1()
+        {
+            int orthog = 0;
+            double[] a = { 1, 2, 3, 4 };
+            double[] b = { 5, 6, 7, 8 };
+            double cs = 0.75, sn = Math.Sqrt(1 - cs * cs);
+            fixed (double* px = a)
+            fixed (double* py = b)
+                BlasLike.delm(orthog, a.Length, px, 1, py, 1, cs, sn);
+            Assert.IsTrue(a[0] == 1 && a[1] == 2 && a[2] == 3 && a[3] == 4 && b[0] == 5.6614378277661475 && b[1] == 7.322875655532295 && b[2] == 8.984313483298443 && b[3] == 10.64575131106459, $"{a[0]},{a[1]},{a[2]},{a[3]}  {b[0]},{b[1]},{b[2]},{b[3]}");
+        }
+        [TestMethod]
+        public unsafe void Test_delm2()
+        {
+            int orthog = 1;
+            double[] a = { 1, 2, 3, 4 };
+            double[] b = { 5, 6, 7, 8 };
+            double cs = 0.75, sn = Math.Sqrt(1 - cs * cs);
+            fixed (double* px = a)
+            fixed (double* py = b)
+                BlasLike.delm(orthog, a.Length, px, 1, py, 1, cs, sn);
+            Assert.IsTrue(a[0] == 4.0571891388307382 && a[1] == 5.4686269665968865 && a[2] ==6.880064794363034 && a[3] == 8.2915026221291814 && b[0] == -3.0885621722338525 && b[1] == -3.1771243444677046 && b[2] == -3.2656865167015567 && b[3] == -3.3542486889354093, $"{a[0]},{a[1]},{a[2]},{a[3]}  {b[0]},{b[1]},{b[2]},{b[3]}");
         }
     }
 }

@@ -4,7 +4,32 @@ namespace Blas
 {
     public static class BlasLike
     {
+        public static double lm_eps = Math.Abs((4.0 / 3 - 1) * 3 - 1);
+        public static double lm_min = 2.2250738585072014e-308;
+        public static double lm_rootmin = Math.Sqrt(lm_min);
+        public static double lm_rooteps = Math.Sqrt(lm_eps);
+
         public static void daxpy(int n, double a, double[] x, int ix, double[] y, int iy)
+        {
+            if (a == 1)
+            {
+                for (int i = 0, iix = 0, iiy = 0; i < n; ++i, iiy += iy, iix += ix)
+                    y[iiy] += x[iix];
+            }
+            else if (a == -1)
+            {
+                for (int i = 0, iix = 0, iiy = 0; i < n; ++i, iiy += iy, iix += ix)
+                    y[iiy] -= x[iix];
+            }
+            else if (a != 0)
+            {
+                for (int i = 0, iix = 0, iiy = 0; i < n; ++i, iiy += iy, iix += ix)
+                    y[iiy] += a * x[iix];
+            }
+        }
+
+
+        public unsafe static void daxpy(int n, double a, double* x, int ix, double* y, int iy)
         {
             if (a == 1)
             {
@@ -275,7 +300,7 @@ namespace Blas
         {
             return dsum(n, x, 1, px);
         }
-        public unsafe static void dxminmax(int n, double* x, int incx, double* xmax, double* xmin)
+        public unsafe static void dxminmax(int n, double* x, int ix, double* xmax, double* xmin)
         {
             if (n < 1) *xmin = *xmax = 0;
             else
@@ -284,7 +309,7 @@ namespace Blas
                 double xm = ax, xn = ax;
                 while (--n > 0)
                 {
-                    x += incx;
+                    x += ix;
                     ax = *x;
                     if (ax < 0) ax = -ax;
                     if (ax > xm) xm = ax;
@@ -294,14 +319,14 @@ namespace Blas
                 *xmax = xm;
             }
         }
-        public static void dxminmax(int n, double[] x, int incx, double[] xmax, double[] xmin, int px = 0)
+        public static void dxminmax(int n, double[] x, int ix, double[] xmax, double[] xmin, int px = 0)
         {
             if (n < 1) xmin[0] = xmax[0] = 0;
             else
             {
                 double ax = Math.Abs(x[px]);
                 double xm = ax, xn = ax;
-                for (int i = 0, iix = 0; i < n; i++, iix += incx)
+                for (int i = 0, iix = 0; i < n; i++, iix += ix)
                 {
                     ax = x[iix + px];
                     if (ax < 0) ax = -ax;
@@ -310,6 +335,254 @@ namespace Blas
                 }
                 xmin[0] = xn;
                 xmax[0] = xm;
+            }
+        }
+        public unsafe static void detagen(int n, double* alpha, double* x, int ix, long* iswap, int* itrans)
+        {
+            long imax = 1000000000;
+            int nzero;
+            double xmax, absalf, tol, axi;
+            double* v, vlim;
+            *iswap = 0;
+            *itrans = 0;
+            if (n < 1) return;
+            absalf = Math.Abs(*alpha);
+            xmax = 0;
+            for (v = x, vlim = x + n * ix; v != vlim; v += ix)
+            {
+                if (xmax < (axi = Math.Abs(*v)))
+                {
+                    xmax = axi;
+                    imax = v - x;
+                }
+            }
+            /* exit if  x  is very small */
+            if (xmax <= lm_rootmin) return;
+            /* see if an interchange is needed for stability */
+            if (absalf < xmax)
+            {
+                *iswap = imax + 1;
+                xmax = x[imax];
+                x[imax] = *alpha;
+                *alpha = xmax;
+            }
+            /*
+                 form the multipliers in  x.  they will be no greater than one
+                 in magnitude.  change negligible multipliers to zero
+            */
+            tol = Math.Abs(*alpha) * lm_eps;
+            nzero = 0;
+            for (v = x; v != vlim; v += ix)
+            {
+                if (Math.Abs(*v) > tol) *v = -*v / *alpha;
+                else
+                {
+                    *v = 0;
+                    ++nzero;
+                }
+            }
+            /*z is zero only if nzero=n*/
+            if (nzero < n) *itrans = 1;
+        }
+        public unsafe static void delm(int orthog, int n, double* x, int ix, double* y, int iy, double cs, double sn)
+        {
+            /*
+                   If  orthog  is true, delm  applies a plane rotation.  otherwise,
+                   elm computes the transformation (x y)*e  and returns the result
+                   in  (x y),  where the 2 by 2 matrix  e  is defined by  cs  and  sn
+
+                   as follows...
+                   e  =    ( 1  sn )       if  cs>0 else   e  =    (     1 )
+                           (     1 )                               ( 1  sn )
+           */
+            if (orthog == 0)
+            {
+                if (cs <= 0) dswap(n, x, ix, y, iy);
+                if (sn != 0) daxpy(n, sn, x, ix, y, iy);
+            }
+            else dsymplanerotate(n, x, ix, y, iy, cs, sn);
+        }
+        public unsafe static void dsymplanerotate(int n, double* x, int ix, double* y, int iy, double c, double s)
+        {
+            int i__1, i__2;
+
+            double temp1;
+            int i, iix, iiy;
+            --y;
+            --x;
+
+            if (n > 0 && s != 0)
+            {
+                if (c == 0 && s == 1)
+                {
+                    if (ix == iy && ix > 0)
+                    {
+                        i__1 = (n - 1) * ix + 1;
+                        i__2 = ix;
+                        for (iix = 1; (i__2 < 0 ? iix >= i__1 : iix <= i__1); iix += i__2)
+                        {
+                            temp1 = x[iix];
+                            x[iix] = y[iix];
+                            y[iix] = temp1;
+                        }
+                    }
+                    else
+                    {
+                        if (iy >= 0)
+                        {
+                            iiy = 1;
+                        }
+                        else
+                        {
+                            iiy = 1 - (n - 1) * iy;
+                        }
+                        if (ix > 0)
+                        {
+                            i__2 = (n - 1) * ix + 1;
+                            i__1 = ix;
+                            for (iix = 1; (i__1 < 0 ? iix >= i__2 : iix <= i__2); iix += i__1)
+                            {
+                                temp1 = x[iix];
+                                x[iix] = y[iiy];
+                                y[iiy] = temp1;
+                                iiy += iy;
+                            }
+                        }
+                        else
+                        {
+                            iix = 1 - (n - 1) * ix;
+                            i__1 = n;
+                            for (i = 1; i <= i__1; ++i)
+                            {
+                                temp1 = x[iix];
+                                x[iix] = y[iiy];
+                                y[iiy] = temp1;
+                                iix += ix;
+                                iiy += iy;
+                            }
+                        }
+                    }
+                }
+                else if (c == 0 && s == -1)
+                {
+                    if (ix == iy && ix > 0)
+                    {
+                        i__1 = (n - 1) * ix + 1;
+                        i__2 = ix;
+                        for (iix = 1; (i__2 < 0 ? iix >= i__1 : iix <= i__1); iix += i__2)
+                        {
+                            temp1 = -x[iix];
+                            x[iix] = -y[iix];
+                            y[iix] = temp1;
+                        }
+                    }
+                    else
+                    {
+                        if (iy >= 0)
+                        {
+                            iiy = 1;
+                        }
+                        else
+                        {
+                            iiy = 1 - (n - 1) * iy;
+                        }
+                        if (ix > 0)
+                        {
+                            i__2 = (n - 1) * ix + 1;
+                            i__1 = ix;
+                            for (iix = 1; (i__1 < 0 ? iix >= i__2 : iix <= i__2); iix += i__1)
+                            {
+                                temp1 = -x[iix];
+                                x[iix] = -y[iiy];
+                                y[iiy] = temp1;
+                                iiy += iy;
+                            }
+                        }
+                        else
+                        {
+                            iix = 1 - (n - 1) * ix;
+                            i__1 = n;
+                            for (i = 1; i <= i__1; ++i)
+                            {
+                                temp1 = -x[iix];
+                                x[iix] = -y[iiy];
+                                y[iiy] = temp1;
+                                iix += ix;
+                                iiy += iy;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    if (ix == iy && ix > 0)
+                    {
+                        i__1 = (n - 1) * ix + 1;
+                        i__2 = ix;
+                        for (iix = 1; (i__2 < 0 ? iix >= i__1 : iix <= i__1); iix += i__2)
+                        {
+                            temp1 = x[iix];
+                            x[iix] = c * temp1 + s * y[iix];
+                            y[iix] = s * temp1 - c * y[iix];
+                        }
+                    }
+                    else
+                    {
+                        if (iy >= 0)
+                        {
+                            iiy = 1;
+                        }
+                        else
+                        {
+                            iiy = 1 - (n - 1) * iy;
+                        }
+                        if (ix > 0)
+                        {
+                            i__2 = (n - 1) * ix + 1;
+                            i__1 = ix;
+                            for (iix = 1; (i__1 < 0 ? iix >= i__2 : iix <= i__2); iix += i__1)
+                            {
+                                temp1 = x[iix];
+                                x[iix] = c * temp1 + s * y[iiy];
+                                y[iiy] = s * temp1 - c * y[iiy];
+                                iiy += iy;
+                            }
+                        }
+                        else
+                        {
+                            iix = 1 - (n - 1) * ix;
+                            i__1 = n;
+                            for (i = 1; i <= i__1; ++i)
+                            {
+                                temp1 = x[iix];
+                                x[iix] = c * temp1 + s * y[iiy];
+                                y[iiy] = s * temp1 - c * y[iiy];
+                                iix += ix;
+                                iiy += iy;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        public unsafe static void dswap(int n, double* a, int ia, double* b, int ib)
+        {
+            for (; (n--) > 0; a += ia, b += ib)
+            {
+                double temp = *a;
+                *a = *b;
+                *b = temp;
+            }
+        }
+        public unsafe static
+        void dswapvec(int n, double* a, double* b)
+        {
+            while ((n--) > 0)
+            {
+                double temp = *a;
+                *a++ = *b;
+                *b++ = temp;
             }
         }
     }
