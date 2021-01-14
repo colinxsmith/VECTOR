@@ -4,6 +4,9 @@
 Make on linux with
 gcc -O -I ~/safeqp sssq.c -L ~/safeqp -lsafeqp -o sssq
 
+Make on Windows in safeqp64 with
+cl -D__SYSNT__ -I . safeqp.lib ..\VECTOR\sssq.c
+
 Result
 ./sssq 
 scale=   9.000000000000000, sumsq=   2.037037037037037
