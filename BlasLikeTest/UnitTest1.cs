@@ -195,7 +195,7 @@ namespace BlasLikeTest
             Assert.IsTrue(y[0] == -2 && y[1] == -4 && y[2] == -6 && y[3] == -8 && y[4] == -10 && y[5] == -12);
         }
         [TestMethod]
-        public void Test_dsssq()
+        public void Test_dsssq1()
         {
             double[] a = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
             double s1 = 1;
@@ -205,13 +205,35 @@ namespace BlasLikeTest
             Assert.IsTrue(scale[0] == 9 && sumsq[0] == 2.037037037037037, $"scale is {scale[0]}, sumsq is {sumsq[0]}");
         }
         [TestMethod]
+        public unsafe void Test_dsssq2()
+        {
+            double[] a = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+            double s1 = 1;
+            double[] scale = { s1 };
+            double[] sumsq = { 0 };
+            fixed(double* aa = &(a[0]))
+            BlasLike.dsssq(a.Length / 2, aa+1, -2, scale, sumsq);
+            Assert.IsTrue(scale[0] == 10 && sumsq[0] == 2.2, $"scale is {scale[0]}, sumsq is {sumsq[0]}");
+        }
+  
+        [TestMethod]
+        public void Test_dsssq3()
+        {
+            double[] a = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+            double s1 = 1;
+            double[] scale = { s1 };
+            double[] sumsq = { 0 };
+            BlasLike.dsssq(a.Length / 2, a, -2, scale, sumsq,1);
+            Assert.IsTrue(scale[0] == 10 && sumsq[0] == 2.2, $"scale is {scale[0]}, sumsq is {sumsq[0]}");
+        }
+        [TestMethod]
         public void Test_dsssqvec()
         {
             double[] a = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
             double s1 = 1;
             double[] scale = { s1 };
             double[] sumsq = { 0 };
-            BlasLike.dsssq(a.Length, a, 1, scale, sumsq);
+            BlasLike.dsssqvec(a.Length, a, scale, sumsq);
             Assert.IsTrue(scale[0] == 10 && sumsq[0] == 3.85, $"scale is {scale[0]}, sumsq is {sumsq[0]}");
         }
     }
