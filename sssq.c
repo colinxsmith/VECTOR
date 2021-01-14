@@ -10,12 +10,12 @@ cl -D__SYSNT__ -I . safeqp.lib ..\VECTOR\sssq.c
 Result
 ./sssq 
 scale=   9.000000000000000, sumsq=   2.037037037037037
+scale=  10.000000000000000, sumsq=   2.200000000000000
 scale=  10.000000000000000, sumsq=   3.850000000000000
 scale=  10.000000000000000, sumsq=   3.850000000000000
 */
 #include <ldefns.h>
-extern void dsssq(dimen /*n*/, vector /*x*/, increment /*incx*/, real * /*pscale*/, real * /*psumsq*/);
-extern void dsssqvec(dimen /*n*/, vector /*x*/, real * /*pscale*/, real * /*psumsq*/);
+
 int main()
 {
     double a[] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
@@ -23,6 +23,10 @@ int main()
     double scale = 1;
     double sumsq = 0;
     dsssq(n/2, a, 2, &scale, &sumsq);
+    printf("scale=%20.15f, sumsq=%20.15f\n",scale,sumsq);
+    scale = 1;
+    sumsq = 0;
+    dsssq(n/2, a+1, 2, &scale, &sumsq);
     printf("scale=%20.15f, sumsq=%20.15f\n",scale,sumsq);
     scale = 1;
     sumsq = 0;
