@@ -268,5 +268,22 @@ namespace BlasLikeTest
             double sum = BlasLike.dsumvec(a.Length, a);
             Assert.IsTrue(sum == 55, $"sum is {sum}");
         }
+        [TestMethod]
+        public unsafe void Test_dxminmax1()
+        {
+            double[] a = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+            double min, max;
+            fixed (double* aa = a)
+                BlasLike.dxminmax(a.Length, aa, 1, &max, &min);
+            Assert.IsTrue(max == 10 && min == 1, $"max is {max}, min is {min}");
+        }
+        [TestMethod]
+        public void Test_dxminmax1a()
+        {
+            double[] a = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+            double[] min = { 1 }, max = { 1 };
+            BlasLike.dxminmax(a.Length, a, 1, max, min);
+            Assert.IsTrue(max[0] == 10 && min[0] == 1, $"max is {max}, min is {min}");
+        }
     }
 }

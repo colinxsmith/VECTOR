@@ -275,5 +275,42 @@ namespace Blas
         {
             return dsum(n, x, 1, px);
         }
+        public unsafe static void dxminmax(int n, double* x, int incx, double* xmax, double* xmin)
+        {
+            if (n < 1) *xmin = *xmax = 0;
+            else
+            {
+                double ax = Math.Abs(*x);
+                double xm = ax, xn = ax;
+                while (--n > 0)
+                {
+                    x += incx;
+                    ax = *x;
+                    if (ax < 0) ax = -ax;
+                    if (ax > xm) xm = ax;
+                    if (ax < xn) xn = ax;
+                }
+                *xmin = xn;
+                *xmax = xm;
+            }
+        }
+        public static void dxminmax(int n, double[] x, int incx, double[] xmax, double[] xmin, int px = 0)
+        {
+            if (n < 1) xmin[0] = xmax[0] = 0;
+            else
+            {
+                double ax = Math.Abs(x[px]);
+                double xm = ax, xn = ax;
+                for (int i = 0, iix = 0; i < n; i++, iix += incx)
+                {
+                    ax = x[iix + px];
+                    if (ax < 0) ax = -ax;
+                    if (ax > xm) xm = ax;
+                    if (ax < xn) xn = ax;
+                }
+                xmin[0] = xn;
+                xmax[0] = xm;
+            }
+        }
     }
 }
