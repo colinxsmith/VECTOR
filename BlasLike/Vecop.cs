@@ -156,26 +156,26 @@ namespace Blas
         {
             dsccopy(n, a, x, 1, y, 1);
         }
-        public unsafe static void dsssq(int n, double* x, int ix, double[] pscale, double[] psumsq,int px=0)
+        public unsafe static void dsssq(int n, double* x, int ix, double[] pscale, double[] psumsq, int px = 0)
         {
-  /*
-        dsssqvec returns the values scl and smsq such that
-        ( scl**2 )*smsq = x( 1 )**2 +...+ x( n )**2 + ( scale**2 )*sumsq,
-        to be at least unity and the value of smsq will then satisfy
-        1.0 .le. smsq .le. ( sumsq + n ) .
-        scale is assumed to be non-negative and scl returns the value
-        scl = max( scale, abs( x( i ) ) ) .
-        scale and sumsq must be supplied in SCALE and SUMSQ respectively.
-        scl and smsq are overwritten on SCALE and SUMSQ respectively.
-        The routine makes only one pass through the vector X.
-*/
+            /*
+                  dsssqvec returns the values scl and smsq such that
+                  ( scl**2 )*smsq = x( 1 )**2 +...+ x( n )**2 + ( scale**2 )*sumsq,
+                  to be at least unity and the value of smsq will then satisfy
+                  1.0 .le. smsq .le. ( sumsq + n ) .
+                  scale is assumed to be non-negative and scl returns the value
+                  scl = max( scale, abs( x( i ) ) ) .
+                  scale and sumsq must be supplied in SCALE and SUMSQ respectively.
+                  scl and smsq are overwritten on SCALE and SUMSQ respectively.
+                  The routine makes only one pass through the vector X.
+          */
             if (n > 0)
             {
                 double absxi, d, sumsq = psumsq[0], scale = pscale[0];
-                Debug.Assert(scale>=0);
+                Debug.Assert(scale >= 0);
                 for (int i = 0, iix = ix < 0 ? -(n - 1) * ix : 0; i < n; ++i, iix += ix)
                 {
-                    absxi = x[iix+px];
+                    absxi = x[iix + px];
                     if (absxi == 0) continue;
                     if (absxi < 0) absxi = -absxi;
                     if (scale < absxi)
@@ -194,27 +194,27 @@ namespace Blas
                 psumsq[0] = sumsq;
             }
         }
-    
-        public static void dsssq(int n, double[] x, int ix, double[] pscale, double[] psumsq,int px=0)
+
+        public static void dsssq(int n, double[] x, int ix, double[] pscale, double[] psumsq, int px = 0)
         {
-  /*
-        dsssqvec returns the values scl and smsq such that
-        ( scl**2 )*smsq = x( 1 )**2 +...+ x( n )**2 + ( scale**2 )*sumsq,
-        to be at least unity and the value of smsq will then satisfy
-        1.0 .le. smsq .le. ( sumsq + n ) .
-        scale is assumed to be non-negative and scl returns the value
-        scl = max( scale, abs( x( i ) ) ) .
-        scale and sumsq must be supplied in SCALE and SUMSQ respectively.
-        scl and smsq are overwritten on SCALE and SUMSQ respectively.
-        The routine makes only one pass through the vector X.
-*/
+            /*
+                  dsssqvec returns the values scl and smsq such that
+                  ( scl**2 )*smsq = x( 1 )**2 +...+ x( n )**2 + ( scale**2 )*sumsq,
+                  to be at least unity and the value of smsq will then satisfy
+                  1.0 .le. smsq .le. ( sumsq + n ) .
+                  scale is assumed to be non-negative and scl returns the value
+                  scl = max( scale, abs( x( i ) ) ) .
+                  scale and sumsq must be supplied in SCALE and SUMSQ respectively.
+                  scl and smsq are overwritten on SCALE and SUMSQ respectively.
+                  The routine makes only one pass through the vector X.
+          */
             if (n > 0)
             {
                 double absxi, d, sumsq = psumsq[0], scale = pscale[0];
-                Debug.Assert(scale>=0);
+                Debug.Assert(scale >= 0);
                 for (int i = 0, iix = ix < 0 ? -(n - 1) * ix : 0; i < n; ++i, iix += ix)
                 {
-                    absxi = x[iix+px];
+                    absxi = x[iix + px];
                     if (absxi == 0) continue;
                     if (absxi < 0) absxi = -absxi;
                     if (scale < absxi)
@@ -233,16 +233,16 @@ namespace Blas
                 psumsq[0] = sumsq;
             }
         }
-    
-        public static void dsssqvec(int n, double[] x, double[] pscale, double[] psumsq,int px=0)
+
+        public static void dsssqvec(int n, double[] x, double[] pscale, double[] psumsq, int px = 0)
         {
             if (n > 0)
             {
                 double absxi, d, sumsq = psumsq[0], scale = pscale[0];
-                Debug.Assert(scale>=0);
+                Debug.Assert(scale >= 0);
                 for (int i = 0; i < n; ++i)
                 {
-                    absxi = x[i+px];
+                    absxi = x[i + px];
                     if (absxi == 0) continue;
                     if (absxi < 0) absxi = -absxi;
                     if (scale < absxi)
@@ -260,6 +260,20 @@ namespace Blas
                 pscale[0] = scale;
                 psumsq[0] = sumsq;
             }
+        }
+
+        public static double dsum(int n, double[] x, int ix = 1, int px = 0)
+        {
+            double back = 0;
+            for (int i = 0, iix = 0; i < n; i++, iix += ix)
+            {
+                back += x[iix + px];
+            }
+            return back;
+        }
+        public static double dsumvec(int n, double[] x, int px = 0)
+        {
+            return dsum(n, x, 1, px);
         }
     }
 }
