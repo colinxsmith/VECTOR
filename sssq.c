@@ -9,10 +9,14 @@ cl -D__SYSNT__ -I . safeqp.lib ..\VECTOR\sssq.c
 
 Result
 ./sssq 
-scale=   9.000000000000000, sumsq=   2.037037037037037
-scale=  10.000000000000000, sumsq=   2.200000000000000
-scale=  10.000000000000000, sumsq=   3.850000000000000
-scale=  10.000000000000000, sumsq=   3.850000000000000
+scale=  9.0000000000000000, sumsq=  2.0370370370370372
+scale= 10.0000000000000000, sumsq=  2.2000000000000002
+scale= 10.0000000000000000, sumsq=  3.8499999999999996
+scale= 10.0000000000000000, sumsq=  3.8500000000000001
+  4.0571891388307382  -3.0885621722338525
+  5.4686269665968865  -3.1771243444677046
+  6.8800647943630340  -3.2656865167015567
+  8.2915026221291814  -3.3542486889354093
 */
 #include <ldefns.h>
 
@@ -23,15 +27,15 @@ int main()
         int n = 10;
         double scale = 1;
         double sumsq = 0;
-        dsssq(n / 2, a, 2, &scale, &sumsq);
+        dsssq(n / 2, a, -2, &scale, &sumsq);
         printf("scale=%20.16f, sumsq=%20.16f\n", scale, sumsq);
         scale = 1;
         sumsq = 0;
-        dsssq(n / 2, a + 1, 2, &scale, &sumsq);
+        dsssq(n / 2, a + 1, -2, &scale, &sumsq);
         printf("scale=%20.16f, sumsq=%20.16f\n", scale, sumsq);
         scale = 1;
         sumsq = 0;
-        dsssq(n, a, 1, &scale, &sumsq);
+        dsssq(n, a, -1, &scale, &sumsq);
         printf("scale=%20.16f, sumsq=%20.16f\n", scale, sumsq);
         scale = 1;
         sumsq = 0;
