@@ -18,7 +18,7 @@ namespace UseBlas
             {
                 Console.WriteLine($"y[{i}]={y[i]}");
             }
-            var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
             {
                 string ourkey = "Software\\safeqp";
