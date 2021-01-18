@@ -9,15 +9,16 @@ namespace UseBlas
     {
         static void Main(string[] args)
         {
-            double a = 4;
+            var a = 4.0;
             double[] x = { 1, 2, 3 };
             double[] y = { 4, 5, 6 };
             BlasLike.daxpyvec(x.Length, a, x, y);
-            for (int i = 0; i < x.Length; ++i)
+            var iy=0;
+            foreach (var yy in y)
             {
-                Console.WriteLine($"y[{i}]={y.GetValue(i)} {y[i]}");
+                Console.WriteLine($"y[{iy}]={y.GetValue(iy)} {y[iy++]}");
             }
-            bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
             {
                 string ourkey = "Software\\safeqp";
