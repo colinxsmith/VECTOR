@@ -51,6 +51,10 @@ namespace Blas
         {
             daxpy(n, a, x, 1, y, 1);
         }
+        public unsafe static void daxpyvec(int n, double a, double* x, double* y)
+        {
+            daxpy(n, a, x, 1, y, 1);
+        }
         public static void dadd(int n, double[] x, int ix, double[] y, int iy, double[] z, int iz)
         {
             for (int i = 0, iix = 0, iiy = 0, iiz = 0; i < n; i++, iix += ix, iiy += iy, iiz += iz)
@@ -65,11 +69,24 @@ namespace Blas
             for (int i = 0, iix = 0; i < n; i++, iix += ix)
                 x[iix] = 0;
         }
+        public unsafe static void dzero(int n, double* x, int ix)
+        {
+            for (int i = 0, iix = 0; i < n; i++, iix += ix)
+                x[iix] = 0;
+        }
         public static void dzerovec(int n, double[] a)
         {
             for (int i = 0; i < n * sizeof(double); ++i)
             {
                 Buffer.SetByte(a, i, 0);
+            }
+        }
+
+        public unsafe static void dzerovec(int n, double* a)
+        {
+            while (n-- > 0)
+            {
+                *a++ = 0;
             }
         }
         public static void dcopy(int n, double[] x, int ix, double[] y, int iy)
@@ -106,7 +123,21 @@ namespace Blas
             }
             return back;
         }
+
+        public unsafe static double ddot(int n, double* a, int ia, double* b, int ib)
+        {
+            double back = 0;
+            for (int i = 0, iia = 0, iib = 0; i < n; i++, iia += ia, iib += ib)
+            {
+                back += a[iia] * b[iib];
+            }
+            return back;
+        }
         public static double ddotvec(int n, double[] a, double[] b)
+        {
+            return ddot(n, a, 1, b, 1);
+        }
+        public unsafe static double ddotvec(int n, double* a, double* b)
         {
             return ddot(n, a, 1, b, 1);
         }
@@ -122,6 +153,11 @@ namespace Blas
             dset(n, a, x, 1);
         }
         public static void dneg(int n, double[] x, int ix)
+        {
+            for (int i = 0, iix = ix < 0 ? -(n - 1) * ix : 0; i < n; i++, iix += ix)
+                x[iix] = -x[iix];
+        }
+        public unsafe static void dneg(int n, double* x, int ix)
         {
             for (int i = 0, iix = ix < 0 ? -(n - 1) * ix : 0; i < n; i++, iix += ix)
                 x[iix] = -x[iix];
@@ -148,7 +184,27 @@ namespace Blas
                     x[iix] = a * x[iix];
             }
         }
+        public unsafe static void dscal(int n, double a, double* x, int ix)
+        {
+            if (a == 0)
+            {
+                dzero(n, x, ix);
+            }
+            else if (a == -1)
+            {
+                dneg(n, x, ix);
+            }
+            else
+            {
+                for (int i = 0, iix = ix < 0 ? -(n - 1) * ix : 0; i < n; i++, iix += ix)
+                    x[iix] = a * x[iix];
+            }
+        }
         public static void dscalvec(int n, double a, double[] x)
+        {
+            dscal(n, a, x, 1);
+        }
+        public unsafe static void dscalvec(int n, double a, double* x)
         {
             dscal(n, a, x, 1);
         }
