@@ -52,4 +52,42 @@ int main()
         for (i = 0; i < n; ++i)
             printf("%20.16f %20.16f\n", x[i], y[i]);
     }
+    {
+        int n = 3, i, j, ij;
+        double a[] = {1, 2, 4,
+                      3, 5,
+                      6};
+        long piv[] = {1, 2, 3};
+        char *U = "L";
+        int back = 10;
+        for (i = 0, ij = 0; i < n; ++i)
+        {
+            printf("piv[%d] %d\n", i, piv[i]);
+            for (j = 0; j < n - i; ++j, ++ij)
+            {
+                printf("a[%d][%d] %20.16f  ", i, j, a[ij]);
+            }
+            printf("\n");
+        }
+        back = dsptrf(U, n, a, piv);
+        for (i = 0, ij = 0; i < n; ++i)
+        {
+            printf("piv[%d] %d\n", i, piv[i]);
+            for (j = 0; j < n - i; ++j, ++ij)
+            {
+                printf("a[%d][%d] %20.16f  ", i, j, a[ij]);
+            }
+            printf("\n");
+        }
+        double b[] = {1, 0, 1};
+        back = dsptrs(U, n, 1, a, piv, b, n);
+        double a1[] = {1, 2, 4};
+        double a2[] = {2, 3, 5};
+        double a3[] = {4, 5, 6};
+        double lm_eps = fabs((4.0 / 3 - 1) * 3 - 1);
+        double c1 = ddotvec(n, b, a1);
+        double c2 = ddotvec(n, b, a2);
+        double c3 = ddotvec(n, b, a3);
+        printf("%20.16e %20.16f %20.16f %20.16f\n",lm_eps, c1, c2, c3);
+    }
 }
