@@ -184,20 +184,131 @@ namespace Blas
                     x[iix] = a * x[iix];
             }
         }
-        public unsafe static void dscal(int n, double a, double* x, int ix)
+        public unsafe static void dscal(int n, double da, double* dx,
+    int incx)
         {
-            if (a == 0)
+            /* System generated locals */
+            int i__1, i__2;
+
+            /* Local variables */
+            int i__, m, mp1, nincx;
+
+
+            /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
+            /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     November 2017 */
+
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  ===================================================================== */
+
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+            /* Parameter adjustments */
+            --dx;
+            /* Function Body */
+            if (incx == 1)
             {
-                dzero(n, x, ix);
-            }
-            else if (a == -1)
-            {
-                dneg(n, x, ix);
+                /*        code for increment equal to 1 */
+                /*        clean-up loop */
+                m = n % 5;
+                if (m != 0)
+                {
+                    i__1 = m;
+                    if (da != 0)
+                    {
+                        for (i__ = 1; i__ <= i__1; ++i__)
+                        {
+                            dx[i__] = da * dx[i__];
+                        }
+                    }
+                    else
+                    {
+                        for (i__ = 1; i__ <= i__1; ++i__)
+                        {
+                            dx[i__] = 0;
+                        }
+                    }
+                    if (n < 5)
+                    {
+                        return;
+                    }
+                }
+                mp1 = m + 1;
+                i__1 = n;
+                if (da != 0)
+                {
+                    if (da == 1)
+                    {
+                        for (i__ = mp1; i__ <= i__1; i__ += 5)
+                        {
+                            dx[i__] = dx[i__];
+                            dx[i__ + 1] = dx[i__ + 1];
+                            dx[i__ + 2] = dx[i__ + 2];
+                            dx[i__ + 3] = dx[i__ + 3];
+                            dx[i__ + 4] = dx[i__ + 4];
+                        }
+                    }
+                    else
+                    {
+                        for (i__ = mp1; i__ <= i__1; i__ += 5)
+                        {
+                            dx[i__] = da * dx[i__];
+                            dx[i__ + 1] = da * dx[i__ + 1];
+                            dx[i__ + 2] = da * dx[i__ + 2];
+                            dx[i__ + 3] = da * dx[i__ + 3];
+                            dx[i__ + 4] = da * dx[i__ + 4];
+                        }
+                    }
+                }
+                else
+                {
+                    for (i__ = mp1; i__ <= i__1; i__ += 5)
+                    {
+                        dx[i__] = 0;
+                        dx[i__ + 1] = 0;
+                        dx[i__ + 2] = 0;
+                        dx[i__ + 3] = 0;
+                        dx[i__ + 4] = 0;
+                    }
+                }
             }
             else
             {
-                for (int i = 0, iix = ix < 0 ? -(n - 1) * ix : 0; i < n; i++, iix += ix)
-                    x[iix] = a * x[iix];
+                /*        code for increment not equal to 1 */
+                nincx = n * incx;
+                i__1 = nincx;
+                i__2 = incx;
+                if (da == 0)
+                {
+                    for (i__ = 1; i__2 < 0 ? i__ >= i__1 : i__ <= i__1; i__ += i__2)
+                    {
+                        dx[i__] = 0;
+                    }
+                }
+                else
+                {
+                    if (da == 1)
+                    {
+                        for (i__ = 1; i__2 < 0 ? i__ >= i__1 : i__ <= i__1; i__ += i__2)
+                        {
+                            dx[i__] = dx[i__];
+                        }
+                    }
+                    else
+                    {
+                        for (i__ = 1; i__2 < 0 ? i__ >= i__1 : i__ <= i__1; i__ += i__2)
+                        {
+                            dx[i__] = da * dx[i__];
+                        }
+                    }
+                }
             }
         }
         public static void dscalvec(int n, double a, double[] x)

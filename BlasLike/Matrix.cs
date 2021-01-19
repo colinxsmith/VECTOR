@@ -634,104 +634,43 @@ namespace Blas
         L110:
             return info;
         }
-        public unsafe static
-        void dspr(char* uplo, int n, double alpha,
-            double* x, int incx, double* ap)
+        public unsafe static void dspr(char* uplo, int n, double alpha,
+    double* x, int incx, double* ap)
         {
-            int i, j, k, kk = 0, jx, kx = 0, info;
-            double* px, pxi, pap;
+            /* System generated locals */
+            int i__1, i__2;
+
+            /* Local variables */
+            int i__, j, k, kk, ix, jx, kx=0, info;
             double temp;
 
 
+            /*  -- Reference BLAS level2 routine (version 3.7.0) -- */
+            /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     December 2016 */
+
             /*     .. Scalar Arguments .. */
+            /*     .. */
             /*     .. Array Arguments .. */
             /*     .. */
 
-            /*  Purpose */
-            /*  ======= */
-
-            /*  DSPR    performs the symmetric rank 1 operation */
-
-            /*     A := alpha*x*x' + A, */
-
-            /*  where alpha is a real scalar, x is an n element vector and A is an */
-            /*  n by n symmetric matrix, supplied in packed form. */
-
-            /*  Parameters */
-            /*  ========== */
-
-            /*  UPLO   - CHARACTER*1. */
-            /*           On entry, UPLO specifies whether the upper or lower */
-            /*           triangular part of the matrix A is supplied in the packed */
-            /*           array AP as follows: */
-
-            /*              UPLO = 'U' or 'u'   The upper triangular part of A is */
-            /*                                  supplied in AP. */
-
-            /*              UPLO = 'L' or 'l'   The lower triangular part of A is */
-            /*                                  supplied in AP. */
-
-            /*           Unchanged on exit. */
-
-            /*  N      - INTEGER. */
-            /*           On entry, N specifies the order of the matrix A. */
-            /*           N must be at least zero. */
-            /*           Unchanged on exit. */
-
-            /*  ALPHA  - DOUBLE PRECISION. */
-            /*           On entry, ALPHA specifies the scalar alpha. */
-            /*           Unchanged on exit. */
-
-            /*  X      - DOUBLE PRECISION array of dimension at least */
-            /*           ( 1 + ( n - 1 )*abs( INCX ) ). */
-            /*           Before entry, the incremented array X must contain the n */
-            /*           element vector x. */
-            /*           Unchanged on exit. */
-
-            /*  INCX   - INTEGER. */
-            /*           On entry, INCX specifies the increment for the elements of */
-            /*           X. INCX must not be zero. */
-            /*           Unchanged on exit. */
-
-            /*  AP     - DOUBLE PRECISION array of DIMENSION at least */
-            /*           ( ( n*( n + 1 ) )/2 ). */
-            /*           Before entry with  UPLO = 'U' or 'u', the array AP must */
-            /*           contain the upper triangular part of the symmetric matrix */
-            /*           packed sequentially, column by column, so that AP( 1 ) */
-            /*           contains a( 1, 1 ), AP( 2 ) and AP( 3 ) contain a( 1, 2 ) */
-            /*           and a( 2, 2 ) respectively, and so on. On exit, the array */
-            /*           AP is overwritten by the upper triangular part of the */
-            /*           updated matrix. */
-            /*           Before entry with UPLO = 'L' or 'l', the array AP must */
-            /*           contain the lower triangular part of the symmetric matrix */
-            /*           packed sequentially, column by column, so that AP( 1 ) */
-            /*           contains a( 1, 1 ), AP( 2 ) and AP( 3 ) contain a( 2, 1 ) */
-            /*           and a( 3, 1 ) respectively, and so on. On exit, the array */
-            /*           AP is overwritten by the lower triangular part of the */
-            /*           updated matrix. */
-
-
-            /*  Level 2 Blas routine. */
-
-            /*  -- Written on 22-October-1986. */
-            /*     Jack Dongarra, Argonne National Lab. */
-            /*     Jeremy Du Croz, Nag Central Office. */
-            /*     Sven Hammarling, Nag Central Office. */
-            /*     Richard Hanson, Sandia National Labs. */
-
+            /*  ===================================================================== */
 
             /*     .. Parameters .. */
+            /*     .. */
             /*     .. Local Scalars .. */
+            /*     .. */
             /*     .. External Functions .. */
+            /*     .. */
             /*     .. External Subroutines .. */
             /*     .. */
-            /*     .. Executable Statements .. */
 
             /*     Test the input parameters. */
 
             /* Parameter adjustments */
-            //    --ap;
-            //    --x;
+            --ap;
+            --x;
 
             /* Function Body */
             info = 0;
@@ -749,7 +688,7 @@ namespace Blas
             }
             if (info != 0)
             {
-                Console.WriteLine($"dspr error code {info}");
+                Console.WriteLine($"dspr: Error {info}");
                 return;
             }
 
@@ -757,62 +696,71 @@ namespace Blas
 
             if (n == 0 || alpha == 0.0)
             {
-                return;
+                return ;
             }
 
             /*     Set the start point in X if the increment is not unity. */
 
             if (incx <= 0)
             {
-                kx = 0 - (n - 1) * incx;
+                kx = 1 - (n - 1) * incx;
             }
             else if (incx != 1)
             {
-                kx = 0;
+                kx = 1;
             }
 
             /*     Start the operations. In this version the elements of the array AP */
             /*     are accessed sequentially with one pass through AP. */
 
-            kk = 0;
-            if (*uplo == 'U')
+            kk = 1;
+            if (*uplo=='U')
             {
 
                 /*        Form  A  when upper triangle is stored in AP. */
 
                 if (incx == 1)
                 {
-                    for (j = 1, px = x; j <= n; ++j, px++)
+                    i__1 = n;
+                    for (j = 1; j <= i__1; ++j)
                     {
-                        if (*px != 0.0)
+                        if (x[j] != 0.0)
                         {
-                            temp = alpha * *px;
-                            for (i = 0, pap = ap + kk, pxi = x; i < j; ++i)
+                            temp = alpha * x[j];
+                            k = kk;
+                            i__2 = j;
+                            for (i__ = 1; i__ <= i__2; ++i__)
                             {
-                                *pap++ += *pxi++ * temp;
+                                ap[k] += x[i__] * temp;
+                                ++k;
+                                /* L10: */
                             }
                         }
                         kk += j;
+                        /* L20: */
                     }
                 }
                 else
                 {
-                    px = x + kx;
-                    for (j = 1; j <= n; ++j)
+                    jx = kx;
+                    i__1 = n;
+                    for (j = 1; j <= i__1; ++j)
                     {
-                        if (*px != 0.0)
+                        if (x[jx] != 0.0)
                         {
-                            temp = alpha * *px;
-                            pxi = x + kx;
-                            for (k = 0, pap = ap + kk; k < j; ++k)
+                            temp = alpha * x[jx];
+                            ix = kx;
+                            i__2 = kk + j - 1;
+                            for (k = kk; k <= i__2; ++k)
                             {
-                                *pap++ += *pxi * temp;
-                                pxi += incx;
+                                ap[k] += x[ix] * temp;
+                                ix += incx;
+                                /* L30: */
                             }
                         }
-                        px += incx;
-                        kx += incx;
+                        jx += incx;
                         kk += j;
+                        /* L40: */
                     }
                 }
             }
@@ -823,41 +771,54 @@ namespace Blas
 
                 if (incx == 1)
                 {
-                    for (j = 1, px = x; j <= n; ++j)
+                    i__1 = n;
+                    for (j = 1; j <= i__1; ++j)
                     {
-                        if (*px != 0.0)
+                        if (x[j] != 0.0)
                         {
-                            temp = alpha * *px;
-                            for (i = 0, pap = ap + kk, pxi = x + j - 1; i <= n - j; ++i)
+                            temp = alpha * x[j];
+                            k = kk;
+                            i__2 = n;
+                            for (i__ = j; i__ <= i__2; ++i__)
                             {
-                                *pap++ += *pxi++ * temp;
+                                ap[k] += x[i__] * temp;
+                                ++k;
+                                /* L50: */
                             }
                         }
                         kk = kk + n - j + 1;
+                        /* L60: */
                     }
                 }
                 else
                 {
                     jx = kx;
-                    px = x + jx;
-                    for (j = 1; j <= n; ++j)
+                    i__1 = n;
+                    for (j = 1; j <= i__1; ++j)
                     {
-                        if (*px != 0.0)
+                        if (x[jx] != 0.0)
                         {
-                            temp = alpha * *px;
-                            pxi = x + jx;
-                            for (k = 0, pap = ap + kk; k <= n - j; ++k)
+                            temp = alpha * x[jx];
+                            ix = jx;
+                            i__2 = kk + n - j;
+                            for (k = kk; k <= i__2; ++k)
                             {
-                                *pap++ += *pxi * temp;
-                                *pxi += incx;
+                                ap[k] += x[ix] * temp;
+                                ix += incx;
+                                /* L70: */
                             }
                         }
-                        px += incx;
                         jx += incx;
                         kk = kk + n - j + 1;
+                        /* L80: */
                     }
                 }
             }
+
+            return ;
+
+            /*     End of DSPR  . */
+
         }
         public unsafe static int idamaxvec(int n, double* x)
         {
@@ -879,9 +840,15 @@ namespace Blas
         public unsafe static int dsptrs(char* uplo, int n, int nrhs,
     double* ap, int* ipiv, double* b, int ldb)
         {
-            int b_dim1, b_offset;
-            int info;
+            double c_b7 = -1.0;
+            int c__1 = 1;
+            double c_b19 = 1.0;
 
+            /* System generated locals */
+            int b_dim1, b_offset, i__1;
+            double d__1;
+
+            /* Local variables */
             int j, k;
             double ak, bk;
             int kc, kp;
@@ -890,55 +857,29 @@ namespace Blas
             double denom;
 
 
-            /*  -- LAPACK routine (version 3.0) -- */
-            /*     Univ. of Tennessee, Univ. of California Berkeley, NAG Ltd., */
-            /*     Courant Institute, Argonne National Lab, and Rice University */
-            /*     March 31, 1993 */
+            /*  -- LAPACK computational routine (version 3.7.0) -- */
+            /*  -- LAPACK is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     December 2016 */
 
-            /*  Purpose */
-            /*  ======= */
-
-            /*  DSPTRS solves a system of linear equations A*X = B with a real */
-            /*  symmetric matrix A stored in packed format using the factorization */
-            /*  A = U*D*U**T or A = L*D*L**T computed by DSPTRF. */
-
-            /*  Arguments */
-            /*  ========= */
-
-            /*  UPLO    (input) CHARACTER*1 */
-            /*          Specifies whether the details of the factorization are stored */
-            /*          as an upper or lower triangular matrix. */
-            /*          = 'U':  Upper triangular, form is A = U*D*U**T; */
-            /*          = 'L':  Lower triangular, form is A = L*D*L**T. */
-
-            /*  N       (input) INTEGER */
-            /*          The order of the matrix A.  N >= 0. */
-
-            /*  NRHS    (input) INTEGER */
-            /*          The number of right hand sides, i.e., the number of columns */
-            /*          of the matrix B.  NRHS >= 0. */
-
-            /*  AP      (input) DOUBLE PRECISION array, dimension (N*(N+1)/2) */
-            /*          The block diagonal matrix D and the multipliers used to */
-            /*          obtain the factor U or L as computed by DSPTRF, stored as a */
-            /*          packed triangular matrix. */
-
-            /*  IPIV    (input) INTEGER array, dimension (N) */
-            /*          Details of the interchanges and the block structure of D */
-            /*          as determined by DSPTRF. */
-
-            /*  B       (input/output) DOUBLE PRECISION array, dimension (LDB,NRHS) */
-            /*          On entry, the right hand side matrix B. */
-            /*          On exit, the solution matrix X. */
-
-            /*  LDB     (input) INTEGER */
-            /*          The leading dimension of the array B.  LDB >= Math.Max(1,N). */
-
-            /*  INFO    (output) INTEGER */
-            /*          = 0:  successful exit */
-            /*          < 0: if INFO = -i, the i-th argument had an illegal value */
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
 
             /*  ===================================================================== */
+
+            /*     .. Parameters .. */
+            /*     .. */
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. External Functions .. */
+            /*     .. */
+            /*     .. External Subroutines .. */
+            /*     .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+            /*     .. Executable Statements .. */
 
             /* Parameter adjustments */
             --ap;
@@ -948,7 +889,7 @@ namespace Blas
             b -= b_offset;
 
             /* Function Body */
-            info = 0;
+            int info = 0;
             if (*uplo != 'U' && *uplo != 'L')
             {
                 info = -1;
@@ -967,8 +908,8 @@ namespace Blas
             }
             if (info != 0)
             {
-                Console.WriteLine($"dsptrs: error code {-info}");
-                return info;
+                Console.WriteLine($"dsptrs: error code  {-info}");
+                return -info;
             }
 
             /*     Quick return if possible */
@@ -981,7 +922,7 @@ namespace Blas
             if (*uplo == 'U')
             {
 
-                /*        Solve A*X = B, where A = U*D*U'. */
+                /*        Solve A*X = B, where A = U*D*U**T. */
 
                 /*        First solve U*D*X = B, overwriting B with X. */
 
@@ -1016,11 +957,14 @@ namespace Blas
                     /*           Multiply by inv(U(K)), where U(K) is the transformation */
                     /*           stored in column K of A. */
 
-                    dger(k - 1, nrhs, -1, &ap[kc], 1, &b[k + b_dim1], ldb, &b[
+                    i__1 = k - 1;
+                    dger(i__1, nrhs, c_b7, &ap[kc], c__1, &b[k + b_dim1], ldb, &b[
                         b_dim1 + 1], ldb);
 
                     /*           Multiply by the inverse of the diagonal block. */
-                    BlasLike.dscal(nrhs, (Math.Abs(ap[kc + k - 1]) > lm_eps8 ? 1.0 / ap[kc + k - 1] : 0), &b[k + b_dim1], ldb);
+
+                    d__1 = 1.0 / ap[kc + k - 1];
+                    BlasLike.dscal(nrhs, d__1, &b[k + b_dim1], ldb);
                     --k;
                 }
                 else
@@ -1039,9 +983,11 @@ namespace Blas
                     /*           Multiply by inv(U(K)), where U(K) is the transformation */
                     /*           stored in columns K-1 and K of A. */
 
-                    dger(k - 2, nrhs, -1, &ap[kc], 1, &b[k + b_dim1], ldb, &b[
+                    i__1 = k - 2;
+                    dger(i__1, nrhs, c_b7, &ap[kc], c__1, &b[k + b_dim1], ldb, &b[
                         b_dim1 + 1], ldb);
-                    dger(k - 2, nrhs, -1, &ap[kc - (k - 1)], 1, &b[k - 1 +
+                    i__1 = k - 2;
+                    dger(i__1, nrhs, c_b7, &ap[kc - (k - 1)], c__1, &b[k - 1 +
                         b_dim1], ldb, &b[b_dim1 + 1], ldb);
 
                     /*           Multiply by the inverse of the diagonal block. */
@@ -1050,14 +996,15 @@ namespace Blas
                     akm1 = ap[kc - 1] / akm1k;
                     ak = ap[kc + k - 1] / akm1k;
                     denom = akm1 * ak - 1.0;
-                    for (j = 1; j <= nrhs; ++j)
+                    i__1 = nrhs;
+                    for (j = 1; j <= i__1; ++j)
                     {
                         bkm1 = b[k - 1 + j * b_dim1] / akm1k;
                         bk = b[k + j * b_dim1] / akm1k;
-                        b[k - 1 + j * b_dim1] = (Math.Abs(denom) > lm_eps8 ? (ak * bkm1 - bk) / denom : 0);
-                        b[k + j * b_dim1] = (Math.Abs(denom) > lm_eps8 ? (akm1 * bk - bkm1) / denom : 0);
+                        b[k - 1 + j * b_dim1] = (ak * bkm1 - bk) / denom;
+                        b[k + j * b_dim1] = (akm1 * bk - bkm1) / denom;
+                        /* L20: */
                     }
-                    /* L20: */
                     kc = kc - k + 1;
                     k += -2;
                 }
@@ -1065,7 +1012,7 @@ namespace Blas
                 goto L10;
             L30:
 
-                /*        Next solve U'*X = B, overwriting B with X. */
+                /*        Next solve U**T*X = B, overwriting B with X. */
 
                 /*        K is the main loop index, increasing from 1 to N in steps of */
                 /*        1 or 2, depending on the size of the diagonal blocks. */
@@ -1086,11 +1033,13 @@ namespace Blas
 
                     /*           1 x 1 diagonal block */
 
-                    /*           Multiply by inv(U'(K)), where U(K) is the transformation */
+                    /*           Multiply by inv(U**T(K)), where U(K) is the transformation */
                     /*           stored in column K of A. */
 
-                    char trans = 'T';
-                    dgemv(&trans, k - 1, nrhs, -1, &b[b_offset], ldb, &ap[kc], 1, 1, &b[k + b_dim1], ldb);
+                    i__1 = k - 1;
+                    char TT = 'T';
+                    dgemv(&TT, i__1, nrhs, c_b7, &b[b_offset], ldb, &ap[kc]
+                        , c__1, c_b19, &b[k + b_dim1], ldb);
 
                     /*           Interchange rows K and IPIV(K). */
 
@@ -1107,14 +1056,16 @@ namespace Blas
 
                     /*           2 x 2 diagonal block */
 
-                    /*           Multiply by inv(U'(K+1)), where U(K+1) is the transformation */
+                    /*           Multiply by inv(U**T(K+1)), where U(K+1) is the transformation */
                     /*           stored in columns K and K+1 of A. */
 
-                    char trans = 'T';
-                    dgemv(&trans, k - 1, nrhs, -1, &b[b_offset], ldb, &ap[kc]
-                        , 1, 1, &b[k + b_dim1], ldb);
-                    dgemv(&trans, k - 1, nrhs, -1, &b[b_offset], ldb, &ap[kc
-                        + k], 1, 1, &b[k + 1 + b_dim1], ldb);
+                    i__1 = k - 1;
+                    char TT = 'T';
+                    dgemv(&TT, i__1, nrhs, c_b7, &b[b_offset], ldb, &ap[kc]
+                        , c__1, c_b19, &b[k + b_dim1], ldb);
+                    i__1 = k - 1;
+                    dgemv(&TT, i__1, nrhs, c_b7, &b[b_offset], ldb, &ap[kc
+                        + k], c__1, c_b19, &b[k + 1 + b_dim1], ldb);
 
                     /*           Interchange rows K and -IPIV(K). */
 
@@ -1135,7 +1086,7 @@ namespace Blas
             else
             {
 
-                /*        Solve A*X = B, where A = L*D*L'. */
+                /*        Solve A*X = B, where A = L*D*L**T. */
 
                 /*        First solve L*D*X = B, overwriting B with X. */
 
@@ -1171,12 +1122,15 @@ namespace Blas
 
                     if (k < n)
                     {
-                        dger(n - k, nrhs, -1, &ap[kc + 1], 1, &b[k + b_dim1],
+                        i__1 = n - k;
+                        dger(i__1, nrhs, c_b7, &ap[kc + 1], c__1, &b[k + b_dim1],
                             ldb, &b[k + 1 + b_dim1], ldb);
                     }
 
                     /*           Multiply by the inverse of the diagonal block. */
-                    BlasLike.dscal(nrhs, (Math.Abs(ap[kc]) > lm_eps8 ? 1.0 / ap[kc] : 0), &b[k + b_dim1], ldb);
+
+                    d__1 = 1.0 / ap[kc];
+                    BlasLike.dscal(nrhs, d__1, &b[k + b_dim1], ldb);
                     kc = kc + n - k + 1;
                     ++k;
                 }
@@ -1198,9 +1152,11 @@ namespace Blas
 
                     if (k < n - 1)
                     {
-                        dger(n - k - 1, nrhs, -1, &ap[kc + 2], 1, &b[k + b_dim1],
+                        i__1 = n - k - 1;
+                        dger(i__1, nrhs, c_b7, &ap[kc + 2], c__1, &b[k + b_dim1],
                             ldb, &b[k + 2 + b_dim1], ldb);
-                        dger(n - k - 1, nrhs, -1, &ap[kc + n - k + 2], 1, &b[k +
+                        i__1 = n - k - 1;
+                        dger(i__1, nrhs, c_b7, &ap[kc + n - k + 2], c__1, &b[k +
                             1 + b_dim1], ldb, &b[k + 2 + b_dim1], ldb);
                     }
 
@@ -1210,22 +1166,23 @@ namespace Blas
                     akm1 = ap[kc] / akm1k;
                     ak = ap[kc + n - k + 1] / akm1k;
                     denom = akm1 * ak - 1.0;
-                    for (j = 1; j <= nrhs; ++j)
+                    i__1 = nrhs;
+                    for (j = 1; j <= i__1; ++j)
                     {
                         bkm1 = b[k + j * b_dim1] / akm1k;
                         bk = b[k + 1 + j * b_dim1] / akm1k;
-                        b[k + j * b_dim1] = (Math.Abs(denom) > lm_eps8 ? (ak * bkm1 - bk) / denom : 0);
-                        b[k + 1 + j * b_dim1] = (Math.Abs(denom) > lm_eps8 ? (akm1 * bk - bkm1) / denom : 0);
+                        b[k + j * b_dim1] = (ak * bkm1 - bk) / denom;
+                        b[k + 1 + j * b_dim1] = (akm1 * bk - bkm1) / denom;
+                        /* L70: */
                     }
-                    /* L70: */
-                    kc = kc + (n - (k << 1)) + 1;
+                    kc = kc + (n - k << 1) + 1;
                     k += 2;
                 }
 
                 goto L60;
             L80:
 
-                /*        Next solve L'*X = B, overwriting B with X. */
+                /*        Next solve L**T*X = B, overwriting B with X. */
 
                 /*        K is the main loop index, decreasing from N to 1 in steps of */
                 /*        1 or 2, depending on the size of the diagonal blocks. */
@@ -1247,14 +1204,15 @@ namespace Blas
 
                     /*           1 x 1 diagonal block */
 
-                    /*           Multiply by inv(L'(K)), where L(K) is the transformation */
+                    /*           Multiply by inv(L**T(K)), where L(K) is the transformation */
                     /*           stored in column K of A. */
 
                     if (k < n)
                     {
-                        char trans = 'T';
-                        dgemv(&trans, n - k, nrhs, -1, &b[k + 1 + b_dim1],
-                            ldb, &ap[kc + 1], 1, 1, &b[k + b_dim1], ldb);
+                        i__1 = n - k;
+                        char TT = 'T';
+                        dgemv(&TT, i__1, nrhs, c_b7, &b[k + 1 + b_dim1],
+                            ldb, &ap[kc + 1], c__1, c_b19, &b[k + b_dim1], ldb);
                     }
 
                     /*           Interchange rows K and IPIV(K). */
@@ -1271,16 +1229,18 @@ namespace Blas
 
                     /*           2 x 2 diagonal block */
 
-                    /*           Multiply by inv(L'(K-1)), where L(K-1) is the transformation */
+                    /*           Multiply by inv(L**T(K-1)), where L(K-1) is the transformation */
                     /*           stored in columns K-1 and K of A. */
 
                     if (k < n)
                     {
-                        char trans = 'T';
-                        dgemv(&trans, n - k, nrhs, -1, &b[k + 1 + b_dim1],
-                            ldb, &ap[kc + 1], 1, 1, &b[k + b_dim1], ldb);
-                        dgemv(&trans, n - k, nrhs, -1, &b[k + 1 + b_dim1],
-                            ldb, &ap[kc - (n - k)], 1, 1, &b[k - 1 +
+                        i__1 = n - k;
+                        char TT = 'T';
+                        dgemv(&TT, i__1, nrhs, c_b7, &b[k + 1 + b_dim1],
+                            ldb, &ap[kc + 1], c__1, c_b19, &b[k + b_dim1], ldb);
+                        i__1 = n - k;
+                        dgemv(&TT, i__1, nrhs, c_b7, &b[k + 1 + b_dim1],
+                            ldb, &ap[kc - (n - k)], c__1, c_b19, &b[k - 1 +
                             b_dim1], ldb);
                     }
 
@@ -1300,11 +1260,14 @@ namespace Blas
                 ;
             }
 
-            return info;
-        }
+            return 0;
+
+            /*     End of DSPTRS */
+
+        } /* dsptrs_ */
         public unsafe static void dger(int m, int n, double alpha,
-    double* x, int incx, double* y, int incy,
-    double* a, int lda)
+            double* x, int incx, double* y, int incy,
+            double* a, int lda)
         {
             if (incx == 1 && incy == 1 && m > 1)
             {
@@ -1313,7 +1276,7 @@ namespace Blas
                 Console.WriteLine("Forward to dgemm from dger");
                 char transa = 'N';
                 char transb = 'T';
-                dgemm_BITA(&transa, &transb, &mm, &nn, &one, &alpha, x, &mm, y, &nn, &oned, a, &ldaa);
+                dgemm(&transa, &transb, &mm, &nn, &one, &alpha, x, &mm, y, &nn, &oned, a, &ldaa);
             }
             else dger1(m, n, alpha, x, incx, y, incy, a, lda);
         }
@@ -1516,7 +1479,7 @@ namespace Blas
                 }
             }
         }
-        public unsafe static int dgemm_BITA(char* transa, char* transb, int* m, int*
+        public unsafe static int dgemm(char* transa, char* transb, int* m, int*
     n, int* k, double* alpha, double* a, int* lda,
     double* b, int* ldb, double* beta, double* c__,
     int* ldc)
@@ -1954,126 +1917,30 @@ namespace Blas
             /*     End of DGEMM . */
 
         } /* dgemm_ */
-        public unsafe static void dgemv(char* trans, int m, int n, double
-        alpha, double* a, int lda, double* x, int incx,
-        double beta, double* y, int incy)
-        {
-            /*        if(incy==1 && incx==1)
-                    {
-                            Integer nn=n,mm=m,one=1,ldaa=lda;
-                            //printf("Forward to dgemm from dgemv\n");
-                            if(trans[0]=='N'||trans[0]=='n')dgemm_BITA(trans, "N", &mm, &one, &nn, &alpha, a, &ldaa, x, &nn, &beta, y, &mm);
-                            else                            dgemm_BITA(trans, "N", &nn, &one, &mm, &alpha, a, &ldaa, x, &mm, &beta, y, &nn);
-                    }
-                    else*/
-            {
-                int nn = n, mm = m, ldaa = lda, incxx = incx, incyy = incy;
-                //                dgemv_blas(trans,&mm,&nn,&alpha,a,&ldaa,x,&incxx,&beta,y,&incyy);
-                dgemv_me(trans, &mm, &nn, &alpha, a, &ldaa, x, &incxx, &beta, y, &incyy);
-            }
-        }
-        public unsafe static /* Subroutine */ int dgemv_me(char* trans, int* m, int* n, double*
-    alpha, double* a, int* lda, double* x, int* incx,
-    double* beta, double* y, int* incy)
+        public unsafe static int dgemv(char* trans, int m, int n, double alpha,
+        double* a, int lda, double* x, int incx,
+            double beta, double* y, int incy)
         {
             /* System generated locals */
-            int a_dim1, a_offset, i__1;
+            int a_dim1, a_offset, i__1, i__2;
 
             /* Local variables */
-            int i__, j, iy, jx, jy, kx, ky, info;
+            int i__, j, ix, iy, jx, jy, kx, ky, info;
+            double temp;
             int lenx, leny;
 
 
-            /*  Purpose */
-            /*  ======= */
+            /*  -- Reference BLAS level2 routine (version 3.7.0) -- */
+            /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     December 2016 */
 
-            /*  DGEMV  performs one of the matrix-vector operations */
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
 
-            /*     y := alpha*A*x + beta*y,   or   y := alpha*A'*x + beta*y, */
-
-            /*  where alpha and beta are scalars, x and y are vectors and A is an */
-            /*  m by n matrix. */
-
-            /*  Arguments */
-            /*  ========== */
-
-            /*  TRANS  - CHARACTER*1. */
-            /*           On entry, TRANS specifies the operation to be performed as */
-            /*           follows: */
-
-            /*              TRANS = 'N' or 'n'   y := alpha*A*x + beta*y. */
-
-            /*              TRANS = 'T' or 't'   y := alpha*A'*x + beta*y. */
-
-            /*              TRANS = 'C' or 'c'   y := alpha*A'*x + beta*y. */
-
-            /*           Unchanged on exit. */
-
-            /*  M      - INTEGER. */
-            /*           On entry, M specifies the number of rows of the matrix A. */
-            /*           M must be at least zero. */
-            /*           Unchanged on exit. */
-
-            /*  N      - INTEGER. */
-            /*           On entry, N specifies the number of columns of the matrix A. */
-            /*           N must be at least zero. */
-            /*           Unchanged on exit. */
-
-            /*  ALPHA  - DOUBLE PRECISION. */
-            /*           On entry, ALPHA specifies the scalar alpha. */
-            /*           Unchanged on exit. */
-
-            /*  A      - DOUBLE PRECISION array of DIMENSION ( LDA, n ). */
-            /*           Before entry, the leading m by n part of the array A must */
-            /*           contain the matrix of coefficients. */
-            /*           Unchanged on exit. */
-
-            /*  LDA    - INTEGER. */
-            /*           On entry, LDA specifies the first dimension of A as declared */
-            /*           in the calling (sub) program. LDA must be at least */
-            /*           max( 1, m ). */
-            /*           Unchanged on exit. */
-
-            /*  X      - DOUBLE PRECISION array of DIMENSION at least */
-            /*           ( 1 + ( n - 1 )*abs( INCX ) ) when TRANS = 'N' or 'n' */
-            /*           and at least */
-            /*           ( 1 + ( m - 1 )*abs( INCX ) ) otherwise. */
-            /*           Before entry, the incremented array X must contain the */
-            /*           vector x. */
-            /*           Unchanged on exit. */
-
-            /*  INCX   - INTEGER. */
-            /*           On entry, INCX specifies the increment for the elements of */
-            /*           X. INCX must not be zero. */
-            /*           Unchanged on exit. */
-
-            /*  BETA   - DOUBLE PRECISION. */
-            /*           On entry, BETA specifies the scalar beta. When BETA is */
-            /*           supplied as zero then Y need not be set on input. */
-            /*           Unchanged on exit. */
-
-            /*  Y      - DOUBLE PRECISION array of DIMENSION at least */
-            /*           ( 1 + ( m - 1 )*abs( INCY ) ) when TRANS = 'N' or 'n' */
-            /*           and at least */
-            /*           ( 1 + ( n - 1 )*abs( INCY ) ) otherwise. */
-            /*           Before entry with BETA non-zero, the incremented array Y */
-            /*           must contain the vector y. On exit, Y is overwritten by the */
-            /*           updated vector y. */
-
-            /*  INCY   - INTEGER. */
-            /*           On entry, INCY specifies the increment for the elements of */
-            /*           Y. INCY must not be zero. */
-            /*           Unchanged on exit. */
-
-
-            /*  Level 2 Blas routine. */
-
-            /*  -- Written on 22-October-1986. */
-            /*     Jack Dongarra, Argonne National Lab. */
-            /*     Jeremy Du Croz, Nag Central Office. */
-            /*     Sven Hammarling, Nag Central Office. */
-            /*     Richard Hanson, Sandia National Labs. */
-
+            /*  ===================================================================== */
 
             /*     .. Parameters .. */
             /*     .. */
@@ -2089,7 +1956,7 @@ namespace Blas
             /*     Test the input parameters. */
 
             /* Parameter adjustments */
-            a_dim1 = *lda;
+            a_dim1 = lda;
             a_offset = 1 + a_dim1;
             a -= a_offset;
             --x;
@@ -2101,35 +1968,35 @@ namespace Blas
             {
                 info = 1;
             }
-            else if (*m < 0)
+            else if (m < 0)
             {
                 info = 2;
             }
-            else if (*n < 0)
+            else if (n < 0)
             {
                 info = 3;
             }
-            else if (*lda < Math.Max(1, *m))
+            else if (lda < Math.Max(1, m))
             {
                 info = 6;
             }
-            else if (*incx == 0)
+            else if (incx == 0)
             {
                 info = 8;
             }
-            else if (*incy == 0)
+            else if (incy == 0)
             {
                 info = 11;
             }
             if (info != 0)
             {
-                Console.WriteLine($"dgemv error code {info}");
-                return 0;
+                Console.WriteLine($"In dgemv info is {info}");
+                return info;
             }
 
             /*     Quick return if possible. */
 
-            if (*m == 0 || *n == 0 || (*alpha == 0.0 && *beta == 1.0))
+            if (m == 0 || n == 0 || alpha == 0.0 && beta == 1.0)
             {
                 return 0;
             }
@@ -2139,29 +2006,29 @@ namespace Blas
 
             if (*trans == 'N')
             {
-                lenx = *n;
-                leny = *m;
+                lenx = n;
+                leny = m;
             }
             else
             {
-                lenx = *m;
-                leny = *n;
+                lenx = m;
+                leny = n;
             }
-            if (*incx > 0)
+            if (incx > 0)
             {
                 kx = 1;
             }
             else
             {
-                kx = 1 - (lenx - 1) * *incx;
+                kx = 1 - (lenx - 1) * incx;
             }
-            if (*incy > 0)
+            if (incy > 0)
             {
                 ky = 1;
             }
             else
             {
-                ky = 1 - (leny - 1) * *incy;
+                ky = 1 - (leny - 1) * incy;
             }
 
             /*     Start the operations. In this version the elements of A are */
@@ -2169,39 +2036,55 @@ namespace Blas
 
             /*     First form  y := beta*y. */
 
-            if (*beta != 1.0)
+            if (beta != 1.0)
             {
-                if (*incy == 1)
+                if (incy == 1)
                 {
-                    if (*beta == 0.0)
+                    if (beta == 0.0)
                     {
-                        //	memset((double*)(y+1),0,leny*sizeof(*y));
-                        BlasLike.dzerovec(leny, y + 1);
+                        i__1 = leny;
+                        for (i__ = 1; i__ <= i__1; ++i__)
+                        {
+                            y[i__] = 0.0;
+                            /* L10: */
+                        }
                     }
                     else
                     {
-                        BlasLike.dscalvec(leny, *beta, y + 1);
+                        i__1 = leny;
+                        for (i__ = 1; i__ <= i__1; ++i__)
+                        {
+                            y[i__] = beta * y[i__];
+                            /* L20: */
+                        }
                     }
                 }
                 else
                 {
                     iy = ky;
-                    if (*beta == 0.0)
+                    if (beta == 0.0)
                     {
                         i__1 = leny;
                         for (i__ = 1; i__ <= i__1; ++i__)
                         {
                             y[iy] = 0.0;
-                            iy += *incy;
+                            iy += incy;
+                            /* L30: */
                         }
                     }
                     else
                     {
-                        BlasLike.dscal(leny, *beta, y + 1, *incy);
+                        i__1 = leny;
+                        for (i__ = 1; i__ <= i__1; ++i__)
+                        {
+                            y[iy] = beta * y[iy];
+                            iy += incy;
+                            /* L40: */
+                        }
                     }
                 }
             }
-            if (*alpha == 0.0)
+            if (alpha == 0.0)
             {
                 return 0;
             }
@@ -2209,90 +2092,84 @@ namespace Blas
             {
 
                 /*        Form  y := alpha*A*x + y. */
-                /*	if(*n>OMPSWITCH)
-                    {
-                        for(j=1;j<=*m;++j)
-                        {
-                            jy=ky+(j-1)* *incy;
-                            y[jy]+=*alpha*BITA_ddot(*n,x+kx,*incx,a+a_dim1+j,a_dim1);
-                        }
-                    }
-                    else*/
+
+                jx = kx;
+                if (incy == 1)
                 {
-                    jx = kx;
-                    if (*incy == 1)
+                    i__1 = n;
+                    for (j = 1; j <= i__1; ++j)
                     {
-                        for (j = 1; j <= *n; ++j)
+                        temp = (alpha * x[jx]);
+                        i__2 = m;
+                        for (i__ = 1; i__ <= i__2; ++i__)
                         {
-                            if (x[jx] != 0.0)
-                            {
-                                BlasLike.daxpyvec(*m, *alpha * x[jx], a + 1 + j * a_dim1, y + 1);
-                                //					daxpyvec_blas(*m,*alpha*x[jx],a+1+j*a_dim1,y+1);
-                            }
-                            jx += *incx;
+                            y[i__] += temp * a[i__ + j * a_dim1];
+                            /* L50: */
                         }
+                        jx += incx;
+                        /* L60: */
                     }
-                    else
+                }
+                else
+                {
+                    i__1 = n;
+                    for (j = 1; j <= i__1; ++j)
                     {
-                        //#pragma omp parallel for private(j,jy) schedule(dynamic)
-                        for (j = 1; j <= *m; ++j)
+                        temp = (alpha * x[jx]);
+                        iy = ky;
+                        i__2 = m;
+                        for (i__ = 1; i__ <= i__2; ++i__)
                         {
-                            jy = ky + (j - 1) * *incy;
-                            y[jy] += *alpha * BlasLike.ddot(*n, x + kx, *incx, a + a_dim1 + j, a_dim1);
+                            y[iy] += temp * a[i__ + j * a_dim1];
+                            iy += incy;
+                            /* L70: */
                         }
-                        /*		    for (j = 1; j <= *n; ++j) {
-                                    if (x[jx] != 0.) {
-                                        BITA_daxpy(*m,*alpha*x[jx],a+1+j*a_dim1,1,y+ky,*incy);
-                                    }
-                                    jx += *incx;
-                                    }*/
+                        jx += incx;
+                        /* L80: */
                     }
                 }
             }
             else
             {
-                /*        Form  y := alpha*A'*x + y. */
 
-                /*	if(*m<=OMPSWITCH)
-                    {
-                        for(j=1,jx=kx;j<=*m;++j,jx+=*incx)
-                        {
-                            if(x[jx]!=0)
-                            {
-                                BITA_daxpy(*n,*alpha*x[jx],a+a_dim1+j,a_dim1,y+ky,*incy);
-                            }
-                        }
-                    }
-                    else*/
+                /*        Form  y := alpha*A**T*x + y. */
+
+                jy = ky;
+                if (incx == 1)
                 {
-                    if (*incx == 1)
+                    i__1 = n;
+                    for (j = 1; j <= i__1; ++j)
                     {
-                        // #pragma omp parallel for private(j,jy) schedule(dynamic)
-                        for (j = 1; j <= *n; ++j)
+                        temp = 0.0;
+                        i__2 = m;
+                        for (i__ = 1; i__ <= i__2; ++i__)
                         {
-                            jy = ky + (j - 1) * *incy;
-                            y[jy] += *alpha * BlasLike.ddotvec(*m, a + 1 + j * a_dim1, x + 1);
-                            //			y[jy] += *alpha * ddotvec_blas(*m,a+1+j*a_dim1,x+1);
+                            temp += a[i__ + j * a_dim1] * x[i__];
+                            /* L90: */
                         }
+                        y[jy] += alpha * temp;
+                        jy += incy;
+                        /* L100: */
                     }
-                    else
+                }
+                else
+                {
+                    i__1 = n;
+                    for (j = 1; j <= i__1; ++j)
                     {
-                        // #pragma omp parallel for private(j,jy) schedule(dynamic)
-                        for (j = 1; j <= *n; ++j)
+                        temp = 0.0;
+                        ix = kx;
+                        i__2 = m;
+                        for (i__ = 1; i__ <= i__2; ++i__)
                         {
-                            jy = ky + (j - 1) * *incy;
-                            y[jy] += *alpha * BlasLike.ddot(*m, a + 1 + j * a_dim1, 1, x + kx, *incx);
+                            temp += a[i__ + j * a_dim1] * x[ix];
+                            ix += incx;
+                            /* L110: */
                         }
+                        y[jy] += alpha * temp;
+                        jy += incy;
+                        /* L120: */
                     }
-                    /*	{
-                            for(j=1,jx=kx;j<=*m;++j,jx+=*incx)
-                            {
-                                if(x[jx]!=0)
-                                {
-                                    BITA_daxpy(*n,*alpha*x[jx],a+a_dim1+j,a_dim1,y+ky,*incy);
-                                }
-                            }
-                        }*/
                 }
             }
 
@@ -2301,5 +2178,7 @@ namespace Blas
             /*     End of DGEMV . */
 
         } /* dgemv_ */
+
+
     }
 }
