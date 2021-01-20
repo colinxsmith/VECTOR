@@ -4,12 +4,12 @@ namespace Blas
 {
     public static class BlasLike
     {
-        public static double lm_eps = Math.Abs((4.0 / 3 - 1) * 3 - 1);
+        public static double lm_eps = Math.Abs((((double)4) / 3 - 1) * 3 - 1);
         public static double lm_min = 2.2250738585072014e-308;
         public static double lm_rootmin = Math.Sqrt(lm_min);
         public static double lm_rooteps = Math.Sqrt(lm_eps);
 
-        public static void daxpy(int n, double a, double[] x, int ix, double[] y, int iy)
+        public static void daxpy1(int n, double a, double[] x, int ix, double[] y, int iy)
         {
             if (a == 1)
             {
@@ -28,8 +28,302 @@ namespace Blas
             }
         }
 
+        public unsafe static void daxpy(int n, double da, double* dx,
+            int incx, double* dy, int incy)
+        {
+            int i__, m, ix, iy, mp1;
+            /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
+            /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     November 2017 */
 
-        public unsafe static void daxpy(int n, double a, double* x, int ix, double* y, int iy)
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  ===================================================================== */
+
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+            /* Parameter adjustments */
+            --dy;
+            --dx;
+
+            /* Function Body */
+            if (n <= 0)
+            {
+                return;
+            }
+            if (da == 0)
+            {
+                return;
+            }
+            if (incx == 1 && incy == 1)
+            {
+
+                /*        code for both increments equal to 1 */
+
+
+                /*        clean-up loop */
+
+                m = n % 4;
+                if (m != 0)
+                {
+                    if (da == 1)
+                    {
+                        for (i__ = 1; i__ <= m; ++i__)
+                        {
+                            dy[i__] += dx[i__];
+                        }
+                    }
+                    else if (da == -1)
+                    {
+                        for (i__ = 1; i__ <= m; ++i__)
+                        {
+                            dy[i__] -= dx[i__];
+                        }
+                    }
+                    else
+                    {
+                        for (i__ = 1; i__ <= m; ++i__)
+                        {
+                            dy[i__] += da * dx[i__];
+                        }
+                    }
+                }
+                if (n < 4)
+                {
+                    return;
+                }
+                mp1 = m + 1;
+                if (da == 1)
+                {
+                    for (i__ = mp1; i__ <= n; i__ += 4)
+                    {
+                        dy[i__] += dx[i__];
+                        dy[i__ + 1] += dx[i__ + 1];
+                        dy[i__ + 2] += dx[i__ + 2];
+                        dy[i__ + 3] += dx[i__ + 3];
+                    }
+                }
+                else if (da == -1)
+                {
+                    for (i__ = mp1; i__ <= n; i__ += 4)
+                    {
+                        dy[i__] -= dx[i__];
+                        dy[i__ + 1] -= dx[i__ + 1];
+                        dy[i__ + 2] -= dx[i__ + 2];
+                        dy[i__ + 3] -= dx[i__ + 3];
+                    }
+                }
+                else
+                {
+                    for (i__ = mp1; i__ <= n; i__ += 4)
+                    {
+                        dy[i__] += da * dx[i__];
+                        dy[i__ + 1] += da * dx[i__ + 1];
+                        dy[i__ + 2] += da * dx[i__ + 2];
+                        dy[i__ + 3] += da * dx[i__ + 3];
+                    }
+                }
+            }
+            else
+            {
+
+                /*        code for unequal increments or equal increments */
+                /*          not equal to 1 */
+
+                ix = 1;
+                iy = 1;
+                if (incx < 0)
+                {
+                    ix = (-(n) + 1) * incx + 1;
+                }
+                if (incy < 0)
+                {
+                    iy = (-(n) + 1) * incy + 1;
+                }
+                if (da == 1)
+                {
+                    for (i__ = 1; i__ <= n; ++i__)
+                    {
+                        dy[iy] += dx[ix];
+                        ix += incx;
+                        iy += incy;
+                    }
+                }
+                else if (da == -1)
+                {
+                    for (i__ = 1; i__ <= n; ++i__)
+                    {
+                        dy[iy] -= dx[ix];
+                        ix += incx;
+                        iy += incy;
+                    }
+                }
+                else
+                {
+                    for (i__ = 1; i__ <= n; ++i__)
+                    {
+                        dy[iy] += da * dx[ix];
+                        ix += incx;
+                        iy += incy;
+                    }
+                }
+            }
+        }
+
+
+        public static void daxpy(int n, double da, double[] dx,
+            int incx, double[] dy, int incy)
+        {
+            int i__, m, ix, iy;
+            /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
+            /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     November 2017 */
+
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  ===================================================================== */
+
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+            /* Parameter adjustments */
+
+            /* Function Body */
+            if (n <= 0)
+            {
+                return;
+            }
+            if (da == 0)
+            {
+                return;
+            }
+            if (incx == 1 && incy == 1)
+            {
+
+                /*        code for both increments equal to 1 */
+
+
+                /*        clean-up loop */
+
+                m = n % 4;
+                if (m != 0)
+                {
+                    if (da == 1)
+                    {
+                        for (i__ = 0; i__ < m; ++i__)
+                        {
+                            dy[i__] += dx[i__];
+                        }
+                    }
+                    else if (da == -1)
+                    {
+                        for (i__ = 0; i__ < m; ++i__)
+                        {
+                            dy[i__] -= dx[i__];
+                        }
+                    }
+                    else
+                    {
+                        for (i__ = 0; i__ < m; ++i__)
+                        {
+                            dy[i__] += da * dx[i__];
+                        }
+                    }
+                }
+                if (n < 4)
+                {
+                    return;
+                }
+                if (da == 1)
+                {
+                    for (i__ = m; i__ < n; i__ += 4)
+                    {
+                        dy[i__] += dx[i__];
+                        dy[i__ + 1] += dx[i__ + 1];
+                        dy[i__ + 2] += dx[i__ + 2];
+                        dy[i__ + 3] += dx[i__ + 3];
+                    }
+                }
+                else if (da == -1)
+                {
+                    for (i__ = m; i__ < n; i__ += 4)
+                    {
+                        dy[i__] -= dx[i__];
+                        dy[i__ + 1] -= dx[i__ + 1];
+                        dy[i__ + 2] -= dx[i__ + 2];
+                        dy[i__ + 3] -= dx[i__ + 3];
+                    }
+                }
+                else
+                {
+                    for (i__ = m; i__ < n; i__ += 4)
+                    {
+                        dy[i__] += da * dx[i__];
+                        dy[i__ + 1] += da * dx[i__ + 1];
+                        dy[i__ + 2] += da * dx[i__ + 2];
+                        dy[i__ + 3] += da * dx[i__ + 3];
+                    }
+                }
+            }
+            else
+            {
+
+                /*        code for unequal increments or equal increments */
+                /*          not equal to 1 */
+
+                ix = 1;
+                iy = 1;
+                if (incx < 0)
+                {
+                    ix = (-(n) + 1) * incx + 1;
+                }
+                if (incy < 0)
+                {
+                    iy = (-(n) + 1) * incy + 1;
+                }
+                if (da == 1)
+                {
+                    for (i__ = 0; i__ < n; ++i__)
+                    {
+                        dy[iy] += dx[ix];
+                        ix += incx;
+                        iy += incy;
+                    }
+                }
+                else if (da == -1)
+                {
+                    for (i__ = 0; i__ < n; ++i__)
+                    {
+                        dy[iy] -= dx[ix];
+                        ix += incx;
+                        iy += incy;
+                    }
+                }
+                else
+                {
+                    for (i__ = 0; i__ < n; ++i__)
+                    {
+                        dy[iy] += da * dx[ix];
+                        ix += incx;
+                        iy += incy;
+                    }
+                }
+            }
+        }
+
+
+        public unsafe static void daxpy1(int n, double a, double* x, int ix, double* y, int iy)
         {
             if (a == 1)
             {
@@ -89,7 +383,173 @@ namespace Blas
                 *a++ = 0;
             }
         }
-        public static void dcopy(int n, double[] x, int ix, double[] y, int iy)
+        public static void dcopy(int n, double[] dx, int incx, double[] dy, int incy)
+        {
+            int i__, m, ix, iy;
+            /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
+            /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     November 2017 */
+
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  ===================================================================== */
+
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+
+
+            /* Function Body */
+            if (n <= 0)
+            {
+                return;
+            }
+            if (incx == 1 && incy == 1)
+            {
+
+                /*        code for both increments equal to 1 */
+
+
+                /*        clean-up loop */
+
+                m = n % 7;
+                if (m != 0)
+                {
+                    for (i__ = 0; i__ < m; ++i__)
+                    {
+                        dy[i__] = dx[i__];
+                    }
+                    if (n < 7)
+                    {
+                        return;
+                    }
+                }
+                for (i__ = m; i__ < n; i__ += 7)
+                {
+                    dy[i__] = dx[i__];
+                    dy[i__ + 1] = dx[i__ + 1];
+                    dy[i__ + 2] = dx[i__ + 2];
+                    dy[i__ + 3] = dx[i__ + 3];
+                    dy[i__ + 4] = dx[i__ + 4];
+                    dy[i__ + 5] = dx[i__ + 5];
+                    dy[i__ + 6] = dx[i__ + 6];
+                }
+            }
+            else
+            {
+
+                /*        code for unequal increments or equal increments */
+                /*          not equal to 1 */
+
+                ix = 1;
+                iy = 1;
+                if (incx < 0)
+                {
+                    ix = (-(n) + 1) * incx + 1;
+                }
+                if (incy < 0)
+                {
+                    iy = (-(n) + 1) * incy + 1;
+                }
+                for (i__ = 0; i__ < n; ++i__)
+                {
+                    dy[iy - 1] = dx[ix - 1];
+                    ix += incx;
+                    iy += incy;
+                }
+            }
+        }
+
+        public unsafe static void dcopy(int n, double* dx, int incx, double* dy, int incy)
+        {
+            int i__, m, ix, iy, mp1;
+            /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
+            /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     November 2017 */
+
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  ===================================================================== */
+
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+            /* Parameter adjustments */
+            --dy;
+            --dx;
+
+            /* Function Body */
+            if (n <= 0)
+            {
+                return;
+            }
+            if (incx == 1 && incy == 1)
+            {
+
+                /*        code for both increments equal to 1 */
+
+
+                /*        clean-up loop */
+
+                m = n % 7;
+                if (m != 0)
+                {
+                    for (i__ = 1; i__ <= m; ++i__)
+                    {
+                        dy[i__] = dx[i__];
+                    }
+                    if (n < 7)
+                    {
+                        return;
+                    }
+                }
+                mp1 = m + 1;
+                for (i__ = mp1; i__ <= n; i__ += 7)
+                {
+                    dy[i__] = dx[i__];
+                    dy[i__ + 1] = dx[i__ + 1];
+                    dy[i__ + 2] = dx[i__ + 2];
+                    dy[i__ + 3] = dx[i__ + 3];
+                    dy[i__ + 4] = dx[i__ + 4];
+                    dy[i__ + 5] = dx[i__ + 5];
+                    dy[i__ + 6] = dx[i__ + 6];
+                }
+            }
+            else
+            {
+
+                /*        code for unequal increments or equal increments */
+                /*          not equal to 1 */
+
+                ix = 1;
+                iy = 1;
+                if (incx < 0)
+                {
+                    ix = (-(n) + 1) * incx + 1;
+                }
+                if (incy < 0)
+                {
+                    iy = (-(n) + 1) * incy + 1;
+                }
+                for (i__ = 1; i__ <= n; ++i__)
+                {
+                    dy[iy] = dx[ix];
+                    ix += incx;
+                    iy += incy;
+                }
+            }
+        }
+        public static void dcopy1(int n, double[] x, int ix, double[] y, int iy)
         {
             if (ix == 1 && iy == 1)
             {
@@ -114,7 +574,8 @@ namespace Blas
         {
             dsub(n, x, 1, y, 1, z, 1);
         }
-        public static double ddot(int n, double[] a, int ia, double[] b, int ib)
+        public static double ddot1(int n, double[] a, int ia, double[] b, int ib)
+
         {
             double back = 0;
             for (int i = 0, iia = 0, iib = 0; i < n; i++, iia += ia, iib += ib)
@@ -123,8 +584,179 @@ namespace Blas
             }
             return back;
         }
+        public unsafe static double ddot(int n, double* dx, int incx, double* dy,
+            int incy)
+        {
+            double back;
 
-        public unsafe static double ddot(int n, double* a, int ia, double* b, int ib)
+            /* Local variables */
+            int i__, m, ix, iy;
+
+
+            /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
+            /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     November 2017 */
+
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  ===================================================================== */
+
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+            /* Parameter adjustments */
+
+            /* Function Body */
+            back = 0;
+            if (n <= 0)
+            {
+                return back;
+            }
+            if (incx == 1 && incy == 1)
+            {
+
+                /*        code for both increments equal to 1 */
+
+
+                /*        clean-up loop */
+
+                m = n % 5;
+                if (m != 0)
+                {
+                    for (i__ = 0; i__ < m; ++i__)
+                    {
+                        back += dx[i__] * dy[i__];
+                    }
+                    if (n < 5)
+                    {
+                        return back;
+                    }
+                }
+                for (i__ = m; i__ < n; i__ += 5)
+                {
+                    back = back + dx[i__] * dy[i__] + dx[i__ + 1] * dy[i__ + 1] +
+                        dx[i__ + 2] * dy[i__ + 2] + dx[i__ + 3] * dy[i__ + 3] +
+                        dx[i__ + 4] * dy[i__ + 4];
+                }
+            }
+            else
+            {
+
+                /*        code for unequal increments or equal increments */
+                /*          not equal to 1 */
+
+                ix = 1;
+                iy = 1;
+                if (incx < 0)
+                {
+                    ix = (-(n) + 1) * incx + 1;
+                }
+                if (incy < 0)
+                {
+                    iy = (-(n) + 1) * incy + 1;
+                }
+                for (i__ = 0; i__ < n; ++i__)
+                {
+                    back += dx[ix - 1] * dy[iy - 1];
+                    ix += incx;
+                    iy += incy;
+                }
+            }
+            return back;
+        } /* ddot_ */
+        public static double ddot(int n, double[] dx, int incx, double[] dy,
+            int incy)
+        {
+            double back;
+
+            /* Local variables */
+            int i__, m, ix, iy;
+
+
+            /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
+            /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     November 2017 */
+
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  ===================================================================== */
+
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+            /* Parameter adjustments */
+
+            /* Function Body */
+            back = 0;
+            if (n <= 0)
+            {
+                return back;
+            }
+            if (incx == 1 && incy == 1)
+            {
+
+                /*        code for both increments equal to 1 */
+
+
+                /*        clean-up loop */
+
+                m = n % 5;
+                if (m != 0)
+                {
+                    for (i__ = 0; i__ < m; ++i__)
+                    {
+                        back += dx[i__] * dy[i__];
+                    }
+                    if (n < 5)
+                    {
+                        return back;
+                    }
+                }
+                for (i__ = m; i__ < n; i__ += 5)
+                {
+                    back = back + dx[i__] * dy[i__] + dx[i__ + 1] * dy[i__ + 1] +
+                        dx[i__ + 2] * dy[i__ + 2] + dx[i__ + 3] * dy[i__ + 3] +
+                        dx[i__ + 4] * dy[i__ + 4];
+                }
+            }
+            else
+            {
+
+                /*        code for unequal increments or equal increments */
+                /*          not equal to 1 */
+
+                ix = 1;
+                iy = 1;
+                if (incx < 0)
+                {
+                    ix = (-(n) + 1) * incx + 1;
+                }
+                if (incy < 0)
+                {
+                    iy = (-(n) + 1) * incy + 1;
+                }
+                for (i__ = 0; i__ < n; ++i__)
+                {
+                    back += dx[ix - 1] * dy[iy - 1];
+                    ix += incx;
+                    iy += incy;
+                }
+            }
+            return back;
+        } /* ddot_ */
+
+
+        public unsafe static double ddot1(int n, double* a, int ia, double* b, int ib)
         {
             double back = 0;
             for (int i = 0, iia = 0, iib = 0; i < n; i++, iia += ia, iib += ib)
@@ -184,14 +816,1293 @@ namespace Blas
                     x[iix] = a * x[iix];
             }
         }
-        public unsafe static void dscal(int n, double da, double* dx,
-    int incx)
+        public unsafe static void dger1(int m, int n, double alpha,
+double* x, int incx, double* y, int incy,
+double* a, int lda)
+        {
+            int a_dim1;
+            //    size_t i, 
+            int jy, kx, info;
+            long j;
+            //    double temp;
+            //	vector px,pA,py;
+
+            /*     .. Scalar Arguments .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  Purpose */
+            /*  ======= */
+
+            /*  DGER   performs the rank 1 operation */
+
+            /*     A := alpha*x*y' + A, */
+
+            /*  where alpha is a scalar, x is an m element vector, y is an n element */
+            /*  vector and A is an m by n matrix. */
+
+            /*  Parameters */
+            /*  ========== */
+
+            /*  M      - size_t. */
+            /*           On entry, M specifies the number of rows of the matrix A. */
+            /*           M must be at least zero. */
+            /*           Unchanged on exit. */
+
+            /*  N      - size_t. */
+            /*           On entry, N specifies the number of columns of the matrix A. */
+            /*           N must be at least zero. */
+            /*           Unchanged on exit. */
+
+            /*  ALPHA  - DOUBLE PRECISION. */
+            /*           On entry, ALPHA specifies the scalar alpha. */
+            /*           Unchanged on exit. */
+
+            /*  X      - DOUBLE PRECISION array of dimension at least */
+            /*           ( 1 + ( m - 1 )*abs( INCX ) ). */
+            /*           Before entry, the incremented array X must contain the m */
+            /*           element vector x. */
+            /*           Unchanged on exit. */
+
+            /*  INCX   - size_t. */
+            /*           On entry, INCX specifies the increment for the elements of */
+            /*           X. INCX must not be zero. */
+            /*           Unchanged on exit. */
+
+            /*  Y      - DOUBLE PRECISION array of dimension at least */
+            /*           ( 1 + ( n - 1 )*abs( INCY ) ). */
+            /*           Before entry, the incremented array Y must contain the n */
+            /*           element vector y. */
+            /*           Unchanged on exit. */
+
+            /*  INCY   - size_t. */
+            /*           On entry, INCY specifies the increment for the elements of */
+            /*           Y. INCY must not be zero. */
+            /*           Unchanged on exit. */
+
+            /*  A      - DOUBLE PRECISION array of DIMENSION ( LDA, n ). */
+            /*           Before entry, the leading m by n part of the array A must */
+            /*           contain the matrix of coefficients. On exit, A is */
+            /*           overwritten by the updated matrix. */
+
+            /*  LDA    - size_t. */
+            /*           On entry, LDA specifies the first dimension of A as declared */
+            /*           in the calling (sub) program. LDA must be at least */
+            /*           Math.Max( 1, m ). */
+            /*           Unchanged on exit. */
+
+
+            /*  Level 2 Blas routine. */
+
+            /*  -- Written on 22-October-1986. */
+            /*     Jack Dongarra, Argonne National Lab. */
+            /*     Jeremy Du Croz, Nag Central Office. */
+            /*     Sven Hammarling, Nag Central Office. */
+            /*     Richard Hanson, Sandia National Labs. */
+
+
+            /*     .. Parameters .. */
+            /*     .. Local Scalars .. */
+            /*     .. External Subroutines .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+            /*     .. Executable Statements .. */
+
+            /*     Test the input parameters. */
+
+            /* Parameter adjustments */
+            a_dim1 = lda;
+
+            /* Function Body */
+            info = 0;
+            if (m < 0)
+            {
+                info = 1;
+            }
+            else if (n < 0)
+            {
+                info = 2;
+            }
+            else if (incx == 0)
+            {
+                info = 5;
+            }
+            else if (incy == 0)
+            {
+                info = 7;
+            }
+            else if (lda < Math.Max(1, m))
+            {
+                info = 9;
+            }
+            if (info != 0)
+            {
+                Console.WriteLine($"dger error code {info}");
+                return;
+            }
+
+            /*     Quick return if possible. */
+
+            if (m == 0 || n == 0 || alpha == 0.0)
+            {
+                return;
+            }
+
+            /*     Start the operations. In this version the elements of A are */
+            /*     accessed sequentially with one pass through A. */
+            if (incy > 0)
+            {
+                jy = 0;
+            }
+            else
+            {
+                jy = 0 - (n - 1) * incy;
+            }
+            if (incx == 1)
+            {
+                if (m > 500)
+                {
+                    //#pragma omp parallel for private(j) schedule(dynamic)
+                    for (j = 0; j < n; ++j/*,py+=incy*/)
+                    {
+                        if (y[jy + incy * j] != 0.0)
+                        {
+                            daxpyvec(m, alpha * y[jy + incy * j], x, a + j * a_dim1);
+                        }
+                    }
+                }
+                else
+                {
+                    for (j = 0; j < n; ++j/*,py+=incy*/)
+                    {
+                        if (y[jy + incy * j] != 0.0)
+                        {
+                            daxpyvec(m, alpha * y[jy + incy * j], x, a + j * a_dim1);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (incx > 0)
+                {
+                    kx = 0;
+                }
+                else
+                {
+                    kx = 0 - (m - 1) * incx;
+                }
+                if (m > 500)
+                {
+                    //#pragma omp parallel for private(j) schedule(dynamic)
+                    for (j = 0; j < n; ++j/*,py+=incy*/)
+                    {
+                        if (y[jy + incy * j] != 0.0)
+                        {
+                            daxpy(m, alpha * y[jy + incy * j], x + kx, incx, a + j * a_dim1, 1);
+                        }
+                    }
+                }
+                else
+                {
+                    for (j = 0; j < n; ++j/*,py+=incy*/)
+                    {
+                        if (y[jy + incy * j] != 0.0)
+                        {
+                            daxpy(m, alpha * y[jy + incy * j], x + kx, incx, a + j * a_dim1, 1);
+                        }
+                    }
+                }
+            }
+        }
+
+        public unsafe static void dger(int m, int n, double alpha,
+            double* x, int incx, double* y, int incy,
+            double* a, int lda)
+        {
+            if (incx == 1 && incy == 1 && m > 1)
+            {
+                double oned = 1;
+                int mm = (int)m, nn = (int)n, one = 1, ldaa = (int)lda;
+                Console.WriteLine("Forward to dgemm from dger");
+                char transa = 'N';
+                char transb = 'T';
+                dgemm(&transa, &transb, &mm, &nn, &one, &alpha, x, &mm, y, &nn, &oned, a, &ldaa);
+            }
+            else dger1(m, n, alpha, x, incx, y, incy, a, lda);
+        }
+
+        public unsafe static int dgemm(char* transa, char* transb, int* m, int*
+n, int* k, double* alpha, double* a, int* lda,
+double* b, int* ldb, double* beta, double* c__,
+int* ldc)
         {
             /* System generated locals */
-            int i__1, i__2;
+            int a_dim1, a_offset, b_dim1, b_offset, c_dim1, c_offset;// i__1, i__2, 
+                                                                     //    i__3;
 
             /* Local variables */
-            int i__, m, mp1, nincx;
+            int j, info, i__, l; double temp;
+            short nota, notb;
+            int ncola;
+            int nrowa, nrowb;
+
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  Purpose */
+            /*  ======= */
+
+            /*  DGEMM  performs one of the matrix-matrix operations */
+
+            /*     C := alpha*op( A )*op( B ) + beta*C, */
+
+            /*  where  op( X ) is one of */
+
+            /*     op( X ) = X   or   op( X ) = X', */
+
+            /*  alpha and beta are scalars, and A, B and C are matrices, with op( A ) */
+            /*  an m by k matrix,  op( B )  a  k by n matrix and  C an m by n matrix. */
+
+            /*  Arguments */
+            /*  ========== */
+
+            /*  TRANSA - CHARACTER*1. */
+            /*           On entry, TRANSA specifies the form of op( A ) to be used in */
+            /*           the matrix multiplication as follows: */
+
+            /*              TRANSA = 'N' or 'n',  op( A ) = A. */
+
+            /*              TRANSA = 'T' or 't',  op( A ) = A'. */
+
+            /*              TRANSA = 'C' or 'c',  op( A ) = A'. */
+
+            /*           Unchanged on exit. */
+
+            /*  TRANSB - CHARACTER*1. */
+            /*           On entry, TRANSB specifies the form of op( B ) to be used in */
+            /*           the matrix multiplication as follows: */
+
+            /*              TRANSB = 'N' or 'n',  op( B ) = B. */
+
+            /*              TRANSB = 'T' or 't',  op( B ) = B'. */
+
+            /*              TRANSB = 'C' or 'c',  op( B ) = B'. */
+
+            /*           Unchanged on exit. */
+
+            /*  M      - INTEGER. */
+            /*           On entry,  M  specifies  the number  of rows  of the  matrix */
+            /*           op( A )  and of the  matrix  C.  M  must  be at least  zero. */
+            /*           Unchanged on exit. */
+
+            /*  N      - INTEGER. */
+            /*           On entry,  N  specifies the number  of columns of the matrix */
+            /*           op( B ) and the number of columns of the matrix C. N must be */
+            /*           at least zero. */
+            /*           Unchanged on exit. */
+
+            /*  K      - INTEGER. */
+            /*           On entry,  K  specifies  the number of columns of the matrix */
+            /*           op( A ) and the number of rows of the matrix op( B ). K must */
+            /*           be at least  zero. */
+            /*           Unchanged on exit. */
+
+            /*  ALPHA  - DOUBLE PRECISION. */
+            /*           On entry, ALPHA specifies the scalar alpha. */
+            /*           Unchanged on exit. */
+
+            /*  A      - DOUBLE PRECISION array of DIMENSION ( LDA, ka ), where ka is */
+            /*           k  when  TRANSA = 'N' or 'n',  and is  m  otherwise. */
+            /*           Before entry with  TRANSA = 'N' or 'n',  the leading  m by k */
+            /*           part of the array  A  must contain the matrix  A,  otherwise */
+            /*           the leading  k by m  part of the array  A  must contain  the */
+            /*           matrix A. */
+            /*           Unchanged on exit. */
+
+            /*  LDA    - INTEGER. */
+            /*           On entry, LDA specifies the first dimension of A as declared */
+            /*           in the calling (sub) program. When  TRANSA = 'N' or 'n' then */
+            /*           LDA must be at least  Math.Max( 1, m ), otherwise  LDA must be at */
+            /*           least  Math.Max( 1, k ). */
+            /*           Unchanged on exit. */
+
+            /*  B      - DOUBLE PRECISION array of DIMENSION ( LDB, kb ), where kb is */
+            /*           n  when  TRANSB = 'N' or 'n',  and is  k  otherwise. */
+            /*           Before entry with  TRANSB = 'N' or 'n',  the leading  k by n */
+            /*           part of the array  B  must contain the matrix  B,  otherwise */
+            /*           the leading  n by k  part of the array  B  must contain  the */
+            /*           matrix B. */
+            /*           Unchanged on exit. */
+
+            /*  LDB    - INTEGER. */
+            /*           On entry, LDB specifies the first dimension of B as declared */
+            /*           in the calling (sub) program. When  TRANSB = 'N' or 'n' then */
+            /*           LDB must be at least  Math.Max( 1, k ), otherwise  LDB must be at */
+            /*           least  Math.Max( 1, n ). */
+            /*           Unchanged on exit. */
+
+            /*  BETA   - DOUBLE PRECISION. */
+            /*           On entry,  BETA  specifies the scalar  beta.  When  BETA  is */
+            /*           supplied as zero then C need not be set on input. */
+            /*           Unchanged on exit. */
+
+            /*  C      - DOUBLE PRECISION array of DIMENSION ( LDC, n ). */
+            /*           Before entry, the leading  m by n  part of the array  C must */
+            /*           contain the matrix  C,  except when  beta  is zero, in which */
+            /*           case C need not be set on entry. */
+            /*           On exit, the array  C  is overwritten by the  m by n  matrix */
+            /*           ( alpha*op( A )*op( B ) + beta*C ). */
+
+            /*  LDC    - INTEGER. */
+            /*           On entry, LDC specifies the first dimension of C as declared */
+            /*           in  the  calling  (sub)  program.   LDC  must  be  at  least */
+            /*           Math.Max( 1, m ). */
+            /*           Unchanged on exit. */
+
+
+            /*  Level 3 Blas routine. */
+
+            /*  -- Written on 8-February-1989. */
+            /*     Jack Dongarra, Argonne National Laboratory. */
+            /*     Iain Duff, AERE Harwell. */
+            /*     Jeremy Du Croz, Numerical Algorithms Group Ltd. */
+            /*     Sven Hammarling, Numerical Algorithms Group Ltd. */
+
+
+            /*     .. External Functions .. */
+            /*     .. */
+            /*     .. External Subroutines .. */
+            /*     .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. Parameters .. */
+            /*     .. */
+
+            /*     Set  NOTA  and  NOTB  as  true if  A  and  B  respectively are not */
+            /*     transposed and set  NROWA, NCOLA and  NROWB  as the number of rows */
+            /*     and  columns of  A  and the  number of  rows  of  B  respectively. */
+
+            /* Parameter adjustments */
+            a_dim1 = *lda;
+            a_offset = 1 + a_dim1;
+            a -= a_offset;
+            b_dim1 = *ldb;
+            b_offset = 1 + b_dim1;
+            b -= b_offset;
+            c_dim1 = *ldc;
+            c_offset = 1 + c_dim1;
+            c__ -= c_offset;
+
+            /* Function Body */
+            nota = (*transa == 'N') ? 1 : 0;//lsame_BITA(transa, "N", (ftnlen)1, (ftnlen)1);
+            notb = (*transb == 'N') ? 1 : 0;//lsame_BITA(transb, "N", (ftnlen)1, (ftnlen)1);
+            if (nota != 0)
+            {
+                nrowa = *m;
+                ncola = *k;
+            }
+            else
+            {
+                nrowa = *k;
+                ncola = *m;
+            }
+            if (notb != 0)
+            {
+                nrowb = *k;
+            }
+            else
+            {
+                nrowb = *n;
+            }
+
+            /*     Test the input parameters. */
+
+            info = 0;
+            if (nota == 0 && *transa != 'C' && *transa != 'T')
+            {
+                info = 1;
+            }
+            else if (notb == 0 && *transb != 'C' && *transb != 'T')
+            {
+                info = 2;
+            }
+            else if (*m < 0)
+            {
+                info = 3;
+            }
+            else if (*n < 0)
+            {
+                info = 4;
+            }
+            else if (*k < 0)
+            {
+                info = 5;
+            }
+            else if (*lda < Math.Max(1, nrowa))
+            {
+                info = 8;
+            }
+            else if (*ldb < Math.Max(1, nrowb))
+            {
+                info = 10;
+            }
+            else if (*ldc < Math.Max(1, *m))
+            {
+                info = 13;
+            }
+            if (info != 0)
+            {
+                Console.WriteLine($"DGEMM info {info}");
+                //	xerbla_BITA("DGEMM ", &info, (ftnlen)6);
+                return 0;
+            }
+
+            /*     Quick return if possible. */
+
+            if ((*m == 0 || *n == 0 || *alpha == 0.0 || *k == 0) && *beta == 1.0)
+            {
+                return 0;
+            }
+
+            /*     And if  alpha.eq.zero. */
+
+            if (*alpha == 0.0)
+            {
+                if (*beta == 0.0)
+                {
+                    //	    i__1 = *n;
+                    //	    for (j = 1; j <= *n; ++j) {
+                    //		i__2 = *m;
+                    //   memset((double*)(c__ + c_dim1 + 1), 0, *n * *m * sizeof(double));
+                    dzerovec(*n * *m, (c__ + c_dim1 + 1));
+                    //		for (i__ = 1; i__ <= *m; ++i__) {
+                    //		    c__[i__ + j * c_dim1] = 0.;
+                    /* L10: */
+                    //		}
+                    /* L20: */
+                    //	    }
+                }
+                else
+                {
+                    //	    i__1 = *n;
+                    //#pragma omp parallel for private(j,i__) schedule(dynamic)
+                    for (j = 1; j <= *n; ++j)
+                    {
+                        //		i__2 = *m;
+                        for (i__ = 1; i__ <= *m; ++i__)
+                        {
+                            c__[i__ + j * c_dim1] *= *beta;
+                            /* L30: */
+                        }
+                        /* L40: */
+                    }
+                }
+                return 0;
+            }
+
+            /*     Start the operations. */
+
+            if (notb != 0)
+            {
+                if (nota != 0)
+                {
+
+                    /*           Form  C := alpha*A*B + beta*C. */
+
+                    //	    i__1 = *n;
+                    //#pragma omp parallel for private(j,i__,l,temp) schedule(dynamic)
+                    for (j = 1; j <= *n; ++j)
+                    {
+                        if (*beta == 0.0)
+                        {
+                            //		    i__2 = *m;
+                            //		    for (i__ = 1; i__ <= *m; ++i__) {
+                            //			c__[i__ + j * c_dim1] = 0.;
+                            /* L50: */
+                            //       memset((double*)(c__ + j * c_dim1 + 1), 0, *m * sizeof(double));
+                            dzerovec(*m, (double*)(c__ + j * c_dim1 + 1));
+                            //		    }
+                        }
+                        else if (*beta != 1.0)
+                        {
+                            //		    i__2 = *m;
+                            for (i__ = 1; i__ <= *m; ++i__)
+                            {
+                                c__[i__ + j * c_dim1] *= *beta;
+                                /* L60: */
+                            }
+                        }
+                        //		i__2 = *k;
+                        for (l = 1; l <= *k; ++l)
+                        {
+                            if (b[l + j * b_dim1] != 0.0)
+                            {
+                                temp = *alpha * b[l + j * b_dim1];
+                                //			i__3 = *m;
+                                if (temp > 0)
+                                {
+                                    for (i__ = 1; i__ <= *m; ++i__)
+                                    {
+                                        c__[i__ + j * c_dim1] += temp * a[i__ + l * a_dim1];
+                                    }
+                                    /* L70: */
+                                }
+                            }
+                            /* L80: */
+                        }
+                        /* L90: */
+                    }
+                }
+                else
+                {
+
+                    /*           Form  C := alpha*A'*B + beta*C */
+
+                    //	    i__1 = *n;
+                    //#pragma omp parallel for private(j,i__,temp,l)  schedule(dynamic)
+                    for (j = 1; j <= *n; ++j)
+                    {
+                        //		i__2 = *m;
+                        for (i__ = 1; i__ <= *m; ++i__)
+                        {
+                            temp = 0.0;
+                            //		    i__3 = *k;
+                            for (l = 1; l <= *k; ++l)
+                            {
+                                temp += a[l + i__ * a_dim1] * b[l + j * b_dim1];
+                                /* L100: */
+                            }
+                            if (*beta == 0.0)
+                            {
+                                if (temp != 0)
+                                    c__[i__ + j * c_dim1] = *alpha * temp;
+                            }
+                            else
+                            {
+                                if (temp != 0)
+                                    c__[i__ + j * c_dim1] = *alpha * temp + *beta * c__[i__ + j * c_dim1];
+                                else if (*beta != 1)
+                                    c__[i__ + j * c_dim1] = *beta * c__[i__ + j * c_dim1];
+                            }
+                            /* L110: */
+                        }
+                        /* L120: */
+                    }
+                }
+            }
+            else
+            {
+                if (nota != 0)
+                {
+
+                    /*           Form  C := alpha*A*B' + beta*C */
+
+                    //	    i__1 = *n;
+                    //#pragma omp parallel for private(j,l,temp) schedule(dynamic)
+                    for (j = 1; j <= *n; ++j)
+                    {
+                        if (*beta == 0.0)
+                        {
+                            //  memset((double*)(c__ + j * c_dim1 + 1), 0, *m * sizeof(double));
+                            dzerovec(*m, (double*)(c__ + j * c_dim1 + 1));
+                        }
+                        else
+                        {
+                            dscalvec(*m, *beta, c__ + 1 + j * c_dim1);
+                        }
+                        for (l = 1; l <= *k; ++l)
+                        {
+                            if (b[j + l * b_dim1] != 0)
+                            {
+                                temp = *alpha * b[j + l * b_dim1];
+                                daxpyvec(*m, temp, a + 1 + l * a_dim1, c__ + 1 + j * c_dim1);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+
+                    /*           Form  C := alpha*A'*B' + beta*C */
+
+                    //	    i__1 = *n;
+                    //#pragma omp parallel for private(j,i__,l,temp) schedule(dynamic)
+                    for (j = 1; j <= *n; ++j)
+                    {
+                        //		i__2 = *m;
+                        for (i__ = 1; i__ <= *m; ++i__)
+                        {
+                            temp = 0.0;
+                            //		    i__3 = *k;
+                            for (l = 1; l <= *k; ++l)
+                            {
+                                temp += a[l + i__ * a_dim1] * b[j + l * b_dim1];
+                                /* L180: */
+                            }
+                            if (*beta == 0.0)
+                            {
+                                if (temp != 0)
+                                    c__[i__ + j * c_dim1] = *alpha * temp;
+                            }
+                            else
+                            {
+                                if (temp != 0)
+                                    c__[i__ + j * c_dim1] = *alpha * temp + *beta * c__[i__ + j * c_dim1];
+                                else if (*beta != 1)
+                                    c__[i__ + j * c_dim1] *= *beta;
+                            }
+                            /* L190: */
+                        }
+                        /* L200: */
+                    }
+                }
+            }
+
+            return 0;
+
+            /*     End of DGEMM . */
+
+        } /* dgemm_ */
+
+        public unsafe static int dgemv(char* trans, int m, int n, double alpha,
+double* a, int lda, double* x, int incx,
+double beta, double* y, int incy)
+        {
+            /* System generated locals */
+            int a_dim1, a_offset, i__1, i__2;
+
+            /* Local variables */
+            int i__, j, ix, iy, jx, jy, kx, ky, info;
+            double temp;
+            int lenx, leny;
+
+
+            /*  -- Reference BLAS level2 routine (version 3.7.0) -- */
+            /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     December 2016 */
+
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  ===================================================================== */
+
+            /*     .. Parameters .. */
+            /*     .. */
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. External Functions .. */
+            /*     .. */
+            /*     .. External Subroutines .. */
+            /*     .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+
+            /*     Test the input parameters. */
+
+            /* Parameter adjustments */
+            a_dim1 = lda;
+            a_offset = 1 + a_dim1;
+            a -= a_offset;
+            --x;
+            --y;
+
+            /* Function Body */
+            info = 0;
+            if (*trans != 'N' && *trans != 'T' && *trans != 'C')
+            {
+                info = 1;
+            }
+            else if (m < 0)
+            {
+                info = 2;
+            }
+            else if (n < 0)
+            {
+                info = 3;
+            }
+            else if (lda < Math.Max(1, m))
+            {
+                info = 6;
+            }
+            else if (incx == 0)
+            {
+                info = 8;
+            }
+            else if (incy == 0)
+            {
+                info = 11;
+            }
+            if (info != 0)
+            {
+                Console.WriteLine($"In dgemv info is {info}");
+                return info;
+            }
+
+            /*     Quick return if possible. */
+
+            if (m == 0 || n == 0 || alpha == 0.0 && beta == 1.0)
+            {
+                return 0;
+            }
+
+            /*     Set  LENX  and  LENY, the lengths of the vectors x and y, and set */
+            /*     up the start points in  X  and  Y. */
+
+            if (*trans == 'N')
+            {
+                lenx = n;
+                leny = m;
+            }
+            else
+            {
+                lenx = m;
+                leny = n;
+            }
+            if (incx > 0)
+            {
+                kx = 1;
+            }
+            else
+            {
+                kx = 1 - (lenx - 1) * incx;
+            }
+            if (incy > 0)
+            {
+                ky = 1;
+            }
+            else
+            {
+                ky = 1 - (leny - 1) * incy;
+            }
+
+            /*     Start the operations. In this version the elements of A are */
+            /*     accessed sequentially with one pass through A. */
+
+            /*     First form  y := beta*y. */
+
+            if (beta != 1.0)
+            {
+                if (incy == 1)
+                {
+                    if (beta == 0.0)
+                    {
+                        i__1 = leny;
+                        for (i__ = 1; i__ <= i__1; ++i__)
+                        {
+                            y[i__] = 0.0;
+                            /* L10: */
+                        }
+                    }
+                    else
+                    {
+                        i__1 = leny;
+                        for (i__ = 1; i__ <= i__1; ++i__)
+                        {
+                            y[i__] = beta * y[i__];
+                            /* L20: */
+                        }
+                    }
+                }
+                else
+                {
+                    iy = ky;
+                    if (beta == 0.0)
+                    {
+                        i__1 = leny;
+                        for (i__ = 1; i__ <= i__1; ++i__)
+                        {
+                            y[iy] = 0.0;
+                            iy += incy;
+                            /* L30: */
+                        }
+                    }
+                    else
+                    {
+                        i__1 = leny;
+                        for (i__ = 1; i__ <= i__1; ++i__)
+                        {
+                            y[iy] = beta * y[iy];
+                            iy += incy;
+                            /* L40: */
+                        }
+                    }
+                }
+            }
+            if (alpha == 0.0)
+            {
+                return 0;
+            }
+            if (*trans == 'N')
+            {
+
+                /*        Form  y := alpha*A*x + y. */
+
+                jx = kx;
+                if (incy == 1)
+                {
+                    i__1 = n;
+                    for (j = 1; j <= i__1; ++j)
+                    {
+                        temp = (alpha * x[jx]);
+                        i__2 = m;
+                        for (i__ = 1; i__ <= i__2; ++i__)
+                        {
+                            y[i__] += temp * a[i__ + j * a_dim1];
+                            /* L50: */
+                        }
+                        jx += incx;
+                        /* L60: */
+                    }
+                }
+                else
+                {
+                    i__1 = n;
+                    for (j = 1; j <= i__1; ++j)
+                    {
+                        temp = (alpha * x[jx]);
+                        iy = ky;
+                        i__2 = m;
+                        for (i__ = 1; i__ <= i__2; ++i__)
+                        {
+                            y[iy] += temp * a[i__ + j * a_dim1];
+                            iy += incy;
+                            /* L70: */
+                        }
+                        jx += incx;
+                        /* L80: */
+                    }
+                }
+            }
+            else
+            {
+
+                /*        Form  y := alpha*A**T*x + y. */
+
+                jy = ky;
+                if (incx == 1)
+                {
+                    i__1 = n;
+                    for (j = 1; j <= i__1; ++j)
+                    {
+                        temp = 0.0;
+                        i__2 = m;
+                        for (i__ = 1; i__ <= i__2; ++i__)
+                        {
+                            temp += a[i__ + j * a_dim1] * x[i__];
+                            /* L90: */
+                        }
+                        y[jy] += alpha * temp;
+                        jy += incy;
+                        /* L100: */
+                    }
+                }
+                else
+                {
+                    i__1 = n;
+                    for (j = 1; j <= i__1; ++j)
+                    {
+                        temp = 0.0;
+                        ix = kx;
+                        i__2 = m;
+                        for (i__ = 1; i__ <= i__2; ++i__)
+                        {
+                            temp += a[i__ + j * a_dim1] * x[ix];
+                            ix += incx;
+                            /* L110: */
+                        }
+                        y[jy] += alpha * temp;
+                        jy += incy;
+                        /* L120: */
+                    }
+                }
+            }
+
+            return 0;
+
+            /*     End of DGEMV . */
+
+        }
+        public unsafe static void dspr(char* uplo, int n, double alpha,
+double* x, int incx, double* ap)
+        {
+            int i__, j, k, kk, ix, jx, kx = 0, info;
+            double temp;
+            /*  -- Reference BLAS level2 routine (version 3.7.0) -- */
+            /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     December 2016 */
+
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  ===================================================================== */
+
+            /*     .. Parameters .. */
+            /*     .. */
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. External Functions .. */
+            /*     .. */
+            /*     .. External Subroutines .. */
+            /*     .. */
+
+            /*     Test the input parameters. */
+
+            /* Parameter adjustments */
+            //       --ap;
+            //       --x;
+
+            /* Function Body */
+            info = 0;
+            if (*uplo != 'U' && *uplo != 'L')
+            {
+                info = 1;
+            }
+            else if (n < 0)
+            {
+                info = 2;
+            }
+            else if (incx == 0)
+            {
+                info = 5;
+            }
+            if (info != 0)
+            {
+                Console.WriteLine($"dspr: Error {info}");
+                return;
+            }
+
+            /*     Quick return if possible. */
+
+            if (n == 0 || alpha == 0.0)
+            {
+                return;
+            }
+
+            /*     Set the start point in X if the increment is not unity. */
+
+            if (incx <= 0)
+            {
+                kx = 1 - (n - 1) * incx;
+            }
+            else if (incx != 1)
+            {
+                kx = 1;
+            }
+
+            /*     Start the operations. In this version the elements of the array AP */
+            /*     are accessed sequentially with one pass through AP. */
+
+            kk = 1;
+            if (*uplo == 'U')
+            {
+
+                /*        Form  A  when upper triangle is stored in AP. */
+
+                if (incx == 1)
+                {
+                    for (j = 0; j < n; ++j)
+                    {
+                        if (x[j] != 0.0)
+                        {
+                            temp = alpha * x[j];
+                            k = kk - 1;
+                            for (i__ = 0; i__ <= j; ++i__)
+                            {
+                                ap[k] += x[i__] * temp;
+                                ++k;
+                                /* L10: */
+                            }
+                        }
+                        kk += j + 1;
+                        /* L20: */
+                    }
+                }
+                else
+                {
+                    jx = kx - 1;
+                    for (j = 0; j < n; ++j)
+                    {
+                        if (x[jx] != 0.0)
+                        {
+                            temp = alpha * x[jx];
+                            ix = kx - 1;
+                            for (k = kk - 1; k < kk + j; ++k)
+                            {
+                                ap[k] += x[ix] * temp;
+                                ix += incx;
+                                /* L30: */
+                            }
+                        }
+                        jx += incx;
+                        kk += j - 1;
+                        /* L40: */
+                    }
+                }
+            }
+            else
+            {
+
+                /*        Form  A  when lower triangle is stored in AP. */
+
+                if (incx == 1)
+                {
+                    for (j = 1; j <= n; ++j)
+                    {
+                        if (x[j - 1] != 0.0)
+                        {
+                            temp = alpha * x[j - 1];
+                            k = kk - 1;
+                            for (i__ = j - 1; i__ < n; ++i__)
+                            {
+                                ap[k] += x[i__] * temp;
+                                ++k;
+                                /* L50: */
+                            }
+                        }
+                        kk = kk + n - j + 1;
+                        /* L60: */
+                    }
+                }
+                else
+                {
+                    jx = kx - 1;
+                    for (j = 1; j <= n; ++j)
+                    {
+                        if (x[jx] != 0.0)
+                        {
+                            temp = alpha * x[jx];
+                            ix = jx;
+                            for (k = kk - 1; k < kk + n - j; ++k)
+                            {
+                                ap[k] += x[ix] * temp;
+                                ix += incx;
+                                /* L70: */
+                            }
+                        }
+                        jx += incx;
+                        kk = kk + n - j + 1;
+                        /* L80: */
+                    }
+                }
+            }
+        }
+        public static void dspr(char[] uplo, int n, double alpha,
+        double[] x, int incx, double[] ap)
+        {
+            int i__, j, k, kk, ix, jx, kx = 0, info;
+            double temp;
+            /*  -- Reference BLAS level2 routine (version 3.7.0) -- */
+            /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     December 2016 */
+
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  ===================================================================== */
+
+            /*     .. Parameters .. */
+            /*     .. */
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. External Functions .. */
+            /*     .. */
+            /*     .. External Subroutines .. */
+            /*     .. */
+
+            /*     Test the input parameters. */
+
+            /* Parameter adjustments */
+            //       --ap;
+            //       --x;
+
+            /* Function Body */
+            info = 0;
+            if (uplo[0] != 'U' && uplo[0] != 'L')
+            {
+                info = 1;
+            }
+            else if (n < 0)
+            {
+                info = 2;
+            }
+            else if (incx == 0)
+            {
+                info = 5;
+            }
+            if (info != 0)
+            {
+                Console.WriteLine($"dspr: Error {info}");
+                return;
+            }
+
+            /*     Quick return if possible. */
+
+            if (n == 0 || alpha == 0.0)
+            {
+                return;
+            }
+
+            /*     Set the start point in X if the increment is not unity. */
+
+            if (incx <= 0)
+            {
+                kx = 1 - (n - 1) * incx;
+            }
+            else if (incx != 1)
+            {
+                kx = 1;
+            }
+
+            /*     Start the operations. In this version the elements of the array AP */
+            /*     are accessed sequentially with one pass through AP. */
+
+            kk = 1;
+            if (uplo[0] == 'U')
+            {
+
+                /*        Form  A  when upper triangle is stored in AP. */
+
+                if (incx == 1)
+                {
+                    for (j = 0; j < n; ++j)
+                    {
+                        if (x[j] != 0.0)
+                        {
+                            temp = alpha * x[j];
+                            k = kk - 1;
+                            for (i__ = 0; i__ <= j; ++i__)
+                            {
+                                ap[k] += x[i__] * temp;
+                                ++k;
+                                /* L10: */
+                            }
+                        }
+                        kk += j + 1;
+                        /* L20: */
+                    }
+                }
+                else
+                {
+                    jx = kx - 1;
+                    for (j = 0; j < n; ++j)
+                    {
+                        if (x[jx] != 0.0)
+                        {
+                            temp = alpha * x[jx];
+                            ix = kx - 1;
+                            for (k = kk - 1; k < kk + j; ++k)
+                            {
+                                ap[k] += x[ix] * temp;
+                                ix += incx;
+                                /* L30: */
+                            }
+                        }
+                        jx += incx;
+                        kk += j - 1;
+                        /* L40: */
+                    }
+                }
+            }
+            else
+            {
+
+                /*        Form  A  when lower triangle is stored in AP. */
+
+                if (incx == 1)
+                {
+                    for (j = 1; j <= n; ++j)
+                    {
+                        if (x[j - 1] != 0.0)
+                        {
+                            temp = alpha * x[j - 1];
+                            k = kk - 1;
+                            for (i__ = j - 1; i__ < n; ++i__)
+                            {
+                                ap[k] += x[i__] * temp;
+                                ++k;
+                                /* L50: */
+                            }
+                        }
+                        kk = kk + n - j + 1;
+                        /* L60: */
+                    }
+                }
+                else
+                {
+                    jx = kx - 1;
+                    for (j = 1; j <= n; ++j)
+                    {
+                        if (x[jx] != 0.0)
+                        {
+                            temp = alpha * x[jx];
+                            ix = jx;
+                            for (k = kk - 1; k < kk + n - j; ++k)
+                            {
+                                ap[k] += x[ix] * temp;
+                                ix += incx;
+                                /* L70: */
+                            }
+                        }
+                        jx += incx;
+                        kk = kk + n - j + 1;
+                        /* L80: */
+                    }
+                }
+            }
+        }
+        public unsafe static int idamaxvec1(int n, double* x)
+        {
+            double mxi = -1.0;
+            int m = 1000000000,nn=n;
+            double* pxi = x;
+
+            while (n-- > 0)
+            {
+                double t = Math.Abs(*pxi++);
+                if (t > mxi)
+                {
+                    mxi = t;
+                    m = (int)(pxi - x);
+                }
+            }
+            int back = m - 1;
+    /*        for (int i = 0; i < nn; ++i)
+            {
+                Console.WriteLine($"iiii {back}   {x[i]}");
+            }*/
+            return back;
+        }
+        public unsafe static int idamaxvec(int n, double* x)
+        {
+            int back = idamax(n, x, 1);
+     /*       for (int i = 0; i < n; ++i)
+            {
+                Console.WriteLine($"iiiiiii {back}   {x[i]}");
+            }*/
+            return back;
+        }
+        public unsafe static int idamax(int n, double* dx, int incx)
+        {
+            /* System generated locals */
+            int ret_val, i__1;
+
+            /* Local variables */
+            int i__, ix;
+            double dmax__;
 
 
             /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
@@ -211,28 +2122,107 @@ namespace Blas
             /*     .. Intrinsic Functions .. */
             /*     .. */
             /* Parameter adjustments */
-            --dx;
+         //   --dx;   //This called correctly as x+1 so we don't need -- (consistant with old safeqp)
+
             /* Function Body */
+            ret_val = 0;
+            if (n < 1 || incx <= 0)
+            {
+                return ret_val;
+            }
+            ret_val = 1;
+            if (n == 1)
+            {
+                return 0;  //Makes it consistant with safeqp's old version
+            }
             if (incx == 1)
             {
+
                 /*        code for increment equal to 1 */
-                /*        clean-up loop */
+
+                dmax__ = Math.Abs(dx[1]);
+                i__1 = n;
+                for (i__ = 2; i__ <= i__1; ++i__)
+                {
+                    if ((Math.Abs(dx[i__])) > dmax__)
+                    {
+                        ret_val = i__;
+                        dmax__ = (Math.Abs(dx[i__]));
+                    }
+                }
+            }
+            else
+            {
+
+                /*        code for increment not equal to 1 */
+
+                ix = 1;
+                dmax__ = Math.Abs(dx[1]);
+                ix += incx;
+                i__1 = n;
+                for (i__ = 2; i__ <= i__1; ++i__)
+                {
+                    if ((Math.Abs(dx[ix])) > dmax__)
+                    {
+                        ret_val = i__;
+                        dmax__ = (Math.Abs(dx[ix]));
+                    }
+                    ix += incx;
+                }
+            }
+            return ret_val;
+        }
+
+
+        public unsafe static void dscal(int n, double da, double* dx, int incx)
+        {
+            int i__, m, mp1, nincx;
+            /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
+            /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     November 2017 */
+
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  ===================================================================== */
+
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+            /* Parameter adjustments */
+            --dx;
+            if (n <= 0 || incx <= 0)
+            {
+                return;
+            }
+            if (incx == 1)
+            {
                 m = n % 5;
                 if (m != 0)
                 {
-                    i__1 = m;
-                    if (da != 0)
+                    if (da == 0)
                     {
-                        for (i__ = 1; i__ <= i__1; ++i__)
+                        for (i__ = 1; i__ <= m; ++i__)
                         {
-                            dx[i__] = da * dx[i__];
+                            dx[i__] = 0;
+                        }
+                    }
+                    else if (da == -1)
+                    {
+                        for (i__ = 1; i__ <= m; ++i__)
+                        {
+                            dx[i__] = -dx[i__];
                         }
                     }
                     else
                     {
-                        for (i__ = 1; i__ <= i__1; ++i__)
+                        for (i__ = 1; i__ <= m; ++i__)
                         {
-                            dx[i__] = 0;
+                            dx[i__] = da * dx[i__];
                         }
                     }
                     if (n < 5)
@@ -241,35 +2231,9 @@ namespace Blas
                     }
                 }
                 mp1 = m + 1;
-                i__1 = n;
-                if (da != 0)
+                if (da == 0)
                 {
-                    if (da == 1)
-                    {
-                        for (i__ = mp1; i__ <= i__1; i__ += 5)
-                        {
-                            dx[i__] = dx[i__];
-                            dx[i__ + 1] = dx[i__ + 1];
-                            dx[i__ + 2] = dx[i__ + 2];
-                            dx[i__ + 3] = dx[i__ + 3];
-                            dx[i__ + 4] = dx[i__ + 4];
-                        }
-                    }
-                    else
-                    {
-                        for (i__ = mp1; i__ <= i__1; i__ += 5)
-                        {
-                            dx[i__] = da * dx[i__];
-                            dx[i__ + 1] = da * dx[i__ + 1];
-                            dx[i__ + 2] = da * dx[i__ + 2];
-                            dx[i__ + 3] = da * dx[i__ + 3];
-                            dx[i__ + 4] = da * dx[i__ + 4];
-                        }
-                    }
-                }
-                else
-                {
-                    for (i__ = mp1; i__ <= i__1; i__ += 5)
+                    for (i__ = mp1; i__ <= n; i__ += 5)
                     {
                         dx[i__] = 0;
                         dx[i__ + 1] = 0;
@@ -278,39 +2242,57 @@ namespace Blas
                         dx[i__ + 4] = 0;
                     }
                 }
+                else if (da == -1)
+                {
+                    for (i__ = mp1; i__ <= n; i__ += 5)
+                    {
+                        dx[i__] = -dx[i__];
+                        dx[i__ + 1] = -dx[i__ + 1];
+                        dx[i__ + 2] = -dx[i__ + 2];
+                        dx[i__ + 3] = -dx[i__ + 3];
+                        dx[i__ + 4] = -dx[i__ + 4];
+                    }
+                }
+                else
+                {
+                    for (i__ = mp1; i__ <= n; i__ += 5)
+                    {
+                        dx[i__] = da * dx[i__];
+                        dx[i__ + 1] = da * dx[i__ + 1];
+                        dx[i__ + 2] = da * dx[i__ + 2];
+                        dx[i__ + 3] = da * dx[i__ + 3];
+                        dx[i__ + 4] = da * dx[i__ + 4];
+                    }
+                }
             }
             else
             {
                 /*        code for increment not equal to 1 */
                 nincx = n * incx;
-                i__1 = nincx;
-                i__2 = incx;
                 if (da == 0)
                 {
-                    for (i__ = 1; i__2 < 0 ? i__ >= i__1 : i__ <= i__1; i__ += i__2)
+                    for (i__ = 1; incx < 0 ? i__ >= nincx : i__ <= nincx; i__ += incx)
                     {
                         dx[i__] = 0;
                     }
                 }
+                else if (da == -1)
+                {
+                    for (i__ = 1; incx < 0 ? i__ >= nincx : i__ <= nincx; i__ += incx)
+                    {
+                        dx[i__] = -dx[i__];
+                    }
+                }
                 else
                 {
-                    if (da == 1)
+                    for (i__ = 1; incx < 0 ? i__ >= nincx : i__ <= nincx; i__ += incx)
                     {
-                        for (i__ = 1; i__2 < 0 ? i__ >= i__1 : i__ <= i__1; i__ += i__2)
-                        {
-                            dx[i__] = dx[i__];
-                        }
-                    }
-                    else
-                    {
-                        for (i__ = 1; i__2 < 0 ? i__ >= i__1 : i__ <= i__1; i__ += i__2)
-                        {
-                            dx[i__] = da * dx[i__];
-                        }
+                        dx[i__] = da * dx[i__];
                     }
                 }
             }
         }
+
         public static void dscalvec(int n, double a, double[] x)
         {
             dscal(n, a, x, 1);

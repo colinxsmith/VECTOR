@@ -358,7 +358,6 @@ namespace BlasLikeTest
             Assert.IsTrue(back == 0, $"{back} {piv[0]} {piv[1]} {piv[2]}  {a[0]} {a[1]} {a[2]} {a[3]} {a[4]} {a[5]} ");
             double[] b = { 1, 0, 1 };
             double[] bcopy = (double[])b.Clone();
-            BlasLike.dcopyvec(n, b, bcopy);
             fixed (double* ap = a)
             fixed (double* bp = b)
             fixed (int* ipiv = piv)
@@ -390,7 +389,6 @@ namespace BlasLikeTest
             Assert.IsTrue(back == 0, $"{back} {piv[0]} {piv[1]} {piv[2]}  {a[0]} {a[1]} {a[2]} {a[3]} {a[4]} {a[5]} ");
             double[] b = { 1, 0, 1 };
             double[] bcopy = (double[])b.Clone();
-            BlasLike.dcopyvec(n, b, bcopy);
             fixed (double* ap = a)
             fixed (double* bp = b)
             fixed (int* ipiv = piv)

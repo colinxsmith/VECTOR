@@ -8,6 +8,9 @@ cp ../safeqp/lapack-release/BLAS/SRC/dscal.f .
 cp ../safeqp/lapack-release/BLAS/SRC/dger.f .
 cp ../safeqp/lapack-release/BLAS/SRC/dgemv.f .
 cp ../safeqp/lapack-release/BLAS/SRC/dgemm.f .
+cp ../safeqp/lapack-release/BLAS/SRC/daxpy.f .
+cp ../safeqp/lapack-release/BLAS/SRC/dcopy.f .
+cp ../safeqp/lapack-release/BLAS/SRC/ddot.f .
 for i in *.f
 do
 f2c $i

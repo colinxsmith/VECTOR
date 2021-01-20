@@ -7,7 +7,7 @@ namespace UseBlas
 {
     class Program
     {
-        static void Main(string[] args)
+        static unsafe void Main(string[] args)
         {
             var a = 4.0;
             double[] x = { 1, 2, 3 };
@@ -18,6 +18,37 @@ namespace UseBlas
             {
                 Console.WriteLine($"y[{iy}]={y.GetValue(iy)} {y[iy++]}");
             }
+                    
+        {
+            int n = 3;
+            double[] aa = { 1,2,4,
+                             3,5,
+                               6};
+            int[] piv = { 1, 2, 3 };
+            char[] U = { 'L' };
+            int back = 10;
+            fixed (double* ap = aa)
+            fixed (int* ipiv = piv)
+            fixed (char* UP = U)
+                back = Factorise.dsptrf(UP, n, ap, ipiv);
+            Console.WriteLine($"{back} {piv[0]} {piv[1]} {piv[2]}  {aa[0]} {aa[1]} {aa[2]} {aa[3]} {aa[4]} {aa[5]} ");
+            double[] b = { 1, 0, 1 };
+            double[] bcopy = (double[])b.Clone();
+            fixed (double* ap = aa)
+            fixed (double* bp = b)
+            fixed (int* ipiv = piv)
+            fixed (char* UP = U)
+                back = Factorise.dsptrs(UP, n, 1, ap, ipiv, bp, n);
+            double[] a1 = { 1, 2, 4 };
+            double[] a2 = { 2, 3, 5 };
+            double[] a3 = { 4, 5, 6 };
+            double c1 = BlasLike.ddotvec(n, b, a1);
+            double c2 = BlasLike.ddotvec(n, b, a2);
+            double c3 = BlasLike.ddotvec(n, b, a3);
+            double okerror = BlasLike.lm_eps * 64;
+            Console.WriteLine($"back={back} {c1},{c2},{c3} ");
+        }
+ 
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
             {
