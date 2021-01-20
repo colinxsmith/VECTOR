@@ -2067,7 +2067,7 @@ double* x, int incx, double* ap)
         public unsafe static int idamaxvec1(int n, double* x)
         {
             double mxi = -1.0;
-            int m = 1000000000,nn=n;
+            int m = 1000000000, nn = n;
             double* pxi = x;
 
             while (n-- > 0)
@@ -2080,25 +2080,25 @@ double* x, int incx, double* ap)
                 }
             }
             int back = m - 1;
-    /*        for (int i = 0; i < nn; ++i)
-            {
-                Console.WriteLine($"iiii {back}   {x[i]}");
-            }*/
+            /*           for (int i = 0; i < nn; ++i)
+                       {
+                           Console.WriteLine($"iiii {back}   {x[i]}");
+                       }*/
             return back;
         }
         public unsafe static int idamaxvec(int n, double* x)
         {
             int back = idamax(n, x, 1);
-     /*       for (int i = 0; i < n; ++i)
-            {
-                Console.WriteLine($"iiiiiii {back}   {x[i]}");
-            }*/
+            /*           for (int i = 0; i < n; ++i)
+                       {
+                           Console.WriteLine($"iiiiiii {back}   {x[i]}");
+                       }*/
             return back;
         }
         public unsafe static int idamax(int n, double* dx, int incx)
         {
             /* System generated locals */
-            int ret_val, i__1;
+            int ret_val;
 
             /* Local variables */
             int i__, ix;
@@ -2122,27 +2122,20 @@ double* x, int incx, double* ap)
             /*     .. Intrinsic Functions .. */
             /*     .. */
             /* Parameter adjustments */
-         //   --dx;   //This called correctly as x+1 so we don't need -- (consistant with old safeqp)
+            --dx;
 
             /* Function Body */
             ret_val = 0;
             if (n < 1 || incx <= 0)
-            {
                 return ret_val;
-            }
             ret_val = 1;
             if (n == 1)
-            {
-                return 0;  //Makes it consistant with safeqp's old version
-            }
+                return ret_val - 1;// -1 because of FORTRAN style
             if (incx == 1)
             {
-
                 /*        code for increment equal to 1 */
-
                 dmax__ = Math.Abs(dx[1]);
-                i__1 = n;
-                for (i__ = 2; i__ <= i__1; ++i__)
+                for (i__ = 2; i__ <= n; ++i__)
                 {
                     if ((Math.Abs(dx[i__])) > dmax__)
                     {
@@ -2153,14 +2146,11 @@ double* x, int incx, double* ap)
             }
             else
             {
-
                 /*        code for increment not equal to 1 */
-
                 ix = 1;
                 dmax__ = Math.Abs(dx[1]);
                 ix += incx;
-                i__1 = n;
-                for (i__ = 2; i__ <= i__1; ++i__)
+                for (i__ = 2; i__ <= n; ++i__)
                 {
                     if ((Math.Abs(dx[ix])) > dmax__)
                     {
@@ -2170,7 +2160,7 @@ double* x, int incx, double* ap)
                     ix += incx;
                 }
             }
-            return ret_val;
+            return ret_val - 1;// -1 because of FORTRAN style
         }
 
 
