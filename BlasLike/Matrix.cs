@@ -1643,7 +1643,7 @@ namespace Blas
         {
             int i;
             for (i = 1; i <= n; i++, x++, S += i)
-                *y++ = BlasLike.ddot2(i, S, -1, x, -1) + BlasLike.didot(n - i, S + i, i + 1, x + 1, 1);
+                *y++ = BlasLike.ddot(i, S, -1, x, -1) + BlasLike.didot(n - i, S + i, i + 1, x + 1, 1);
         }
     }
 }
