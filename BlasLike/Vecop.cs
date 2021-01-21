@@ -765,6 +765,18 @@ namespace Blas
             }
             return back;
         }
+        public unsafe static double ddot2(int n, double* x, int incx, double* y, int incy)
+        {
+            double sum;
+            sum = 0;
+            while (n-- > 0)
+            {
+                sum += *x * *y;
+                x += incx;
+                y += incy;
+            }
+            return sum;
+        }
         public static double ddotvec(int n, double[] a, double[] b)
         {
             return ddot(n, a, 1, b, 1);
@@ -2095,6 +2107,84 @@ double* x, int incx, double* ap)
                        }*/
             return back;
         }
+        public static int idamaxvec(int n, double[] x, int xstart = 0)
+        {
+            int back = idamax(n, x, 1, xstart);
+            /*           for (int i = 0; i < n; ++i)
+                       {
+                           Console.WriteLine($"iiiiiii {back}   {x[i]}");
+                       }*/
+            return back;
+        }
+
+        public static int idamax(int n, double[] x, int incx, int xstart = 0)
+        {
+            /* System generated locals */
+            int ret_val;
+
+            /* Local variables */
+            int i__, ix;
+            double dmax__;
+
+
+            /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
+            /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     November 2017 */
+
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  ===================================================================== */
+
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+            /* Parameter adjustments */
+            //--dx;
+
+            /* Function Body */
+            ret_val = 0;
+            if (n < 1 || incx <= 0)
+                return ret_val;
+            ret_val = 0;
+            if (n == 1)
+                return ret_val;
+            if (incx == 1)
+            {
+                /*        code for increment equal to 1 */
+                dmax__ = Math.Abs(x[xstart]);
+                for (i__ = 1; i__ < n; ++i__)
+                {
+                    if ((Math.Abs(x[i__ + xstart])) > dmax__)
+                    {
+                        ret_val = i__;
+                        dmax__ = (Math.Abs(x[i__ + xstart]));
+                    }
+                }
+            }
+            else
+            {
+                /*        code for increment not equal to 1 */
+                ix = 1;
+                dmax__ = Math.Abs(x[xstart]);
+                ix += incx;
+                for (i__ = 1; i__ < n; ++i__)
+                {
+                    if ((Math.Abs(x[ix + xstart])) > dmax__)
+                    {
+                        ret_val = i__;
+                        dmax__ = (Math.Abs(x[ix + xstart]));
+                    }
+                    ix += incx;
+                }
+            }
+            return ret_val;
+        }
+
         public unsafe static int idamax(int n, double* dx, int incx)
         {
             /* System generated locals */
@@ -2162,8 +2252,6 @@ double* x, int incx, double* ap)
             }
             return ret_val - 1;// -1 because of FORTRAN style
         }
-
-
         public unsafe static void dscal(int n, double da, double* dx, int incx)
         {
             int i__, m, mp1, nincx;
@@ -2427,6 +2515,15 @@ double* x, int incx, double* ap)
         }
 
         public static double dsum(int n, double[] x, int ix = 1, int px = 0)
+        {
+            double back = 0;
+            for (int i = 0, iix = 0; i < n; i++, iix += ix)
+            {
+                back += x[iix + px];
+            }
+            return back;
+        }
+        public unsafe static double dsum(int n, double* x, int ix = 1, int px = 0)
         {
             double back = 0;
             for (int i = 0, iix = 0; i < n; i++, iix += ix)
@@ -2714,6 +2811,15 @@ double* x, int incx, double* ap)
                 *b = temp;
             }
         }
+        public static void dswap(int n, double[] a, int ia, double[] b, int ib, int astart = 0, int bstart = 0)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                double temp = a[i + astart];
+                a[i + astart] = b[i + bstart];
+                b[i + bstart] = temp;
+            }
+        }
         public unsafe static
         void dswapvec(int n, double* a, double* b)
         {
@@ -2723,6 +2829,25 @@ double* x, int incx, double* ap)
                 *a++ = *b;
                 *b++ = temp;
             }
+        }
+        public unsafe static double didot(int n, double* x, int iix, double* y, int iy    /*increment for y*/    )
+        {
+            double sum = 0;
+
+            if (n > 0)
+            {
+                if (iix != 0)
+                {
+                    while (n-- > 0)
+                    {
+                        sum += (*x) * (*y);
+                        y += iy;
+                        x += iix++;
+                    }
+                }
+                else sum = *x * dsum(n, y, iy);
+            }
+            return sum;
         }
     }
 }

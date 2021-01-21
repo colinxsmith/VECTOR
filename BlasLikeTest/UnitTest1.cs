@@ -362,7 +362,7 @@ namespace BlasLikeTest
             fixed (double* bp = b)
             fixed (int* ipiv = piv)
             fixed (char* UP = U)
-                back = Factorise.dsptrs(UP, n, 1, ap, ipiv, bp, n);
+                Factorise.dsptrs(UP, n, 1, ap, ipiv, bp, n);
             double[] a1 = { 1, 2, 4 };
             double[] a2 = { 2, 3, 5 };
             double[] a3 = { 4, 5, 6 };
@@ -393,7 +393,7 @@ namespace BlasLikeTest
             fixed (double* bp = b)
             fixed (int* ipiv = piv)
             fixed (char* UP = U)
-                back = Factorise.dsptrs(UP, n, 1, ap, ipiv, bp, n);
+                Factorise.dsptrs(UP, n, 1, ap, ipiv, bp, n);
             double[] a1 = { 1, 2, 4 };
             double[] a2 = { 2, 3, 5 };
             double[] a3 = { 4, 5, 6 };

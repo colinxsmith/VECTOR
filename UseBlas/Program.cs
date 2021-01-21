@@ -22,8 +22,8 @@ namespace UseBlas
             {
                 int n = 3;
                 double[] aa = { 1,2,4,
-                             3,5,
-                               6};
+                                  3,5,
+                                    6};
                 int[] piv = { 1, 2, 3 };
                 char[] U = { 'L' };
                 int back = 10;
@@ -38,7 +38,7 @@ namespace UseBlas
                 fixed (double* bp = b)
                 fixed (int* ipiv = piv)
                 fixed (char* UP = U)
-                    back = Factorise.dsptrs(UP, n, 1, ap, ipiv, bp, n);
+                    Factorise.dsptrs(UP, n, 1, ap, ipiv, bp, n);
                 double[] a1 = { 1, 2, 4 };
                 double[] a2 = { 2, 3, 5 };
                 double[] a3 = { 4, 5, 6 };
@@ -53,13 +53,14 @@ namespace UseBlas
                 double[] aa = { 1,
                             2,3,
                             4,5,6};
+                            
                 int[] piv = { 1, 2, 3 };
                 char[] U = { 'U' };
                 int back = 10;
                 fixed (double* ap = aa)
                 fixed (int* ipiv = piv)
                 fixed (char* UP = U)
-                    back = Factorise.dsptrf(UP, n, ap, ipiv);
+                    back=Factorise.dsptrf(UP, n, ap, ipiv);
                 Console.WriteLine($"{back} {piv[0]} {piv[1]} {piv[2]}  {aa[0]} {aa[1]} {aa[2]} {aa[3]} {aa[4]} {aa[5]} ");
                 double[] b = { 1, 0, 1 };
                 double[] bcopy = (double[])b.Clone();
@@ -67,10 +68,16 @@ namespace UseBlas
                 fixed (double* bp = b)
                 fixed (int* ipiv = piv)
                 fixed (char* UP = U)
-                    back = Factorise.dsptrs(UP, n, 1, ap, ipiv, bp, n);
+                    Factorise.dsptrs(UP, n, 1, ap, ipiv, bp, n);
                 double[] a1 = { 1, 2, 4 };
                 double[] a2 = { 2, 3, 5 };
                 double[] a3 = { 4, 5, 6 };
+                double[] c = new double[n];
+                fixed (double* a1p = a1)
+                fixed (double* bp = b)
+                fixed (double* cp = c)
+                    Factorise.dsmxmulv(n, a1p, bp, cp);
+                Console.WriteLine($"back={back} {c[0]},{c[1]},{c[2]} ");
                 double c1 = BlasLike.ddotvec(n, b, a1);
                 double c2 = BlasLike.ddotvec(n, b, a2);
                 double c3 = BlasLike.ddotvec(n, b, a3);

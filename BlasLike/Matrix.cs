@@ -5,7 +5,7 @@ namespace Blas
     public static class Factorise
     {
         public static double lm_eps8 = 8 * Math.Abs((((double)4) / 3 - 1) * 3 - 1);
-        public unsafe static int dsptrf(char* uplo, int n, double* ap, int* ipiv)
+        public unsafe static int dsptrfold(char* uplo, int n, double* ap, int* ipiv)
         {
             int info;
 
@@ -128,8 +128,8 @@ namespace Blas
             /*  ===================================================================== */
 
             /* Parameter adjustments */
-     //       --ipiv;
-     //       --ap;
+            //       --ipiv;
+            //       --ap;
 
             /* Function Body */
             info = 0;
@@ -182,7 +182,7 @@ namespace Blas
 
                 if (k > 1)
                 {
-                    imax = BlasLike.idamaxvec(k - 1, &ap[-1+kc]) + 1;
+                    imax = BlasLike.idamaxvec(k - 1, &ap[-1 + kc]) + 1;
                     colmax = Math.Abs(ap[kc + imax - 2]);
                 }
                 else
@@ -221,9 +221,9 @@ namespace Blas
                         kx = (int)(imax * (imax + 1) / 2 + imax);
                         for (j = (int)(imax + 1); j <= k; ++j)
                         {
-                            if (Math.Abs(ap[-1+kx]) > rowmax)
+                            if (Math.Abs(ap[-1 + kx]) > rowmax)
                             {
-                                rowmax = Math.Abs(ap[-1+kx]);
+                                rowmax = Math.Abs(ap[-1 + kx]);
                                 jmax = j;
                             }
                             kx += j;
@@ -232,9 +232,9 @@ namespace Blas
                         kpc = (int)((imax - 1) * imax / 2 + 1);
                         if (imax > 1)
                         {
-                            jmax = BlasLike.idamaxvec(imax - 1, &ap[-1+kpc]) + 1;
+                            jmax = BlasLike.idamaxvec(imax - 1, &ap[-1 + kpc]) + 1;
                             /* Computing Math.Max */
-                            rowmax = Math.Max(rowmax, Math.Abs(ap[-1+kpc + jmax - 1]));
+                            rowmax = Math.Max(rowmax, Math.Abs(ap[-1 + kpc + jmax - 1]));
                         }
 
                         if (absakk >= alpha * colmax * (colmax / rowmax))
@@ -244,7 +244,7 @@ namespace Blas
 
                             kp = k;
                         }
-                        else if (Math.Abs(ap[-1+kpc + imax - 1]) >= alpha *
+                        else if (Math.Abs(ap[-1 + kpc + imax - 1]) >= alpha *
                           rowmax)
                         {
 
@@ -275,24 +275,24 @@ namespace Blas
                         /*              Interchange rows and columns KK and KP in the leading */
                         /*              submatrix A(1:k,1:k) */
 
-                        BlasLike.dswap((int)(kp - 1), &ap[-1+knc], 1, &ap[-1+kpc], 1);
+                        BlasLike.dswap((int)(kp - 1), &ap[-1 + knc], 1, &ap[-1 + kpc], 1);
                         kx = kpc + kp - 1;
                         for (j = kp + 1; j <= kk - 1; ++j)
                         {
                             kx = kx + j - 1;
-                            t = ap[-1+knc + j - 1];
-                            ap[-1+knc + j - 1] = ap[-1+kx];
-                            ap[-1+kx] = t;
+                            t = ap[-1 + knc + j - 1];
+                            ap[-1 + knc + j - 1] = ap[-1 + kx];
+                            ap[-1 + kx] = t;
                             /* L30: */
                         }
-                        t = ap[-1+knc + kk - 1];
-                        ap[-1+knc + kk - 1] = ap[-1+kpc + kp - 1];
-                        ap[-1+kpc + kp - 1] = t;
+                        t = ap[-1 + knc + kk - 1];
+                        ap[-1 + knc + kk - 1] = ap[-1 + kpc + kp - 1];
+                        ap[-1 + kpc + kp - 1] = t;
                         if (kstep == 2)
                         {
-                            t = ap[-1+kc + k - 2];
-                            ap[-1+kc + k - 2] = ap[-1+kc + kp - 1];
-                            ap[-1+kc + kp - 1] = t;
+                            t = ap[-1 + kc + k - 2];
+                            ap[-1 + kc + k - 2] = ap[-1 + kc + kp - 1];
+                            ap[-1 + kc + kp - 1] = t;
                         }
                     }
 
@@ -311,12 +311,12 @@ namespace Blas
 
                         /*              A := A - U(k)*D(k)*U(k)' = A - W(k)*1/D(k)*W(k)' */
 
-                        r1 = (Math.Abs(ap[-1+kc + k - 1]) > lm_eps8 ? 1.0 / ap[-1+kc + k - 1] : 0);
-                        BlasLike.dspr(uplo, (int)(k - 1), -r1, &ap[-1+kc], 1, &ap[-1+1]);
+                        r1 = (Math.Abs(ap[-1 + kc + k - 1]) > lm_eps8 ? 1.0 / ap[-1 + kc + k - 1] : 0);
+                        BlasLike.dspr(uplo, (int)(k - 1), -r1, &ap[-1 + kc], 1, &ap[-1 + 1]);
 
                         /*              Store U(k) in column k */
 
-                        BlasLike.dscal((int)(k - 1), r1, &ap[-1+kc], 1);
+                        BlasLike.dscal((int)(k - 1), r1, &ap[-1 + kc], 1);
                     }
                     else
                     {
@@ -336,28 +336,28 @@ namespace Blas
                         if (k > 2)
                         {
                             double desc;
-                            d12 = ap[-1+k - 1 + (k - 1) * k / 2];
-                            d22 = ap[-1+k - 1 + (k - 2) * (k - 1) / 2] / d12;
-                            d11 = ap[-1+k + (k - 1) * k / 2] / d12;
+                            d12 = ap[-1 + k - 1 + (k - 1) * k / 2];
+                            d22 = ap[-1 + k - 1 + (k - 2) * (k - 1) / 2] / d12;
+                            d11 = ap[-1 + k + (k - 1) * k / 2] / d12;
                             desc = (d11 * d22 - 1.0);
                             t = (Math.Abs(desc) > lm_eps8 ? 1.0 / desc : 0);
                             d12 = t / d12;
 
                             for (j = k - 2; j >= 1; --j)
                             {
-                                wkm1 = d12 * (d11 * ap[-1+j + (k - 2) * (k - 1) / 2] -
-                                    ap[-1+j + (k - 1) * k / 2]);
-                                wk = d12 * (d22 * ap[-1+j + (k - 1) * k / 2] - ap[-1+j + (k
+                                wkm1 = d12 * (d11 * ap[-1 + j + (k - 2) * (k - 1) / 2] -
+                                    ap[-1 + j + (k - 1) * k / 2]);
+                                wk = d12 * (d22 * ap[-1 + j + (k - 1) * k / 2] - ap[-1 + j + (k
                                     - 2) * (k - 1) / 2]);
                                 for (i = j; i >= 1; --i)
                                 {
-                                    ap[-1+i + (j - 1) * j / 2] = ap[-1+i + (j - 1) * j /
-                                        2] - ap[-1+i + (k - 1) * k / 2] * wk - ap[-1+
+                                    ap[-1 + i + (j - 1) * j / 2] = ap[-1 + i + (j - 1) * j /
+                                        2] - ap[-1 + i + (k - 1) * k / 2] * wk - ap[-1 +
                                         i + (k - 2) * (k - 1) / 2] * wkm1;
                                     /* L40: */
                                 }
-                                ap[-1+j + (k - 1) * k / 2] = wk;
-                                ap[-1+j + (k - 2) * (k - 1) / 2] = wkm1;
+                                ap[-1 + j + (k - 1) * k / 2] = wk;
+                                ap[-1 + j + (k - 2) * (k - 1) / 2] = wkm1;
                                 /* L50: */
                             }
 
@@ -370,12 +370,12 @@ namespace Blas
 
                 if (kstep == 1)
                 {
-                    ipiv[-1+k] = kp;
+                    ipiv[-1 + k] = kp;
                 }
                 else
                 {
-                    ipiv[-1+k] = -kp;
-                    ipiv[-1+k - 1] = -kp;
+                    ipiv[-1 + k] = -kp;
+                    ipiv[-1 + k - 1] = -kp;
                 }
 
                 /*        Decrease K and return to the start of the main loop */
@@ -410,15 +410,15 @@ namespace Blas
                 /*        Determine rows and columns to be interchanged and whether */
                 /*        a 1-by-1 or 2-by-2 pivot block will be used */
 
-                absakk = Math.Abs(ap[-1+kc]);
+                absakk = Math.Abs(ap[-1 + kc]);
 
                 /*        imax is the row-index of the largest off-diagonal element in */
                 /*        column K, and colmax is its absolute value */
 
                 if (k < n)
                 {
-                    imax = k + BlasLike.idamaxvec(n - k, &ap[-1+kc + 1]) + 1;
-                    colmax = Math.Abs(ap[-1+kc + imax - k]);
+                    imax = k + BlasLike.idamaxvec(n - k, &ap[-1 + kc + 1]) + 1;
+                    colmax = Math.Abs(ap[-1 + kc + imax - k]);
                 }
                 else
                 {
@@ -455,9 +455,9 @@ namespace Blas
                         kx = kc + (int)imax - k;
                         for (j = k; j <= imax - 1; ++j)
                         {
-                            if (Math.Abs(ap[-1+kx]) > rowmax)
+                            if (Math.Abs(ap[-1 + kx]) > rowmax)
                             {
-                                rowmax = Math.Abs(ap[-1+kx]);
+                                rowmax = Math.Abs(ap[-1 + kx]);
                                 jmax = j;
                             }
                             kx = kx + n - j;
@@ -466,9 +466,9 @@ namespace Blas
                         kpc = npp - (n - (int)imax + 1) * (n - (int)imax + 2) / 2 + 1;
                         if (imax < n)
                         {
-                            jmax = imax + BlasLike.idamaxvec(n - (int)imax, &ap[-1+kpc + 1]) + 1;
+                            jmax = imax + BlasLike.idamaxvec(n - (int)imax, &ap[-1 + kpc + 1]) + 1;
                             /* Computing Math.Max */
-                            rowmax = Math.Max(rowmax, Math.Abs(ap[-1+kpc + jmax - imax]));
+                            rowmax = Math.Max(rowmax, Math.Abs(ap[-1 + kpc + jmax - imax]));
                         }
 
                         if (absakk >= alpha * colmax * (colmax / rowmax))
@@ -478,7 +478,7 @@ namespace Blas
 
                             kp = k;
                         }
-                        else if (Math.Abs(ap[-1+kpc]) >= alpha * rowmax)
+                        else if (Math.Abs(ap[-1 + kpc]) >= alpha * rowmax)
                         {
 
                             /*                 interchange rows and columns K and imax, use 1-by-1 */
@@ -510,26 +510,26 @@ namespace Blas
 
                         if (kp < n)
                         {
-                            BlasLike.dswap((int)(n - kp), &ap[-1+knc + kp - kk + 1], 1, &ap[-1+kpc + 1],
+                            BlasLike.dswap((int)(n - kp), &ap[-1 + knc + kp - kk + 1], 1, &ap[-1 + kpc + 1],
                                  1);
                         }
                         kx = knc + kp - kk;
                         for (j = kk + 1; j <= kp - 1; ++j)
                         {
                             kx = kx + n - j + 1;
-                            t = ap[-1+knc + j - kk];
-                            ap[-1+knc + j - kk] = ap[-1+kx];
-                            ap[-1+kx] = t;
+                            t = ap[-1 + knc + j - kk];
+                            ap[-1 + knc + j - kk] = ap[-1 + kx];
+                            ap[-1 + kx] = t;
                             /* L80: */
                         }
-                        t = ap[-1+knc];
-                        ap[-1+knc] = ap[-1+kpc];
-                        ap[-1+kpc] = t;
+                        t = ap[-1 + knc];
+                        ap[-1 + knc] = ap[-1 + kpc];
+                        ap[-1 + kpc] = t;
                         if (kstep == 2)
                         {
-                            t = ap[-1+kc + 1];
-                            ap[-1+kc + 1] = ap[-1+kc + kp - k];
-                            ap[-1+kc + kp - k] = t;
+                            t = ap[-1 + kc + 1];
+                            ap[-1 + kc + 1] = ap[-1 + kc + kp - k];
+                            ap[-1 + kc + kp - k] = t;
                         }
                     }
 
@@ -551,13 +551,13 @@ namespace Blas
 
                             /*                 A := A - L(k)*D(k)*L(k)' = A - W(k)*(1/D(k))*W(k)' */
 
-                            r1 = (Math.Abs(ap[-1+kc]) > lm_eps8 ? 1.0 / ap[-1+kc] : 0);
-                            BlasLike.dspr(uplo, (int)(n - k), -r1, &ap[-1+kc + 1], 1, &ap[-1+kc + n
+                            r1 = (Math.Abs(ap[-1 + kc]) > lm_eps8 ? 1.0 / ap[-1 + kc] : 0);
+                            BlasLike.dspr(uplo, (int)(n - k), -r1, &ap[-1 + kc + 1], 1, &ap[-1 + kc + n
                                 - k + 1]);
 
                             /*                 Store L(k) in column K */
 
-                            BlasLike.dscal((int)(n - k), r1, &ap[-1+kc + 1], 1);
+                            BlasLike.dscal((int)(n - k), r1, &ap[-1 + kc + 1], 1);
                         }
                     }
                     else
@@ -578,32 +578,32 @@ namespace Blas
                             /*                 A := A - ( L(k) L(k+1) )*D(k)*( L(k) L(k+1) )' */
                             /*                    = A - ( W(k) W(k+1) )*inv(D(k))*( W(k) W(k+1) )' */
 
-                            d21 = ap[-1+k + 1 + (k - 1) * ((n << 1) - k) / 2];
-                            d11 = ap[-1+k + 1 + k * ((n << 1) - k - 1) / 2] / d21;
-                            d22 = ap[-1+k + (k - 1) * ((n << 1) - k) / 2] / d21;
+                            d21 = ap[-1 + k + 1 + (k - 1) * ((n << 1) - k) / 2];
+                            d11 = ap[-1 + k + 1 + k * ((n << 1) - k - 1) / 2] / d21;
+                            d22 = ap[-1 + k + (k - 1) * ((n << 1) - k) / 2] / d21;
                             t = d11 * d22 - 1;
                             t = (Math.Abs(t) > lm_eps8 ? 1.0 / t : 0);
                             d21 = t / d21;
 
                             for (j = k + 2; j <= n; ++j)
                             {
-                                wk = d21 * (d11 * ap[-1+j + (k - 1) * ((n << 1) - k) /
-                                    2] - ap[-1+j + k * ((n << 1) - k - 1) / 2]);
-                                wkp1 = d21 * (d22 * ap[-1+j + k * ((n << 1) - k - 1) /
-                                    2] - ap[-1+j + (k - 1) * ((n << 1) - k) / 2]);
+                                wk = d21 * (d11 * ap[-1 + j + (k - 1) * ((n << 1) - k) /
+                                    2] - ap[-1 + j + k * ((n << 1) - k - 1) / 2]);
+                                wkp1 = d21 * (d22 * ap[-1 + j + k * ((n << 1) - k - 1) /
+                                    2] - ap[-1 + j + (k - 1) * ((n << 1) - k) / 2]);
 
                                 for (i = j; i <= n; ++i)
                                 {
-                                    ap[-1+i + (j - 1) * ((n << 1) - j) / 2] = ap[-1+i
-                                        + (j - 1) * ((n << 1) - j) / 2] - ap[-1+i
+                                    ap[-1 + i + (j - 1) * ((n << 1) - j) / 2] = ap[-1 + i
+                                        + (j - 1) * ((n << 1) - j) / 2] - ap[-1 + i
                                         + (k - 1) * ((n << 1) - k) / 2] * wk -
-                                        ap[-1+i + k * ((n << 1) - k - 1) / 2] *
+                                        ap[-1 + i + k * ((n << 1) - k - 1) / 2] *
                                         wkp1;
                                     /* L90: */
                                 }
 
-                                ap[-1+j + (k - 1) * ((n << 1) - k) / 2] = wk;
-                                ap[-1+j + k * ((n << 1) - k - 1) / 2] = wkp1;
+                                ap[-1 + j + (k - 1) * ((n << 1) - k) / 2] = wk;
+                                ap[-1 + j + k * ((n << 1) - k - 1) / 2] = wkp1;
 
                                 /* L100: */
                             }
@@ -615,12 +615,12 @@ namespace Blas
 
                 if (kstep == 1)
                 {
-                    ipiv[-1+k] = kp;
+                    ipiv[-1 + k] = kp;
                 }
                 else
                 {
-                    ipiv[-1+k] = -kp;
-                    ipiv[-1+k + 1] = -kp;
+                    ipiv[-1 + k] = -kp;
+                    ipiv[-1 + k + 1] = -kp;
                 }
 
                 /*        Increase K and return to the start of the main loop */
@@ -634,18 +634,9 @@ namespace Blas
         L110:
             return info;
         }
-        public unsafe static int dsptrs(char* uplo, int n, int nrhs,
-   double* ap, int* ipiv, double* b, int ldb)
+        public unsafe static int dsptrs(char* uplo, int n, int nrhs, double* ap, int* ipiv, double* b, int ldb)
         {
-            double c_b7 = -1.0;
-            int c__1 = 1;
-            double c_b19 = 1.0;
-
-            /* System generated locals */
-            int b_dim1, b_offset, i__1;
-            double d__1;
-
-            /* Local variables */
+            int b_dim1, b_offset;
             int j, k;
             double ak, bk;
             int kc, kp;
@@ -748,20 +739,23 @@ namespace Blas
                     kp = ipiv[k];
                     if (kp != k)
                     {
-                        BlasLike.dswap(nrhs, &b[k + b_dim1], ldb, &b[kp + b_dim1], ldb);
+                        double[] bb = new double[nrhs + Math.Max((1 + k + b_dim1) * ldb, (1 + kp + b_dim1) * ldb)];
+                        for (int iq = 0; iq < bb.Length; ++iq)
+                            bb[iq] = b[iq];
+                        //    BlasLike.dswap(nrhs, &b[k + b_dim1], ldb, &b[kp + b_dim1], ldb);
+                        BlasLike.dswap(nrhs, bb, ldb, bb, ldb, k + b_dim1, kp + b_dim1);
+                        for (int iq = 0; iq < bb.Length; ++iq)
+                            b[iq] = bb[iq];
                     }
 
                     /*           Multiply by inv(U(K)), where U(K) is the transformation */
                     /*           stored in column K of A. */
-
-                    i__1 = k - 1;
-                    BlasLike.dger(i__1, nrhs, c_b7, &ap[kc], c__1, &b[k + b_dim1], ldb, &b[
+                    BlasLike.dger(k - 1, nrhs, -1, &ap[kc], 1, &b[k + b_dim1], ldb, &b[
                         b_dim1 + 1], ldb);
 
                     /*           Multiply by the inverse of the diagonal block. */
 
-                    d__1 = 1.0 / ap[kc + k - 1];
-                    BlasLike.dscal(nrhs, d__1, &b[k + b_dim1], ldb);
+                    BlasLike.dscal(nrhs, 1.0 / ap[kc + k - 1], &b[k + b_dim1], ldb);
                     --k;
                 }
                 else
@@ -774,17 +768,20 @@ namespace Blas
                     kp = -ipiv[k];
                     if (kp != k - 1)
                     {
-                        BlasLike.dswap(nrhs, &b[k - 1 + b_dim1], ldb, &b[kp + b_dim1], ldb);
+                        double[] bb = new double[nrhs + Math.Max((1 + k - 1 + b_dim1) * ldb, (1 + kp + b_dim1) * ldb)];
+                        for (int iq = 0; iq < bb.Length; ++iq)
+                            bb[iq] = b[iq];
+                        //    BlasLike.dswap(nrhs, &b[k - 1 + b_dim1], ldb, &b[kp + b_dim1], ldb);
+                        BlasLike.dswap(nrhs, bb, ldb, bb, ldb, k - 1 + b_dim1, kp + b_dim1);
+                        for (int iq = 0; iq < bb.Length; ++iq)
+                            b[iq] = bb[iq];
                     }
 
                     /*           Multiply by inv(U(K)), where U(K) is the transformation */
                     /*           stored in columns K-1 and K of A. */
-
-                    i__1 = k - 2;
-                    BlasLike.dger(i__1, nrhs, c_b7, &ap[kc], c__1, &b[k + b_dim1], ldb, &b[
+                    BlasLike.dger(k - 2, nrhs, -1, &ap[kc], 1, &b[k + b_dim1], ldb, &b[
                         b_dim1 + 1], ldb);
-                    i__1 = k - 2;
-                    BlasLike.dger(i__1, nrhs, c_b7, &ap[kc - (k - 1)], c__1, &b[k - 1 +
+                    BlasLike.dger(k - 2, nrhs, -1, &ap[kc - (k - 1)], 1, &b[k - 1 +
                         b_dim1], ldb, &b[b_dim1 + 1], ldb);
 
                     /*           Multiply by the inverse of the diagonal block. */
@@ -793,8 +790,7 @@ namespace Blas
                     akm1 = ap[kc - 1] / akm1k;
                     ak = ap[kc + k - 1] / akm1k;
                     denom = akm1 * ak - 1.0;
-                    i__1 = nrhs;
-                    for (j = 1; j <= i__1; ++j)
+                    for (j = 1; j <= nrhs; ++j)
                     {
                         bkm1 = b[k - 1 + j * b_dim1] / akm1k;
                         bk = b[k + j * b_dim1] / akm1k;
@@ -832,18 +828,22 @@ namespace Blas
 
                     /*           Multiply by inv(U**T(K)), where U(K) is the transformation */
                     /*           stored in column K of A. */
-
-                    i__1 = k - 1;
                     char TT = 'T';
-                    BlasLike.dgemv(&TT, i__1, nrhs, c_b7, &b[b_offset], ldb, &ap[kc]
-                        , c__1, c_b19, &b[k + b_dim1], ldb);
+                    BlasLike.dgemv(&TT, k - 1, nrhs, -1, &b[b_offset], ldb, &ap[kc]
+                        , 1, 1, &b[k + b_dim1], ldb);
 
                     /*           Interchange rows K and IPIV(K). */
 
                     kp = ipiv[k];
                     if (kp != k)
                     {
-                        BlasLike.dswap(nrhs, &b[k + b_dim1], ldb, &b[kp + b_dim1], ldb);
+                        double[] bb = new double[nrhs + Math.Max((1 + k + b_dim1) * ldb, (1 + kp + b_dim1) * ldb)];
+                        for (int iq = 0; iq < bb.Length; ++iq)
+                            bb[iq] = b[iq];
+                        //        BlasLike.dswap(nrhs, &b[k + b_dim1], ldb, &b[kp + b_dim1], ldb);
+                        BlasLike.dswap(nrhs, bb, ldb, bb, ldb, k + b_dim1, kp + b_dim1);
+                        for (int iq = 0; iq < bb.Length; ++iq)
+                            b[iq] = bb[iq];
                     }
                     kc += k;
                     ++k;
@@ -855,21 +855,24 @@ namespace Blas
 
                     /*           Multiply by inv(U**T(K+1)), where U(K+1) is the transformation */
                     /*           stored in columns K and K+1 of A. */
-
-                    i__1 = k - 1;
                     char TT = 'T';
-                    BlasLike.dgemv(&TT, i__1, nrhs, c_b7, &b[b_offset], ldb, &ap[kc]
-                        , c__1, c_b19, &b[k + b_dim1], ldb);
-                    i__1 = k - 1;
-                    BlasLike.dgemv(&TT, i__1, nrhs, c_b7, &b[b_offset], ldb, &ap[kc
-                        + k], c__1, c_b19, &b[k + 1 + b_dim1], ldb);
+                    BlasLike.dgemv(&TT, k - 1, nrhs, -1, &b[b_offset], ldb, &ap[kc]
+                        , 1, 1, &b[k + b_dim1], ldb);
+                    BlasLike.dgemv(&TT, k - 1, nrhs, -1, &b[b_offset], ldb, &ap[kc
+                        + k], 1, 1, &b[k + 1 + b_dim1], ldb);
 
                     /*           Interchange rows K and -IPIV(K). */
 
                     kp = -ipiv[k];
                     if (kp != k)
                     {
-                        BlasLike.dswap(nrhs, &b[k + b_dim1], ldb, &b[kp + b_dim1], ldb);
+                        double[] bb = new double[nrhs + Math.Max((1 + k + b_dim1) * ldb, (1 + kp + b_dim1) * ldb)];
+                        for (int iq = 0; iq < bb.Length; ++iq)
+                            bb[iq] = b[iq];
+                        //            BlasLike.dswap(nrhs, &b[k + b_dim1], ldb, &b[kp + b_dim1], ldb);
+                        BlasLike.dswap(nrhs, bb, ldb, bb, ldb, k + b_dim1, kp + b_dim1);
+                        for (int iq = 0; iq < bb.Length; ++iq)
+                            b[iq] = bb[iq];
                     }
                     kc = kc + (k << 1) + 1;
                     k += 2;
@@ -911,7 +914,13 @@ namespace Blas
                     kp = ipiv[k];
                     if (kp != k)
                     {
-                        BlasLike.dswap(nrhs, &b[k + b_dim1], ldb, &b[kp + b_dim1], ldb);
+                        double[] bb = new double[nrhs + Math.Max((1 + k + b_dim1) * ldb, (1 + kp + b_dim1) * ldb)];
+                        for (int iq = 0; iq < bb.Length; ++iq)
+                            bb[iq] = b[iq];
+                        //      BlasLike.dswap(nrhs, &b[k + b_dim1], ldb, &b[kp + b_dim1], ldb);
+                        BlasLike.dswap(nrhs, bb, ldb, bb, ldb, k + b_dim1, kp + b_dim1);
+                        for (int iq = 0; iq < bb.Length; ++iq)
+                            b[iq] = bb[iq];
                     }
 
                     /*           Multiply by inv(L(K)), where L(K) is the transformation */
@@ -919,15 +928,13 @@ namespace Blas
 
                     if (k < n)
                     {
-                        i__1 = n - k;
-                        BlasLike.dger(i__1, nrhs, c_b7, &ap[kc + 1], c__1, &b[k + b_dim1],
+                        BlasLike.dger(n - k, nrhs, -1, &ap[kc + 1], 1, &b[k + b_dim1],
                             ldb, &b[k + 1 + b_dim1], ldb);
                     }
 
                     /*           Multiply by the inverse of the diagonal block. */
 
-                    d__1 = 1.0 / ap[kc];
-                    BlasLike.dscal(nrhs, d__1, &b[k + b_dim1], ldb);
+                    BlasLike.dscal(nrhs, 1.0 / ap[kc], &b[k + b_dim1], ldb);
                     kc = kc + n - k + 1;
                     ++k;
                 }
@@ -941,7 +948,13 @@ namespace Blas
                     kp = -ipiv[k];
                     if (kp != k + 1)
                     {
-                        BlasLike.dswap(nrhs, &b[k + 1 + b_dim1], ldb, &b[kp + b_dim1], ldb);
+                        double[] bb = new double[nrhs + Math.Max((1 + k + 1 + b_dim1) * ldb, (1 + kp + b_dim1) * ldb)];
+                        for (int iq = 0; iq < bb.Length; ++iq)
+                            bb[iq] = b[iq];
+                        //        BlasLike.dswap(nrhs, &b[k + 1 + b_dim1], ldb, &b[kp + b_dim1], ldb);
+                        BlasLike.dswap(nrhs, bb, ldb, bb, ldb, k + 1 + b_dim1, kp + b_dim1);
+                        for (int iq = 0; iq < bb.Length; ++iq)
+                            b[iq] = bb[iq];
                     }
 
                     /*           Multiply by inv(L(K)), where L(K) is the transformation */
@@ -949,11 +962,9 @@ namespace Blas
 
                     if (k < n - 1)
                     {
-                        i__1 = n - k - 1;
-                        BlasLike.dger(i__1, nrhs, c_b7, &ap[kc + 2], c__1, &b[k + b_dim1],
+                        BlasLike.dger(n - k - 1, nrhs, -1, &ap[kc + 2], 1, &b[k + b_dim1],
                             ldb, &b[k + 2 + b_dim1], ldb);
-                        i__1 = n - k - 1;
-                        BlasLike.dger(i__1, nrhs, c_b7, &ap[kc + n - k + 2], c__1, &b[k +
+                        BlasLike.dger(n - k - 1, nrhs, -1, &ap[kc + n - k + 2], 1, &b[k +
                             1 + b_dim1], ldb, &b[k + 2 + b_dim1], ldb);
                     }
 
@@ -963,8 +974,7 @@ namespace Blas
                     akm1 = ap[kc] / akm1k;
                     ak = ap[kc + n - k + 1] / akm1k;
                     denom = akm1 * ak - 1.0;
-                    i__1 = nrhs;
-                    for (j = 1; j <= i__1; ++j)
+                    for (j = 1; j <= nrhs; ++j)
                     {
                         bkm1 = b[k + j * b_dim1] / akm1k;
                         bk = b[k + 1 + j * b_dim1] / akm1k;
@@ -1006,10 +1016,9 @@ namespace Blas
 
                     if (k < n)
                     {
-                        i__1 = n - k;
                         char TT = 'T';
-                        BlasLike.dgemv(&TT, i__1, nrhs, c_b7, &b[k + 1 + b_dim1],
-                            ldb, &ap[kc + 1], c__1, c_b19, &b[k + b_dim1], ldb);
+                        BlasLike.dgemv(&TT, n - k, nrhs, -1, &b[k + 1 + b_dim1],
+                            ldb, &ap[kc + 1], 1, 1, &b[k + b_dim1], ldb);
                     }
 
                     /*           Interchange rows K and IPIV(K). */
@@ -1017,7 +1026,13 @@ namespace Blas
                     kp = ipiv[k];
                     if (kp != k)
                     {
-                        BlasLike.dswap(nrhs, &b[k + b_dim1], ldb, &b[kp + b_dim1], ldb);
+                        double[] bb = new double[nrhs + Math.Max((1 + k + b_dim1) * ldb, (1 + kp + b_dim1) * ldb)];
+                        for (int iq = 0; iq < bb.Length; ++iq)
+                            bb[iq] = b[iq];
+                //        BlasLike.dswap(nrhs, &b[k + b_dim1], ldb, &b[kp + b_dim1], ldb);
+                        BlasLike.dswap(nrhs, bb, ldb, bb, ldb, k + b_dim1, kp + b_dim1);
+                        for (int iq = 0; iq < bb.Length; ++iq)
+                            b[iq] = bb[iq];
                     }
                     --k;
                 }
@@ -1031,13 +1046,11 @@ namespace Blas
 
                     if (k < n)
                     {
-                        i__1 = n - k;
                         char TT = 'T';
-                        BlasLike.dgemv(&TT, i__1, nrhs, c_b7, &b[k + 1 + b_dim1],
-                            ldb, &ap[kc + 1], c__1, c_b19, &b[k + b_dim1], ldb);
-                        i__1 = n - k;
-                        BlasLike.dgemv(&TT, i__1, nrhs, c_b7, &b[k + 1 + b_dim1],
-                            ldb, &ap[kc - (n - k)], c__1, c_b19, &b[k - 1 +
+                        BlasLike.dgemv(&TT, n - k, nrhs, -1, &b[k + 1 + b_dim1],
+                            ldb, &ap[kc + 1], 1, 1, &b[k + b_dim1], ldb);
+                        BlasLike.dgemv(&TT, n - k, nrhs, -1, &b[k + 1 + b_dim1],
+                            ldb, &ap[kc - (n - k)], 1, 1, &b[k - 1 +
                             b_dim1], ldb);
                     }
 
@@ -1046,7 +1059,13 @@ namespace Blas
                     kp = -ipiv[k];
                     if (kp != k)
                     {
-                        BlasLike.dswap(nrhs, &b[k + b_dim1], ldb, &b[kp + b_dim1], ldb);
+                        double[] bb = new double[nrhs + Math.Max((1 + k + b_dim1) * ldb, (1 + kp + b_dim1) * ldb)];
+                        for (int iq = 0; iq < bb.Length; ++iq)
+                            bb[iq] = b[iq];
+                        //      BlasLike.dswap(nrhs, &b[k + b_dim1], ldb, &b[kp + b_dim1], ldb);
+                        BlasLike.dswap(nrhs, bb, ldb, bb, ldb, k + b_dim1, kp + b_dim1);
+                        for (int iq = 0; iq < bb.Length; ++iq)
+                            b[iq] = bb[iq];
                     }
                     kc -= n - k + 2;
                     k += -2;
@@ -1061,6 +1080,570 @@ namespace Blas
 
             /*     End of DSPTRS */
 
+        }
+        public unsafe static int dsptrf(char* uplo, int n, double* ap, int* ipiv)
+        {
+            int info;
+            int i__, j, k;
+            double t, r1, d11, d12, d21, d22;
+            int kc, kk, kp;
+            double wk;
+            int kx, knc, kpc = -20, npp;// I put -20 where compiler said uninitialised
+            double wkm1, wkp1;
+            int imax = -20, jmax = -20;
+            int kstep;
+            double absakk;
+            double colmax, rowmax, alpha;
+
+            /*  -- LAPACK computational routine (version 3.7.0) -- */
+            /*  -- LAPACK is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     December 2016 */
+
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  ===================================================================== */
+
+            /*     .. Parameters .. */
+            /*     .. */
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. External Functions .. */
+            /*     .. */
+            /*     .. External Subroutines .. */
+            /*     .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+            /*     .. Executable Statements .. */
+
+            /*     Test the input parameters. */
+
+            /* Parameter adjustments */
+            --ipiv;
+            --ap;
+
+            /* Function Body */
+            info = 0;
+            if (*uplo != 'U' && *uplo != 'L')
+            {
+                info = -1;
+            }
+            else if (n < 0)
+            {
+                info = -2;
+            }
+            if (info != 0)
+            {
+                Console.WriteLine($"dsptrf: Error {info}");
+                return info;
+            }
+
+            /*     Initialize ALPHA for use in choosing pivot block size. */
+
+            alpha = (Math.Sqrt(17) + 1) / 8;
+
+            if (*uplo == 'U')
+            {
+
+                /*        Factorize A as U*D*U**T using the upper triangle of A */
+
+                /*        K is the main loop index, decreasing from N to 1 in steps of */
+                /*        1 or 2 */
+
+                k = n;
+                kc = (n - 1) * n / 2 + 1;
+            L10:
+                knc = kc;
+
+                /*        If K < 1, exit from loop */
+
+                if (k < 1)
+                {
+                    goto L110;
+                }
+                kstep = 1;
+
+                /*        Determine rows and columns to be interchanged and whether */
+                /*        a 1-by-1 or 2-by-2 pivot block will be used */
+
+                absakk = (Math.Abs(ap[kc + k - 1]));
+
+                /*        IMAX is the row-index of the largest off-diagonal element in */
+                /*        column K, and COLMAX is its absolute value */
+
+                if (k > 1)
+                {
+                    double[] aa = new double[k - 1 + kc];
+                    for (int iq = 0; iq < k - 1 + kc; ++iq)
+                        aa[iq] = ap[iq];
+                    //                imax = BlasLike.idamax(k - 1, &ap[kc], 1) + 1;
+                    imax = BlasLike.idamax(k - 1, aa, 1, kc) + 1;
+                    colmax = (Math.Abs(ap[kc + imax - 1]));
+                }
+                else
+                {
+                    colmax = 0;
+                }
+
+                if (Math.Max(absakk, colmax) == 0)
+                {
+
+                    /*           Column K is zero: set INFO and continue */
+
+                    if (info == 0)
+                    {
+                        info = k;
+                    }
+                    kp = k;
+                }
+                else
+                {
+                    if (absakk >= alpha * colmax)
+                    {
+
+                        /*              no interchange, use 1-by-1 pivot block */
+
+                        kp = k;
+                    }
+                    else
+                    {
+
+                        rowmax = 0;
+                        jmax = imax;
+                        kx = imax * (imax + 1) / 2 + imax;
+                        for (j = imax + 1; j <= k; ++j)
+                        {
+                            if ((Math.Abs(ap[kx])) > rowmax)
+                            {
+                                rowmax = (Math.Abs(ap[kx]));
+                                jmax = j;
+                            }
+                            kx += j;
+                            /* L20: */
+                        }
+                        kpc = (imax - 1) * imax / 2 + 1;
+                        if (imax > 1)
+                        {
+                            double[] aa = new double[imax - 1 + kpc];
+                            for (int iq = 0; iq < imax - 1 + kpc; ++iq)
+                                aa[iq] = ap[iq];
+                            //                         jmax = BlasLike.idamax(imax - 1, &ap[kpc], 1) + 1;
+                            jmax = BlasLike.idamax(imax - 1, aa, 1, kpc) + 1;
+                            rowmax = Math.Max(rowmax, Math.Abs(ap[kpc + jmax - 1]));
+                        }
+
+                        if (absakk >= alpha * colmax * (colmax / rowmax))
+                        {
+
+                            /*                 no interchange, use 1-by-1 pivot block */
+
+                            kp = k;
+                        }
+                        else if ((Math.Abs(ap[kpc + imax - 1])) >= alpha * rowmax)
+                        {
+
+                            /*                 interchange rows and columns K and IMAX, use 1-by-1 */
+                            /*                 pivot block */
+
+                            kp = imax;
+                        }
+                        else
+                        {
+
+                            /*                 interchange rows and columns K-1 and IMAX, use 2-by-2 */
+                            /*                 pivot block */
+
+                            kp = imax;
+                            kstep = 2;
+                        }
+                    }
+
+                    kk = k - kstep + 1;
+                    if (kstep == 2)
+                    {
+                        knc = knc - k + 1;
+                    }
+                    if (kp != kk)
+                    {
+                        double[] aa = new double[kp - 1 + Math.Max(1 + knc, 1 + kpc)];
+                        for (int iq = 0; iq < aa.Length; ++iq)
+                            aa[iq] = ap[iq];
+                        /*              Interchange rows and columns KK and KP in the leading */
+                        /*              submatrix A(1:k,1:k) */
+                        //                    BlasLike.dswap(kp - 1, &ap[knc], 1, &ap[kpc], 1);
+                        BlasLike.dswap(kp - 1, aa, 1, aa, 1, knc, kpc);
+                        for (int iq = 0; iq < aa.Length; ++iq)
+                            ap[iq] = aa[iq];
+                        kx = kpc + kp - 1;
+                        for (j = kp + 1; j <= (kk - 1); ++j)
+                        {
+                            kx = kx + j - 1;
+                            t = ap[knc + j - 1];
+                            ap[knc + j - 1] = ap[kx];
+                            ap[kx] = t;
+                            /* L30: */
+                        }
+                        t = ap[knc + kk - 1];
+                        ap[knc + kk - 1] = ap[kpc + kp - 1];
+                        ap[kpc + kp - 1] = t;
+                        if (kstep == 2)
+                        {
+                            t = ap[kc + k - 2];
+                            ap[kc + k - 2] = ap[kc + kp - 1];
+                            ap[kc + kp - 1] = t;
+                        }
+                    }
+
+                    /*           Update the leading submatrix */
+
+                    if (kstep == 1)
+                    {
+
+                        /*              1-by-1 pivot block D(k): column k now holds */
+
+                        /*              W(k) = U(k)*D(k) */
+
+                        /*              where U(k) is the k-th column of U */
+
+                        /*              Perform a rank-1 update of A(1:k-1,1:k-1) as */
+
+                        /*              A := A - U(k)*D(k)*U(k)**T = A - W(k)*1/D(k)*W(k)**T */
+
+                        r1 = 1 / ap[kc + k - 1];
+                        BlasLike.dspr(uplo, k - 1, -r1, &ap[kc], 1, &ap[1]);
+
+                        /*              Store U(k) in column k */
+                        BlasLike.dscal(k - 1, r1, &ap[kc], 1);
+                    }
+                    else
+                    {
+
+                        /*              2-by-2 pivot block D(k): columns k and k-1 now hold */
+
+                        /*              ( W(k-1) W(k) ) = ( U(k-1) U(k) )*D(k) */
+
+                        /*              where U(k) and U(k-1) are the k-th and (k-1)-th columns */
+                        /*              of U */
+
+                        /*              Perform a rank-2 update of A(1:k-2,1:k-2) as */
+
+                        /*              A := A - ( U(k-1) U(k) )*D(k)*( U(k-1) U(k) )**T */
+                        /*                 = A - ( W(k-1) W(k) )*inv(D(k))*( W(k-1) W(k) )**T */
+
+                        if (k > 2)
+                        {
+
+                            d12 = ap[k - 1 + (k - 1) * k / 2];
+                            d22 = ap[k - 1 + (k - 2) * (k - 1) / 2] / d12;
+                            d11 = ap[k + (k - 1) * k / 2] / d12;
+                            t = 1 / (d11 * d22 - 1);
+                            d12 = t / d12;
+
+                            for (j = k - 2; j >= 1; --j)
+                            {
+                                wkm1 = d12 * (d11 * ap[j + (k - 2) * (k - 1) / 2] -
+                                              ap[j + (k - 1) * k / 2]);
+                                wk = d12 * (d22 * ap[j + (k - 1) * k / 2] - ap[j + (k - 2) * (k - 1) / 2]);
+                                for (i__ = j; i__ >= 1; --i__)
+                                {
+                                    ap[i__ + (j - 1) * j / 2] = ap[i__ + (j - 1) * j /
+                                                                             2] -
+                                                                ap[i__ + (k - 1) * k / 2] * wk - ap[i__ + (k - 2) * (k - 1) / 2] * wkm1;
+                                    /* L40: */
+                                }
+                                ap[j + (k - 1) * k / 2] = wk;
+                                ap[j + (k - 2) * (k - 1) / 2] = wkm1;
+                                /* L50: */
+                            }
+                        }
+                    }
+                }
+
+                /*        Store details of the interchanges in IPIV */
+
+                if (kstep == 1)
+                {
+                    ipiv[k] = kp;
+                }
+                else
+                {
+                    ipiv[k] = -kp;
+                    ipiv[k - 1] = -kp;
+                }
+
+                /*        Decrease K and return to the start of the main loop */
+
+                k -= kstep;
+                kc = knc - k;
+                goto L10;
+            }
+            else
+            {
+
+                /*        Factorize A as L*D*L**T using the lower triangle of A */
+
+                /*        K is the main loop index, increasing from 1 to N in steps of */
+                /*        1 or 2 */
+
+                k = 1;
+                kc = 1;
+                npp = n * (n + 1) / 2;
+            L60:
+                knc = kc;
+
+                /*        If K > N, exit from loop */
+
+                if (k > n)
+                {
+                    goto L110;
+                }
+                kstep = 1;
+
+                /*        Determine rows and columns to be interchanged and whether */
+                /*        a 1-by-1 or 2-by-2 pivot block will be used */
+
+                absakk = (Math.Abs(ap[kc]));
+
+                /*        IMAX is the row-index of the largest off-diagonal element in */
+                /*        column K, and COLMAX is its absolute value */
+
+                if (k < n)
+                {
+                    double[] aa = new double[n - k + kc + 1];
+                    for (int iq = 0; iq < n - k + kc + 1; iq++)
+                        aa[iq] = ap[iq];
+                    //                imax = k + BlasLike.idamax(n - k, &ap[kc + 1], 1) + 1;
+                    imax = k + BlasLike.idamax(n - k, aa, 1, kc + 1) + 1;
+                    colmax = (Math.Abs(ap[kc + imax - k]));
+                }
+                else
+                {
+                    colmax = 0;
+                }
+
+                if (Math.Max(absakk, colmax) == 0)
+                {
+
+                    /*           Column K is zero: set INFO and continue */
+
+                    if (info == 0)
+                    {
+                        info = k;
+                    }
+                    kp = k;
+                }
+                else
+                {
+                    if (absakk >= alpha * colmax)
+                    {
+
+                        /*              no interchange, use 1-by-1 pivot block */
+
+                        kp = k;
+                    }
+                    else
+                    {
+
+                        /*              JMAX is the column-index of the largest off-diagonal */
+                        /*              element in row IMAX, and ROWMAX is its absolute value */
+
+                        rowmax = 0;
+                        kx = kc + imax - k;
+                        for (j = k; j <= imax - 1; ++j)
+                        {
+                            if ((Math.Abs(ap[kx])) > rowmax)
+                            {
+                                rowmax = (Math.Abs(ap[kx]));
+                                jmax = j;
+                            }
+                            kx = kx + n - j;
+                            /* L70: */
+                        }
+                        kpc = npp - (n - imax + 1) * (n - imax + 2) / 2 + 1;
+                        if (imax < n)
+                        {
+                            double[] aa = new double[n - imax + kpc + 1];
+                            for (int iq = 0; iq < n - imax + kpc + 1; iq++)
+                                aa[iq] = ap[iq];
+                            //                         jmax = imax + BlasLike.idamax( n - imax, &ap[kpc + 1], 1) + 1;
+                            jmax = imax + BlasLike.idamax(n - imax, aa, 1, kpc + 1) + 1;
+                            rowmax = Math.Max(rowmax, Math.Abs(ap[kpc + jmax - imax]));
+                        }
+
+                        if (absakk >= alpha * colmax * (colmax / rowmax))
+                        {
+
+                            /*                 no interchange, use 1-by-1 pivot block */
+
+                            kp = k;
+                        }
+                        else if ((Math.Abs(ap[kpc])) >= alpha * rowmax)
+                        {
+
+                            /*                 interchange rows and columns K and IMAX, use 1-by-1 */
+                            /*                 pivot block */
+
+                            kp = imax;
+                        }
+                        else
+                        {
+
+                            /*                 interchange rows and columns K+1 and IMAX, use 2-by-2 */
+                            /*                 pivot block */
+
+                            kp = imax;
+                            kstep = 2;
+                        }
+                    }
+
+                    kk = k + kstep - 1;
+                    if (kstep == 2)
+                    {
+                        knc = knc + n - k + 1;
+                    }
+                    if (kp != kk)
+                    {
+
+                        /*              Interchange rows and columns KK and KP in the trailing */
+                        /*              submatrix A(k:n,k:n) */
+
+                        if (kp < n)
+                        {
+                            double[] aa = new double[n - kp + Math.Max(1 + knc + kp - kk + 1, 1 + kpc + 1)];
+                            for (int iq = 0; iq < aa.Length; ++iq)
+                                aa[iq] = ap[iq];
+                            //       BlasLike.dswap(n - kp, &ap[knc + kp - kk + 1], 1, &ap[kpc + 1], 1);
+                            BlasLike.dswap(n - kp, aa, 1, aa, 1, knc + kp - kk + 1, kpc + 1);
+                            for (int iq = 0; iq < aa.Length; ++iq)
+                                ap[iq] = aa[iq];
+                        }
+                        kx = knc + kp - kk;
+                        for (j = kk + 1; j <= kp - 1; ++j)
+                        {
+                            kx = kx + n - j + 1;
+                            t = ap[knc + j - kk];
+                            ap[knc + j - kk] = ap[kx];
+                            ap[kx] = t;
+                            /* L80: */
+                        }
+                        t = ap[knc];
+                        ap[knc] = ap[kpc];
+                        ap[kpc] = t;
+                        if (kstep == 2)
+                        {
+                            t = ap[kc + 1];
+                            ap[kc + 1] = ap[kc + kp - k];
+                            ap[kc + kp - k] = t;
+                        }
+                    }
+
+                    /*           Update the trailing submatrix */
+
+                    if (kstep == 1)
+                    {
+
+                        /*              1-by-1 pivot block D(k): column k now holds */
+
+                        /*              W(k) = L(k)*D(k) */
+
+                        /*              where L(k) is the k-th column of L */
+
+                        if (k < n)
+                        {
+
+                            /*                 Perform a rank-1 update of A(k+1:n,k+1:n) as */
+
+                            /*                 A := A - L(k)*D(k)*L(k)**T = A - W(k)*(1/D(k))*W(k)**T */
+
+                            r1 = 1 / ap[kc];
+                            BlasLike.dspr(uplo, n - k, -r1, &ap[kc + 1], 1, &ap[kc + n - k + 1]);
+
+                            /*                 Store L(k) in column K */
+                            BlasLike.dscal(n - k, r1, &ap[kc + 1], 1);
+                        }
+                    }
+                    else
+                    {
+
+                        /*              2-by-2 pivot block D(k): columns K and K+1 now hold */
+
+                        /*              ( W(k) W(k+1) ) = ( L(k) L(k+1) )*D(k) */
+
+                        /*              where L(k) and L(k+1) are the k-th and (k+1)-th columns */
+                        /*              of L */
+
+                        if (k < n - 1)
+                        {
+
+                            /*                 Perform a rank-2 update of A(k+2:n,k+2:n) as */
+
+                            /*                 A := A - ( L(k) L(k+1) )*D(k)*( L(k) L(k+1) )**T */
+                            /*                    = A - ( W(k) W(k+1) )*inv(D(k))*( W(k) W(k+1) )**T */
+
+                            /*                 where L(k) and L(k+1) are the k-th and (k+1)-th */
+                            /*                 columns of L */
+
+                            d21 = ap[k + 1 + (k - 1) * ((n << 1) - k) / 2];
+                            d11 = ap[k + 1 + k * ((n << 1) - k - 1) / 2] / d21;
+                            d22 = ap[k + (k - 1) * ((n << 1) - k) / 2] / d21;
+                            t = 1 / (d11 * d22 - 1);
+                            d21 = t / d21;
+                            for (j = k + 2; j <= n; ++j)
+                            {
+                                wk = d21 * (d11 * ap[j + (k - 1) * ((n << 1) - k) /
+                                                             2] -
+                                            ap[j + k * ((n << 1) - k - 1) / 2]);
+                                wkp1 = d21 * (d22 * ap[j + k * ((n << 1) - k - 1) /
+                                                               2] -
+                                              ap[j + (k - 1) * ((n << 1) - k) / 2]);
+
+                                for (i__ = j; i__ <= n; ++i__)
+                                {
+                                    ap[i__ + (j - 1) * ((n << 1) - j) / 2] = ap[i__ + (j - 1) * ((n << 1) - j) / 2] - ap[i__ + (k - 1) * ((n << 1) - k) / 2] * wk -
+                                                                              ap[i__ + k * ((n << 1) - k - 1) / 2] *
+                                                                                  wkp1;
+                                    /* L90: */
+                                }
+
+                                ap[j + (k - 1) * ((n << 1) - k) / 2] = wk;
+                                ap[j + k * ((n << 1) - k - 1) / 2] = wkp1;
+
+                                /* L100: */
+                            }
+                        }
+                    }
+                }
+
+                /*        Store details of the interchanges in IPIV */
+
+                if (kstep == 1)
+                {
+                    ipiv[k] = kp;
+                }
+                else
+                {
+                    ipiv[k] = -kp;
+                    ipiv[k + 1] = -kp;
+                }
+
+                /*        Increase K and return to the start of the main loop */
+
+                k += kstep;
+                kc = knc + n - k + 2;
+                goto L60;
+            }
+
+        L110:
+            return info;
+        }
+        public unsafe static void dsmxmulv(int n, double* S, double* x, double* y)
+        {
+            int i;
+            for (i = 1; i <= n; i++, x++, S += i)
+                *y++ = BlasLike.ddot2(i, S, -1, x, -1) + BlasLike.didot(n - i, S + i, i + 1, x + 1, 1);
         }
     }
 }

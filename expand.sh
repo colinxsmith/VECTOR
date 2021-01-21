@@ -11,6 +11,7 @@ cp ../safeqp/lapack-release/BLAS/SRC/dgemm.f .
 cp ../safeqp/lapack-release/BLAS/SRC/daxpy.f .
 cp ../safeqp/lapack-release/BLAS/SRC/dcopy.f .
 cp ../safeqp/lapack-release/BLAS/SRC/ddot.f .
+cp ../safeqp/lapack-release/BLAS/SRC/didot.f .
 for i in *.f
 do
 f2c $i
