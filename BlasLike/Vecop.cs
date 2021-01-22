@@ -586,11 +586,13 @@ namespace Blas
         }
         public unsafe static double ddot(int n, double* dx, int incx, double* dy,
             int incy)
-        {
-            double back;
+        {   /* System generated locals */
+            int i__1;
+            double ret_val;
 
             /* Local variables */
-            int i__, m, ix, iy;
+            int i__, m, ix, iy, mp1;
+            double dtemp;
 
 
             /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
@@ -610,12 +612,15 @@ namespace Blas
             /*     .. Intrinsic Functions .. */
             /*     .. */
             /* Parameter adjustments */
+            --dy;
+            --dx;
 
             /* Function Body */
-            back = 0;
+            ret_val = 0;
+            dtemp = 0;
             if (n <= 0)
             {
-                return back;
+                return ret_val;
             }
             if (incx == 1 && incy == 1)
             {
@@ -628,18 +633,22 @@ namespace Blas
                 m = n % 5;
                 if (m != 0)
                 {
-                    for (i__ = 0; i__ < m; ++i__)
+                    i__1 = m;
+                    for (i__ = 1; i__ <= i__1; ++i__)
                     {
-                        back += dx[i__] * dy[i__];
+                        dtemp += dx[i__] * dy[i__];
                     }
                     if (n < 5)
                     {
-                        return back;
+                        ret_val = dtemp;
+                        return ret_val;
                     }
                 }
-                for (i__ = m; i__ < n; i__ += 5)
+                mp1 = m + 1;
+                i__1 = n;
+                for (i__ = mp1; i__ <= i__1; i__ += 5)
                 {
-                    back = back + dx[i__] * dy[i__] + dx[i__ + 1] * dy[i__ + 1] +
+                    dtemp = dtemp + dx[i__] * dy[i__] + dx[i__ + 1] * dy[i__ + 1] +
                         dx[i__ + 2] * dy[i__ + 2] + dx[i__ + 3] * dy[i__ + 3] +
                         dx[i__ + 4] * dy[i__ + 4];
                 }
@@ -660,22 +669,28 @@ namespace Blas
                 {
                     iy = (-(n) + 1) * incy + 1;
                 }
-                for (i__ = 0; i__ < n; ++i__)
+                i__1 = n;
+                for (i__ = 1; i__ <= i__1; ++i__)
                 {
-                    back += dx[ix - 1] * dy[iy - 1];
+                    dtemp += dx[ix] * dy[iy];
                     ix += incx;
                     iy += incy;
                 }
             }
-            return back;
+            ret_val = dtemp;
+            return ret_val;
+
         } /* ddot_ */
+
         public static double ddot(int n, double[] dx, int incx, double[] dy,
-            int incy)
-        {
-            double back;
+            int incy, int dxstart = 0, int dystart = 0)
+        {   /* System generated locals */
+            int i__1;
+            double ret_val;
 
             /* Local variables */
-            int i__, m, ix, iy;
+            int i__, m, ix, iy, mp1;
+            double dtemp;
 
 
             /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
@@ -697,10 +712,11 @@ namespace Blas
             /* Parameter adjustments */
 
             /* Function Body */
-            back = 0;
+            ret_val = 0;
+            dtemp = 0;
             if (n <= 0)
             {
-                return back;
+                return ret_val;
             }
             if (incx == 1 && incy == 1)
             {
@@ -713,20 +729,24 @@ namespace Blas
                 m = n % 5;
                 if (m != 0)
                 {
-                    for (i__ = 0; i__ < m; ++i__)
+                    i__1 = m;
+                    for (i__ = 0; i__ < i__1; ++i__)
                     {
-                        back += dx[i__] * dy[i__];
+                        dtemp += dx[i__ + dxstart] * dy[i__ + dystart];
                     }
                     if (n < 5)
                     {
-                        return back;
+                        ret_val = dtemp;
+                        return ret_val;
                     }
                 }
-                for (i__ = m; i__ < n; i__ += 5)
+                mp1 = m + 1;
+                i__1 = n;
+                for (i__ = mp1 - 1; i__ < i__1; i__ += 5)
                 {
-                    back = back + dx[i__] * dy[i__] + dx[i__ + 1] * dy[i__ + 1] +
-                        dx[i__ + 2] * dy[i__ + 2] + dx[i__ + 3] * dy[i__ + 3] +
-                        dx[i__ + 4] * dy[i__ + 4];
+                    dtemp = dtemp + dx[i__ + dxstart] * dy[i__ + dystart] + dx[i__ + 1 + dxstart] * dy[i__ + 1 + dystart] +
+                        dx[i__ + 2 + dxstart] * dy[i__ + 2 + dystart] + dx[i__ + 3 + dxstart] * dy[i__ + 3 + dystart] +
+                        dx[i__ + 4 + dxstart] * dy[i__ + 4 + dystart];
                 }
             }
             else
@@ -745,14 +765,17 @@ namespace Blas
                 {
                     iy = (-(n) + 1) * incy + 1;
                 }
-                for (i__ = 0; i__ < n; ++i__)
+                i__1 = n;
+                for (i__ = 1; i__ <= i__1; ++i__)
                 {
-                    back += dx[ix - 1] * dy[iy - 1];
+                    dtemp += dx[ix - 1 + dxstart] * dy[iy - 1 + dystart];
                     ix += incx;
                     iy += incy;
                 }
             }
-            return back;
+            ret_val = dtemp;
+            return ret_val;
+
         } /* ddot_ */
 
 
@@ -2846,6 +2869,42 @@ double* x, int incx, double* ap)
                     }
                 }
                 else sum = *x * dsum(n, y, iy);
+            }
+            return sum;
+        }
+
+        public static double didot(int n, double[] x, int iix, double[] y, int iy, int xstart = 0, int ystart = 0)
+        {
+            double sum = 0;
+
+            if (n > 0)
+            {
+                if (iix != 0)
+                {
+                    for (int i = 0, yi = 0, xi = 0; i < n; ++i, xi += iix++, yi += iy)
+                    {
+                        sum += x[xi + xstart] * y[yi + ystart];
+                    }
+                }
+                else sum = x[0] * dsum(n, y, iy, ystart);
+            }
+            return sum;
+        }
+   
+        public static double didotrev(int n, double[] x, int iix, double[] y, int iy, int xstart = 0, int ystart = 0)
+        {
+            double sum = 0;
+
+            if (n > 0)
+            {
+                if (iix != 0)
+                {
+                    for (int i = 0, yi = 0, xi = 0; i < n; ++i, xi += --iix, yi += iy)
+                    {
+                        sum += x[xi + xstart] * y[yi + ystart];
+                    }
+                }
+                else sum = x[0] * dsum(n, y, iy, ystart);
             }
             return sum;
         }

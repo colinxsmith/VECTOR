@@ -1029,7 +1029,7 @@ namespace Blas
                         double[] bb = new double[nrhs + Math.Max((1 + k + b_dim1) * ldb, (1 + kp + b_dim1) * ldb)];
                         for (int iq = 0; iq < bb.Length; ++iq)
                             bb[iq] = b[iq];
-                //        BlasLike.dswap(nrhs, &b[k + b_dim1], ldb, &b[kp + b_dim1], ldb);
+                        //        BlasLike.dswap(nrhs, &b[k + b_dim1], ldb, &b[kp + b_dim1], ldb);
                         BlasLike.dswap(nrhs, bb, ldb, bb, ldb, k + b_dim1, kp + b_dim1);
                         for (int iq = 0; iq < bb.Length; ++iq)
                             b[iq] = bb[iq];
@@ -1641,9 +1641,21 @@ namespace Blas
         }
         public unsafe static void dsmxmulv(int n, double* S, double* x, double* y)
         {
-            int i;
+            int i;//This needed change to be compatable with BLAS ddot
             for (i = 1; i <= n; i++, x++, S += i)
-                *y++ = BlasLike.ddot(i, S, -1, x, -1) + BlasLike.didot(n - i, S + i, i + 1, x + 1, 1);
+                *y++ = BlasLike.ddot(i, S + 1 - i, -1, x + 1 - i, -1) + BlasLike.didot(n - i, S + i, i + 1, x + 1, 1);
+        }
+        public static void dsmxmulv(int n, double[] S, double[] x, double[] y)
+        {
+            int i, iS, ix;//This needed change to be compatable with BLAS ddot
+            for (i = 1, iS = 0, ix = 0; i <= n; i++, ix++, iS += i)
+                y[i - 1] = BlasLike.ddot(i, S, -1, x, -1, iS + 1 - i) + BlasLike.didot(n - i, S, i + 1, x, 1, i + iS, 1 + ix);
+        }
+        public static void dsmxmulvT(int n, double[] S, double[] x, double[] y)
+        {
+            int i, iS, ix;
+            for (i = 1, iS = 0, ix = 0; i <= n; i++, ix++, iS += n - i + 2)
+                y[i - 1] = BlasLike.ddot(n - i + 1, S, 1, x, 1, iS, ix) + BlasLike.didotrev(i - 1, S, i, x, 1, i - 1);
         }
     }
 }
