@@ -1655,7 +1655,7 @@ namespace Blas
         {
             int i, iS, ix;
             for (i = 1, iS = 0, ix = 0; i <= n; i++, ix++, iS += n - i + 2)
-                y[i - 1] = BlasLike.ddot(n - i + 1, S, 1, x, 1, iS, ix) + BlasLike.didotrev(i - 1, S, i, x, 1, i - 1);
+                y[i - 1] = BlasLike.ddot(n - i + 1, S, 1, x, 1, iS, ix) + BlasLike.didotrev(i - 1, S, n-1, x, 1, i - 1);
         }
     }
 }
