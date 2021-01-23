@@ -2899,7 +2899,7 @@ double* x, int incx, double* ap)
             {
                 if (iix != 0)
                 {
-                    for (int i = 0, yi = 0, xi = 0; i < n; ++i, xi += --iix, yi += iy)
+                    for (int i = 0, yi = 0, xi = 0; i < n; ++i, xi += iix--, yi += iy)
                     {
                         sum += x[xi + xstart] * y[yi + ystart];
                     }
