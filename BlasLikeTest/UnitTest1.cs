@@ -344,64 +344,66 @@ namespace BlasLikeTest
         [TestMethod]
         public unsafe void Test_MatrixFactoriseAndSolveU()
         {
-            int n = 3;
+            int n = 4;
             double[] a = {  1,
                             2,3,
-                            4,5,6};
-            int[] piv = { 1, 2, 3 };
+                            4,5,6,
+                            7,8,9,10};
+            double[] acopy = (double[])a.Clone();
+            int[] piv = { 1, 2, 3, 4 };
             char[] U = { 'U' };
             int back = 10;
             fixed (double* ap = a)
             fixed (int* ipiv = piv)
             fixed (char* UP = U)
                 back = Factorise.dsptrf(UP, n, ap, ipiv);
-            Assert.IsTrue(back == 0, $"{back} {piv[0]} {piv[1]} {piv[2]}  {a[0]} {a[1]} {a[2]} {a[3]} {a[4]} {a[5]} ");
-            double[] b = { 1, 0, 1 };
+            Assert.IsTrue(back == 0);
+            double[] b = { 1, 2, 3, 4 };
             double[] bcopy = (double[])b.Clone();
             fixed (double* ap = a)
             fixed (double* bp = b)
             fixed (int* ipiv = piv)
             fixed (char* UP = U)
                 Factorise.dsptrs(UP, n, 1, ap, ipiv, bp, n);
-            double[] a1 = { 1, 2, 4 };
-            double[] a2 = { 2, 3, 5 };
-            double[] a3 = { 4, 5, 6 };
-            double c1 = BlasLike.ddotvec(n, b, a1);
-            double c2 = BlasLike.ddotvec(n, b, a2);
-            double c3 = BlasLike.ddotvec(n, b, a3);
-            double okerror = BlasLike.lm_eps * 64;
-            Assert.IsTrue(back == 0 && Math.Abs(c1 - bcopy[0]) < okerror && Math.Abs(c2 - bcopy[1]) < okerror && Math.Abs(c3 - bcopy[2]) < okerror, $"back={back} {c1},{c2},{c3} ");
+            double okerror = BlasLike.lm_eps * 16;
+            double[] c = new double[n];
+            Factorise.dsmxmulv(n, acopy, b, c);
+            double[] errorvec = new double[n];
+            BlasLike.dsubvec(n, bcopy, c, errorvec);
+            double error = Math.Sqrt(BlasLike.ddotvec(n, errorvec, errorvec)) / n;
+            Assert.IsTrue(back == 0 && error < okerror, $"back={back} error={error} {c[0]},{c[1]},{c[2]},{c[3]} ");
         }
         [TestMethod]
         public unsafe void Test_MatrixFactoriseAndSolveL()
         {
-            int n = 3;
-            double[] a = { 1,2,4,
-                             3,5,
-                               6};
-            int[] piv = { 1, 2, 3 };
-            char[] U = { 'L' };
+            int n = 4;
+            double[] a ={1,2,4,7,
+                            3,5,8,
+                            6,9,
+                            10};
+            double[] acopy = (double[])a.Clone();
+            int[] piv = { 1, 2, 3, 4 };
+            char[] U = { 'L'};
             int back = 10;
             fixed (double* ap = a)
             fixed (int* ipiv = piv)
             fixed (char* UP = U)
                 back = Factorise.dsptrf(UP, n, ap, ipiv);
-            Assert.IsTrue(back == 0, $"{back} {piv[0]} {piv[1]} {piv[2]}  {a[0]} {a[1]} {a[2]} {a[3]} {a[4]} {a[5]} ");
-            double[] b = { 1, 0, 1 };
+            Assert.IsTrue(back == 0);
+            double[] b = { 1, 2, 3, 4 };
             double[] bcopy = (double[])b.Clone();
             fixed (double* ap = a)
             fixed (double* bp = b)
             fixed (int* ipiv = piv)
             fixed (char* UP = U)
                 Factorise.dsptrs(UP, n, 1, ap, ipiv, bp, n);
-            double[] a1 = { 1, 2, 4 };
-            double[] a2 = { 2, 3, 5 };
-            double[] a3 = { 4, 5, 6 };
-            double c1 = BlasLike.ddotvec(n, b, a1);
-            double c2 = BlasLike.ddotvec(n, b, a2);
-            double c3 = BlasLike.ddotvec(n, b, a3);
-            double okerror = BlasLike.lm_eps * 64;
-            Assert.IsTrue(back == 0 && Math.Abs(c1 - bcopy[0]) < okerror && Math.Abs(c2 - bcopy[1]) < okerror && Math.Abs(c3 - bcopy[2]) < okerror, $"back={back} {c1},{c2},{c3} ");
+            double okerror = BlasLike.lm_eps * 16;
+            double[] c = new double[n];
+            Factorise.dsmxmulvT(n, acopy, b, c);
+            double[] errorvec = new double[n];
+            BlasLike.dsubvec(n, bcopy, c, errorvec);
+            double error = Math.Sqrt(BlasLike.ddotvec(n, errorvec, errorvec)) / n;
+            Assert.IsTrue(back == 0 && error < okerror, $"back={back} error={error} {c[0]},{c[1]},{c[2]},{c[3]} ");
         }
     }
 }
