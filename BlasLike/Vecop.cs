@@ -2861,11 +2861,24 @@ double* x, int incx, double* ap)
             {
                 if (iix != 0)
                 {
-                    while (n-- > 0)
+                    if (iix > 0)
                     {
-                        sum += (*x) * (*y);
-                        y += iy;
-                        x += iix++;
+                        while (n-- > 0)
+                        {
+                            sum += (*x) * (*y);
+                            y += iy;
+                            x += iix++;
+                        }
+                    }
+                    else
+                    {
+                        iix = -iix;
+                        while (n-- > 0)
+                        {
+                            sum += (*x) * (*y);
+                            y += iy;
+                            x += iix--;
+                        }
                     }
                 }
                 else sum = *x * dsum(n, y, iy);
@@ -2881,27 +2894,20 @@ double* x, int incx, double* ap)
             {
                 if (iix != 0)
                 {
-                    for (int i = 0, yi = 0, xi = 0; i < n; ++i, xi += iix++, yi += iy)
+                    if (iix > 0)
                     {
-                        sum += x[xi + xstart] * y[yi + ystart];
+                        for (int i = 0, yi = 0, xi = 0; i < n; ++i, xi += iix++, yi += iy)
+                        {
+                            sum += x[xi + xstart] * y[yi + ystart];
+                        }
                     }
-                }
-                else sum = x[0] * dsum(n, y, iy, ystart);
-            }
-            return sum;
-        }
-   
-        public static double didotrev(int n, double[] x, int iix, double[] y, int iy, int xstart = 0, int ystart = 0)
-        {
-            double sum = 0;
-
-            if (n > 0)
-            {
-                if (iix != 0)
-                {
-                    for (int i = 0, yi = 0, xi = 0; i < n; ++i, xi += iix--, yi += iy)
+                    else
                     {
-                        sum += x[xi + xstart] * y[yi + ystart];
+                        iix = -iix;
+                        for (int i = 0, yi = 0, xi = 0; i < n; ++i, xi += iix--, yi += iy)
+                        {
+                            sum += x[xi + xstart] * y[yi + ystart];
+                        }
                     }
                 }
                 else sum = x[0] * dsum(n, y, iy, ystart);
