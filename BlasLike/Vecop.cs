@@ -178,7 +178,7 @@ namespace Blas
 
 
         public static void daxpy(int n, double da, double[] dx,
-            int incx, double[] dy, int incy)
+            int incx, double[] dy, int incy, int xstart = 0, int ystart = 0)
         {
             int i__, m, ix, iy;
             /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
@@ -223,21 +223,21 @@ namespace Blas
                     {
                         for (i__ = 0; i__ < m; ++i__)
                         {
-                            dy[i__] += dx[i__];
+                            dy[i__ + ystart] += dx[i__ + xstart];
                         }
                     }
                     else if (da == -1)
                     {
                         for (i__ = 0; i__ < m; ++i__)
                         {
-                            dy[i__] -= dx[i__];
+                            dy[i__ + ystart] -= dx[i__ + xstart];
                         }
                     }
                     else
                     {
                         for (i__ = 0; i__ < m; ++i__)
                         {
-                            dy[i__] += da * dx[i__];
+                            dy[i__ + ystart] += da * dx[i__ + xstart];
                         }
                     }
                 }
@@ -249,30 +249,30 @@ namespace Blas
                 {
                     for (i__ = m; i__ < n; i__ += 4)
                     {
-                        dy[i__] += dx[i__];
-                        dy[i__ + 1] += dx[i__ + 1];
-                        dy[i__ + 2] += dx[i__ + 2];
-                        dy[i__ + 3] += dx[i__ + 3];
+                        dy[i__ + ystart] += dx[i__ + xstart];
+                        dy[i__ + 1 + ystart] += dx[i__ + 1 + xstart];
+                        dy[i__ + 2 + ystart] += dx[i__ + 2 + xstart];
+                        dy[i__ + 3 + ystart] += dx[i__ + 3 + xstart];
                     }
                 }
                 else if (da == -1)
                 {
                     for (i__ = m; i__ < n; i__ += 4)
                     {
-                        dy[i__] -= dx[i__];
-                        dy[i__ + 1] -= dx[i__ + 1];
-                        dy[i__ + 2] -= dx[i__ + 2];
-                        dy[i__ + 3] -= dx[i__ + 3];
+                        dy[i__ + ystart] -= dx[i__ + xstart];
+                        dy[i__ + 1 + ystart] -= dx[i__ + 1 + xstart];
+                        dy[i__ + 2 + ystart] -= dx[i__ + 2 + xstart];
+                        dy[i__ + 3 + ystart] -= dx[i__ + 3 + xstart];
                     }
                 }
                 else
                 {
                     for (i__ = m; i__ < n; i__ += 4)
                     {
-                        dy[i__] += da * dx[i__];
-                        dy[i__ + 1] += da * dx[i__ + 1];
-                        dy[i__ + 2] += da * dx[i__ + 2];
-                        dy[i__ + 3] += da * dx[i__ + 3];
+                        dy[i__ + ystart] += da * dx[i__ + xstart];
+                        dy[i__ + 1 + ystart] += da * dx[i__ + 1 + xstart];
+                        dy[i__ + 2 + ystart] += da * dx[i__ + 2 + xstart];
+                        dy[i__ + 3 + ystart] += da * dx[i__ + 3 + xstart];
                     }
                 }
             }
@@ -296,7 +296,7 @@ namespace Blas
                 {
                     for (i__ = 0; i__ < n; ++i__)
                     {
-                        dy[iy] += dx[ix];
+                        dy[iy + ystart] += dx[ix + xstart];
                         ix += incx;
                         iy += incy;
                     }
@@ -305,7 +305,7 @@ namespace Blas
                 {
                     for (i__ = 0; i__ < n; ++i__)
                     {
-                        dy[iy] -= dx[ix];
+                        dy[iy + ystart] -= dx[ix + xstart];
                         ix += incx;
                         iy += incy;
                     }
@@ -314,7 +314,7 @@ namespace Blas
                 {
                     for (i__ = 0; i__ < n; ++i__)
                     {
-                        dy[iy] += da * dx[ix];
+                        dy[iy + ystart] += da * dx[ix + xstart];
                         ix += incx;
                         iy += incy;
                     }
@@ -341,9 +341,9 @@ namespace Blas
                     y[iiy] += a * x[iix];
             }
         }
-        public static void daxpyvec(int n, double a, double[] x, double[] y)
+        public static void daxpyvec(int n, double a, double[] x, double[] y, int xstart = 0, int ystart = 0)
         {
-            daxpy(n, a, x, 1, y, 1);
+            daxpy(n, a, x, 1, y, 1, xstart, ystart);
         }
         public unsafe static void daxpyvec(int n, double a, double* x, double* y)
         {
@@ -800,9 +800,9 @@ namespace Blas
             }
             return sum;
         }
-        public static double ddotvec(int n, double[] a, double[] b,int astart=0,int bstart=0)
+        public static double ddotvec(int n, double[] a, double[] b, int astart = 0, int bstart = 0)
         {
-            return ddot(n, a, 1, b, 1,astart,bstart);
+            return ddot(n, a, 1, b, 1, astart, bstart);
         }
         public unsafe static double ddotvec(int n, double* a, double* b)
         {
@@ -972,7 +972,7 @@ double* a, int lda)
             }
             if (info != 0)
             {
-                Console.WriteLine($"dger error code {info}");
+                Console.WriteLine($"dger1 error code {info}");
                 return;
             }
 
@@ -1045,6 +1045,206 @@ double* a, int lda)
                         if (y[jy + incy * j] != 0.0)
                         {
                             daxpy(m, alpha * y[jy + incy * j], x + kx, incx, a + j * a_dim1, 1);
+                        }
+                    }
+                }
+            }
+        }
+
+        public static void dger1(int m, int n, double alpha,
+double[] x, int incx, double[] y, int incy,
+double[] a, int lda, int xstart = 0, int ystart = 0, int astart = 0)
+        {
+            int a_dim1;
+            //    size_t i, 
+            int jy, kx, info;
+            int j;
+            //    double temp;
+            //	vector px,pA,py;
+
+            /*     .. Scalar Arguments .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  Purpose */
+            /*  ======= */
+
+            /*  DGER   performs the rank 1 operation */
+
+            /*     A := alpha*x*y' + A, */
+
+            /*  where alpha is a scalar, x is an m element vector, y is an n element */
+            /*  vector and A is an m by n matrix. */
+
+            /*  Parameters */
+            /*  ========== */
+
+            /*  M      - size_t. */
+            /*           On entry, M specifies the number of rows of the matrix A. */
+            /*           M must be at least zero. */
+            /*           Unchanged on exit. */
+
+            /*  N      - size_t. */
+            /*           On entry, N specifies the number of columns of the matrix A. */
+            /*           N must be at least zero. */
+            /*           Unchanged on exit. */
+
+            /*  ALPHA  - DOUBLE PRECISION. */
+            /*           On entry, ALPHA specifies the scalar alpha. */
+            /*           Unchanged on exit. */
+
+            /*  X      - DOUBLE PRECISION array of dimension at least */
+            /*           ( 1 + ( m - 1 )*abs( INCX ) ). */
+            /*           Before entry, the incremented array X must contain the m */
+            /*           element vector x. */
+            /*           Unchanged on exit. */
+
+            /*  INCX   - size_t. */
+            /*           On entry, INCX specifies the increment for the elements of */
+            /*           X. INCX must not be zero. */
+            /*           Unchanged on exit. */
+
+            /*  Y      - DOUBLE PRECISION array of dimension at least */
+            /*           ( 1 + ( n - 1 )*abs( INCY ) ). */
+            /*           Before entry, the incremented array Y must contain the n */
+            /*           element vector y. */
+            /*           Unchanged on exit. */
+
+            /*  INCY   - size_t. */
+            /*           On entry, INCY specifies the increment for the elements of */
+            /*           Y. INCY must not be zero. */
+            /*           Unchanged on exit. */
+
+            /*  A      - DOUBLE PRECISION array of DIMENSION ( LDA, n ). */
+            /*           Before entry, the leading m by n part of the array A must */
+            /*           contain the matrix of coefficients. On exit, A is */
+            /*           overwritten by the updated matrix. */
+
+            /*  LDA    - size_t. */
+            /*           On entry, LDA specifies the first dimension of A as declared */
+            /*           in the calling (sub) program. LDA must be at least */
+            /*           Math.Max( 1, m ). */
+            /*           Unchanged on exit. */
+
+
+            /*  Level 2 Blas routine. */
+
+            /*  -- Written on 22-October-1986. */
+            /*     Jack Dongarra, Argonne National Lab. */
+            /*     Jeremy Du Croz, Nag Central Office. */
+            /*     Sven Hammarling, Nag Central Office. */
+            /*     Richard Hanson, Sandia National Labs. */
+
+
+            /*     .. Parameters .. */
+            /*     .. Local Scalars .. */
+            /*     .. External Subroutines .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+            /*     .. Executable Statements .. */
+
+            /*     Test the input parameters. */
+
+            /* Parameter adjustments */
+            a_dim1 = lda;
+
+            /* Function Body */
+            info = 0;
+            if (m < 0)
+            {
+                info = 1;
+            }
+            else if (n < 0)
+            {
+                info = 2;
+            }
+            else if (incx == 0)
+            {
+                info = 5;
+            }
+            else if (incy == 0)
+            {
+                info = 7;
+            }
+            else if (lda < Math.Max(1, m))
+            {
+                info = 9;
+            }
+            if (info != 0)
+            {
+                Console.WriteLine($"dger1 error code {info}");
+                return;
+            }
+
+            /*     Quick return if possible. */
+
+            if (m == 0 || n == 0 || alpha == 0.0)
+            {
+                return;
+            }
+
+            /*     Start the operations. In this version the elements of A are */
+            /*     accessed sequentially with one pass through A. */
+            if (incy > 0)
+            {
+                jy = 0;
+            }
+            else
+            {
+                jy = 0 - (n - 1) * incy;
+            }
+            if (incx == 1)
+            {
+                if (m > 500)
+                {
+                    //#pragma omp parallel for private(j) schedule(dynamic)
+                    for (j = 0; j < n; ++j/*,py+=incy*/)
+                    {
+                        if (y[jy + incy * j+ystart] != 0.0)
+                        {
+                            daxpyvec(m, alpha * y[jy + incy * j + ystart], x, a, xstart, astart + j * a_dim1);
+                        }
+                    }
+                }
+                else
+                {
+                    for (j = 0; j < n; ++j/*,py+=incy*/)
+                    {
+                        if (y[jy + incy * j+ystart] != 0.0)
+                        {
+                            daxpyvec(m, alpha * y[jy + incy * j + ystart], x, a, xstart, astart + j * a_dim1);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (incx > 0)
+                {
+                    kx = 0;
+                }
+                else
+                {
+                    kx = 0 - (m - 1) * incx;
+                }
+                if (m > 500)
+                {
+                    //#pragma omp parallel for private(j) schedule(dynamic)
+                    for (j = 0; j < n; ++j/*,py+=incy*/)
+                    {
+                        if (y[jy + incy * j+ystart] != 0.0)
+                        {
+                            daxpy(m, alpha * y[jy + incy * j+ystart], x , incx, a , 1,xstart+ kx,astart+ j * a_dim1);
+                        }
+                    }
+                }
+                else
+                {
+                    for (j = 0; j < n; ++j/*,py+=incy*/)
+                    {
+                        if (y[jy + incy * j+ystart] != 0.0)
+                        {
+                            daxpy(m, alpha * y[jy + incy * j+ystart], x , incx, a , 1,xstart+ kx,astart+ j * a_dim1);
                         }
                     }
                 }
