@@ -41,29 +41,35 @@ namespace UseBlas
                 fixed (int* ipiv = piv)
                 fixed (char* UP = U)
                     Factorise.dsptrs(UP, n, 1, ap, ipiv, bp, n);
-                double okerror = BlasLike.lm_eps * 16;
                 double[] c = new double[n];
+                fixed (double* acp = acopy)
+                fixed (double* bp = b)
+                fixed (double* cp = c)
+                    Factorise.dsmxmulvT(n, acp, bp, cp);
+                Console.WriteLine($"back={back} unsafe dsmxmulvT {c[0]},{c[1]},{c[2]},{c[3]} ");
                 Factorise.dsmxmulvT(n, acopy, b, c);
                 double[] errorvec = new double[n];
                 BlasLike.dsubvec(n, bcopy, c, errorvec);
                 double error = Math.Sqrt(BlasLike.ddotvec(n, errorvec, errorvec)) / n;
+                Console.WriteLine($"b {b[0]},{b[1]},{b[2]},{b[3]} ");
                 Console.WriteLine($"back={back} error={error.ToString("e1")} dsmxmulvT {c[0]},{c[1]},{c[2]},{c[3]} ");
             }
             {
-                int n = 3;
+                int n = 4;
                 double[] aa = { 1,
-                            2,3,
-                            4,5,6};
+                                2,3,
+                                4,5,6,
+                                7,8,9,10};
                 double[] acopy = (double[])aa.Clone();
-                int[] piv = { 1, 2, 3 };
+                int[] piv = { 1, 2, 3, 4 };
                 char[] U = { 'U' };
                 int back = 10;
                 fixed (double* ap = aa)
                 fixed (int* ipiv = piv)
                 fixed (char* UP = U)
                     back = Factorise.dsptrf(UP, n, ap, ipiv);
-                Console.WriteLine($"{back} {piv[0]} {piv[1]} {piv[2]}  {aa[0]} {aa[1]} {aa[2]} {aa[3]} {aa[4]} {aa[5]} ");
-                double[] b = { 1, 2, 3 };
+                Console.WriteLine($"{back} {piv[0]} {piv[1]} {piv[2]} {piv[3]}  {aa[0]} {aa[1]} {aa[2]} {aa[3]} {aa[4]} {aa[5]} {aa[6]} {aa[7]} {aa[8]} {aa[9]} ");
+                double[] b = { 1, 2, 3, 4 };
                 double[] bcopy = (double[])b.Clone();
                 fixed (double* ap = aa)
                 fixed (double* bp = b)
@@ -71,11 +77,17 @@ namespace UseBlas
                 fixed (char* UP = U)
                     Factorise.dsptrs(UP, n, 1, ap, ipiv, bp, n);
                 double[] c = new double[n];
+                fixed (double* acp = acopy)
+                fixed (double* bp = b)
+                fixed (double* cp = c)
+                    Factorise.dsmxmulv(n, acp, bp, cp);
+                Console.WriteLine($"back={back} unsafe dsmxmulv {c[0]},{c[1]},{c[2]},{c[3]} ");
                 Factorise.dsmxmulv(n, acopy, b, c);
                 double[] errorvec = new double[n];
                 BlasLike.dsubvec(n, bcopy, c, errorvec);
                 double error = Math.Sqrt(BlasLike.ddotvec(n, errorvec, errorvec)) / n;
-                Console.WriteLine($"back={back} error={error.ToString("e1")} dsmxmulv {c[0]},{c[1]},{c[2]} ");
+                Console.WriteLine($"b {b[0]},{b[1]},{b[2]},{b[3]} ");
+                Console.WriteLine($"back={back} error={error.ToString("e1")} dsmxmulv {c[0]},{c[1]},{c[2]},{c[3]} ");
             }
 
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);

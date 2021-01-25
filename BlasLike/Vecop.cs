@@ -800,9 +800,9 @@ namespace Blas
             }
             return sum;
         }
-        public static double ddotvec(int n, double[] a, double[] b)
+        public static double ddotvec(int n, double[] a, double[] b,int astart=0,int bstart=0)
         {
-            return ddot(n, a, 1, b, 1);
+            return ddot(n, a, 1, b, 1,astart,bstart);
         }
         public unsafe static double ddotvec(int n, double* a, double* b)
         {
