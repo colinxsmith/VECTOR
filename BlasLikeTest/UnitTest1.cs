@@ -364,7 +364,7 @@ namespace BlasLikeTest
             fixed (double* bp = b)
             fixed (int* ipiv = piv)
             fixed (char* UP = U)
-                Factorise.dsptrs(UP, n, 1, ap, ipiv, bp, n);
+                Factorise.dsptrs(U, n, 1, a, piv, b, n);
             double okerror = BlasLike.lm_eps * 16;
             double[] c = new double[n];
             Factorise.dsmxmulv(n, acopy, b, c);
@@ -383,7 +383,7 @@ namespace BlasLikeTest
                             10};
             double[] acopy = (double[])a.Clone();
             int[] piv = { 1, 2, 3, 4 };
-            char[] U = { 'L'};
+            char[] U = { 'L' };
             int back = 10;
             fixed (double* ap = a)
             fixed (int* ipiv = piv)
@@ -396,7 +396,7 @@ namespace BlasLikeTest
             fixed (double* bp = b)
             fixed (int* ipiv = piv)
             fixed (char* UP = U)
-                Factorise.dsptrs(UP, n, 1, ap, ipiv, bp, n);
+                Factorise.dsptrs(U, n, 1, a, piv, b, n);
             double okerror = BlasLike.lm_eps * 16;
             double[] c = new double[n];
             Factorise.dsmxmulvT(n, acopy, b, c);

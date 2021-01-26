@@ -358,21 +358,21 @@ namespace Blas
         {
             dadd(n, x, 1, y, 1, z, 1);
         }
-        public static void dzero(int n, double[] x, int ix)
+        public static void dzero(int n, double[] x, int ix, int xstart = 0)
         {
             for (int i = 0, iix = 0; i < n; i++, iix += ix)
-                x[iix] = 0;
+                x[iix + xstart] = 0;
         }
         public unsafe static void dzero(int n, double* x, int ix)
         {
             for (int i = 0, iix = 0; i < n; i++, iix += ix)
                 x[iix] = 0;
         }
-        public static void dzerovec(int n, double[] a)
+        public static void dzerovec(int n, double[] a, int astart = 0)
         {
-            for (int i = 0; i < n * sizeof(double); ++i)
+            for (int i = 0; i < n; ++i)
             {
-                Buffer.SetByte(a, i, 0);
+                a[i + astart] = 0;
             }
         }
 
@@ -819,10 +819,10 @@ namespace Blas
         {
             dset(n, a, x, 1);
         }
-        public static void dneg(int n, double[] x, int ix)
+        public static void dneg(int n, double[] x, int ix, int xstart = 0)
         {
             for (int i = 0, iix = ix < 0 ? -(n - 1) * ix : 0; i < n; i++, iix += ix)
-                x[iix] = -x[iix];
+                x[iix + xstart] = -x[iix + xstart];
         }
         public unsafe static void dneg(int n, double* x, int ix)
         {
@@ -835,20 +835,20 @@ namespace Blas
                 x[i] = -x[i];
         }
 
-        public static void dscal(int n, double a, double[] x, int ix)
+        public static void dscal(int n, double a, double[] x, int ix, int xstart = 0)
         {
             if (a == 0)
             {
-                dzero(n, x, ix);
+                dzero(n, x, ix, xstart);
             }
             else if (a == -1)
             {
-                dneg(n, x, ix);
+                dneg(n, x, ix, xstart);
             }
             else
             {
                 for (int i = 0, iix = ix < 0 ? -(n - 1) * ix : 0; i < n; i++, iix += ix)
-                    x[iix] = a * x[iix];
+                    x[iix + xstart] = a * x[iix + xstart];
             }
         }
         public unsafe static void dger1(int m, int n, double alpha,
@@ -1200,7 +1200,7 @@ double[] a, int lda, int xstart = 0, int ystart = 0, int astart = 0)
                     //#pragma omp parallel for private(j) schedule(dynamic)
                     for (j = 0; j < n; ++j/*,py+=incy*/)
                     {
-                        if (y[jy + incy * j+ystart] != 0.0)
+                        if (y[jy + incy * j + ystart] != 0.0)
                         {
                             daxpyvec(m, alpha * y[jy + incy * j + ystart], x, a, xstart, astart + j * a_dim1);
                         }
@@ -1210,7 +1210,7 @@ double[] a, int lda, int xstart = 0, int ystart = 0, int astart = 0)
                 {
                     for (j = 0; j < n; ++j/*,py+=incy*/)
                     {
-                        if (y[jy + incy * j+ystart] != 0.0)
+                        if (y[jy + incy * j + ystart] != 0.0)
                         {
                             daxpyvec(m, alpha * y[jy + incy * j + ystart], x, a, xstart, astart + j * a_dim1);
                         }
@@ -1232,9 +1232,9 @@ double[] a, int lda, int xstart = 0, int ystart = 0, int astart = 0)
                     //#pragma omp parallel for private(j) schedule(dynamic)
                     for (j = 0; j < n; ++j/*,py+=incy*/)
                     {
-                        if (y[jy + incy * j+ystart] != 0.0)
+                        if (y[jy + incy * j + ystart] != 0.0)
                         {
-                            daxpy(m, alpha * y[jy + incy * j+ystart], x , incx, a , 1,xstart+ kx,astart+ j * a_dim1);
+                            daxpy(m, alpha * y[jy + incy * j + ystart], x, incx, a, 1, xstart + kx, astart + j * a_dim1);
                         }
                     }
                 }
@@ -1242,9 +1242,9 @@ double[] a, int lda, int xstart = 0, int ystart = 0, int astart = 0)
                 {
                     for (j = 0; j < n; ++j/*,py+=incy*/)
                     {
-                        if (y[jy + incy * j+ystart] != 0.0)
+                        if (y[jy + incy * j + ystart] != 0.0)
                         {
-                            daxpy(m, alpha * y[jy + incy * j+ystart], x , incx, a , 1,xstart+ kx,astart+ j * a_dim1);
+                            daxpy(m, alpha * y[jy + incy * j + ystart], x, incx, a, 1, xstart + kx, astart + j * a_dim1);
                         }
                     }
                 }
@@ -1265,6 +1265,23 @@ double[] a, int lda, int xstart = 0, int ystart = 0, int astart = 0)
                 dgemm(&transa, &transb, &mm, &nn, &one, &alpha, x, &mm, y, &nn, &oned, a, &ldaa);
             }
             else dger1(m, n, alpha, x, incx, y, incy, a, lda);
+        }
+
+
+        public static void dger(int m, int n, double alpha,
+            double[] x, int incx, double[] y, int incy,
+            double[] a, int lda, int xstart = 0, int ystart = 0, int astart = 0)
+        {
+            if (incx == 1 && incy == 1 && m > 1)
+            {
+                double oned = 1;
+                int mm = (int)m, nn = (int)n, one = 1, ldaa = (int)lda;
+                Console.WriteLine("Forward to dgemm from dger");
+                char[] transa = { 'N' };
+                char[] transb = { 'T' };
+                dgemm(transa, transb, mm, nn, one, alpha, x, mm, y, nn, oned, a, ldaa, xstart, ystart, astart);
+            }
+            else dger1(m, n, alpha, x, incx, y, incy, a, lda, xstart, ystart, astart);
         }
 
         public unsafe static int dgemm(char* transa, char* transb, int* m, int*
@@ -1704,6 +1721,446 @@ int* ldc)
 
         } /* dgemm_ */
 
+        public static int dgemm(char[] transa, char[] transb, int m, int
+n, int k, double alpha, double[] a, int lda,
+double[] b, int ldb, double beta, double[] c__,
+int ldc, int astart = 0, int bstart = 0, int cstart = 0)
+        {
+            /* System generated locals */
+            int a_dim1, a_offset, b_dim1, b_offset, c_dim1, c_offset;// i__1, i__2, 
+                                                                     //    i__3;
+
+            /* Local variables */
+            int j, info, i__, l; double temp;
+            short nota, notb;
+            int ncola;
+            int nrowa, nrowb;
+
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  Purpose */
+            /*  ======= */
+
+            /*  DGEMM  performs one of the matrix-matrix operations */
+
+            /*     C := alpha*op( A )*op( B ) + beta*C, */
+
+            /*  where  op( X ) is one of */
+
+            /*     op( X ) = X   or   op( X ) = X', */
+
+            /*  alpha and beta are scalars, and A, B and C are matrices, with op( A ) */
+            /*  an m by k matrix,  op( B )  a  k by n matrix and  C an m by n matrix. */
+
+            /*  Arguments */
+            /*  ========== */
+
+            /*  TRANSA - CHARACTER*1. */
+            /*           On entry, TRANSA specifies the form of op( A ) to be used in */
+            /*           the matrix multiplication as follows: */
+
+            /*              TRANSA = 'N' or 'n',  op( A ) = A. */
+
+            /*              TRANSA = 'T' or 't',  op( A ) = A'. */
+
+            /*              TRANSA = 'C' or 'c',  op( A ) = A'. */
+
+            /*           Unchanged on exit. */
+
+            /*  TRANSB - CHARACTER*1. */
+            /*           On entry, TRANSB specifies the form of op( B ) to be used in */
+            /*           the matrix multiplication as follows: */
+
+            /*              TRANSB = 'N' or 'n',  op( B ) = B. */
+
+            /*              TRANSB = 'T' or 't',  op( B ) = B'. */
+
+            /*              TRANSB = 'C' or 'c',  op( B ) = B'. */
+
+            /*           Unchanged on exit. */
+
+            /*  M      - INTEGER. */
+            /*           On entry,  M  specifies  the number  of rows  of the  matrix */
+            /*           op( A )  and of the  matrix  C.  M  must  be at least  zero. */
+            /*           Unchanged on exit. */
+
+            /*  N      - INTEGER. */
+            /*           On entry,  N  specifies the number  of columns of the matrix */
+            /*           op( B ) and the number of columns of the matrix C. N must be */
+            /*           at least zero. */
+            /*           Unchanged on exit. */
+
+            /*  K      - INTEGER. */
+            /*           On entry,  K  specifies  the number of columns of the matrix */
+            /*           op( A ) and the number of rows of the matrix op( B ). K must */
+            /*           be at least  zero. */
+            /*           Unchanged on exit. */
+
+            /*  ALPHA  - DOUBLE PRECISION. */
+            /*           On entry, ALPHA specifies the scalar alpha. */
+            /*           Unchanged on exit. */
+
+            /*  A      - DOUBLE PRECISION array of DIMENSION ( LDA, ka ), where ka is */
+            /*           k  when  TRANSA = 'N' or 'n',  and is  m  otherwise. */
+            /*           Before entry with  TRANSA = 'N' or 'n',  the leading  m by k */
+            /*           part of the array  A  must contain the matrix  A,  otherwise */
+            /*           the leading  k by m  part of the array  A  must contain  the */
+            /*           matrix A. */
+            /*           Unchanged on exit. */
+
+            /*  LDA    - INTEGER. */
+            /*           On entry, LDA specifies the first dimension of A as declared */
+            /*           in the calling (sub) program. When  TRANSA = 'N' or 'n' then */
+            /*           LDA must be at least  Math.Max( 1, m ), otherwise  LDA must be at */
+            /*           least  Math.Max( 1, k ). */
+            /*           Unchanged on exit. */
+
+            /*  B      - DOUBLE PRECISION array of DIMENSION ( LDB, kb ), where kb is */
+            /*           n  when  TRANSB = 'N' or 'n',  and is  k  otherwise. */
+            /*           Before entry with  TRANSB = 'N' or 'n',  the leading  k by n */
+            /*           part of the array  B  must contain the matrix  B,  otherwise */
+            /*           the leading  n by k  part of the array  B  must contain  the */
+            /*           matrix B. */
+            /*           Unchanged on exit. */
+
+            /*  LDB    - INTEGER. */
+            /*           On entry, LDB specifies the first dimension of B as declared */
+            /*           in the calling (sub) program. When  TRANSB = 'N' or 'n' then */
+            /*           LDB must be at least  Math.Max( 1, k ), otherwise  LDB must be at */
+            /*           least  Math.Max( 1, n ). */
+            /*           Unchanged on exit. */
+
+            /*  BETA   - DOUBLE PRECISION. */
+            /*           On entry,  BETA  specifies the scalar  beta.  When  BETA  is */
+            /*           supplied as zero then C need not be set on input. */
+            /*           Unchanged on exit. */
+
+            /*  C      - DOUBLE PRECISION array of DIMENSION ( LDC, n ). */
+            /*           Before entry, the leading  m by n  part of the array  C must */
+            /*           contain the matrix  C,  except when  beta  is zero, in which */
+            /*           case C need not be set on entry. */
+            /*           On exit, the array  C  is overwritten by the  m by n  matrix */
+            /*           ( alpha*op( A )*op( B ) + beta*C ). */
+
+            /*  LDC    - INTEGER. */
+            /*           On entry, LDC specifies the first dimension of C as declared */
+            /*           in  the  calling  (sub)  program.   LDC  must  be  at  least */
+            /*           Math.Max( 1, m ). */
+            /*           Unchanged on exit. */
+
+
+            /*  Level 3 Blas routine. */
+
+            /*  -- Written on 8-February-1989. */
+            /*     Jack Dongarra, Argonne National Laboratory. */
+            /*     Iain Duff, AERE Harwell. */
+            /*     Jeremy Du Croz, Numerical Algorithms Group Ltd. */
+            /*     Sven Hammarling, Numerical Algorithms Group Ltd. */
+
+
+            /*     .. External Functions .. */
+            /*     .. */
+            /*     .. External Subroutines .. */
+            /*     .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. Parameters .. */
+            /*     .. */
+
+            /*     Set  NOTA  and  NOTB  as  true if  A  and  B  respectively are not */
+            /*     transposed and set  NROWA, NCOLA and  NROWB  as the number of rows */
+            /*     and  columns of  A  and the  number of  rows  of  B  respectively. */
+
+            /* Parameter adjustments */
+            a_dim1 = lda;
+            a_offset = 1 + a_dim1;
+            /*a -= a_offset; */
+            astart -= a_offset;
+            b_dim1 = ldb;
+            b_offset = 1 + b_dim1;
+            /*b -= b_offset;*/
+            bstart -= b_offset;
+            c_dim1 = ldc;
+            c_offset = 1 + c_dim1;
+            /*c__ -= c_offset;*/
+            cstart -= c_offset;
+
+            /* Function Body */
+            nota = (transa[0] == 'N') ? 1 : 0;//lsame_BITA(transa, "N", (ftnlen)1, (ftnlen)1);
+            notb = (transb[0] == 'N') ? 1 : 0;//lsame_BITA(transb, "N", (ftnlen)1, (ftnlen)1);
+            if (nota != 0)
+            {
+                nrowa = m;
+                ncola = k;
+            }
+            else
+            {
+                nrowa = k;
+                ncola = m;
+            }
+            if (notb != 0)
+            {
+                nrowb = k;
+            }
+            else
+            {
+                nrowb = n;
+            }
+
+            /*     Test the input parameters. */
+
+            info = 0;
+            if (nota == 0 && transa[0] != 'C' && transa[0] != 'T')
+            {
+                info = 1;
+            }
+            else if (notb == 0 && transb[0] != 'C' && transb[0] != 'T')
+            {
+                info = 2;
+            }
+            else if (m < 0)
+            {
+                info = 3;
+            }
+            else if (n < 0)
+            {
+                info = 4;
+            }
+            else if (k < 0)
+            {
+                info = 5;
+            }
+            else if (lda < Math.Max(1, nrowa))
+            {
+                info = 8;
+            }
+            else if (ldb < Math.Max(1, nrowb))
+            {
+                info = 10;
+            }
+            else if (ldc < Math.Max(1, m))
+            {
+                info = 13;
+            }
+            if (info != 0)
+            {
+                Console.WriteLine($"DGEMM info {info}");
+                //	xerbla_BITA("DGEMM ", &info, (ftnlen)6);
+                return 0;
+            }
+
+            /*     Quick return if possible. */
+
+            if ((m == 0 || n == 0 || alpha == 0.0 || k == 0) && beta == 1.0)
+            {
+                return 0;
+            }
+
+            /*     And if  alpha.eq.zero. */
+
+            if (alpha == 0.0)
+            {
+                if (beta == 0.0)
+                {
+                    //	    i__1 = *n;
+                    //	    for (j = 1; j <= *n; ++j) {
+                    //		i__2 = *m;
+                    //   memset((double*)(c__ + c_dim1 + 1), 0, *n * *m * sizeof(double));
+                    dzerovec(n * m, (c__ /*+ c_dim1 + 1*/), c_dim1 + 1 + cstart);
+                    //		for (i__ = 1; i__ <= *m; ++i__) {
+                    //		    c__[i__ + j * c_dim1] = 0.;
+                    /* L10: */
+                    //		}
+                    /* L20: */
+                    //	    }
+                }
+                else
+                {
+                    //	    i__1 = *n;
+                    //#pragma omp parallel for private(j,i__) schedule(dynamic)
+                    for (j = 1; j <= n; ++j)
+                    {
+                        //		i__2 = *m;
+                        for (i__ = 1 + cstart; i__ <= m + cstart; ++i__)
+                        {
+                            c__[i__ + j * c_dim1] *= beta;
+                            /* L30: */
+                        }
+                        /* L40: */
+                    }
+                }
+                return 0;
+            }
+
+            /*     Start the operations. */
+
+            if (notb != 0)
+            {
+                if (nota != 0)
+                {
+
+                    /*           Form  C := alpha*A*B + beta*C. */
+
+                    //	    i__1 = *n;
+                    //#pragma omp parallel for private(j,i__,l,temp) schedule(dynamic)
+                    for (j = 1; j <= n; ++j)
+                    {
+                        if (beta == 0.0)
+                        {
+                            //		    i__2 = *m;
+                            //		    for (i__ = 1; i__ <= *m; ++i__) {
+                            //			c__[i__ + j * c_dim1] = 0.;
+                            /* L50: */
+                            //       memset((double*)(c__ + j * c_dim1 + 1), 0, *m * sizeof(double));
+                            dzerovec(m, (c__ /*+ j * c_dim1 + 1*/), j * c_dim1 + 1 + cstart);
+                            //		    }
+                        }
+                        else if (beta != 1.0)
+                        {
+                            //		    i__2 = *m;
+                            for (i__ = 1 + cstart; i__ <= m + cstart; ++i__)
+                            {
+                                c__[i__ + j * c_dim1] *= beta;
+                                /* L60: */
+                            }
+                        }
+                        //		i__2 = *k;
+                        for (l = 1; l <= k; ++l)
+                        {
+                            if (b[l + j * b_dim1 + bstart] != 0.0)
+                            {
+                                temp = alpha * b[l + j * b_dim1 + bstart];
+                                //			i__3 = *m;
+                                if (temp > 0)
+                                {
+                                    for (i__ = 1; i__ <= m; ++i__)
+                                    {
+                                        c__[i__ + j * c_dim1 + cstart] += temp * a[i__ + l * a_dim1 + astart];
+                                    }
+                                    /* L70: */
+                                }
+                            }
+                            /* L80: */
+                        }
+                        /* L90: */
+                    }
+                }
+                else
+                {
+
+                    /*           Form  C := alpha*A'*B + beta*C */
+
+                    //	    i__1 = *n;
+                    //#pragma omp parallel for private(j,i__,temp,l)  schedule(dynamic)
+                    for (j = 1; j <= n; ++j)
+                    {
+                        //		i__2 = *m;
+                        for (i__ = 1; i__ <= m; ++i__)
+                        {
+                            temp = 0.0;
+                            //		    i__3 = *k;
+                            for (l = 1; l <= k; ++l)
+                            {
+                                temp += a[l + i__ * a_dim1 + astart] * b[l + j * b_dim1 + bstart];
+                                /* L100: */
+                            }
+                            if (beta == 0.0)
+                            {
+                                if (temp != 0)
+                                    c__[i__ + j * c_dim1 + cstart] = alpha * temp;
+                            }
+                            else
+                            {
+                                if (temp != 0)
+                                    c__[i__ + j * c_dim1 + cstart] = alpha * temp + beta * c__[i__ + j * c_dim1 + cstart];
+                                else if (beta != 1)
+                                    c__[i__ + j * c_dim1 + cstart] = beta * c__[i__ + j * c_dim1 + cstart];
+                            }
+                            /* L110: */
+                        }
+                        /* L120: */
+                    }
+                }
+            }
+            else
+            {
+                if (nota != 0)
+                {
+
+                    /*           Form  C := alpha*A*B' + beta*C */
+
+                    //	    i__1 = *n;
+                    //#pragma omp parallel for private(j,l,temp) schedule(dynamic)
+                    for (j = 1; j <= n; ++j)
+                    {
+                        if (beta == 0.0)
+                        {
+                            //  memset((double*)(c__ + j * c_dim1 + 1), 0, *m * sizeof(double));
+                            dzerovec(m, (c__ /*+ j * c_dim1 + 1*/), j * c_dim1 + 1 + cstart);
+                        }
+                        else
+                        {
+                            dscalvec(m, beta, c__/* + 1 + j * c_dim1*/, 1 + j * c_dim1 + cstart);
+                        }
+                        for (l = 1; l <= k; ++l)
+                        {
+                            if (b[j + l * b_dim1] != 0)
+                            {
+                                temp = alpha * b[j + l * b_dim1 + bstart];
+                                daxpyvec(m, temp, a /*+ 1 + l * a_dim1*/, c__ /*+ 1 + j * c_dim1*/, 1 + l * a_dim1 + astart, 1 + j * c_dim1 + cstart);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+
+                    /*           Form  C := alpha*A'*B' + beta*C */
+
+                    //	    i__1 = *n;
+                    //#pragma omp parallel for private(j,i__,l,temp) schedule(dynamic)
+                    for (j = 1; j <= n; ++j)
+                    {
+                        //		i__2 = *m;
+                        for (i__ = 1; i__ <= m; ++i__)
+                        {
+                            temp = 0.0;
+                            //		    i__3 = *k;
+                            for (l = 1; l <= k; ++l)
+                            {
+                                temp += a[l + i__ * a_dim1 + astart] * b[j + l * b_dim1 + bstart];
+                                /* L180: */
+                            }
+                            if (beta == 0.0)
+                            {
+                                if (temp != 0)
+                                    c__[i__ + j * c_dim1 + cstart] = alpha * temp;
+                            }
+                            else
+                            {
+                                if (temp != 0)
+                                    c__[i__ + j * c_dim1 + cstart] = alpha * temp + beta * c__[i__ + j * c_dim1 + cstart];
+                                else if (beta != 1)
+                                    c__[i__ + j * c_dim1 + cstart] *= beta;
+                            }
+                            /* L190: */
+                        }
+                        /* L200: */
+                    }
+                }
+            }
+
+            return 0;
+
+            /*     End of DGEMM . */
+
+        } /* dgemm_ */
+
         public unsafe static int dgemv(char* trans, int m, int n, double alpha,
 double* a, int lda, double* x, int incx,
 double beta, double* y, int incy)
@@ -1954,6 +2411,271 @@ double beta, double* y, int incy)
                             /* L110: */
                         }
                         y[jy] += alpha * temp;
+                        jy += incy;
+                        /* L120: */
+                    }
+                }
+            }
+
+            return 0;
+
+            /*     End of DGEMV . */
+
+        }
+
+        public static int dgemv(char[] trans, int m, int n, double alpha,
+double[] a, int lda, double[] x, int incx,
+double beta, double[] y, int incy, int astart = 0, int xstart = 0, int ystart = 0)
+        {
+            /* System generated locals */
+            int a_dim1, a_offset, i__1, i__2;
+
+            /* Local variables */
+            int i__, j, ix, iy, jx, jy, kx, ky, info;
+            double temp;
+            int lenx, leny;
+
+
+            /*  -- Reference BLAS level2 routine (version 3.7.0) -- */
+            /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     December 2016 */
+
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  ===================================================================== */
+
+            /*     .. Parameters .. */
+            /*     .. */
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. External Functions .. */
+            /*     .. */
+            /*     .. External Subroutines .. */
+            /*     .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+
+            /*     Test the input parameters. */
+
+            /* Parameter adjustments */
+            a_dim1 = lda;
+            a_offset = 1 + a_dim1;
+            /*a -= a_offset;*/
+            astart -= a_offset;
+            /*--x;*/
+            xstart -= 1;
+            /*--y;*/
+            ystart -= 1;
+
+            /* Function Body */
+            info = 0;
+            if (trans[0] != 'N' && trans[0] != 'T' && trans[0] != 'C')
+            {
+                info = 1;
+            }
+            else if (m < 0)
+            {
+                info = 2;
+            }
+            else if (n < 0)
+            {
+                info = 3;
+            }
+            else if (lda < Math.Max(1, m))
+            {
+                info = 6;
+            }
+            else if (incx == 0)
+            {
+                info = 8;
+            }
+            else if (incy == 0)
+            {
+                info = 11;
+            }
+            if (info != 0)
+            {
+                Console.WriteLine($"In dgemv info is {info}");
+                return info;
+            }
+
+            /*     Quick return if possible. */
+
+            if (m == 0 || n == 0 || alpha == 0.0 && beta == 1.0)
+            {
+                return 0;
+            }
+
+            /*     Set  LENX  and  LENY, the lengths of the vectors x and y, and set */
+            /*     up the start points in  X  and  Y. */
+
+            if (trans[0] == 'N')
+            {
+                lenx = n;
+                leny = m;
+            }
+            else
+            {
+                lenx = m;
+                leny = n;
+            }
+            if (incx > 0)
+            {
+                kx = 1;
+            }
+            else
+            {
+                kx = 1 - (lenx - 1) * incx;
+            }
+            if (incy > 0)
+            {
+                ky = 1;
+            }
+            else
+            {
+                ky = 1 - (leny - 1) * incy;
+            }
+
+            /*     Start the operations. In this version the elements of A are */
+            /*     accessed sequentially with one pass through A. */
+
+            /*     First form  y := beta*y. */
+
+            if (beta != 1.0)
+            {
+                if (incy == 1)
+                {
+                    if (beta == 0.0)
+                    {
+                        i__1 = leny;
+                        for (i__ = 1; i__ <= i__1; ++i__)
+                        {
+                            y[i__ + ystart] = 0.0;
+                            /* L10: */
+                        }
+                    }
+                    else
+                    {
+                        i__1 = leny;
+                        for (i__ = 1; i__ <= i__1; ++i__)
+                        {
+                            y[i__ + ystart] = beta * y[i__ + ystart];
+                            /* L20: */
+                        }
+                    }
+                }
+                else
+                {
+                    iy = ky;
+                    if (beta == 0.0)
+                    {
+                        i__1 = leny;
+                        for (i__ = 1; i__ <= i__1; ++i__)
+                        {
+                            y[iy + ystart] = 0.0;
+                            iy += incy;
+                            /* L30: */
+                        }
+                    }
+                    else
+                    {
+                        i__1 = leny;
+                        for (i__ = 1; i__ <= i__1; ++i__)
+                        {
+                            y[iy + ystart] = beta * y[iy + ystart];
+                            iy += incy;
+                            /* L40: */
+                        }
+                    }
+                }
+            }
+            if (alpha == 0.0)
+            {
+                return 0;
+            }
+            if (trans[0] == 'N')
+            {
+
+                /*        Form  y := alpha*A*x + y. */
+
+                jx = kx;
+                if (incy == 1)
+                {
+                    i__1 = n;
+                    for (j = 1; j <= i__1; ++j)
+                    {
+                        temp = (alpha * x[jx + xstart]);
+                        i__2 = m;
+                        for (i__ = 1; i__ <= i__2; ++i__)
+                        {
+                            y[i__ + ystart] += temp * a[i__ + j * a_dim1 + astart];
+                            /* L50: */
+                        }
+                        jx += incx;
+                        /* L60: */
+                    }
+                }
+                else
+                {
+                    i__1 = n;
+                    for (j = 1; j <= i__1; ++j)
+                    {
+                        temp = (alpha * x[jx + xstart]);
+                        iy = ky;
+                        i__2 = m;
+                        for (i__ = 1; i__ <= i__2; ++i__)
+                        {
+                            y[iy + ystart] += temp * a[i__ + j * a_dim1 + astart];
+                            iy += incy;
+                            /* L70: */
+                        }
+                        jx += incx;
+                        /* L80: */
+                    }
+                }
+            }
+            else
+            {
+
+                /*        Form  y := alpha*A**T*x + y. */
+
+                jy = ky;
+                if (incx == 1)
+                {
+                    i__1 = n;
+                    for (j = 1; j <= i__1; ++j)
+                    {
+                        temp = 0.0;
+                        i__2 = m;
+                        for (i__ = 1; i__ <= i__2; ++i__)
+                        {
+                            temp += a[i__ + j * a_dim1 + astart] * x[i__ + xstart];
+                            /* L90: */
+                        }
+                        y[jy + ystart] += alpha * temp;
+                        jy += incy;
+                        /* L100: */
+                    }
+                }
+                else
+                {
+                    i__1 = n;
+                    for (j = 1; j <= i__1; ++j)
+                    {
+                        temp = 0.0;
+                        ix = kx;
+                        i__2 = m;
+                        for (i__ = 1; i__ <= i__2; ++i__)
+                        {
+                            temp += a[i__ + j * a_dim1 + astart] * x[ix + xstart];
+                            ix += incx;
+                            /* L110: */
+                        }
+                        y[jy + ystart] += alpha * temp;
                         jy += incy;
                         /* L120: */
                     }
@@ -2594,9 +3316,9 @@ double* x, int incx, double* ap)
             }
         }
 
-        public static void dscalvec(int n, double a, double[] x)
+        public static void dscalvec(int n, double a, double[] x, int xstart = 0)
         {
-            dscal(n, a, x, 1);
+            dscal(n, a, x, 1, xstart);
         }
         public unsafe static void dscalvec(int n, double a, double* x)
         {

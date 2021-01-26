@@ -40,13 +40,15 @@ namespace UseBlas
                 fixed (double* bp = b)
                 fixed (int* ipiv = piv)
                 fixed (char* UP = U)
-                    Factorise.dsptrs(UP, n, 1, ap, ipiv, bp, n);
+                    //            Factorise.dsptrs(UP, n, 1, ap, ipiv, bp, n);
+                    Factorise.dsptrs(U, n, 1, aa, piv, b, n);
                 double[] c = new double[n];
                 fixed (double* acp = acopy)
                 fixed (double* bp = b)
                 fixed (double* cp = c)
-                    Factorise.dsmxmulvT(n, acp, bp, cp);
-                Console.WriteLine($"back={back} unsafe dsmxmulvT {c[0]},{c[1]},{c[2]},{c[3]} ");
+ //                   Factorise.dsmxmulvT(n, acp, bp, cp);
+                    Factorise.dsmxmulvT(n, acopy, b, c);
+                Console.WriteLine($"back={back} safe dsmxmulvT {c[0]},{c[1]},{c[2]},{c[3]} ");
                 Factorise.dsmxmulvT(n, acopy, b, c);
                 double[] errorvec = new double[n];
                 BlasLike.dsubvec(n, bcopy, c, errorvec);
@@ -75,13 +77,15 @@ namespace UseBlas
                 fixed (double* bp = b)
                 fixed (int* ipiv = piv)
                 fixed (char* UP = U)
-                    Factorise.dsptrs(UP, n, 1, ap, ipiv, bp, n);
+                    //               Factorise.dsptrs(UP, n, 1, ap, ipiv, bp, n);
+                    Factorise.dsptrs(U, n, 1, aa, piv, b, n);
                 double[] c = new double[n];
                 fixed (double* acp = acopy)
                 fixed (double* bp = b)
                 fixed (double* cp = c)
-                    Factorise.dsmxmulv(n, acp, bp, cp);
-                Console.WriteLine($"back={back} unsafe dsmxmulv {c[0]},{c[1]},{c[2]},{c[3]} ");
+ //                   Factorise.dsmxmulv(n, acp, bp, cp);
+                    Factorise.dsmxmulv(n, acopy, b, c);
+                Console.WriteLine($"back={back} safe dsmxmulv {c[0]},{c[1]},{c[2]},{c[3]} ");
                 Factorise.dsmxmulv(n, acopy, b, c);
                 double[] errorvec = new double[n];
                 BlasLike.dsubvec(n, bcopy, c, errorvec);
