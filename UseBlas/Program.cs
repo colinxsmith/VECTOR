@@ -94,7 +94,7 @@ namespace UseBlas
                 {
                     for (int j = i; j < n; j++, ij++)
                     {
-                        S[ij] = ((i > j) ? i * (i + 1) / 2 + j : j * (j + 1) / 2 + i) + 1;
+                        S[ij] = j * (j + 1) / 2 + i+ 1;
                     }
                 }
                 double[] SS = (double[])S.Clone();
