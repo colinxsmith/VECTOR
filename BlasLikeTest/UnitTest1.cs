@@ -353,18 +353,11 @@ namespace BlasLikeTest
             int[] piv = { 1, 2, 3, 4 };
             char[] U = { 'U' };
             int back = 10;
-            fixed (double* ap = a)
-            fixed (int* ipiv = piv)
-            fixed (char* UP = U)
-                back = Factorise.dsptrf(UP, n, ap, ipiv);
+            back = Factorise.dsptrf(U, n, a, piv);
             Assert.IsTrue(back == 0);
             double[] b = { 1, 2, 3, 4 };
             double[] bcopy = (double[])b.Clone();
-            fixed (double* ap = a)
-            fixed (double* bp = b)
-            fixed (int* ipiv = piv)
-            fixed (char* UP = U)
-                Factorise.dsptrs(U, n, 1, a, piv, b, n);
+            Factorise.dsptrs(U, n, 1, a, piv, b, n);
             double okerror = BlasLike.lm_eps * 16;
             double[] c = new double[n];
             Factorise.dsmxmulv(n, acopy, b, c);
@@ -385,18 +378,11 @@ namespace BlasLikeTest
             int[] piv = { 1, 2, 3, 4 };
             char[] U = { 'L' };
             int back = 10;
-            fixed (double* ap = a)
-            fixed (int* ipiv = piv)
-            fixed (char* UP = U)
-                back = Factorise.dsptrf(UP, n, ap, ipiv);
+            back = Factorise.dsptrf(U, n, a, piv);
             Assert.IsTrue(back == 0);
             double[] b = { 1, 2, 3, 4 };
             double[] bcopy = (double[])b.Clone();
-            fixed (double* ap = a)
-            fixed (double* bp = b)
-            fixed (int* ipiv = piv)
-            fixed (char* UP = U)
-                Factorise.dsptrs(U, n, 1, a, piv, b, n);
+            Factorise.dsptrs(U, n, 1, a, piv, b, n);
             double okerror = BlasLike.lm_eps * 16;
             double[] c = new double[n];
             Factorise.dsmxmulvT(n, acopy, b, c);

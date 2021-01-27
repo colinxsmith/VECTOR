@@ -29,10 +29,7 @@ namespace UseBlas
                 int[] piv = { 1, 2, 3, 4 };
                 char[] U = { 'L' };
                 int back = 10;
-                fixed (double* ap = aa)
-                fixed (int* ipiv = piv)
-                fixed (char* UP = U)
-                    back = Factorise.dsptrf(UP, n, ap, ipiv);
+                back = Factorise.dsptrf(U, n, aa, piv);
                 Console.WriteLine($"{back} {piv[0]} {piv[1]} {piv[2]} {piv[3]}  {aa[0]} {aa[1]} {aa[2]} {aa[3]} {aa[4]} {aa[5]} {aa[6]} {aa[7]} {aa[8]} {aa[9]} ");
                 double[] b = { 1, 2, 3, 4 };
                 double[] bcopy = (double[])b.Clone();
@@ -46,7 +43,7 @@ namespace UseBlas
                 fixed (double* acp = acopy)
                 fixed (double* bp = b)
                 fixed (double* cp = c)
- //                   Factorise.dsmxmulvT(n, acp, bp, cp);
+                    //                   Factorise.dsmxmulvT(n, acp, bp, cp);
                     Factorise.dsmxmulvT(n, acopy, b, c);
                 Console.WriteLine($"back={back} safe dsmxmulvT {c[0]},{c[1]},{c[2]},{c[3]} ");
                 Factorise.dsmxmulvT(n, acopy, b, c);
@@ -66,10 +63,7 @@ namespace UseBlas
                 int[] piv = { 1, 2, 3, 4 };
                 char[] U = { 'U' };
                 int back = 10;
-                fixed (double* ap = aa)
-                fixed (int* ipiv = piv)
-                fixed (char* UP = U)
-                    back = Factorise.dsptrf(UP, n, ap, ipiv);
+                back = Factorise.dsptrf(U, n, aa, piv);
                 Console.WriteLine($"{back} {piv[0]} {piv[1]} {piv[2]} {piv[3]}  {aa[0]} {aa[1]} {aa[2]} {aa[3]} {aa[4]} {aa[5]} {aa[6]} {aa[7]} {aa[8]} {aa[9]} ");
                 double[] b = { 1, 2, 3, 4 };
                 double[] bcopy = (double[])b.Clone();
@@ -83,7 +77,7 @@ namespace UseBlas
                 fixed (double* acp = acopy)
                 fixed (double* bp = b)
                 fixed (double* cp = c)
- //                   Factorise.dsmxmulv(n, acp, bp, cp);
+                    //                   Factorise.dsmxmulv(n, acp, bp, cp);
                     Factorise.dsmxmulv(n, acopy, b, c);
                 Console.WriteLine($"back={back} safe dsmxmulv {c[0]},{c[1]},{c[2]},{c[3]} ");
                 Factorise.dsmxmulv(n, acopy, b, c);

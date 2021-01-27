@@ -2855,7 +2855,7 @@ double* x, int incx, double* ap)
             }
         }
         public static void dspr(char[] uplo, int n, double alpha,
-        double[] x, int incx, double[] ap)
+        double[] x, int incx, double[] ap,int xstart=0,int astart=0)
         {
             int i__, j, k, kk, ix, jx, kx = 0, info;
             double temp;
@@ -2937,13 +2937,13 @@ double* x, int incx, double* ap)
                 {
                     for (j = 0; j < n; ++j)
                     {
-                        if (x[j] != 0.0)
+                        if (x[j+xstart] != 0.0)
                         {
-                            temp = alpha * x[j];
+                            temp = alpha * x[j+xstart];
                             k = kk - 1;
                             for (i__ = 0; i__ <= j; ++i__)
                             {
-                                ap[k] += x[i__] * temp;
+                                ap[k+astart] += x[i__+xstart] * temp;
                                 ++k;
                                 /* L10: */
                             }
@@ -2957,13 +2957,13 @@ double* x, int incx, double* ap)
                     jx = kx - 1;
                     for (j = 0; j < n; ++j)
                     {
-                        if (x[jx] != 0.0)
+                        if (x[jx+xstart] != 0.0)
                         {
-                            temp = alpha * x[jx];
+                            temp = alpha * x[jx+xstart];
                             ix = kx - 1;
                             for (k = kk - 1; k < kk + j; ++k)
                             {
-                                ap[k] += x[ix] * temp;
+                                ap[k+astart] += x[ix+xstart] * temp;
                                 ix += incx;
                                 /* L30: */
                             }
@@ -2983,13 +2983,13 @@ double* x, int incx, double* ap)
                 {
                     for (j = 1; j <= n; ++j)
                     {
-                        if (x[j - 1] != 0.0)
+                        if (x[j - 1+xstart] != 0.0)
                         {
-                            temp = alpha * x[j - 1];
+                            temp = alpha * x[j - 1+xstart];
                             k = kk - 1;
                             for (i__ = j - 1; i__ < n; ++i__)
                             {
-                                ap[k] += x[i__] * temp;
+                                ap[k+astart] += x[i__+xstart] * temp;
                                 ++k;
                                 /* L50: */
                             }
@@ -3003,13 +3003,13 @@ double* x, int incx, double* ap)
                     jx = kx - 1;
                     for (j = 1; j <= n; ++j)
                     {
-                        if (x[jx] != 0.0)
+                        if (x[jx+xstart] != 0.0)
                         {
-                            temp = alpha * x[jx];
+                            temp = alpha * x[jx+xstart];
                             ix = jx;
                             for (k = kk - 1; k < kk + n - j; ++k)
                             {
-                                ap[k] += x[ix] * temp;
+                                ap[k+astart] += x[ix+xstart] * temp;
                                 ix += incx;
                                 /* L70: */
                             }
