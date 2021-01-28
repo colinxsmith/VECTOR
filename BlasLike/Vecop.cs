@@ -4,6 +4,7 @@ namespace Blas
 {
     public static class BlasLike
     {
+        public static int baseref = 0;
         public static double lm_eps = Math.Abs((((double)4) / 3 - 1) * 3 - 1);
         public static double lm_min = 2.2250738585072014e-308;
         public static double lm_rootmin = Math.Sqrt(lm_min);
@@ -835,8 +836,11 @@ namespace Blas
                 x[i] = -x[i];
         }
 
-        public static void dscal(int n, double a, double[] x, int ix, int xstart = 0)
+        public unsafe static void dscal(int n, double a, double[] x, int ix, int xstart = 0)
         {
+            fixed(double*xx=x)
+            dscal(n,a,xx+xstart,ix);
+            return;
             if (a == 0)
             {
                 dzero(n, x, ix, xstart);
@@ -851,7 +855,7 @@ namespace Blas
                     x[iix + xstart] = a * x[iix + xstart];
             }
         }
-        public unsafe static void dger1(int m, int n, double alpha,
+        public unsafe static void dger2(int m, int n, double alpha,
 double* x, int incx, double* y, int incy,
 double* a, int lda)
         {
@@ -1268,7 +1272,7 @@ double[] a, int lda, int xstart = 0, int ystart = 0, int astart = 0)
         }
 
 
-        public static void dger(int m, int n, double alpha,
+        public unsafe static void dger(int m, int n, double alpha,
             double[] x, int incx, double[] y, int incy,
             double[] a, int lda, int xstart = 0, int ystart = 0, int astart = 0)
         {
@@ -1281,7 +1285,14 @@ double[] a, int lda, int xstart = 0, int ystart = 0, int astart = 0)
                 char[] transb = { 'T' };
                 dgemm(transa, transb, mm, nn, one, alpha, x, mm, y, nn, oned, a, ldaa, xstart, ystart, astart);
             }
-            else dger1(m, n, alpha, x, incx, y, incy, a, lda, xstart, ystart, astart);
+            else
+            {
+                fixed (double* px = x)
+                fixed (double* py = y)
+                fixed (double* pa = a)
+                    dger1(m, n, alpha, px + xstart, incx, py + ystart, incy, pa + astart, lda);
+                //dger1(m, n, alpha, x, incx, y, incy, a, lda, xstart, ystart, astart);
+            }
         }
 
         public unsafe static int dgemm(char* transa, char* transb, int* m, int*
@@ -2165,6 +2176,7 @@ int ldc, int astart = 0, int bstart = 0, int cstart = 0)
 double* a, int lda, double* x, int incx,
 double beta, double* y, int incy)
         {
+            Console.WriteLine($"DGEMV alpha {alpha} a {(int)a - baseref} lda {lda} x {(int)x - baseref} incy {incy}");
             /* System generated locals */
             int a_dim1, a_offset, i__1, i__2;
 
@@ -2423,10 +2435,15 @@ double beta, double* y, int incy)
 
         }
 
-        public static int dgemv(char[] trans, int m, int n, double alpha,
+        public unsafe static int dgemv(char[] trans, int m, int n, double alpha,
 double[] a, int lda, double[] x, int incx,
 double beta, double[] y, int incy, int astart = 0, int xstart = 0, int ystart = 0)
         {
+            fixed (char* tt = trans)
+            fixed (double* aa = a)
+            fixed (double* xx = x)
+            fixed (double* yy = y)
+                return dgemv(tt, m, n, alpha, aa + astart, lda, xx + xstart, incx, beta, yy + ystart, incy);
             /* System generated locals */
             int a_dim1, a_offset, i__1, i__2;
 
@@ -2855,7 +2872,7 @@ double* x, int incx, double* ap)
             }
         }
         public static void dspr(char[] uplo, int n, double alpha,
-        double[] x, int incx, double[] ap,int xstart=0,int astart=0)
+        double[] x, int incx, double[] ap, int xstart = 0, int astart = 0)
         {
             int i__, j, k, kk, ix, jx, kx = 0, info;
             double temp;
@@ -2937,13 +2954,13 @@ double* x, int incx, double* ap)
                 {
                     for (j = 0; j < n; ++j)
                     {
-                        if (x[j+xstart] != 0.0)
+                        if (x[j + xstart] != 0.0)
                         {
-                            temp = alpha * x[j+xstart];
+                            temp = alpha * x[j + xstart];
                             k = kk - 1;
                             for (i__ = 0; i__ <= j; ++i__)
                             {
-                                ap[k+astart] += x[i__+xstart] * temp;
+                                ap[k + astart] += x[i__ + xstart] * temp;
                                 ++k;
                                 /* L10: */
                             }
@@ -2957,13 +2974,13 @@ double* x, int incx, double* ap)
                     jx = kx - 1;
                     for (j = 0; j < n; ++j)
                     {
-                        if (x[jx+xstart] != 0.0)
+                        if (x[jx + xstart] != 0.0)
                         {
-                            temp = alpha * x[jx+xstart];
+                            temp = alpha * x[jx + xstart];
                             ix = kx - 1;
                             for (k = kk - 1; k < kk + j; ++k)
                             {
-                                ap[k+astart] += x[ix+xstart] * temp;
+                                ap[k + astart] += x[ix + xstart] * temp;
                                 ix += incx;
                                 /* L30: */
                             }
@@ -2983,13 +3000,13 @@ double* x, int incx, double* ap)
                 {
                     for (j = 1; j <= n; ++j)
                     {
-                        if (x[j - 1+xstart] != 0.0)
+                        if (x[j - 1 + xstart] != 0.0)
                         {
-                            temp = alpha * x[j - 1+xstart];
+                            temp = alpha * x[j - 1 + xstart];
                             k = kk - 1;
                             for (i__ = j - 1; i__ < n; ++i__)
                             {
-                                ap[k+astart] += x[i__+xstart] * temp;
+                                ap[k + astart] += x[i__ + xstart] * temp;
                                 ++k;
                                 /* L50: */
                             }
@@ -3003,13 +3020,13 @@ double* x, int incx, double* ap)
                     jx = kx - 1;
                     for (j = 1; j <= n; ++j)
                     {
-                        if (x[jx+xstart] != 0.0)
+                        if (x[jx + xstart] != 0.0)
                         {
-                            temp = alpha * x[jx+xstart];
+                            temp = alpha * x[jx + xstart];
                             ix = jx;
                             for (k = kk - 1; k < kk + n - j; ++k)
                             {
-                                ap[k+astart] += x[ix+xstart] * temp;
+                                ap[k + astart] += x[ix + xstart] * temp;
                                 ix += incx;
                                 /* L70: */
                             }
@@ -3199,6 +3216,7 @@ double* x, int incx, double* ap)
         }
         public unsafe static void dscal(int n, double da, double* dx, int incx)
         {
+            Console.WriteLine($"SCAL da {da} dx {(int)dx-baseref} incx {incx}");
             int i__, m, mp1, nincx;
             /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
             /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
@@ -3747,23 +3765,120 @@ double* x, int incx, double* ap)
             }
         }
 
-        public unsafe static void dswap(int n, double* a, int ia, double* b, int ib)
+        public unsafe static void dswap(int n, double* dx, int incx,
+    double* dy, int incy)
         {
-            for (; (n--) > 0; a += ia, b += ib)
+            Console.WriteLine($"SWAP dx {(int)dx - baseref} incx {incx} dy {(int)dy - baseref} incy {incy}");
+            /* System generated locals */
+            int i__1;
+
+            /* Local variables */
+            int i__, m, ix, iy, mp1;
+            double dtemp;
+
+
+            /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
+            /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     November 2017 */
+
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  ===================================================================== */
+
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+            /* Parameter adjustments */
+            --dy;
+            --dx;
+
+            /* Function Body */
+            if (n <= 0)
             {
-                double temp = *a;
-                *a = *b;
-                *b = temp;
+                return;
             }
+            if (incx == 1 && incy == 1)
+            {
+
+                /*       code for both increments equal to 1 */
+
+
+                /*       clean-up loop */
+
+                m = n % 3;
+                if (m != 0)
+                {
+                    i__1 = m;
+                    for (i__ = 1; i__ <= i__1; ++i__)
+                    {
+                        dtemp = dx[i__];
+                        dx[i__] = dy[i__];
+                        dy[i__] = dtemp;
+                    }
+                    if (n < 3)
+                    {
+                        return;
+                    }
+                }
+                mp1 = m + 1;
+                i__1 = n;
+                for (i__ = mp1; i__ <= i__1; i__ += 3)
+                {
+                    dtemp = dx[i__];
+                    dx[i__] = dy[i__];
+                    dy[i__] = dtemp;
+                    dtemp = dx[i__ + 1];
+                    dx[i__ + 1] = dy[i__ + 1];
+                    dy[i__ + 1] = dtemp;
+                    dtemp = dx[i__ + 2];
+                    dx[i__ + 2] = dy[i__ + 2];
+                    dy[i__ + 2] = dtemp;
+                }
+            }
+            else
+            {
+
+                /*       code for unequal increments or equal increments not equal */
+                /*         to 1 */
+
+                ix = 1;
+                iy = 1;
+                if (incx < 0)
+                {
+                    ix = (-(n) + 1) * incx + 1;
+                }
+                if (incy < 0)
+                {
+                    iy = (-(n) + 1) * incy + 1;
+                }
+                i__1 = n;
+                for (i__ = 1; i__ <= i__1; ++i__)
+                {
+                    dtemp = dx[ix];
+                    dx[ix] = dy[iy];
+                    dy[iy] = dtemp;
+                    ix += incx;
+                    iy += incy;
+                }
+            }
+            return;
         }
-        public static void dswap(int n, double[] a, int ia, double[] b, int ib, int astart = 0, int bstart = 0)
+        public unsafe static void dswap(int n, double[] a, int ia, double[] b, int ib, int astart = 0, int bstart = 0)
         {
-            for (int i = 0; i < n; i++)
-            {
-                double temp = a[i + astart];
-                a[i + astart] = b[i + bstart];
-                b[i + bstart] = temp;
-            }
+            /*           for (int i = 0,iia=0,iib=0; i < n; i++,iia+=ia,iib+=ib)
+                       {
+                           double temp = a[iia + astart];
+                           a[iia + astart] = b[iib + bstart];
+                           b[iib + bstart] = temp;
+                       }*/
+            fixed (double* aa = a)
+            fixed (double* bb = b)
+                dswap(n, aa + astart, ia, bb + bstart, ib);
         }
         public unsafe static
         void dswapvec(int n, double* a, double* b)
@@ -3835,6 +3950,150 @@ double* x, int incx, double* ap)
                 else sum = x[0] * dsum(n, y, iy, ystart);
             }
             return sum;
+        }
+        public unsafe static int dger1(int m, int n, double alpha,
+    double* x, int incx, double* y, int incy,
+    double* a, int lda)
+        {
+
+            Console.WriteLine($"DGER1 alpha {alpha} x {(int)x - baseref} incx {incx} y {(int)y - baseref} incy {incy}");
+            /* System generated locals */
+            int a_dim1, a_offset, i__1, i__2;
+
+            /* Local variables */
+            int i__, j, ix, jy, kx, info;
+            double temp;
+
+
+            /*  -- Reference BLAS level2 routine (version 3.7.0) -- */
+            /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     December 2016 */
+
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  ===================================================================== */
+
+            /*     .. Parameters .. */
+            /*     .. */
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. External Subroutines .. */
+            /*     .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+
+            /*     Test the input parameters. */
+
+            /* Parameter adjustments */
+            --x;
+            --y;
+            a_dim1 = lda;
+            a_offset = 1 + a_dim1;
+            a -= a_offset;
+
+            /* Function Body */
+            info = 0;
+            if (m < 0)
+            {
+                info = 1;
+            }
+            else if (n < 0)
+            {
+                info = 2;
+            }
+            else if (incx == 0)
+            {
+                info = 5;
+            }
+            else if (incy == 0)
+            {
+                info = 7;
+            }
+            else if (lda < Math.Max(1, m))
+            {
+                info = 9;
+            }
+            if (info != 0)
+            {
+                Console.WriteLine($"dger1: info {info}");
+                return 0;
+            }
+
+            /*     Quick return if possible. */
+
+            if (m == 0 || n == 0 || alpha == 0)
+            {
+                return 0;
+            }
+
+            /*     Start the operations. In this version the elements of A are */
+            /*     accessed sequentially with one pass through A. */
+
+            if (incy > 0)
+            {
+                jy = 1;
+            }
+            else
+            {
+                jy = 1 - (n - 1) * incy;
+            }
+            if (incx == 1)
+            {
+                i__1 = n;
+                for (j = 1; j <= i__1; ++j)
+                {
+                    if (y[jy] != 0)
+                    {
+                        temp = alpha * y[jy];
+                        i__2 = m;
+                        for (i__ = 1; i__ <= i__2; ++i__)
+                        {
+                            a[i__ + j * a_dim1] += x[i__] * temp;
+                            /* L10: */
+                        }
+                    }
+                    jy += incy;
+                    /* L20: */
+                }
+            }
+            else
+            {
+                if (incx > 0)
+                {
+                    kx = 1;
+                }
+                else
+                {
+                    kx = 1 - (m - 1) * incx;
+                }
+                i__1 = n;
+                for (j = 1; j <= i__1; ++j)
+                {
+                    if (y[jy] != 0)
+                    {
+                        temp = alpha * y[jy];
+                        ix = kx;
+                        i__2 = m;
+                        for (i__ = 1; i__ <= i__2; ++i__)
+                        {
+                            a[i__ + j * a_dim1] += x[ix] * temp;
+                            ix += incx;
+                            /* L30: */
+                        }
+                    }
+                    jy += incy;
+                    /* L40: */
+                }
+            }
+
+            return 0;
+
+            /*     End of DGER  . */
+
         }
     }
 }

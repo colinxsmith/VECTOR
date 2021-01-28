@@ -18,8 +18,10 @@ namespace UseBlas
             {
                 Console.WriteLine($"y[{iy}]={y.GetValue(iy)} {y[iy++]}");
             }
-
             {
+                double[] aref = new double[1];
+                fixed (double* aq = aref)
+                    BlasLike.baseref = (int)aq;
                 int n = 4;
                 double[] aa ={1,2,4,7,
                             3,5,8,
@@ -54,6 +56,9 @@ namespace UseBlas
                 Console.WriteLine($"back={back} error={error.ToString("e1")} dsmxmulvT {c[0]},{c[1]},{c[2]},{c[3]} ");
             }
             {
+                double[] aref = new double[1];
+                fixed (double* aq = aref)
+                    BlasLike.baseref = (int)aq;
                 int n = 4;
                 double[] aa = { 1,
                                 2,3,
@@ -88,42 +93,21 @@ namespace UseBlas
                 Console.WriteLine($"back={back} error={error.ToString("e1")} dsmxmulv {c[0]},{c[1]},{c[2]},{c[3]} ");
             }
             {
-                int n = 2000;
+                double[] aref = new double[1];
+                fixed (double* aq = aref)
+                    BlasLike.baseref = (int)aq;
+                int n = 100;
                 double[] S = new double[n * (n + 1) / 2];
                 for (int i = 0, ij = 0; i < n; ++i)
                 {
                     for (int j = i; j < n; j++, ij++)
                     {
-                        S[ij] = j * (j + 1) / 2 + i+ 1;
+                        //S[ij] = i * n - i * (i - 1) / 2 + j - i  ;
+                        S[ij] = j * (j + 1) / 2 + i;
+                        //S[ij]=ij;
                     }
                 }
-                double[] SS = (double[])S.Clone();
-                double[] c = new double[n];
-                for (int i = 1; i <= c.Length; ++i)
-                {
-                    c[i - 1] = i;
-                }
-                double[] cc = (double[])c.Clone();
-                double[] b = new double[n];
-                int[] piv = new int[n];
-                char[] U = { 'L' };
-                int back = Factorise.dsptrf(U, n, S, piv);
-                Factorise.dsptrs(U, n, 1, S, piv, c, n);
-                Factorise.dsmxmulvT(n, SS, c, b);
-                BlasLike.dsubvec(n, b, cc, b);
-                double error = Math.Sqrt(BlasLike.ddotvec(n, b, b) / n);
-                Console.WriteLine($"{U[0]}\t\t{back}\tError: {error}");
-            }
-            {
-                int n = 2000;
-                double[] S = new double[n * (n + 1) / 2];
-                for (int i = 0, ij = 0; i < n; ++i)
-                {
-                    for (int j = 0; j <= i; j++, ij++)
-                    {
-                        S[ij] = ij + 1;
-                    }
-                }
+
                 double[] SS = (double[])S.Clone();
                 double[] c = new double[n];
                 for (int i = 1; i <= c.Length; ++i)
@@ -137,6 +121,44 @@ namespace UseBlas
                 int back = Factorise.dsptrf(U, n, S, piv);
                 Factorise.dsptrs(U, n, 1, S, piv, c, n);
                 Factorise.dsmxmulv(n, SS, c, b);
+                BlasLike.dsubvec(n, b, cc, b);
+                double error = Math.Sqrt(BlasLike.ddotvec(n, b, b) / n);
+                Console.WriteLine($"{U[0]}\t\t{back}\tError: {error}");
+            }
+            {
+                double[] aref = new double[1];
+                fixed (double* aq = aref)
+                    BlasLike.baseref = (int)aq;
+                int n = 6;
+                double[] S = new double[n * (n + 1) / 2];
+                for (int i = 0, ij = 0; i < n; ++i)
+                {
+                    for (int j = 0; j <= i; j++, ij++)
+                    {
+                        //S[ij] = i * (i + 1) / 2 + j ;
+                        S[ij] = j * n - j * (j - 1) / 2 + i - j;
+                        //S[ij]=ij;
+                    }
+                }
+                double[] SS = (double[])S.Clone();
+                double[] c = new double[n];
+                for (int i = 1; i <= c.Length; ++i)
+                {
+                    c[i - 1] = i;
+                }
+                double[] cc = (double[])c.Clone();
+                double[] b = new double[n];
+                int[] piv = new int[n];
+                char[] U = { 'L' };
+                int back = Factorise.dsptrf(U, n, S, piv);
+                Console.WriteLine("===============================");
+                fixed (double* SSS = S)
+                fixed (int* pv = piv)
+                fixed (char* UU = U)
+                fixed (double* ccc = c)
+                    //Factorise.dsptrs(UU, n, 1, SSS, pv, ccc, n);
+                    Factorise.dsptrs(U, n, 1, S, piv, c, n);
+                Factorise.dsmxmulvT(n, SS, c, b);
                 BlasLike.dsubvec(n, b, cc, b);
                 double error = Math.Sqrt(BlasLike.ddotvec(n, b, b) / n);
                 Console.WriteLine($"{U[0]}\t\t{back}\tError: {error}");
