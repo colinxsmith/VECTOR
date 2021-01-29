@@ -114,7 +114,7 @@ namespace UseBlas
                 {
                     for (int j = i; j < n; j++, ij++)
                     {
-                        S[ji[ij]] = ij;
+                        S[j*(j+1)/2+i] = ji[ij];
                     }
                 }
 
