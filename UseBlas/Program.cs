@@ -21,7 +21,7 @@ namespace UseBlas
             {
                 double[] aref = new double[1];
                 fixed (double* aq = aref)
-                    BlasLike.baseref = (int)aq;
+                    BlasLike.baseref = 0;
                 int n = 4;
                 double[] aa ={1,2,4,7,
                             3,5,8,
@@ -58,7 +58,7 @@ namespace UseBlas
             {
                 double[] aref = new double[1];
                 fixed (double* aq = aref)
-                    BlasLike.baseref = (int)aq;
+                    BlasLike.baseref = 0;
                 int n = 4;
                 double[] aa = { 1,
                                 2,3,
@@ -95,16 +95,18 @@ namespace UseBlas
             {
                 double[] aref = new double[1];
                 fixed (double* aq = aref)
-                    BlasLike.baseref = (int)aq;
-                int n = 100;
+                    BlasLike.baseref = 0;
+                int n = 1000;
                 double[] S = new double[n * (n + 1) / 2];
                 for (int i = 0, ij = 0; i < n; ++i)
                 {
                     for (int j = i; j < n; j++, ij++)
                     {
-                        //S[ij] = i * n - i * (i - 1) / 2 + j - i  ;
-                        S[ij] = j * (j + 1) / 2 + i;
+                        //S[ij] = i * n - i * (i - 1) / 2 + j - i;
+                        //S[ij] = j * (j + 1) / 2 + i;
                         //S[ij]=ij;
+                        //S[j * (j + 1) / 2 + i] = i * n - i * (i - 1) / 2 + j - i;
+                        S[i * n - i * (i - 1) / 2 + j - i] = j * (j + 1) / 2 + i;
                     }
                 }
 
@@ -118,7 +120,16 @@ namespace UseBlas
                 double[] b = new double[n];
                 int[] piv = new int[n];
                 char[] U = { 'U' };
-                int back = Factorise.dsptrf(U, n, S, piv);
+                int back;
+                fixed (double* SSS = S)
+                fixed (char* UU = U)
+                fixed (int* pv = piv)
+                fixed (double* ccc = c)
+                {
+                    // back = Factorise.dsptrf(UU, n, SSS, pv);
+                    // Factorise.dsptrs(UU, n, 1, SSS, pv, ccc, n);
+                }
+                back = Factorise.dsptrf(U, n, S, piv);
                 Factorise.dsptrs(U, n, 1, S, piv, c, n);
                 Factorise.dsmxmulv(n, SS, c, b);
                 BlasLike.dsubvec(n, b, cc, b);
@@ -128,16 +139,18 @@ namespace UseBlas
             {
                 double[] aref = new double[1];
                 fixed (double* aq = aref)
-                    BlasLike.baseref = (int)aq;
-                int n = 6;
+                    BlasLike.baseref = 0;
+                int n = 4;
                 double[] S = new double[n * (n + 1) / 2];
                 for (int i = 0, ij = 0; i < n; ++i)
                 {
                     for (int j = 0; j <= i; j++, ij++)
                     {
                         //S[ij] = i * (i + 1) / 2 + j ;
-                        S[ij] = j * n - j * (j - 1) / 2 + i - j;
+                        //S[ij] = i * n - i * (i s- 1) / 2 + j - i;
                         //S[ij]=ij;
+                        S[j * n - j * (j - 1) / 2 + i - j] = i * (i + 1) / 2 + j;
+                        //S[i * (i + 1) / 2 + j]=j * n - j * (j - 1) / 2 + i - j;
                     }
                 }
                 double[] SS = (double[])S.Clone();
@@ -150,8 +163,12 @@ namespace UseBlas
                 double[] b = new double[n];
                 int[] piv = new int[n];
                 char[] U = { 'L' };
-                int back = Factorise.dsptrf(U, n, S, piv);
-                Console.WriteLine("===============================");
+                int back;
+                fixed (double* SSS = S)
+                fixed (char* UU = U)
+                fixed (int* pv = piv)
+                    //              back = Factorise.dsptrf(UU, n, SSS, pv);
+                    back = Factorise.dsptrf(U, n, S, piv);
                 fixed (double* SSS = S)
                 fixed (int* pv = piv)
                 fixed (char* UU = U)

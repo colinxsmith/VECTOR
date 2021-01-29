@@ -4,7 +4,7 @@ namespace Blas
 {
     public static class BlasLike
     {
-        public static int baseref = 0;
+        public static int baseref = 0;//Set to an array address for debug output
         public static double lm_eps = Math.Abs((((double)4) / 3 - 1) * 3 - 1);
         public static double lm_min = 2.2250738585072014e-308;
         public static double lm_rootmin = Math.Sqrt(lm_min);
@@ -838,9 +838,12 @@ namespace Blas
 
         public unsafe static void dscal(int n, double a, double[] x, int ix, int xstart = 0)
         {
-            fixed(double*xx=x)
-            dscal(n,a,xx+xstart,ix);
-            return;
+            if (baseref != 0)
+            {
+                fixed (double* xx = x)
+                    dscal(n, a, xx + xstart, ix);
+                return;
+            }
             if (a == 0)
             {
                 dzero(n, x, ix, xstart);
@@ -855,209 +858,7 @@ namespace Blas
                     x[iix + xstart] = a * x[iix + xstart];
             }
         }
-        public unsafe static void dger2(int m, int n, double alpha,
-double* x, int incx, double* y, int incy,
-double* a, int lda)
-        {
-            int a_dim1;
-            //    size_t i, 
-            int jy, kx, info;
-            long j;
-            //    double temp;
-            //	vector px,pA,py;
-
-            /*     .. Scalar Arguments .. */
-            /*     .. Array Arguments .. */
-            /*     .. */
-
-            /*  Purpose */
-            /*  ======= */
-
-            /*  DGER   performs the rank 1 operation */
-
-            /*     A := alpha*x*y' + A, */
-
-            /*  where alpha is a scalar, x is an m element vector, y is an n element */
-            /*  vector and A is an m by n matrix. */
-
-            /*  Parameters */
-            /*  ========== */
-
-            /*  M      - size_t. */
-            /*           On entry, M specifies the number of rows of the matrix A. */
-            /*           M must be at least zero. */
-            /*           Unchanged on exit. */
-
-            /*  N      - size_t. */
-            /*           On entry, N specifies the number of columns of the matrix A. */
-            /*           N must be at least zero. */
-            /*           Unchanged on exit. */
-
-            /*  ALPHA  - DOUBLE PRECISION. */
-            /*           On entry, ALPHA specifies the scalar alpha. */
-            /*           Unchanged on exit. */
-
-            /*  X      - DOUBLE PRECISION array of dimension at least */
-            /*           ( 1 + ( m - 1 )*abs( INCX ) ). */
-            /*           Before entry, the incremented array X must contain the m */
-            /*           element vector x. */
-            /*           Unchanged on exit. */
-
-            /*  INCX   - size_t. */
-            /*           On entry, INCX specifies the increment for the elements of */
-            /*           X. INCX must not be zero. */
-            /*           Unchanged on exit. */
-
-            /*  Y      - DOUBLE PRECISION array of dimension at least */
-            /*           ( 1 + ( n - 1 )*abs( INCY ) ). */
-            /*           Before entry, the incremented array Y must contain the n */
-            /*           element vector y. */
-            /*           Unchanged on exit. */
-
-            /*  INCY   - size_t. */
-            /*           On entry, INCY specifies the increment for the elements of */
-            /*           Y. INCY must not be zero. */
-            /*           Unchanged on exit. */
-
-            /*  A      - DOUBLE PRECISION array of DIMENSION ( LDA, n ). */
-            /*           Before entry, the leading m by n part of the array A must */
-            /*           contain the matrix of coefficients. On exit, A is */
-            /*           overwritten by the updated matrix. */
-
-            /*  LDA    - size_t. */
-            /*           On entry, LDA specifies the first dimension of A as declared */
-            /*           in the calling (sub) program. LDA must be at least */
-            /*           Math.Max( 1, m ). */
-            /*           Unchanged on exit. */
-
-
-            /*  Level 2 Blas routine. */
-
-            /*  -- Written on 22-October-1986. */
-            /*     Jack Dongarra, Argonne National Lab. */
-            /*     Jeremy Du Croz, Nag Central Office. */
-            /*     Sven Hammarling, Nag Central Office. */
-            /*     Richard Hanson, Sandia National Labs. */
-
-
-            /*     .. Parameters .. */
-            /*     .. Local Scalars .. */
-            /*     .. External Subroutines .. */
-            /*     .. Intrinsic Functions .. */
-            /*     .. */
-            /*     .. Executable Statements .. */
-
-            /*     Test the input parameters. */
-
-            /* Parameter adjustments */
-            a_dim1 = lda;
-
-            /* Function Body */
-            info = 0;
-            if (m < 0)
-            {
-                info = 1;
-            }
-            else if (n < 0)
-            {
-                info = 2;
-            }
-            else if (incx == 0)
-            {
-                info = 5;
-            }
-            else if (incy == 0)
-            {
-                info = 7;
-            }
-            else if (lda < Math.Max(1, m))
-            {
-                info = 9;
-            }
-            if (info != 0)
-            {
-                Console.WriteLine($"dger1 error code {info}");
-                return;
-            }
-
-            /*     Quick return if possible. */
-
-            if (m == 0 || n == 0 || alpha == 0.0)
-            {
-                return;
-            }
-
-            /*     Start the operations. In this version the elements of A are */
-            /*     accessed sequentially with one pass through A. */
-            if (incy > 0)
-            {
-                jy = 0;
-            }
-            else
-            {
-                jy = 0 - (n - 1) * incy;
-            }
-            if (incx == 1)
-            {
-                if (m > 500)
-                {
-                    //#pragma omp parallel for private(j) schedule(dynamic)
-                    for (j = 0; j < n; ++j/*,py+=incy*/)
-                    {
-                        if (y[jy + incy * j] != 0.0)
-                        {
-                            daxpyvec(m, alpha * y[jy + incy * j], x, a + j * a_dim1);
-                        }
-                    }
-                }
-                else
-                {
-                    for (j = 0; j < n; ++j/*,py+=incy*/)
-                    {
-                        if (y[jy + incy * j] != 0.0)
-                        {
-                            daxpyvec(m, alpha * y[jy + incy * j], x, a + j * a_dim1);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                if (incx > 0)
-                {
-                    kx = 0;
-                }
-                else
-                {
-                    kx = 0 - (m - 1) * incx;
-                }
-                if (m > 500)
-                {
-                    //#pragma omp parallel for private(j) schedule(dynamic)
-                    for (j = 0; j < n; ++j/*,py+=incy*/)
-                    {
-                        if (y[jy + incy * j] != 0.0)
-                        {
-                            daxpy(m, alpha * y[jy + incy * j], x + kx, incx, a + j * a_dim1, 1);
-                        }
-                    }
-                }
-                else
-                {
-                    for (j = 0; j < n; ++j/*,py+=incy*/)
-                    {
-                        if (y[jy + incy * j] != 0.0)
-                        {
-                            daxpy(m, alpha * y[jy + incy * j], x + kx, incx, a + j * a_dim1, 1);
-                        }
-                    }
-                }
-            }
-        }
-
-        public static void dger1(int m, int n, double alpha,
-double[] x, int incx, double[] y, int incy,
-double[] a, int lda, int xstart = 0, int ystart = 0, int astart = 0)
+        public static void dger1(int m, int n, double alpha, double[] x, int incx, double[] y, int incy, double[] a, int lda, int xstart = 0, int ystart = 0, int astart = 0)
         {
             int a_dim1;
             //    size_t i, 
@@ -1287,11 +1088,15 @@ double[] a, int lda, int xstart = 0, int ystart = 0, int astart = 0)
             }
             else
             {
-                fixed (double* px = x)
-                fixed (double* py = y)
-                fixed (double* pa = a)
-                    dger1(m, n, alpha, px + xstart, incx, py + ystart, incy, pa + astart, lda);
-                //dger1(m, n, alpha, x, incx, y, incy, a, lda, xstart, ystart, astart);
+                if (baseref != 0)
+                {
+                    fixed (double* px = x)
+                    fixed (double* py = y)
+                    fixed (double* pa = a)
+                        dger1(m, n, alpha, px + xstart, incx, py + ystart, incy, pa + astart, lda);
+                    return;
+                }
+                dger1(m, n, alpha, x, incx, y, incy, a, lda, xstart, ystart, astart);
             }
         }
 
@@ -2176,7 +1981,7 @@ int ldc, int astart = 0, int bstart = 0, int cstart = 0)
 double* a, int lda, double* x, int incx,
 double beta, double* y, int incy)
         {
-            Console.WriteLine($"DGEMV alpha {alpha} a {(int)a - baseref} lda {lda} x {(int)x - baseref} incy {incy}");
+            if (baseref != 0) Console.WriteLine($"DGEMV alpha {alpha} a {(int)a - baseref} lda {lda} x {(int)x - baseref} incy {incy}");
             /* System generated locals */
             int a_dim1, a_offset, i__1, i__2;
 
@@ -2439,12 +2244,14 @@ double beta, double* y, int incy)
 double[] a, int lda, double[] x, int incx,
 double beta, double[] y, int incy, int astart = 0, int xstart = 0, int ystart = 0)
         {
-            fixed (char* tt = trans)
-            fixed (double* aa = a)
-            fixed (double* xx = x)
-            fixed (double* yy = y)
-                return dgemv(tt, m, n, alpha, aa + astart, lda, xx + xstart, incx, beta, yy + ystart, incy);
-            /* System generated locals */
+            if (baseref != 0)
+            {
+                fixed (char* tt = trans)
+                fixed (double* aa = a)
+                fixed (double* xx = x)
+                fixed (double* yy = y)
+                    return dgemv(tt, m, n, alpha, aa + astart, lda, xx + xstart, incx, beta, yy + ystart, incy);
+            }/* System generated locals */
             int a_dim1, a_offset, i__1, i__2;
 
             /* Local variables */
@@ -3216,7 +3023,7 @@ double* x, int incx, double* ap)
         }
         public unsafe static void dscal(int n, double da, double* dx, int incx)
         {
-            Console.WriteLine($"SCAL da {da} dx {(int)dx-baseref} incx {incx}");
+            if (baseref != 0) Console.WriteLine($"SCAL da {da} dx {(int)dx - baseref} incx {incx}");
             int i__, m, mp1, nincx;
             /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
             /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
@@ -3768,7 +3575,7 @@ double* x, int incx, double* ap)
         public unsafe static void dswap(int n, double* dx, int incx,
     double* dy, int incy)
         {
-            Console.WriteLine($"SWAP dx {(int)dx - baseref} incx {incx} dy {(int)dy - baseref} incy {incy}");
+            if (baseref != 0) Console.WriteLine($"SWAP dx {(int)dx - baseref} incx {incx} dy {(int)dy - baseref} incy {incy}");
             /* System generated locals */
             int i__1;
 
@@ -3870,15 +3677,18 @@ double* x, int incx, double* ap)
         }
         public unsafe static void dswap(int n, double[] a, int ia, double[] b, int ib, int astart = 0, int bstart = 0)
         {
-            /*           for (int i = 0,iia=0,iib=0; i < n; i++,iia+=ia,iib+=ib)
-                       {
-                           double temp = a[iia + astart];
-                           a[iia + astart] = b[iib + bstart];
-                           b[iib + bstart] = temp;
-                       }*/
-            fixed (double* aa = a)
-            fixed (double* bb = b)
-                dswap(n, aa + astart, ia, bb + bstart, ib);
+            if (baseref != 0)
+            {
+                fixed (double* aa = a)
+                fixed (double* bb = b)
+                    dswap(n, aa + astart, ia, bb + bstart, ib); return;
+            }
+            for (int i = 0, iia = ia > 0 ? 0 : (1 - n) * ia, iib = ib > 0 ? 0 : (1 - n) * ib; i < n; i++, iia += ia, iib += ib)
+            {
+                double temp = a[iia + astart];
+                a[iia + astart] = b[iib + bstart];
+                b[iib + bstart] = temp;
+            }
         }
         public unsafe static
         void dswapvec(int n, double* a, double* b)
@@ -3893,7 +3703,6 @@ double* x, int incx, double* ap)
         public unsafe static double didot(int n, double* x, int iix, double* y, int iy    /*increment for y*/    )
         {
             double sum = 0;
-
             if (n > 0)
             {
                 if (iix != 0)
@@ -3926,7 +3735,6 @@ double* x, int incx, double* ap)
         public static double didot(int n, double[] x, int iix, double[] y, int iy, int xstart = 0, int ystart = 0)
         {
             double sum = 0;
-
             if (n > 0)
             {
                 if (iix != 0)
@@ -3956,7 +3764,7 @@ double* x, int incx, double* ap)
     double* a, int lda)
         {
 
-            Console.WriteLine($"DGER1 alpha {alpha} x {(int)x - baseref} incx {incx} y {(int)y - baseref} incy {incy}");
+            if (baseref != 0) Console.WriteLine($"DGER1 alpha {alpha} x {(int)x - baseref} incx {incx} y {(int)y - baseref} incy {incy}");
             /* System generated locals */
             int a_dim1, a_offset, i__1, i__2;
 
