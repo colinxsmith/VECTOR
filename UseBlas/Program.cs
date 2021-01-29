@@ -98,6 +98,7 @@ namespace UseBlas
                     BlasLike.baseref = 0;
                 int n = 1000;
                 double[] S = new double[n * (n + 1) / 2];
+                int[]ji=new int[n*(n+1)/2];
                 for (int i = 0, ij = 0; i < n; ++i)
                 {
                     for (int j = i; j < n; j++, ij++)
@@ -105,8 +106,15 @@ namespace UseBlas
                         //S[ij] = i * n - i * (i - 1) / 2 + j - i;
                         //S[ij] = j * (j + 1) / 2 + i;
                         //S[ij]=ij;
+                        ji[j * (j + 1) / 2 + i] = i * n - i * (i - 1) / 2 + j - i;
                         //S[j * (j + 1) / 2 + i] = i * n - i * (i - 1) / 2 + j - i;
-                        S[i * n - i * (i - 1) / 2 + j - i] = j * (j + 1) / 2 + i;
+                    }     
+                }
+                for (int i = 0, ij = 0; i < n; ++i)
+                {            
+                       for (int j = i; j < n; j++, ij++)
+                    {
+                        S[ji[i * n - i * (i - 1) / 2 + j - i]] = j * (j + 1) / 2 + i;
                     }
                 }
 
@@ -140,7 +148,7 @@ namespace UseBlas
                 double[] aref = new double[1];
                 fixed (double* aq = aref)
                     BlasLike.baseref = 0;
-                int n = 4;
+                int n = 1000;
                 double[] S = new double[n * (n + 1) / 2];
                 for (int i = 0, ij = 0; i < n; ++i)
                 {
@@ -149,8 +157,8 @@ namespace UseBlas
                         //S[ij] = i * (i + 1) / 2 + j ;
                         //S[ij] = i * n - i * (i s- 1) / 2 + j - i;
                         //S[ij]=ij;
-                        S[j * n - j * (j - 1) / 2 + i - j] = i * (i + 1) / 2 + j;
-                        //S[i * (i + 1) / 2 + j]=j * n - j * (j - 1) / 2 + i - j;
+                        //S[j * n - j * (j - 1) / 2 + i - j] = i * (i + 1) / 2 + j;
+                        S[i * (i + 1) / 2 + j]=j * n - j * (j - 1) / 2 + i - j;
                     }
                 }
                 double[] SS = (double[])S.Clone();
