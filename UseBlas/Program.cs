@@ -96,7 +96,7 @@ namespace UseBlas
                 double[] aref = new double[1];
                 fixed (double* aq = aref)
                     BlasLike.baseref = 0;
-                int n = 4;
+                int n = 1000;
                 double[] S = new double[n * (n + 1) / 2];
                 int[] ji = new int[n * (n + 1) / 2];
                 for (int i = 0, ij = 0; i < n; ++i)
@@ -148,7 +148,7 @@ namespace UseBlas
                 double[] aref = new double[1];
                 fixed (double* aq = aref)
                     BlasLike.baseref = 0;
-                int n = 4;
+                int n = 1000;
                 double[] S = new double[n * (n + 1) / 2];
                 for (int i = 0, ij = 0; i < n; ++i)
                 {
