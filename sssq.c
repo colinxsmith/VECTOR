@@ -4,7 +4,10 @@
 Make on linux with
 gcc -O -I ~/safeqp sssq.c -L ~/safeqp -lsafeqp -o sssq
 
-Make on Windows in safeqp64 with
+Make on cygwin in safeqp with
+gcc -O -I. ../VECTOR/sssq.c -DMSDOSS -L. -lsafeqp -o sssq 
+
+Make 64 bit version on Windows in safeqp64 with
 cl -D__SYSNT__ -I . safeqp.lib ..\VECTOR\sssq.c
 
 Result
