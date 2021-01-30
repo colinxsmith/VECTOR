@@ -391,5 +391,49 @@ namespace BlasLikeTest
             double error = Math.Sqrt(BlasLike.ddotvec(n, errorvec, errorvec)) / n;
             Assert.IsTrue(back == 0 && error < okerror, $"back={back} error={error} {c[0]},{c[1]},{c[2]},{c[3]} ");
         }
+        [TestMethod]
+        public void Test_MatrixFactorisations()
+        {
+            int n = 1000;
+            double[] S = new double[n * (n + 1) / 2];
+            double[] ST = new double[n * (n + 1) / 2];
+            int[] ji = new int[n * (n + 1) / 2];
+            for (int i = 0; i < n; ++i)
+            {
+                for (int j = i; j < n; j++)
+                {
+                    ji[j * (j + 1) / 2 + i] = i * n - i * (i - 1) / 2 + j - i;
+                }
+            }
+            for (int i = 0; i < n; ++i)
+            {
+                for (int j = i; j < n; j++)
+                {
+                    S[j * (j + 1) / 2 + i] = ji[i * n - i * (i - 1) / 2 + j - i];
+                }
+            }
+            for (int i = 0; i < n; ++i)
+            {
+                for (int j = i; j < n; j++)
+                {
+                    ST[j * (j + 1) / 2 + i] = i * n - i * (i - 1) / 2 + j - i;
+                }
+            }
+
+            double[] unit1 = new double[n];
+            double[] c = new double[n];
+            double[] cT = new double[n];
+            int[]ipiv=new int[n];
+            unit1[0] = 1;
+            char[]U={'U'};
+            char[]L={'L'};
+        //    Factorise.dsptrf(L,n,ST,ipiv);
+            Factorise.dsptrf(U,n,S,ipiv);
+            Factorise.dsptrs(U,n,1,S,ipiv,unit1,n);
+            Factorise.dsmxmulvT(n, ST, unit1, cT);
+            Factorise.dsmxmulv(n, S, unit1, c);
+            Assert.IsTrue(c[0] == 27, $"\n{c[0]},{c[1]},{c[2]},{c[3]} \n{cT[0]},{cT[1]},{cT[2]},{cT[3]}");
+        }
     }
+
 }
