@@ -397,11 +397,14 @@ namespace BlasLikeTest
             int n = 1000;
             double[] S = new double[n * (n + 1) / 2];
             double[] ST = new double[n * (n + 1) / 2];
+            double[] cov = new double[n * (n + 1) / 2];
             int[] ji = new int[n * (n + 1) / 2];
+            Random cc = new Random();
             for (int i = 0; i < n; ++i)
             {
                 for (int j = i; j < n; j++)
                 {
+                    cov[j * (j + 1) / 2 + i] = cc.NextDouble();
                     ji[j * (j + 1) / 2 + i] = i * n - i * (i - 1) / 2 + j - i;
                 }
             }
@@ -409,30 +412,39 @@ namespace BlasLikeTest
             {
                 for (int j = i; j < n; j++)
                 {
-                    S[j * (j + 1) / 2 + i] = ji[i * n - i * (i - 1) / 2 + j - i];
+                    S[j * (j + 1) / 2 + i] = cov[ji[i * n - i * (i - 1) / 2 + j - i]];
                 }
             }
             for (int i = 0; i < n; ++i)
             {
                 for (int j = i; j < n; j++)
                 {
-                    ST[j * (j + 1) / 2 + i] = i * n - i * (i - 1) / 2 + j - i;
+                    ST[j * (j + 1) / 2 + i] = cov[ji[j * (j + 1) / 2 + i]];
                 }
             }
-
+            double[] Sbefore = (double[])S.Clone();
+            double[] STbefore = (double[])ST.Clone();
             double[] unit1 = new double[n];
+            double[] unit1T = new double[n];
             double[] c = new double[n];
             double[] cT = new double[n];
-            int[]ipiv=new int[n];
-            unit1[0] = 1;
-            char[]U={'U'};
-            char[]L={'L'};
-        //    Factorise.dsptrf(L,n,ST,ipiv);
-            Factorise.dsptrf(U,n,S,ipiv);
-            Factorise.dsptrs(U,n,1,S,ipiv,unit1,n);
-            Factorise.dsmxmulvT(n, ST, unit1, cT);
-            Factorise.dsmxmulv(n, S, unit1, c);
-            Assert.IsTrue(c[0] == 27, $"\n{c[0]},{c[1]},{c[2]},{c[3]} \n{cT[0]},{cT[1]},{cT[2]},{cT[3]}");
+            int[] ipiv = new int[n];
+            int[] ipivT = new int[n];
+            unit1[1] = 1;
+            unit1T[1] = 1;
+            char[] U = { 'U' };
+            char[] L = { 'L' };
+            int back, backT;
+            back=Factorise.dsptrf(U, n, S, ipiv);
+            Factorise.dsptrs(U, n, 1, S, ipiv, unit1, n);
+            backT=Factorise.dsptrf(L, n, ST, ipivT);
+            Factorise.dsptrs(L, n, 1, ST, ipivT, unit1T, n);
+            Factorise.dsmxmulv(n, Sbefore, unit1, c);
+            Factorise.dsmxmulvT(n, STbefore, unit1T, cT);
+            double[]diff=new double[n];
+            BlasLike.dsubvec(n,unit1T,unit1,diff);
+            double error=BlasLike.ddotvec(n,diff,diff)/n;
+            Assert.IsTrue(error < BlasLike.lm_eps, $"{error} back={back} backT={backT}\n {unit1[0]},{unit1[1]},{unit1[2]},{unit1[3]} \n {unit1T[0]},{unit1T[1]},{unit1T[2]},{unit1T[3]} \n {c[0]},{c[1]},{c[2]},{c[3]} \n {cT[0]},{cT[1]},{cT[2]},{cT[3]}");
         }
     }
 
