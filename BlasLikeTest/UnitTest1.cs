@@ -392,9 +392,15 @@ namespace BlasLikeTest
             Assert.IsTrue(back == 0 && error < okerror, $"back={back} error={error} {c[0]},{c[1]},{c[2]},{c[3]} ");
         }
         [TestMethod]
-        public void Test_MatrixFactorisations()
+        public void Test_MatrixFactorisationsAndUse()
         {
-            int n = 1000;
+            /* 
+            Generate 2 random symmetric matrices such that the lower packed version of
+            one is equal to the upper packed version of the other.
+            Test that upper and lower of the solver are working, but this shows that the
+            working is not identical!
+            */
+            int n = 2000;
             double[] S = new double[n * (n + 1) / 2];
             double[] ST = new double[n * (n + 1) / 2];
             double[] cov = new double[n * (n + 1) / 2];
@@ -404,8 +410,14 @@ namespace BlasLikeTest
             {
                 for (int j = i; j < n; j++)
                 {
-                    cov[j * (j + 1) / 2 + i] = cc.NextDouble();
                     ji[j * (j + 1) / 2 + i] = i * n - i * (i - 1) / 2 + j - i;
+                }
+            }
+            for (int i = 0; i < n; ++i)
+            {
+                for (int j = i; j < n; j++)
+                {
+                    cov[ji[j * (j + 1) / 2 + i]] = cc.NextDouble();
                 }
             }
             for (int i = 0; i < n; ++i)
@@ -430,22 +442,27 @@ namespace BlasLikeTest
             double[] cT = new double[n];
             int[] ipiv = new int[n];
             int[] ipivT = new int[n];
-            unit1[1] = 1;
-            unit1T[1] = 1;
+            for (int i = 0; i < n; ++i) unit1[i] = i + 1;
+            for (int i = 0; i < n; ++i) unit1T[i] = i + 1;
             char[] U = { 'U' };
             char[] L = { 'L' };
             int back, backT;
-            back=Factorise.dsptrf(U, n, S, ipiv);
+            back = Factorise.dsptrf(U, n, S, ipiv);
             Factorise.dsptrs(U, n, 1, S, ipiv, unit1, n);
-            backT=Factorise.dsptrf(L, n, ST, ipivT);
+            backT = Factorise.dsptrf(L, n, ST, ipivT);
             Factorise.dsptrs(L, n, 1, ST, ipivT, unit1T, n);
             Factorise.dsmxmulv(n, Sbefore, unit1, c);
             Factorise.dsmxmulvT(n, STbefore, unit1T, cT);
-            double[]diff=new double[n];
-            BlasLike.dsubvec(n,unit1T,unit1,diff);
-            double error=BlasLike.ddotvec(n,diff,diff)/n;
-            Assert.IsTrue(error < BlasLike.lm_eps, $"{error} back={back} backT={backT}\n {unit1[0]},{unit1[1]},{unit1[2]},{unit1[3]} \n {unit1T[0]},{unit1T[1]},{unit1T[2]},{unit1T[3]} \n {c[0]},{c[1]},{c[2]},{c[3]} \n {cT[0]},{cT[1]},{cT[2]},{cT[3]}");
+            double[] diff = new double[n];
+            int negpiv = 0, negpivT = 0;
+            for (int i = 0; i < n; ++i)
+            {
+                if (ipiv[i] < 0) negpiv++;
+                if (ipivT[i] < 0) negpivT++;
+            }
+            BlasLike.dsubvec(n, unit1T, unit1, diff);
+            double error = Math.Sqrt(BlasLike.ddotvec(n, diff, diff) / n);
+            Assert.IsTrue(error < BlasLike.lm_rooteps, $"{error} back={back} backT={backT} negpiv={negpiv} negpivT={negpivT}\n {unit1[0]},{unit1[1]},{unit1[2]},{unit1[3]} \n {unit1T[0]},{unit1T[1]},{unit1T[2]},{unit1T[3]} \n {c[0]},{c[1]},{c[2]},{c[3]} \n {cT[0]},{cT[1]},{cT[2]},{cT[3]}");
         }
     }
-
 }
