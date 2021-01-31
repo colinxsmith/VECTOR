@@ -400,12 +400,8 @@ namespace BlasLikeTest
             Test that upper and lower of the solver are working, but this shows that the
             working is not identical!
             */
-            int n = 2000;
-            double[] S = new double[n * (n + 1) / 2];
-            double[] ST = new double[n * (n + 1) / 2];
-            double[] cov = new double[n * (n + 1) / 2];
-            int[] ji = new int[n * (n + 1) / 2];
-            Random cc = new Random();
+            var n = 2000;
+            var ji = new int[n * (n + 1) / 2];
             for (int i = 0; i < n; ++i)
             {
                 for (int j = i; j < n; j++)
@@ -413,20 +409,24 @@ namespace BlasLikeTest
                     ji[j * (j + 1) / 2 + i] = i * n - i * (i - 1) / 2 + j - i;
                 }
             }
-            for (int i = 0; i < n; ++i)
+            var cov = new double[n * (n + 1) / 2];
+            for (var i = 0; i < n; ++i)
             {
-                for (int j = i; j < n; j++)
+                for (var j = i; j < n; j++)
                 {
+                    var cc = new Random();
                     cov[ji[j * (j + 1) / 2 + i]] = cc.NextDouble();
                 }
             }
-            for (int i = 0; i < n; ++i)
+            var S = new double[n * (n + 1) / 2];
+            for (var i = 0; i < n; ++i)
             {
-                for (int j = i; j < n; j++)
+                for (var j = i; j < n; j++)
                 {
                     S[j * (j + 1) / 2 + i] = cov[ji[i * n - i * (i - 1) / 2 + j - i]];
                 }
             }
+            var ST = new double[n * (n + 1) / 2];
             for (int i = 0; i < n; ++i)
             {
                 for (int j = i; j < n; j++)
@@ -434,34 +434,36 @@ namespace BlasLikeTest
                     ST[j * (j + 1) / 2 + i] = cov[ji[j * (j + 1) / 2 + i]];
                 }
             }
-            double[] Sbefore = (double[])S.Clone();
-            double[] STbefore = (double[])ST.Clone();
-            double[] unit1 = new double[n];
-            double[] unit1T = new double[n];
-            double[] c = new double[n];
-            double[] cT = new double[n];
-            int[] ipiv = new int[n];
-            int[] ipivT = new int[n];
-            for (int i = 0; i < n; ++i) unit1[i] = i + 1;
-            for (int i = 0; i < n; ++i) unit1T[i] = i + 1;
+
+            var unit1 = new double[n];
+            for (var i = 0; i < n; ++i) unit1[i] = 1;
+            var unit1T = new double[n];
+            for (var i = 0; i < n; ++i) unit1T[i] = 1;
             char[] U = { 'U' };
             char[] L = { 'L' };
             int back, backT;
+            var ipiv = new int[n];
             back = Factorise.dsptrf(U, n, S, ipiv);
             Factorise.dsptrs(U, n, 1, S, ipiv, unit1, n);
+            int[] ipivT = new int[n];
             backT = Factorise.dsptrf(L, n, ST, ipivT);
             Factorise.dsptrs(L, n, 1, ST, ipivT, unit1T, n);
+            var Sbefore = (double[])S.Clone();
+            var c = new double[n];
             Factorise.dsmxmulv(n, Sbefore, unit1, c);
+
+            var STbefore = (double[])ST.Clone();
+            var cT = new double[n];
             Factorise.dsmxmulvT(n, STbefore, unit1T, cT);
-            double[] diff = new double[n];
+            var diff = new double[n];
             int negpiv = 0, negpivT = 0;
-            for (int i = 0; i < n; ++i)
+            for (var i = 0; i < n; ++i)
             {
                 if (ipiv[i] < 0) negpiv++;
                 if (ipivT[i] < 0) negpivT++;
             }
             BlasLike.dsubvec(n, unit1T, unit1, diff);
-            double error = Math.Sqrt(BlasLike.ddotvec(n, diff, diff) / n);
+            var error = Math.Sqrt(BlasLike.ddotvec(n, diff, diff) / n);
             Assert.IsTrue(error < BlasLike.lm_rooteps, $"{error} back={back} backT={backT} negpiv={negpiv} negpivT={negpivT}\n {unit1[0]},{unit1[1]},{unit1[2]},{unit1[3]} \n {unit1T[0]},{unit1T[1]},{unit1T[2]},{unit1T[3]} \n {c[0]},{c[1]},{c[2]},{c[3]} \n {cT[0]},{cT[1]},{cT[2]},{cT[3]}");
         }
     }
