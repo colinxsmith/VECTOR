@@ -441,12 +441,11 @@ namespace BlasLikeTest
             for (var i = 0; i < n; ++i) unit1T[i] = 1;
             char[] U = { 'U' };
             char[] L = { 'L' };
-            int back, backT;
             var ipiv = new int[n];
-            back = Factorise.dsptrf(U, n, S, ipiv);
+            var back = Factorise.dsptrf(U, n, S, ipiv);
             Factorise.dsptrs(U, n, 1, S, ipiv, unit1, n);
             int[] ipivT = new int[n];
-            backT = Factorise.dsptrf(L, n, ST, ipivT);
+            var backT = Factorise.dsptrf(L, n, ST, ipivT);
             Factorise.dsptrs(L, n, 1, ST, ipivT, unit1T, n);
             var Sbefore = (double[])S.Clone();
             var c = new double[n];
