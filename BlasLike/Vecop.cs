@@ -996,12 +996,11 @@ namespace Blas
         {
             if (incx == 1 && incy == 1 && m > 1)
             {
-                double oned = 1;
-                int mm = (int)m, nn = (int)n, one = 1, ldaa = (int)lda;
+                int mm = (int)m, nn = (int)n, ldaa = (int)lda;
                 Console.WriteLine("Forward to dgemm from dger");
                 char[] transa = { 'N' };
                 char[] transb = { 'T' };
-                dgemm(transa, transb, mm, nn, one, alpha, x, mm, y, nn, oned, a, ldaa, xstart, ystart, astart);
+                dgemm(transa, transb, mm, nn, 1, alpha, x, mm, y, nn, 1.0, a, ldaa, xstart, ystart, astart);
             }
             else
             {
@@ -1683,7 +1682,6 @@ int ldc, int astart = 0, int bstart = 0, int cstart = 0)
             if (info != 0)
             {
                 Console.WriteLine($"DGEMM info {info}");
-                //	xerbla_BITA("DGEMM ", &info, (ftnlen)6);
                 return 0;
             }
 
