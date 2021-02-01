@@ -9,26 +9,6 @@ namespace Blas
         public static double lm_min = 2.2250738585072014e-308;
         public static double lm_rootmin = Math.Sqrt(lm_min);
         public static double lm_rooteps = Math.Sqrt(lm_eps);
-
-        public static void daxpy1(int n, double a, double[] x, int ix, double[] y, int iy)
-        {
-            if (a == 1)
-            {
-                for (int i = 0, iix = 0, iiy = 0; i < n; ++i, iiy += iy, iix += ix)
-                    y[iiy] += x[iix];
-            }
-            else if (a == -1)
-            {
-                for (int i = 0, iix = 0, iiy = 0; i < n; ++i, iiy += iy, iix += ix)
-                    y[iiy] -= x[iix];
-            }
-            else if (a != 0)
-            {
-                for (int i = 0, iix = 0, iiy = 0; i < n; ++i, iiy += iy, iix += ix)
-                    y[iiy] += a * x[iix];
-            }
-        }
-
         public unsafe static void daxpy(int n, double da, double* dx,
             int incx, double* dy, int incy)
         {
@@ -323,26 +303,7 @@ namespace Blas
             }
         }
 
-
-        public unsafe static void daxpy1(int n, double a, double* x, int ix, double* y, int iy)
-        {
-            if (a == 1)
-            {
-                for (int i = 0, iix = 0, iiy = 0; i < n; ++i, iiy += iy, iix += ix)
-                    y[iiy] += x[iix];
-            }
-            else if (a == -1)
-            {
-                for (int i = 0, iix = 0, iiy = 0; i < n; ++i, iiy += iy, iix += ix)
-                    y[iiy] -= x[iix];
-            }
-            else if (a != 0)
-            {
-                for (int i = 0, iix = 0, iiy = 0; i < n; ++i, iiy += iy, iix += ix)
-                    y[iiy] += a * x[iix];
-            }
-        }
-        public static void daxpyvec(int n, double a, double[] x, double[] y, int xstart = 0, int ystart = 0)
+    public static void daxpyvec(int n, double a, double[] x, double[] y, int xstart = 0, int ystart = 0)
         {
             daxpy(n, a, x, 1, y, 1, xstart, ystart);
         }
@@ -550,18 +511,6 @@ namespace Blas
                 }
             }
         }
-        public static void dcopy1(int n, double[] x, int ix, double[] y, int iy)
-        {
-            if (ix == 1 && iy == 1)
-            {
-                dcopyvec(n, x, y);
-            }
-            else
-            {
-                for (int i = 0, iix = ix < 0 ? -(n - 1) * ix : 0, iiy = iy < 0 ? -(n - 1) * iy : 0; i < n; i++, iix += ix, iiy += iy)
-                    y[iiy] = x[iix];
-            }
-        }
         public static void dcopyvec(int n, double[] a, double[] b)
         {
             Buffer.BlockCopy(a, 0, b, 0, n * sizeof(double));
@@ -574,16 +523,6 @@ namespace Blas
         public static void dsubvec(int n, double[] x, double[] y, double[] z)
         {
             dsub(n, x, 1, y, 1, z, 1);
-        }
-        public static double ddot1(int n, double[] a, int ia, double[] b, int ib)
-
-        {
-            double back = 0;
-            for (int i = 0, iia = 0, iib = 0; i < n; i++, iia += ia, iib += ib)
-            {
-                back += a[iia] * b[iib];
-            }
-            return back;
         }
         public unsafe static double ddot(int n, double* dx, int incx, double* dy,
             int incy)
@@ -743,7 +682,7 @@ namespace Blas
                 }
                 mp1 = m + 1;
                 i__1 = n;
-                for (i__ = mp1 - 1; i__ < i__1; i__ += 5)
+                for (i__ = m; i__ < i__1; i__ += 5)
                 {
                     dtemp = dtemp + dx[i__ + dxstart] * dy[i__ + dystart] + dx[i__ + 1 + dxstart] * dy[i__ + 1 + dystart] +
                         dx[i__ + 2 + dxstart] * dy[i__ + 2 + dystart] + dx[i__ + 3 + dxstart] * dy[i__ + 3 + dystart] +
@@ -777,30 +716,8 @@ namespace Blas
             ret_val = dtemp;
             return ret_val;
 
-        } /* ddot_ */
-
-
-        public unsafe static double ddot1(int n, double* a, int ia, double* b, int ib)
-        {
-            double back = 0;
-            for (int i = 0, iia = 0, iib = 0; i < n; i++, iia += ia, iib += ib)
-            {
-                back += a[iia] * b[iib];
-            }
-            return back;
         }
-        public unsafe static double ddot2(int n, double* x, int incx, double* y, int incy)
-        {
-            double sum;
-            sum = 0;
-            while (n-- > 0)
-            {
-                sum += *x * *y;
-                x += incx;
-                y += incy;
-            }
-            return sum;
-        }
+
         public static double ddotvec(int n, double[] a, double[] b, int astart = 0, int bstart = 0)
         {
             return ddot(n, a, 1, b, 1, astart, bstart);
