@@ -401,40 +401,24 @@ namespace BlasLikeTest
             working is not identical!
             */
             var n = 2000;
-            var ji = new int[n * (n + 1) / 2];
-            for (int i = 0; i < n; ++i)
-            {
-                for (int j = i; j < n; j++)
-                {
-                    ji[j * (j + 1) / 2 + i] = i * n - i * (i - 1) / 2 + j - i;
-                }
-            }
             var cov = new double[n * (n + 1) / 2];
             for (var i = 0; i < n; ++i)
             {
                 for (var j = i; j < n; j++)
                 {
                     var cc = new Random();
-                    cov[ji[j * (j + 1) / 2 + i]] = cc.NextDouble();
+                    cov[j * (j + 1) / 2 + i] = cc.NextDouble();
                 }
             }
             var S = new double[n * (n + 1) / 2];
+            var ST = new double[n * (n + 1) / 2];
             for (var i = 0; i < n; ++i)
             {
                 for (var j = i; j < n; j++)
                 {
-                    S[j * (j + 1) / 2 + i] = cov[ji[i * n - i * (i - 1) / 2 + j - i]];
+                    S[j * (j + 1) / 2 + i] = ST[i * n - i * (i - 1) / 2 + j - i] = cov[j * (j + 1) / 2 + i];
                 }
             }
-            var ST = new double[n * (n + 1) / 2];
-            for (int i = 0; i < n; ++i)
-            {
-                for (int j = i; j < n; j++)
-                {
-                    ST[j * (j + 1) / 2 + i] = cov[ji[j * (j + 1) / 2 + i]];
-                }
-            }
-
             var unit1 = new double[n];
             for (var i = 0; i < n; ++i) unit1[i] = 1;
             var unit1T = new double[n];
@@ -442,16 +426,16 @@ namespace BlasLikeTest
             char[] U = { 'U' };
             char[] L = { 'L' };
             var ipiv = new int[n];
+            var Sbefore = (double[])S.Clone();
             var back = Factorise.dsptrf(U, n, S, ipiv);
             Factorise.dsptrs(U, n, 1, S, ipiv, unit1, n);
             int[] ipivT = new int[n];
+            var STbefore = (double[])ST.Clone();
             var backT = Factorise.dsptrf(L, n, ST, ipivT);
             Factorise.dsptrs(L, n, 1, ST, ipivT, unit1T, n);
-            var Sbefore = (double[])S.Clone();
             var c = new double[n];
             Factorise.dsmxmulv(n, Sbefore, unit1, c);
 
-            var STbefore = (double[])ST.Clone();
             var cT = new double[n];
             Factorise.dsmxmulvT(n, STbefore, unit1T, cT);
             var diff = new double[n];

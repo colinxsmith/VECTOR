@@ -114,7 +114,7 @@ namespace UseBlas
                 {
                     for (int j = i; j < n; j++, ij++)
                     {
-                        S[j*(j+1)/2+i] = ji[ij];
+                        S[j * (j + 1) / 2 + i] = ji[ij];
                     }
                 }
 
@@ -187,6 +187,69 @@ namespace UseBlas
                 BlasLike.dsubvec(n, b, cc, b);
                 double error = Math.Sqrt(BlasLike.ddotvec(n, b, b) / n);
                 Console.WriteLine($"{U[0]}\t\t{back}\tError: {error}");
+            }
+
+            {
+                /* 
+                Generate 2 random symmetric matrices such that the lower packed version of
+                one is equal to the upper packed version of the other.
+                Test that upper and lower of the solver are working, but this shows that the
+                working is not identical!
+                */
+                var n = 4;
+                var cov = new double[n * (n + 1) / 2];
+                for (var i = 0; i < n; ++i)
+                {
+                    for (var j = i; j < n; j++)
+                    {
+                        var cc = new Random();
+                        cov[j * (j + 1) / 2 + i] = cc.NextDouble();
+                    }
+                }
+                var S = new double[n * (n + 1) / 2];
+                var ST = new double[n * (n + 1) / 2];
+
+                for (var i = 0; i < n; ++i)
+                {
+                    for (var j = i; j < n; j++)
+                    {
+                        ST[i * n - i * (i - 1) / 2 + j - i]=S[j * (j + 1) / 2 + i] = cov[j * (j + 1) / 2 + i];
+                    }
+                }
+
+                var unit1 = new double[n];
+                //           for (var i = 0; i < n; ++i) unit1[i] = 1;
+                unit1[0] = 1;
+                var unit1T = new double[n];
+                //           for (var i = 0; i < n; ++i) unit1T[i] = 1;
+                unit1T[0] = 1;
+                char[] U = { 'U' };
+                char[] L = { 'L' };
+                var ipiv = new int[n];
+                var Sbefore = (double[])S.Clone();
+                var back = Factorise.dsptrf(U, n, S, ipiv);
+                Factorise.dsptrs(U, n, 1, S, ipiv, unit1, n);
+                int[] ipivT = new int[n];
+                var STbefore = (double[])ST.Clone();
+                var backT = Factorise.dsptrf(L, n, ST, ipivT);
+                Factorise.dsptrs(L, n, 1, ST, ipivT, unit1T, n);
+                var c = new double[n];
+                Factorise.dsmxmulv(n, Sbefore, unit1, c);
+
+                var cT = new double[n];
+                Factorise.dsmxmulvT(n, STbefore, unit1T, cT);
+                var diff = new double[n];
+                Factorise.dsmxmulv(n, Sbefore, c, diff);
+                Factorise.dsmxmulvT(n, STbefore, cT, diff);
+                int negpiv = 0, negpivT = 0;
+                for (var i = 0; i < n; ++i)
+                {
+                    if (ipiv[i] < 0) negpiv++;
+                    if (ipivT[i] < 0) negpivT++;
+                }
+                BlasLike.dsubvec(n, unit1T, unit1, diff);
+                var error = Math.Sqrt(BlasLike.ddotvec(n, diff, diff) / n);
+                Console.WriteLine($"{error} back={back} backT={backT} negpiv={negpiv} negpivT={negpivT}\n {unit1[0]},{unit1[1]},{unit1[2]},{unit1[3]} \n {unit1T[0]},{unit1T[1]},{unit1T[2]},{unit1T[3]} \n {c[0]},{c[1]},{c[2]},{c[3]} \n {cT[0]},{cT[1]},{cT[2]},{cT[3]}");
             }
 
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
