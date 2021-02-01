@@ -420,22 +420,20 @@ namespace BlasLikeTest
                 }
             }
             var unit1 = new double[n];
-            for (var i = 0; i < n; ++i) unit1[i] = 1;
             var unit1T = new double[n];
-            for (var i = 0; i < n; ++i) unit1T[i] = 1;
+            for (var i = 0; i < n; ++i) unit1T[i] = unit1[i] = 1;
             char[] U = { 'U' };
             char[] L = { 'L' };
             var ipiv = new int[n];
             var Sbefore = (double[])S.Clone();
             var back = Factorise.dsptrf(U, n, S, ipiv);
             Factorise.dsptrs(U, n, 1, S, ipiv, unit1, n);
-            int[] ipivT = new int[n];
+            var ipivT = new int[n];
             var STbefore = (double[])ST.Clone();
             var backT = Factorise.dsptrf(L, n, ST, ipivT);
             Factorise.dsptrs(L, n, 1, ST, ipivT, unit1T, n);
             var c = new double[n];
             Factorise.dsmxmulv(n, Sbefore, unit1, c);
-
             var cT = new double[n];
             Factorise.dsmxmulvT(n, STbefore, unit1T, cT);
             var diff = new double[n];

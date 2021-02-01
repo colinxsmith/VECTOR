@@ -196,8 +196,10 @@ namespace UseBlas
                 Test that upper and lower of the solver are working, but this shows that the
                 working is not identical!
                 */
-                var n = 4;
+                var n = 100;
                 var cov = new double[n * (n + 1) / 2];
+                fixed (double* cv = cov)
+                    BlasLike.baseref = 0*(int)cv;
                 for (var i = 0; i < n; ++i)
                 {
                     for (var j = i; j < n; j++)
@@ -213,16 +215,19 @@ namespace UseBlas
                 {
                     for (var j = i; j < n; j++)
                     {
-                        ST[i * n - i * (i - 1) / 2 + j - i]=S[j * (j + 1) / 2 + i] = cov[j * (j + 1) / 2 + i];
+                        ST[i * n - i * (i - 1) / 2 + j - i] = S[j * (j + 1) / 2 + i] = cov[j * (j + 1) / 2 + i];
                     }
                 }
 
                 var unit1 = new double[n];
-                //           for (var i = 0; i < n; ++i) unit1[i] = 1;
-                unit1[0] = 1;
                 var unit1T = new double[n];
-                //           for (var i = 0; i < n; ++i) unit1T[i] = 1;
-                unit1T[0] = 1;
+                //           for (var i = 0; i < n; ++i) unit1T[i] =unit1[i] = 1;
+                unit1T[0] = unit1[0] = 1;
+                var diff = new double[n];
+                Factorise.dsmxmulv(n, S, unit1, diff);
+                Console.WriteLine($"{diff[0]},{diff[1]},{diff[2]},{diff[3]}");
+                Factorise.dsmxmulvT(n, ST, unit1T, diff);
+                Console.WriteLine($"{diff[0]},{diff[1]},{diff[2]},{diff[3]}");
                 char[] U = { 'U' };
                 char[] L = { 'L' };
                 var ipiv = new int[n];
@@ -231,16 +236,13 @@ namespace UseBlas
                 Factorise.dsptrs(U, n, 1, S, ipiv, unit1, n);
                 int[] ipivT = new int[n];
                 var STbefore = (double[])ST.Clone();
-                var backT = Factorise.dsptrf(L, n, ST, ipivT);
-                Factorise.dsptrs(L, n, 1, ST, ipivT, unit1T, n);
                 var c = new double[n];
                 Factorise.dsmxmulv(n, Sbefore, unit1, c);
+                var backT = Factorise.dsptrf(L, n, ST, ipivT);
+                Factorise.dsptrs(L, n, 1, ST, ipivT, unit1T, n);
 
                 var cT = new double[n];
                 Factorise.dsmxmulvT(n, STbefore, unit1T, cT);
-                var diff = new double[n];
-                Factorise.dsmxmulv(n, Sbefore, c, diff);
-                Factorise.dsmxmulvT(n, STbefore, cT, diff);
                 int negpiv = 0, negpivT = 0;
                 for (var i = 0; i < n; ++i)
                 {
