@@ -2979,5 +2979,37 @@ namespace Blas
             for (i = 1, iS = 0, ix = 0; i <= n; i++, ix++, iS += n - i + 2)
                 y[i - 1] = BlasLike.ddot(n - i + 1, S + iS, 1, x + ix, 1) + BlasLike.didot(i - 1, S + i - 1, -(n - 1), x, 1);
         }
+        public static void Eigen2(double[] S, double[] lambda, double[] t)
+        {//Transformation for diagonalising a symmetric 2x2 matrix
+            if (S[1] == 0)
+            {
+                lambda[0] = S[0];
+                lambda[1] = S[2];
+                t[0] = t[3] = 1;
+                t[1] = t[2] = 0;
+                return;
+            }
+            var d = Math.Sqrt((S[0] - S[2]) * (S[0] - S[2]) + 4 * S[1] * S[1]) / 2;
+            var ab = (S[0] + S[2]) / 2;
+            if (S[0] > S[2])
+            {
+                lambda[0] = ab + d;
+                lambda[1] = ab - d;
+            }
+            else
+            {
+                lambda[0] = ab - d;
+                lambda[1] = ab + d;
+            }
+            t[0] = ((lambda[0]) - S[2]) / S[1];
+            t[2] = ((lambda[1]) - S[2]) / S[1];
+            t[1] = t[3] = 1;
+            var bot = Math.Sqrt(t[0] * t[0] + 1);
+            t[0] /= bot;
+            t[1] /= bot;
+            bot = Math.Sqrt(t[2] * t[2] + 1);
+            t[2] /= bot;
+            t[3] /= bot;
+        }
     }
 }

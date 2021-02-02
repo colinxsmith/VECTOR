@@ -199,7 +199,7 @@ namespace UseBlas
                 var n = 100;
                 var cov = new double[n * (n + 1) / 2];
                 fixed (double* cv = cov)
-                    BlasLike.baseref = 0*(int)cv;
+                    BlasLike.baseref = 0 * (int)cv;
                 for (var i = 0; i < n; ++i)
                 {
                     for (var j = i; j < n; j++)
@@ -253,7 +253,20 @@ namespace UseBlas
                 var error = Math.Sqrt(BlasLike.ddotvec(n, diff, diff) / n);
                 Console.WriteLine($"{error} back={back} backT={backT} negpiv={negpiv} negpivT={negpivT}\n {unit1[0]},{unit1[1]},{unit1[2]},{unit1[3]} \n {unit1T[0]},{unit1T[1]},{unit1T[2]},{unit1T[3]} \n {c[0]},{c[1]},{c[2]},{c[3]} \n {cT[0]},{cT[1]},{cT[2]},{cT[3]}");
             }
+            {
+                double[] M = { 1, 2, 3 };
+                var lambda = new double[2];
+                var t = new double[4];
+                Factorise.Eigen2(M, lambda, t);
+                var lt = new double[4];
 
+                lt[0] = (M[0] * t[0] + M[1] * t[1]) / lambda[0];
+                lt[1] = (M[1] * t[0] + M[2] * t[1]) / lambda[0];
+                lt[2] = (M[0] * t[2] + M[1] * t[3]) / lambda[1];
+                lt[3] = (M[1] * t[2] + M[2] * t[3]) / lambda[1];
+                Console.WriteLine($"{M[0]} {M[1]} {lambda[0]} {t[0]} {t[2]}");
+                Console.WriteLine($"{M[1]} {M[2]} {lambda[1]} {t[1]} {t[3]}");
+            }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
             {

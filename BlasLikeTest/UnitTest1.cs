@@ -447,5 +447,20 @@ namespace BlasLikeTest
             var error = Math.Sqrt(BlasLike.ddotvec(n, diff, diff) / n);
             Assert.IsTrue(error < BlasLike.lm_rooteps, $"{error} back={back} backT={backT} negpiv={negpiv} negpivT={negpivT}\n {unit1[0]},{unit1[1]},{unit1[2]},{unit1[3]} \n {unit1T[0]},{unit1T[1]},{unit1T[2]},{unit1T[3]} \n {c[0]},{c[1]},{c[2]},{c[3]} \n {cT[0]},{cT[1]},{cT[2]},{cT[3]}");
         }
+        [TestMethod]
+        public void Test_Eigen2()
+        {
+            double[] M = { 1, 2, 3 };
+            var lambda = new double[2];
+            var t = new double[4];
+            Factorise.Eigen2(M, lambda, t);
+            var lt = new double[4];
+
+            lt[0] = (M[0] * t[0] + M[1] * t[1]) / lambda[0];
+            lt[1] = (M[1] * t[0] + M[2] * t[1]) / lambda[0];
+            lt[2] = (M[0] * t[2] + M[1] * t[3]) / lambda[1];
+            lt[3] = (M[1] * t[2] + M[2] * t[3]) / lambda[1];
+            Assert.IsTrue(Math.Abs(lt[0] - t[0]) < 4 * BlasLike.lm_eps, $"\n{M[0]} {M[1]} {lambda[0]} {t[0]} {t[2]}\n{M[1]} {M[2]} {lambda[1]} {t[1]} {t[3]}");
+        }
     }
 }
