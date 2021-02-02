@@ -1067,7 +1067,7 @@ namespace Blas
             fixed (double* bb = b)
                 Writevec(n, bb + bstart, ib);
         }
-        public static int dsptrs(char[] uplo, int n, int nrhs, double[] ap, int[] ipiv, double[] b, int ldb, int astart = 0, int pstart = 0, int bstart = 0)
+        public static int dsptrs(char[] uplo, int n, int nrhs, double[] ap, int[] ipiv, double[] b, int ldb, int astart = 0, int pstart = 0, int bstart = 0, int root = 0)
         {
             int b_dim1, b_offset;
             int j, k;
@@ -1186,8 +1186,18 @@ namespace Blas
 
                     Writevec(n, b, nrhs);
                     /*           Multiply by the inverse of the diagonal block. */
-
-                    BlasLike.dscal(nrhs, 1.0 / ap[kc + k - 1 + astart], b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
+                    if (root == 0)
+                    {
+                        BlasLike.dscal(nrhs, 1.0 / ap[kc + k - 1 + astart], b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
+                    }
+                    else if (root == 1)
+                    {
+                        BlasLike.dscal(nrhs, Math.Sqrt(ap[kc + k - 1 + astart]), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
+                    }
+                    else if (root == -1)
+                    {
+                        BlasLike.dscal(nrhs, Math.Sqrt(1.0 / ap[kc + k - 1 + astart]), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
+                    }
                     Writevec(n, b, nrhs);
                     --k;
                 }
@@ -1212,21 +1222,59 @@ namespace Blas
                     BlasLike.dger(k - 2, nrhs, -1, ap/*[kc - (k - 1)]*/, 1, b/*[k - 1 +
                         b_dim1]*/, ldb, b/*[b_dim1 + 1]*/, ldb, astart + kc - (k - 1), bstart + k - 1 + b_dim1, bstart + b_dim1 + 1);
                     Writevec(n, b, nrhs);
-
-                    /*           Multiply by the inverse of the diagonal block. */
-
-                    akm1k = ap[kc + k - 2 + astart];
-                    akm1 = ap[kc - 1 + astart] / akm1k;
-                    ak = ap[kc + k - 1 + astart] / akm1k;
-                    denom = akm1 * ak - 1.0;
-                    for (j = 1; j <= nrhs; ++j)
+                    if (root == 0)
                     {
-                        bkm1 = b[k - 1 + j * b_dim1 + bstart] / akm1k;
-                        bk = b[k + j * b_dim1 + bstart] / akm1k;
-                        b[k - 1 + j * b_dim1 + bstart] = (ak * bkm1 - bk) / denom;
-                        b[k + j * b_dim1 + bstart] = (akm1 * bk - bkm1) / denom;
-                        /* L20: */
+                        /*           Multiply by the inverse of the diagonal block. */
+
+                        akm1k = ap[kc + k - 2 + astart];
+                        akm1 = ap[kc - 1 + astart] / akm1k;
+                        ak = ap[kc + k - 1 + astart] / akm1k;
+                        denom = akm1 * ak - 1.0;
+                        for (j = 1; j <= nrhs; ++j)
+                        {
+                            bkm1 = b[k - 1 + j * b_dim1 + bstart] / akm1k;
+                            bk = b[k + j * b_dim1 + bstart] / akm1k;
+                            b[k - 1 + j * b_dim1 + bstart] = (ak * bkm1 - bk) / denom;
+                            b[k + j * b_dim1 + bstart] = (akm1 * bk - bkm1) / denom;
+                            /* L20: */
+                        }
                     }
+                    else if (root == 1)
+                    {
+                        double[] S = { ap[kc - 1 + astart], ap[kc + k - 2 + astart], ap[kc + k - 1 + astart] };
+                        var lambda = new double[2];
+                        var t = new double[4];
+                        Factorise.Eigen2(S, lambda, t);
+                        for (j = 1; j <= nrhs; ++j)
+                        {
+                            bkm1 = b[k - 1 + j * b_dim1 + bstart] * t[0] + b[k + j * b_dim1 + bstart] * t[2];
+                            bk = b[k - 1 + j * b_dim1 + bstart] * t[1] + b[k + j * b_dim1 + bstart] * t[3];
+                            bkm1 *= Math.Sqrt(lambda[0]);
+                            bk *= Math.Sqrt(lambda[1]);
+                            b[k - 1 + j * b_dim1 + bstart] = bkm1 * t[0] + bk * t[1];
+                            b[k + j * b_dim1 + bstart] = bkm1 * t[2] + bk * t[3];
+                            /* L20: */
+                        }
+                    }
+
+                    else if (root == -1)
+                    {
+                        double[] S = { ap[kc - 1 + astart], ap[kc + k - 2 + astart], ap[kc + k - 1 + astart] };
+                        var lambda = new double[2];
+                        var t = new double[4];
+                        Factorise.Eigen2(S, lambda, t);
+                        for (j = 1; j <= nrhs; ++j)
+                        {
+                            bkm1 = b[k - 1 + j * b_dim1 + bstart] * t[0] + b[k + j * b_dim1 + bstart] * t[2];
+                            bk = b[k - 1 + j * b_dim1 + bstart] * t[1] + b[k + j * b_dim1 + bstart] * t[3];
+                            bkm1 /= Math.Sqrt(lambda[0]);
+                            bk /= Math.Sqrt(lambda[1]);
+                            b[k - 1 + j * b_dim1 + bstart] = bkm1 * t[0] + bk * t[1];
+                            b[k + j * b_dim1 + bstart] = bkm1 * t[2] + bk * t[3];
+                            /* L20: */
+                        }
+                    }
+
                     Writevec(n, b, nrhs);
                     kc = kc - k + 1;
                     k += -2;
@@ -1250,7 +1298,6 @@ namespace Blas
                 {
                     goto L50;
                 }
-
                 if (ipiv[k + pstart] > 0)
                 {
 
@@ -1258,43 +1305,48 @@ namespace Blas
 
                     /*           Multiply by inv(U**T(K)), where U(K) is the transformation */
                     /*           stored in column K of A. */
-                    char[] TT = { 'T' };
-                    BlasLike.dgemv(TT, k - 1, nrhs, -1, b/*[b_offset]*/, ldb, ap/*[kc]*/
-                        , 1, 1, b/*[k + b_dim1]*/, ldb, bstart + b_offset, astart + kc, bstart + k + b_dim1);
-
-                    Writevec(n, b, nrhs);
-                    /*           Interchange rows K and IPIV(K). */
-
-                    kp = ipiv[k + pstart];
-                    if (kp != k)
+                    if (root == 0)
                     {
-                        BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
+                        char[] TT = { 'T' };
+                        BlasLike.dgemv(TT, k - 1, nrhs, -1, b/*[b_offset]*/, ldb, ap/*[kc]*/
+                            , 1, 1, b/*[k + b_dim1]*/, ldb, bstart + b_offset, astart + kc, bstart + k + b_dim1);
+
                         Writevec(n, b, nrhs);
+                        /*           Interchange rows K and IPIV(K). */
+
+                        kp = ipiv[k + pstart];
+                        if (kp != k)
+                        {
+                            BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
+                            Writevec(n, b, nrhs);
+                        }
                     }
                     kc += k;
                     ++k;
                 }
                 else
                 {
+                    if (root == 0)
+                    {
+                        /*           2 x 2 diagonal block */
 
-                    /*           2 x 2 diagonal block */
-
-                    /*           Multiply by inv(U**T(K+1)), where U(K+1) is the transformation */
-                    /*           stored in columns K and K+1 of A. */
-                    char[] TT = { 'T' };
-                    BlasLike.dgemv(TT, k - 1, nrhs, -1, b/*[b_offset]*/, ldb, ap/*[kc]*/
-                        , 1, 1, b/*[k + b_dim1]*/, ldb, bstart + b_offset, astart + kc, bstart + k + b_dim1);
-                    BlasLike.dgemv(TT, k - 1, nrhs, -1, b/*[b_offset]*/, ldb, ap/*[kc
+                        /*           Multiply by inv(U**T(K+1)), where U(K+1) is the transformation */
+                        /*           stored in columns K and K+1 of A. */
+                        char[] TT = { 'T' };
+                        BlasLike.dgemv(TT, k - 1, nrhs, -1, b/*[b_offset]*/, ldb, ap/*[kc]*/
+                            , 1, 1, b/*[k + b_dim1]*/, ldb, bstart + b_offset, astart + kc, bstart + k + b_dim1);
+                        BlasLike.dgemv(TT, k - 1, nrhs, -1, b/*[b_offset]*/, ldb, ap/*[kc
                         + k]*/, 1, 1, b/*[k + 1 + b_dim1]*/, ldb, bstart + b_offset, astart + kc + k, bstart + k + 1 + b_dim1);
 
-                    Writevec(n, b, nrhs);
-                    /*           Interchange rows K and -IPIV(K). */
-
-                    kp = -ipiv[k + pstart];
-                    if (kp != k)
-                    {
-                        BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
                         Writevec(n, b, nrhs);
+                        /*           Interchange rows K and -IPIV(K). */
+
+                        kp = -ipiv[k + pstart];
+                        if (kp != k)
+                        {
+                            BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
+                            Writevec(n, b, nrhs);
+                        }
                     }
                     kc = kc + (k << 1) + 1;
                     k += 2;
@@ -1351,8 +1403,18 @@ namespace Blas
                     }
 
                     /*           Multiply by the inverse of the diagonal block. */
-
-                    BlasLike.dscal(nrhs, 1.0 / ap[kc + astart], b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
+                    if (root == 0)
+                    {
+                        BlasLike.dscal(nrhs, 1.0 / ap[kc + astart], b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
+                    }
+                    else if (root == 1)
+                    {
+                        BlasLike.dscal(nrhs, Math.Sqrt(ap[kc + astart]), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
+                    }
+                    else if (root == -1)
+                    {
+                        BlasLike.dscal(nrhs, Math.Sqrt(1.0 / ap[kc + astart]), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
+                    }
                     Writevec(n, b, nrhs);
                     kc = kc + n - k + 1;
                     ++k;
@@ -1385,19 +1447,59 @@ namespace Blas
                     }
 
                     /*           Multiply by the inverse of the diagonal block. */
-
-                    akm1k = ap[kc + 1 + astart];
-                    akm1 = ap[kc + astart] / akm1k;
-                    ak = ap[kc + n - k + 1 + astart] / akm1k;
-                    denom = akm1 * ak - 1.0;
-                    for (j = 1; j <= nrhs; ++j)
+                    if (root == 0)
                     {
-                        bkm1 = b[k + j * b_dim1 + bstart] / akm1k;
-                        bk = b[k + 1 + j * b_dim1 + bstart] / akm1k;
-                        b[k + j * b_dim1 + bstart] = (ak * bkm1 - bk) / denom;
-                        b[k + 1 + j * b_dim1 + bstart] = (akm1 * bk - bkm1) / denom;
-                        /* L70: */
+                        akm1k = ap[kc + 1 + astart];
+                        akm1 = ap[kc + astart] / akm1k;
+                        ak = ap[kc + n - k + 1 + astart] / akm1k;
+                        denom = akm1 * ak - 1.0;
+                        for (j = 1; j <= nrhs; ++j)
+                        {
+                            bkm1 = b[k + j * b_dim1 + bstart] / akm1k;
+                            bk = b[k + 1 + j * b_dim1 + bstart] / akm1k;
+                            b[k + j * b_dim1 + bstart] = (ak * bkm1 - bk) / denom;
+                            b[k + 1 + j * b_dim1 + bstart] = (akm1 * bk - bkm1) / denom;
+                            /* L70: */
+                        }
                     }
+                    else if (root == 1)
+                    {
+                        {
+                            double[] S = { ap[kc + astart], ap[kc + 1 + astart], ap[kc + n - k + 1 + astart] };
+                            var lambda = new double[2];
+                            var t = new double[4];
+                            Factorise.Eigen2(S, lambda, t);
+                            for (j = 1; j <= nrhs; ++j)
+                            {
+                                bkm1 = b[k + j * b_dim1 + bstart] * t[0] + b[k + 1 + j * b_dim1 + bstart] * t[2];
+                                bk = b[k + j * b_dim1 + bstart] * t[1] + b[k + 1 + j * b_dim1 + bstart] * t[3];
+                                bkm1 *= Math.Sqrt(lambda[0]);
+                                bk *= Math.Sqrt(lambda[1]);
+                                b[k + j * b_dim1 + bstart] = bkm1 * t[0] + bk * t[1];
+                                b[k + 1 + j * b_dim1 + bstart] = bkm1 * t[2] + bk * t[3];
+                                /* L20: */
+                            }
+                        }
+                    }
+                    else if (root == -1)
+                    {
+                        {
+                            double[] S = { ap[kc + astart], ap[kc + 1 + astart], ap[kc + n - k + 1 + astart] };
+                            var lambda = new double[2];
+                            var t = new double[4];
+                            Factorise.Eigen2(S, lambda, t);
+                            for (j = 1; j <= nrhs; ++j)
+                            {
+                                bkm1 = b[k + j * b_dim1 + bstart] * t[0] + b[k + 1 + j * b_dim1 + bstart] * t[2];
+                                bk = b[k + j * b_dim1 + bstart] * t[1] + b[k + 1 + j * b_dim1 + bstart] * t[3];
+                                bkm1 /= Math.Sqrt(lambda[0]);
+                                bk /= Math.Sqrt(lambda[1]);
+                                b[k + j * b_dim1 + bstart] = bkm1 * t[0] + bk * t[1];
+                                b[k + 1 + j * b_dim1 + bstart] = bkm1 * t[2] + bk * t[3];
+                                /* L20: */
+                            }
+                        }
+                   }
                     Writevec(n, b, nrhs);
                     kc = kc + (n - k << 1) + 1;
                     k += 2;
@@ -1423,58 +1525,63 @@ namespace Blas
                 }
 
                 kc -= n - k + 1;
+
                 if (ipiv[k + pstart] > 0)
                 {
-
-                    /*           1 x 1 diagonal block */
-
-                    /*           Multiply by inv(L**T(K)), where L(K) is the transformation */
-                    /*           stored in column K of A. */
-
-                    if (k < n)
+                    if (root == 0)
                     {
-                        char[] TT = { 'T' };
-                        BlasLike.dgemv(TT, n - k, nrhs, -1, b/*[k + 1 + b_dim1]*/,
-                            ldb, ap/*[kc + 1]*/, 1, 1, b/*[k + b_dim1]*/, ldb, bstart + k + 1 + b_dim1, astart + kc + 1, bstart + k + b_dim1);
-                        Writevec(n, b, nrhs);
-                    }
+                        /*           1 x 1 diagonal block */
 
-                    /*           Interchange rows K and IPIV(K). */
+                        /*           Multiply by inv(L**T(K)), where L(K) is the transformation */
+                        /*           stored in column K of A. */
 
-                    kp = ipiv[k + pstart];
-                    if (kp != k)
-                    {
-                        BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
-                        Writevec(n, b, nrhs);
+                        if (k < n)
+                        {
+                            char[] TT = { 'T' };
+                            BlasLike.dgemv(TT, n - k, nrhs, -1, b/*[k + 1 + b_dim1]*/,
+                                ldb, ap/*[kc + 1]*/, 1, 1, b/*[k + b_dim1]*/, ldb, bstart + k + 1 + b_dim1, astart + kc + 1, bstart + k + b_dim1);
+                            Writevec(n, b, nrhs);
+                        }
+
+                        /*           Interchange rows K and IPIV(K). */
+
+                        kp = ipiv[k + pstart];
+                        if (kp != k)
+                        {
+                            BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
+                            Writevec(n, b, nrhs);
+                        }
                     }
                     --k;
                 }
                 else
                 {
-
-                    /*           2 x 2 diagonal block */
-
-                    /*           Multiply by inv(L**T(K-1)), where L(K-1) is the transformation */
-                    /*           stored in columns K-1 and K of A. */
-
-                    if (k < n)
+                    if (root == 0)
                     {
-                        char[] TT = { 'T' };
-                        BlasLike.dgemv(TT, n - k, nrhs, -1, b/*[k + 1 + b_dim1]*/,
-                            ldb, ap/*[kc + 1]*/, 1, 1, b/*[k + b_dim1]*/, ldb, bstart + k + 1 + b_dim1, astart + kc + 1, bstart + k + b_dim1);
-                        BlasLike.dgemv(TT, n - k, nrhs, -1, b/*[k + 1 + b_dim1]*/,
-                            ldb, ap/*[kc - (n - k)]*/, 1, 1, b/*[k - 1 +
+                        /*           2 x 2 diagonal block */
+
+                        /*           Multiply by inv(L**T(K-1)), where L(K-1) is the transformation */
+                        /*           stored in columns K-1 and K of A. */
+
+                        if (k < n)
+                        {
+                            char[] TT = { 'T' };
+                            BlasLike.dgemv(TT, n - k, nrhs, -1, b/*[k + 1 + b_dim1]*/,
+                                ldb, ap/*[kc + 1]*/, 1, 1, b/*[k + b_dim1]*/, ldb, bstart + k + 1 + b_dim1, astart + kc + 1, bstart + k + b_dim1);
+                            BlasLike.dgemv(TT, n - k, nrhs, -1, b/*[k + 1 + b_dim1]*/,
+                                ldb, ap/*[kc - (n - k)]*/, 1, 1, b/*[k - 1 +
                             b_dim1]*/, ldb, bstart + k + 1 + b_dim1, astart + kc - (n - k), bstart + k - 1 + b_dim1);
-                        Writevec(n, b, nrhs);
-                    }
+                            Writevec(n, b, nrhs);
+                        }
 
-                    /*           Interchange rows K and -IPIV(K). */
+                        /*           Interchange rows K and -IPIV(K). */
 
-                    kp = -ipiv[k + pstart];
-                    if (kp != k)
-                    {
-                        BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
-                        Writevec(n, b, nrhs);
+                        kp = -ipiv[k + pstart];
+                        if (kp != k)
+                        {
+                            BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
+                            Writevec(n, b, nrhs);
+                        }
                     }
                     kc -= n - k + 2;
                     k += -2;
