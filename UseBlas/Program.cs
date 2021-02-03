@@ -256,9 +256,9 @@ namespace UseBlas
             {
                 var n = 3;
                 char[] way = { 'L' };
-                double[] M ={3,1,1,
-                                4,-1,
-                                    6};
+                double[] M ={0.539184521971479 ,0.7093733546673033 ,-0.2894729466437226,
+                                0.9332808301199811 ,-0.38084251770984656,
+                                    2.3914778312727987};
                 var piv = new int[n];
                 var back = Factorise.dsptrf(way, n, M, piv);
                 var r = new double[n * n];
@@ -268,10 +268,13 @@ namespace UseBlas
                 Console.WriteLine($"{r[0]} {r[1]} {r[2]}");
                 Console.WriteLine($"{r[3]} {r[4]} {r[5]}");
                 Console.WriteLine($"{r[6]} {r[7]} {r[8]}");
-                Factorise.dsptrs(way, n, n, M, piv, r, n,0,0,0,-1);
-                Console.WriteLine($"{r[0]} {r[1]} {r[2]}");
-                Console.WriteLine($"{r[3]} {r[4]} {r[5]}");
-                Console.WriteLine($"{r[6]} {r[7]} {r[8]}");
+                var symback = Factorise.dsptrs(way, n, n, M, piv, r, n, 0, 0, 0, 1);
+                if (symback != -10)
+                {
+                    Console.WriteLine($"{r[0]} {r[1]} {r[2]}");
+                    Console.WriteLine($"{r[3]} {r[4]} {r[5]}");
+                    Console.WriteLine($"{r[6]} {r[7]} {r[8]}");
+                }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
