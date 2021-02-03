@@ -255,7 +255,7 @@ namespace UseBlas
             }
             {
                 var n = 10;
-                var tdata = 3;
+                var tdata = 30;
                 char[] way = { 'L' };
                 var cov = new double[n * (n + 1) / 2];
                 var M = new double[n * (n + 1) / 2];
