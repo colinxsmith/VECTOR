@@ -1192,11 +1192,13 @@ namespace Blas
                     }
                     else if (root == 1)
                     {
+                        if (Math.Abs(ap[kc + k - 1 + astart]) < 8 * BlasLike.lm_eps) ap[kc + k - 1 + astart] = BlasLike.lm_eps;
                         if (ap[kc + k - 1 + astart] < 0) return -10;
                         BlasLike.dscal(nrhs, Math.Sqrt(ap[kc + k - 1 + astart]), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
                     }
                     else if (root == -1)
                     {
+                        if (Math.Abs(ap[kc + k - 1 + astart]) < 4 * BlasLike.lm_eps) ap[kc + k - 1 + astart] = BlasLike.lm_eps;
                         if (ap[kc + k - 1 + astart] < 0) return -10;
                         BlasLike.dscal(nrhs, Math.Sqrt(1.0 / ap[kc + k - 1 + astart]), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
                     }
@@ -1247,10 +1249,12 @@ namespace Blas
                         var lambda = new double[2];
                         var t = new double[4];
                         Factorise.Eigen2(S, lambda, t);
+                        if (Math.Abs(lambda[0]) < 4 * BlasLike.lm_eps) lambda[0] = BlasLike.lm_eps;
                         if (lambda[0] < 0) return -10;
+                        if (Math.Abs(lambda[1]) < 4 * BlasLike.lm_eps) lambda[1] = BlasLike.lm_eps;
                         if (lambda[1] < 0) return -10;
-//if(lambda[0]<0)lambda[0]=BlasLike.lm_eps;
-//if(lambda[0]<0)lambda[1]=BlasLike.lm_eps;
+                        //if(lambda[0]<0)lambda[0]=BlasLike.lm_eps;
+                        //if(lambda[0]<0)lambda[1]=BlasLike.lm_eps;
                         for (j = 1; j <= nrhs; ++j)
                         {
                             bkm1 = b[k - 1 + j * b_dim1 + bstart] * t[0] + b[k + j * b_dim1 + bstart] * t[2];
@@ -1269,10 +1273,12 @@ namespace Blas
                         var lambda = new double[2];
                         var t = new double[4];
                         Factorise.Eigen2(S, lambda, t);
-    if (lambda[0] < 0) return -10;
+                        if (Math.Abs(lambda[0]) < 4 * BlasLike.lm_eps) lambda[0] = BlasLike.lm_eps;
+                        if (lambda[0] < 0) return -10;
+                        if (Math.Abs(lambda[1]) < 4 * BlasLike.lm_eps) lambda[1] = BlasLike.lm_eps;
                         if (lambda[1] < 0) return -10;
-//if(lambda[0]<0)lambda[0]=BlasLike.lm_eps;
-//if(lambda[0]<0)lambda[1]=BlasLike.lm_eps;
+                        //if(lambda[0]<0)lambda[0]=BlasLike.lm_eps;
+                        //if(lambda[0]<0)lambda[1]=BlasLike.lm_eps;
                         for (j = 1; j <= nrhs; ++j)
                         {
                             bkm1 = b[k - 1 + j * b_dim1 + bstart] * t[0] + b[k + j * b_dim1 + bstart] * t[2];
@@ -1419,11 +1425,13 @@ namespace Blas
                     }
                     else if (root == 1)
                     {
+                        if (Math.Abs(ap[kc + astart]) < 4 * BlasLike.lm_eps) ap[kc + astart] = BlasLike.lm_eps;
                         if (ap[kc + astart] < 0) return -10;
                         BlasLike.dscal(nrhs, Math.Sqrt(ap[kc + astart]), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
                     }
                     else if (root == -1)
                     {
+                        if (Math.Abs(ap[kc + astart]) < 4 * BlasLike.lm_eps) ap[kc + astart] = BlasLike.lm_eps;
                         if (ap[kc + astart] < 0) return -10;
                         BlasLike.dscal(nrhs, Math.Sqrt(1.0 / ap[kc + astart]), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
                     }
@@ -1481,7 +1489,9 @@ namespace Blas
                             var lambda = new double[2];
                             var t = new double[4];
                             Factorise.Eigen2(S, lambda, t);
+                            if (Math.Abs(lambda[0]) < 4 * BlasLike.lm_eps) lambda[0] = BlasLike.lm_eps;
                             if (lambda[0] < 0) return -10;
+                            if (Math.Abs(lambda[1]) < 4 * BlasLike.lm_eps) lambda[1] = BlasLike.lm_eps;
                             if (lambda[1] < 0) return -10;
                             for (j = 1; j <= nrhs; ++j)
                             {
@@ -1502,7 +1512,9 @@ namespace Blas
                             var lambda = new double[2];
                             var t = new double[4];
                             Factorise.Eigen2(S, lambda, t);
+                            if (Math.Abs(lambda[0]) < 4 * BlasLike.lm_eps) lambda[0] = BlasLike.lm_eps;
                             if (lambda[0] < 0) return -10;
+                            if (Math.Abs(lambda[1]) < 4 * BlasLike.lm_eps) lambda[1] = BlasLike.lm_eps;
                             if (lambda[1] < 0) return -10;
                             for (j = 1; j <= nrhs; ++j)
                             {

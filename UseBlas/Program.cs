@@ -254,13 +254,47 @@ namespace UseBlas
                 Console.WriteLine($"{error} back={back} backT={backT} negpiv={negpiv} negpivT={negpivT}\n {unit1[0]},{unit1[1]},{unit1[2]},{unit1[3]} \n {unit1T[0]},{unit1T[1]},{unit1T[2]},{unit1T[3]} \n {c[0]},{c[1]},{c[2]},{c[3]} \n {cT[0]},{cT[1]},{cT[2]},{cT[3]}");
             }
             {
-                var n = 3;
+                var n = 10;
+                var tdata = 3;
                 char[] way = { 'L' };
-                double[] M ={0.539184521971479 ,0.7093733546673033 ,-0.2894729466437226,
-                                0.9332808301199811 ,-0.38084251770984656,
-                                    2.3914778312727987};
+                var cov = new double[n * (n + 1) / 2];
+                var M = new double[n * (n + 1) / 2];
+                var MT = new double[n * (n + 1) / 2];
+                var timeD = new double[n, tdata];
+                for (int i = 0; i < n; ++i)
+                {
+                    for (int time = 0; time < tdata; ++time)
+                    {
+                        var dat = new Random();
+                        timeD[i, time] = dat.NextDouble();
+                    }
+                }
+                for (int i = 0; i < n; ++i)
+                {
+                    for (int j = 0; j <= i; ++j)
+                    {
+                        cov[i * (i + 1) / 2 + j] = 0;
+                        var ti = 0.0;
+                        var tj = 0.0;
+                        for (int time = 0; time < tdata; ++time)
+                        {
+                            ti += timeD[i, time];
+                            tj += timeD[j, time];
+                            cov[i * (i + 1) / 2 + j] += timeD[i, time] * timeD[j, time];
+                        }
+                        cov[i * (i + 1) / 2 + j] = cov[i * (i + 1) / 2 + j] / tdata - ti / tdata * tj / tdata;
+                    }
+                }
+                for (int i = 0; i < n; ++i)
+                {
+                    for (int j = 0; j <= i; ++j)
+                    {
+                        M[i * (i + 1) / 2 + j] = cov[i * (i + 1) / 2 + j];
+                        MT[j * n - j * (j - 1) / 2 + i - j] = cov[i * (i + 1) / 2 + j];
+                    }
+                }
                 var piv = new int[n];
-                var back = Factorise.dsptrf(way, n, M, piv);
+                var back = Factorise.dsptrf(way, n, MT, piv);
                 var r = new double[n * n];
                 r[0] = 1;
                 r[4] = 1;
@@ -268,7 +302,7 @@ namespace UseBlas
                 Console.WriteLine($"{r[0]} {r[1]} {r[2]}");
                 Console.WriteLine($"{r[3]} {r[4]} {r[5]}");
                 Console.WriteLine($"{r[6]} {r[7]} {r[8]}");
-                var symback = Factorise.dsptrs(way, n, n, M, piv, r, n, 0, 0, 0, 1);
+                var symback = Factorise.dsptrs(way, n, n, MT, piv, r, n, 0, 0, 0, 1);
                 if (symback != -10)
                 {
                     Console.WriteLine($"{r[0]} {r[1]} {r[2]}");
