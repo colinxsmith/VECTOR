@@ -462,5 +462,35 @@ namespace BlasLikeTest
             lt[3] = (M[1] * t[2] + M[2] * t[3]) / lambda[1];
             Assert.IsTrue(Math.Abs(lt[0] - t[0]) < 4 * BlasLike.lm_eps, $"\n{M[0]} {M[1]} {lambda[0]} {t[0]} {t[2]}\n{M[1]} {M[2]} {lambda[1]} {t[1]} {t[3]}");
         }
+        [TestMethod]
+        public void Test_transpose()
+        {
+            double[] am = { 11, 12, 13, 21, 22, 23 };
+            var bm = new double[6];
+            Factorise.dmx_transpose(3, 2, am, bm);
+            Factorise.dmx_transpose(3, 2, am, am);
+            Assert.IsTrue(am[0] == bm[0] && am[1] == bm[1] && am[2] == bm[2] && am[3] == bm[3] && am[4] == bm[4] && am[5] == bm[5]);
+            Factorise.dmx_transpose(2, 3, am, bm);
+            Factorise.dmx_transpose(2, 3, am, am);
+            Assert.IsTrue(am[0] == bm[0] && am[1] == bm[1] && am[2] == bm[2] && am[3] == bm[3] && am[4] == bm[4] && am[5] == bm[5]);
+        }
+        [TestMethod]
+        public void Test_MatrixTimesVector()
+        {
+            double[] am = { 11, 12,
+                                21,22,
+                                31,32 };
+            var xx = new double[3];
+            var yy = new double[2];
+            xx[1] = 1;
+            Factorise.dmxmulv(2, 3, am, xx, yy);
+            Assert.IsTrue(yy[0] == am[2] && yy[1] == am[3]);
+            Factorise.dmx_transpose(2, 3, am, am);
+            var xxx = new double[2];
+            var yyy = new double[3];
+            xxx[0] = 1;
+            Factorise.dmxmulv(3, 2, am, xxx, yyy);
+            Assert.IsTrue(yyy[0] == am[0] && yyy[1] == am[1] && yyy[2] == am[2]);
+        }
     }
 }

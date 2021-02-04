@@ -261,6 +261,7 @@ namespace UseBlas
                 var M = new double[n * (n + 1) / 2];
                 var MT = new double[n * (n + 1) / 2];
                 var timeD = new double[n, tdata];
+
                 for (int i = 0; i < n; ++i)
                 {
                     for (int time = 0; time < tdata; ++time)
@@ -308,6 +309,30 @@ namespace UseBlas
                     Console.WriteLine($"{r[0]} {r[1]} {r[2]}");
                     Console.WriteLine($"{r[3]} {r[4]} {r[5]}");
                     Console.WriteLine($"{r[6]} {r[7]} {r[8]}");
+                }
+            }
+            {
+                double[] am = { 11, 12,
+                                21,22,
+                                31,32 };
+                var xx = new double[3];
+                var yy = new double[2];
+                for (int i = 0; i < 3; ++i)
+                {
+                    xx[i] = 1;
+                    Factorise.dmxmulv(2, 3, am, xx, yy);
+                    Console.WriteLine($"{xx[0]},{xx[1]},{xx[2]}   {yy[0]},{yy[1]}");
+                    xx[i] = 0;
+                }
+                Factorise.dmx_transpose(2, 3, am, am);
+                var xxx = new double[2];
+                var yyy = new double[3];
+                for (int i = 0; i < 2; ++i)
+                {
+                    xxx[i] = 1;
+                    Factorise.dmxmulv(3, 2, am, xxx, yyy);
+                    Console.WriteLine($"{xxx[0]},{xxx[1]}   {yyy[0]},{yyy[1]},{yyy[2]}");
+                    xxx[i] = 0;
                 }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);

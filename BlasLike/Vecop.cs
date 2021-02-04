@@ -263,15 +263,15 @@ namespace Blas
                 /*        code for unequal increments or equal increments */
                 /*          not equal to 1 */
 
-                ix = 1;
-                iy = 1;
+                ix = 0;
+                iy = 0;
                 if (incx < 0)
                 {
-                    ix = (-(n) + 1) * incx + 1;
+                    ix = (-(n) + 1) * incx + 0;
                 }
                 if (incy < 0)
                 {
-                    iy = (-(n) + 1) * incy + 1;
+                    iy = (-(n) + 1) * incy + 0;
                 }
                 if (da == 1)
                 {
