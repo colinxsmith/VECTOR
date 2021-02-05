@@ -1179,12 +1179,15 @@ namespace Blas
                         Writevec(n, b, nrhs);
                     }
 
-                    /*           Multiply by inv(U(K)), where U(K) is the transformation */
-                    /*           stored in column K of A. */
-                    BlasLike.dger(k - 1, nrhs, -1, ap/*[kc]*/, 1, b/*[k + b_dim1]*/, ldb, b/*[
+                     //   if (root == 0)
+                    {
+                        /*           Multiply by inv(U(K)), where U(K) is the transformation */
+                        /*           stored in column K of A. */
+                        BlasLike.dger(k - 1, nrhs, -1, ap/*[kc]*/, 1, b/*[k + b_dim1]*/, ldb, b/*[
                         b_dim1 + 1]*/, ldb, astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
 
-                    Writevec(n, b, nrhs);
+                        Writevec(n, b, nrhs);
+                    }
                     /*           Multiply by the inverse of the diagonal block. */
                     if (root == 0)
                     {
@@ -1219,13 +1222,16 @@ namespace Blas
                         Writevec(n, b, nrhs);
                     }
 
-                    /*           Multiply by inv(U(K)), where U(K) is the transformation */
-                    /*           stored in columns K-1 and K of A. */
-                    BlasLike.dger(k - 2, nrhs, -1, ap/*[kc]*/, 1, b/*[k + b_dim1]*/, ldb, b/*[
+                    //      if (root == 0)
+                    {
+                        /*           Multiply by inv(U(K)), where U(K) is the transformation */
+                        /*           stored in columns K-1 and K of A. */
+                        BlasLike.dger(k - 2, nrhs, -1, ap/*[kc]*/, 1, b/*[k + b_dim1]*/, ldb, b/*[
                         b_dim1 + 1]*/, ldb, astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
-                    BlasLike.dger(k - 2, nrhs, -1, ap/*[kc - (k - 1)]*/, 1, b/*[k - 1 +
+                        BlasLike.dger(k - 2, nrhs, -1, ap/*[kc - (k - 1)]*/, 1, b/*[k - 1 +
                         b_dim1]*/, ldb, b/*[b_dim1 + 1]*/, ldb, astart + kc - (k - 1), bstart + k - 1 + b_dim1, bstart + b_dim1 + 1);
-                    Writevec(n, b, nrhs);
+                        Writevec(n, b, nrhs);
+                    }
                     if (root == 0)
                     {
                         /*           Multiply by the inverse of the diagonal block. */
@@ -1328,15 +1334,16 @@ namespace Blas
                             , 1, 1, b/*[k + b_dim1]*/, ldb, bstart + b_offset, astart + kc, bstart + k + b_dim1);
 
                         Writevec(n, b, nrhs);
-                        /*           Interchange rows K and IPIV(K). */
-
-                        kp = ipiv[k + pstart];
-                        if (kp != k)
-                        {
-                            BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
-                            Writevec(n, b, nrhs);
-                        }
                     }
+                    /*           Interchange rows K and IPIV(K). */
+
+                    kp = ipiv[k + pstart];
+                    if (kp != k)
+                    {
+                        BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
+                        Writevec(n, b, nrhs);
+                    }
+
                     kc += k;
                     ++k;
                 }
@@ -1355,15 +1362,16 @@ namespace Blas
                         + k]*/, 1, 1, b/*[k + 1 + b_dim1]*/, ldb, bstart + b_offset, astart + kc + k, bstart + k + 1 + b_dim1);
 
                         Writevec(n, b, nrhs);
-                        /*           Interchange rows K and -IPIV(K). */
-
-                        kp = -ipiv[k + pstart];
-                        if (kp != k)
-                        {
-                            BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
-                            Writevec(n, b, nrhs);
-                        }
                     }
+                    /*           Interchange rows K and -IPIV(K). */
+
+                    kp = -ipiv[k + pstart];
+                    if (kp != k)
+                    {
+                        BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
+                        Writevec(n, b, nrhs);
+                    }
+
                     kc = kc + (k << 1) + 1;
                     k += 2;
                 }
@@ -1408,14 +1416,17 @@ namespace Blas
                         Writevec(n, b, nrhs);
                     }
 
-                    /*           Multiply by inv(L(K)), where L(K) is the transformation */
-                    /*           stored in column K of A. */
-
-                    if (k < n)
+                   //     if (root == 0)
                     {
-                        BlasLike.dger(n - k, nrhs, -1, ap/*[kc + 1]*/, 1, b/*[k + b_dim1]*/,
-                            ldb, b/*[k + 1 + b_dim1]*/, ldb, astart + kc + 1, bstart + k + b_dim1, bstart + k + 1 + b_dim1);
-                        Writevec(n, b, nrhs);
+                        /*           Multiply by inv(L(K)), where L(K) is the transformation */
+                        /*           stored in column K of A. */
+
+                        if (k < n)
+                        {
+                            BlasLike.dger(n - k, nrhs, -1, ap/*[kc + 1]*/, 1, b/*[k + b_dim1]*/,
+                                ldb, b/*[k + 1 + b_dim1]*/, ldb, astart + kc + 1, bstart + k + b_dim1, bstart + k + 1 + b_dim1);
+                            Writevec(n, b, nrhs);
+                        }
                     }
 
                     /*           Multiply by the inverse of the diagonal block. */
@@ -1453,17 +1464,20 @@ namespace Blas
                         Writevec(n, b, nrhs);
                     }
 
-                    /*           Multiply by inv(L(K)), where L(K) is the transformation */
-                    /*           stored in columns K and K+1 of A. */
-
-                    if (k < n - 1)
+                     //  if (root == 0)
                     {
-                        BlasLike.dger(n - k - 1, nrhs, -1, ap/*[kc + 2]*/, 1, b/*[k + b_dim1]*/,
-                            ldb, b/*[k + 2 + b_dim1]*/, ldb, astart + kc + 2, bstart + k + b_dim1, bstart + k + 2 + b_dim1);
-                        Writevec(n, b, nrhs);
-                        BlasLike.dger(n - k - 1, nrhs, -1, ap/*[kc + n - k + 2]*/, 1, b/*[k +
+                        /*           Multiply by inv(L(K)), where L(K) is the transformation */
+                        /*           stored in columns K and K+1 of A. */
+
+                        if (k < n - 1)
+                        {
+                            BlasLike.dger(n - k - 1, nrhs, -1, ap/*[kc + 2]*/, 1, b/*[k + b_dim1]*/,
+                                ldb, b/*[k + 2 + b_dim1]*/, ldb, astart + kc + 2, bstart + k + b_dim1, bstart + k + 2 + b_dim1);
+                            Writevec(n, b, nrhs);
+                            BlasLike.dger(n - k - 1, nrhs, -1, ap/*[kc + n - k + 2]*/, 1, b/*[k +
                             1 + b_dim1]*/, ldb, b/*[k + 2 + b_dim1]*/, ldb, astart + kc + n - k + 2, bstart + k + 1 + b_dim1, bstart + k + 2 + b_dim1);
-                        Writevec(n, b, nrhs);
+                            Writevec(n, b, nrhs);
+                        }
                     }
 
                     /*           Multiply by the inverse of the diagonal block. */
@@ -1556,7 +1570,7 @@ namespace Blas
 
                 if (ipiv[k + pstart] > 0)
                 {
-                    if (root == 0)
+                   if (root == 0)
                     {
                         /*           1 x 1 diagonal block */
 
@@ -1570,21 +1584,21 @@ namespace Blas
                                 ldb, ap/*[kc + 1]*/, 1, 1, b/*[k + b_dim1]*/, ldb, bstart + k + 1 + b_dim1, astart + kc + 1, bstart + k + b_dim1);
                             Writevec(n, b, nrhs);
                         }
-
-                        /*           Interchange rows K and IPIV(K). */
-
-                        kp = ipiv[k + pstart];
-                        if (kp != k)
-                        {
-                            BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
-                            Writevec(n, b, nrhs);
-                        }
                     }
+                    /*           Interchange rows K and IPIV(K). */
+
+                    kp = ipiv[k + pstart];
+                    if (kp != k)
+                    {
+                        BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
+                        Writevec(n, b, nrhs);
+                    }
+
                     --k;
                 }
                 else
                 {
-                    if (root == 0)
+                   if (root == 0)
                     {
                         /*           2 x 2 diagonal block */
 
@@ -1601,16 +1615,16 @@ namespace Blas
                             b_dim1]*/, ldb, bstart + k + 1 + b_dim1, astart + kc - (n - k), bstart + k - 1 + b_dim1);
                             Writevec(n, b, nrhs);
                         }
-
-                        /*           Interchange rows K and -IPIV(K). */
-
-                        kp = -ipiv[k + pstart];
-                        if (kp != k)
-                        {
-                            BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
-                            Writevec(n, b, nrhs);
-                        }
                     }
+                    /*           Interchange rows K and -IPIV(K). */
+
+                    kp = -ipiv[k + pstart];
+                    if (kp != k)
+                    {
+                        BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
+                        Writevec(n, b, nrhs);
+                    }
+
                     kc -= n - k + 2;
                     k += -2;
                 }
@@ -3179,7 +3193,7 @@ namespace Blas
         }
         public static void dmxmulv(int n, int m, double[] A, double[] x, double[] y, int astart = 0, int xstart = 0, int ystart = 0)
         {
-            int way = 2;//Which way is fastest?
+            int way = 3;//Which way is fastest?
             if (way == 1)
             {
                 BlasLike.dzerovec(n, y, ystart);

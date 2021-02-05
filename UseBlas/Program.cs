@@ -254,9 +254,9 @@ namespace UseBlas
                 Console.WriteLine($"{error} back={back} backT={backT} negpiv={negpiv} negpivT={negpivT}\n {unit1[0]},{unit1[1]},{unit1[2]},{unit1[3]} \n {unit1T[0]},{unit1T[1]},{unit1T[2]},{unit1T[3]} \n {c[0]},{c[1]},{c[2]},{c[3]} \n {cT[0]},{cT[1]},{cT[2]},{cT[3]}");
             }
             {
-                var n = 10;
+                var n = 3;
                 var tdata = 30;
-                char[] way = { 'L' };
+                char[] way = { 'U' };
                 var cov = new double[n * (n + 1) / 2];
                 var M = new double[n * (n + 1) / 2];
                 var MT = new double[n * (n + 1) / 2];
@@ -295,7 +295,7 @@ namespace UseBlas
                     }
                 }
                 var piv = new int[n];
-                var back = Factorise.dsptrf(way, n, MT, piv);
+                var back = Factorise.dsptrf(way, n, M, piv);
                 var r = new double[n * n];
                 r[0] = 1;
                 r[4] = 1;
@@ -303,13 +303,20 @@ namespace UseBlas
                 Console.WriteLine($"{r[0]} {r[1]} {r[2]}");
                 Console.WriteLine($"{r[3]} {r[4]} {r[5]}");
                 Console.WriteLine($"{r[6]} {r[7]} {r[8]}");
-                var symback = Factorise.dsptrs(way, n, n, MT, piv, r, n, 0, 0, 0, 1);
+                var symback = Factorise.dsptrs(way, n, n, M, piv, r, n, 0, 0, 0, 1);
                 if (symback != -10)
                 {
+                   // Factorise.dmx_transpose(n, n, r, r);
                     Console.WriteLine($"{r[0]} {r[1]} {r[2]}");
                     Console.WriteLine($"{r[3]} {r[4]} {r[5]}");
                     Console.WriteLine($"{r[6]} {r[7]} {r[8]}");
                 }
+                double[] rt = (double[])r.Clone();
+                var rr = new double[n * n];
+                    Factorise.dmx_transpose(n, n, rt, rt);
+                Factorise.dmxmulv(n, n, r, rt, rr, 0, 0, 0);
+                Factorise.dmxmulv(n, n, r, rt, rr, 0, 3, 3);
+                Factorise.dmxmulv(n, n, r, rt, rr, 0, 6, 6);
             }
             {
                 double[] am = { 11, 12,
