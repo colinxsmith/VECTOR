@@ -256,7 +256,7 @@ namespace UseBlas
             {
                 var n = 3;
                 var tdata = 30;
-                char[] way = { 'U' };
+                char[] way = { 'L' };
                 var cov = new double[n * (n + 1) / 2];
                 var M = new double[n * (n + 1) / 2];
                 var MT = new double[n * (n + 1) / 2];
@@ -295,28 +295,41 @@ namespace UseBlas
                     }
                 }
                 var piv = new int[n];
-                var back = Factorise.dsptrf(way, n, M, piv);
+                var start = new double[n * n];
+                var xxx = new double[n];
+                for (int i = 0; i < n; ++i)
+                {
+                    xxx[i] = 1;
+                    if (way[0] == 'U') Factorise.dsmxmulv(n, M, xxx, start, i * n);
+                    else Factorise.dsmxmulvT(n, MT, xxx, start, i * n);
+                    xxx[i] = 0;
+                }
+                var back = (way[0] == 'U') ? Factorise.dsptrf(way, n, M, piv) : Factorise.dsptrf(way, n, MT, piv);
                 var r = new double[n * n];
-                r[0] = 1;
-                r[4] = 1;
-                r[8] = 1;
+                for(int i=0;i<n;++i)r[i*n+i]=1;
                 Console.WriteLine($"{r[0]} {r[1]} {r[2]}");
                 Console.WriteLine($"{r[3]} {r[4]} {r[5]}");
                 Console.WriteLine($"{r[6]} {r[7]} {r[8]}");
-                var symback = Factorise.dsptrs(way, n, n, M, piv, r, n, 0, 0, 0, 1);
+                var symback = (way[0] == 'U') ? Factorise.dsptrs(way, n, n, M, piv, r, n, 0, 0, 0, 1) : Factorise.dsptrs(way, n, n, MT, piv, r, n, 0, 0, 0, 1);
                 if (symback != -10)
                 {
-                   // Factorise.dmx_transpose(n, n, r, r);
+                    // Factorise.dmx_transpose(n, n, r, r);
                     Console.WriteLine($"{r[0]} {r[1]} {r[2]}");
                     Console.WriteLine($"{r[3]} {r[4]} {r[5]}");
                     Console.WriteLine($"{r[6]} {r[7]} {r[8]}");
                 }
-                double[] rt = (double[])r.Clone();
-                var rr = new double[n * n];
-                    Factorise.dmx_transpose(n, n, rt, rt);
-                Factorise.dmxmulv(n, n, r, rt, rr, 0, 0, 0);
-                Factorise.dmxmulv(n, n, r, rt, rr, 0, 3, 3);
-                Factorise.dmxmulv(n, n, r, rt, rr, 0, 6, 6);
+                var rr2 = new double[n * (n + 1) / 2];
+                double[] rt = new double[n * n];//(double[])r.Clone();
+
+                Factorise.dmx_transpose(n, n, r, rt);
+                for (int i = 0, ij = 0; i < n; ++i)
+                {
+                    for (int j = 0; j <= i; j++, ij++)
+                    {
+                        if (way[0] == 'U') rr2[ij] = BlasLike.ddotvec(n, r, rt, i * n, j * n);
+                        else rr2[ij] = BlasLike.ddotvec(n, rt, r, i * n, j * n);
+                    }
+                }
             }
             {
                 double[] am = { 11, 12,
