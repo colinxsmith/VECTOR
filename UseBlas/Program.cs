@@ -256,7 +256,7 @@ namespace UseBlas
             {
                 var n = 3;
                 var tdata = 30;
-                char[] way = { 'L' };
+                char[] way = { 'U' };
                 var cov = new double[n * (n + 1) / 2];
                 var M = new double[n * (n + 1) / 2];
                 var MT = new double[n * (n + 1) / 2];
@@ -306,28 +306,28 @@ namespace UseBlas
                 }
                 var back = (way[0] == 'U') ? Factorise.dsptrf(way, n, M, piv) : Factorise.dsptrf(way, n, MT, piv);
                 var r = new double[n * n];
-                for(int i=0;i<n;++i)r[i*n+i]=1;
+                for (int i = 0; i < n; ++i) r[i * n + i] = 1;
                 Console.WriteLine($"{r[0]} {r[1]} {r[2]}");
                 Console.WriteLine($"{r[3]} {r[4]} {r[5]}");
                 Console.WriteLine($"{r[6]} {r[7]} {r[8]}");
-                var symback = (way[0] == 'U') ? Factorise.dsptrs(way, n, n, M, piv, r, n, 0, 0, 0, 1) : Factorise.dsptrs(way, n, n, MT, piv, r, n, 0, 0, 0, 1);
+                var whichroot = 1;
+                var symback = (way[0] == 'U') ? Factorise.dsptrs(way, n, n, M, piv, r, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, MT, piv, r, n, 0, 0, 0, whichroot);
                 if (symback != -10)
                 {
-                    // Factorise.dmx_transpose(n, n, r, r);
+                    if (whichroot != 0 && way[0] == 'L') Factorise.dmx_transpose(n, n, r, r);
                     Console.WriteLine($"{r[0]} {r[1]} {r[2]}");
                     Console.WriteLine($"{r[3]} {r[4]} {r[5]}");
                     Console.WriteLine($"{r[6]} {r[7]} {r[8]}");
                 }
                 var rr2 = new double[n * (n + 1) / 2];
-                double[] rt = new double[n * n];//(double[])r.Clone();
+                double[] rt = new double[n * n];
 
                 Factorise.dmx_transpose(n, n, r, rt);
                 for (int i = 0, ij = 0; i < n; ++i)
                 {
                     for (int j = 0; j <= i; j++, ij++)
                     {
-                        if (way[0] == 'U') rr2[ij] = BlasLike.ddotvec(n, r, rt, i * n, j * n);
-                        else rr2[ij] = BlasLike.ddotvec(n, rt, r, i * n, j * n);
+                        rr2[ij] = way[0] == 'L' ? BlasLike.ddotvec(n, r, r, i * n, j * n) : BlasLike.ddotvec(n, rt, rt, i * n, j * n);
                     }
                 }
             }

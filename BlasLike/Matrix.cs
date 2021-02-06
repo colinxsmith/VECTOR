@@ -1327,7 +1327,7 @@ namespace Blas
 
                     /*           Multiply by inv(U**T(K)), where U(K) is the transformation */
                     /*           stored in column K of A. */
-        //           if (root == 0)   //*******
+                  if (root == 0)   //*******
                     {
                         char[] TT = { 'T' };
                         BlasLike.dgemv(TT, k - 1, nrhs, -1, b/*[b_offset]*/, ldb, ap/*[kc]*/
@@ -1349,7 +1349,7 @@ namespace Blas
                 }
                 else
                 {
-         //           if (root == 0)     //*******
+                    if (root == 0)     //*******
                     {
                         /*           2 x 2 diagonal block */
 
@@ -1570,7 +1570,7 @@ namespace Blas
 
                 if (ipiv[k + pstart] > 0)
                 {
-         //          if (root == 0) //******
+                  if (root == 0) //******
                     {
                         /*           1 x 1 diagonal block */
 
@@ -1598,7 +1598,7 @@ namespace Blas
                 }
                 else
                 {
-       //            if (root == 0) //*****
+                 if (root == 0) //*****
                     {
                         /*           2 x 2 diagonal block */
 
