@@ -1179,13 +1179,23 @@ namespace Blas
                         Writevec(n, b, nrhs);
                     }
 
-              //          if (root == 0) 
+                    if (root == 0 || root == -1)
                     {
                         /*           Multiply by inv(U(K)), where U(K) is the transformation */
                         /*           stored in column K of A. */
                         BlasLike.dger(k - 1, nrhs, -1, ap/*[kc]*/, 1, b/*[k + b_dim1]*/, ldb, b/*[
                         b_dim1 + 1]*/, ldb, astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
 
+                        Writevec(n, b, nrhs);
+                    }
+                    else if (root == 1)
+                    {
+                        /*           Multiply by (U(K)), where U(K) is the transformation */
+                        /*           stored in column K of A. */
+                        BlasLike.dger(k - 1, nrhs, 1, ap/*[kc]*/, 1, b/*[k + b_dim1]*/, ldb, b/*[
+                        b_dim1 + 1]*/, ldb, astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
+                        //char[]way={'N'};
+                        //BlasLike.dgemv(way,k-1,nrhs,1,ap,ldb,b,ldb,1,b,ldb,astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
                         Writevec(n, b, nrhs);
                     }
                     /*           Multiply by the inverse of the diagonal block. */
@@ -1222,7 +1232,7 @@ namespace Blas
                         Writevec(n, b, nrhs);
                     }
 
-               //           if (root == 0)  
+                    //           if (root == 0)  
                     {
                         /*           Multiply by inv(U(K)), where U(K) is the transformation */
                         /*           stored in columns K-1 and K of A. */
@@ -1232,7 +1242,7 @@ namespace Blas
                         b_dim1]*/, ldb, b/*[b_dim1 + 1]*/, ldb, astart + kc - (k - 1), bstart + k - 1 + b_dim1, bstart + b_dim1 + 1);
                         Writevec(n, b, nrhs);
                     }
-                    if (root == 0)  
+                    if (root == 0)
                     {
                         /*           Multiply by the inverse of the diagonal block. */
 
@@ -1327,7 +1337,7 @@ namespace Blas
 
                     /*           Multiply by inv(U**T(K)), where U(K) is the transformation */
                     /*           stored in column K of A. */
-                  if (root == 0)   //*******
+                    if (root == 0)   //*******
                     {
                         char[] TT = { 'T' };
                         BlasLike.dgemv(TT, k - 1, nrhs, -1, b/*[b_offset]*/, ldb, ap/*[kc]*/
@@ -1416,7 +1426,7 @@ namespace Blas
                         Writevec(n, b, nrhs);
                     }
 
-             //           if (root == 0)    
+                    if (root == 0 || root == -1)
                     {
                         /*           Multiply by inv(L(K)), where L(K) is the transformation */
                         /*           stored in column K of A. */
@@ -1428,6 +1438,20 @@ namespace Blas
                             Writevec(n, b, nrhs);
                         }
                     }
+
+                    else if (root == 1)
+                    {
+                        /*           Multiply by (L(K)), where L(K) is the transformation */
+                        /*           stored in column K of A. */
+
+                        if (k < n)
+                        {
+                            BlasLike.dger(n - k, nrhs, 1, ap/*[kc + 1]*/, 1, b/*[k + b_dim1]*/,
+                                ldb, b/*[k + 1 + b_dim1]*/, ldb, astart + kc + 1, bstart + k + b_dim1, bstart + k + 1 + b_dim1);
+                            Writevec(n, b, nrhs);
+                        }
+                    }
+
 
                     /*           Multiply by the inverse of the diagonal block. */
                     if (root == 0)
@@ -1464,7 +1488,7 @@ namespace Blas
                         Writevec(n, b, nrhs);
                     }
 
-                //       if (root == 0) 
+                    //       if (root == 0) 
                     {
                         /*           Multiply by inv(L(K)), where L(K) is the transformation */
                         /*           stored in columns K and K+1 of A. */
@@ -1570,7 +1594,7 @@ namespace Blas
 
                 if (ipiv[k + pstart] > 0)
                 {
-                  if (root == 0) //******
+                    if (root == 0) //******
                     {
                         /*           1 x 1 diagonal block */
 
@@ -1598,7 +1622,7 @@ namespace Blas
                 }
                 else
                 {
-                 if (root == 0) //*****
+                    if (root == 0) //*****
                     {
                         /*           2 x 2 diagonal block */
 
@@ -3110,17 +3134,17 @@ namespace Blas
             for (i = 1; i <= n; i++, x++, S += i)
                 *y++ = BlasLike.ddot(i, S + 1 - i, -1, x + 1 - i, -1) + BlasLike.didot(n - i, S + i, i + 1, x + 1, 1);
         }
-        public static void dsmxmulv(int n, double[] S, double[] x, double[] y,int ystart=0)
+        public static void dsmxmulv(int n, double[] S, double[] x, double[] y, int ystart = 0)
         {
             int i, iS, ix;//This needed change to be compatable with BLAS ddot
             for (i = 1, iS = 0, ix = 0; i <= n; i++, ix++, iS += i)
-                y[i - 1+ystart] = BlasLike.ddot(i, S, -1, x, -1, iS + 1 - i) + BlasLike.didot(n - i, S, i + 1, x, 1, i + iS, 1 + ix);
+                y[i - 1 + ystart] = BlasLike.ddot(i, S, -1, x, -1, iS + 1 - i) + BlasLike.didot(n - i, S, i + 1, x, 1, i + iS, 1 + ix);
         }
-        public static void dsmxmulvT(int n, double[] S, double[] x, double[] y,int ystart=0)
+        public static void dsmxmulvT(int n, double[] S, double[] x, double[] y, int ystart = 0)
         {
             int i, iS, ix;
             for (i = 1, iS = 0, ix = 0; i <= n; i++, ix++, iS += n - i + 2)
-                y[i - 1+ystart] = BlasLike.ddot(n - i + 1, S, 1, x, 1, iS, ix) + BlasLike.didot(i - 1, S, -(n - 1), x, 1, i - 1);
+                y[i - 1 + ystart] = BlasLike.ddot(n - i + 1, S, 1, x, 1, iS, ix) + BlasLike.didot(i - 1, S, -(n - 1), x, 1, i - 1);
         }
         public unsafe static void dsmxmulvT(int n, double* S, double* x, double* y)
         {

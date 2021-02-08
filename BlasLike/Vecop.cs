@@ -303,7 +303,7 @@ namespace Blas
             }
         }
 
-    public static void daxpyvec(int n, double a, double[] x, double[] y, int xstart = 0, int ystart = 0)
+        public static void daxpyvec(int n, double a, double[] x, double[] y, int xstart = 0, int ystart = 0)
         {
             daxpy(n, a, x, 1, y, 1, xstart, ystart);
         }
@@ -2366,11 +2366,13 @@ double beta, double[] y, int incy, int astart = 0, int xstart = 0, int ystart = 
                         temp = (alpha * x[jx + xstart]);
                         iy = ky;
                         i__2 = m;
-                        for (i__ = 1; i__ <= i__2; ++i__)
+                        if (temp != 0)
                         {
-                            y[iy + ystart] += temp * a[i__ + j * a_dim1 + astart];
-                            iy += incy;
-                            /* L70: */
+                            for (i__ = 1; i__ <= i__2; ++i__, iy += incy)
+                            {
+                                y[iy + ystart] += temp * a[i__ + j * a_dim1 + astart];
+                                /* L70: */
+                            }
                         }
                         jx += incx;
                         /* L80: */
