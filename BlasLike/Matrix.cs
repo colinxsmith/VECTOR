@@ -1185,17 +1185,20 @@ namespace Blas
                         /*           stored in column K of A. */
                         BlasLike.dger(k - 1, nrhs, -1, ap/*[kc]*/, 1, b/*[k + b_dim1]*/, ldb, b/*[
                         b_dim1 + 1]*/, ldb, astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
-
                         Writevec(n, b, nrhs);
                     }
                     else if (root == 1)
                     {
                         /*           Multiply by (U(K)), where U(K) is the transformation */
                         /*           stored in column K of A. */
+                        //BlasLike.dger(k - 1, nrhs, 1, ap/*[kc]*/, 1, b/*[k + b_dim1]*/, ldb, b/*[
+                        //b_dim1 + 1]*/, ldb, astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
+                        char[] TT = { 'T' };
                         BlasLike.dger(k - 1, nrhs, 1, ap/*[kc]*/, 1, b/*[k + b_dim1]*/, ldb, b/*[
                         b_dim1 + 1]*/, ldb, astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
-                        //char[]way={'N'};
-                        //BlasLike.dgemv(way,k-1,nrhs,1,ap,ldb,b,ldb,1,b,ldb,astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
+                        //   BlasLike.dgemv(TT, k - 1, nrhs, 1, b/*[b_offset]*/, ldb, ap/*[kc]*/
+                        //       , 1, 1, b/*[k + b_dim1]*/, ldb, bstart + b_offset, astart + kc, bstart + k + b_dim1);
+
                         Writevec(n, b, nrhs);
                     }
                     /*           Multiply by the inverse of the diagonal block. */
@@ -1232,7 +1235,7 @@ namespace Blas
                         Writevec(n, b, nrhs);
                     }
 
-                    //           if (root == 0)  
+                    if (root == 0 || root == -1)
                     {
                         /*           Multiply by inv(U(K)), where U(K) is the transformation */
                         /*           stored in columns K-1 and K of A. */
@@ -1240,6 +1243,17 @@ namespace Blas
                         b_dim1 + 1]*/, ldb, astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
                         BlasLike.dger(k - 2, nrhs, -1, ap/*[kc - (k - 1)]*/, 1, b/*[k - 1 +
                         b_dim1]*/, ldb, b/*[b_dim1 + 1]*/, ldb, astart + kc - (k - 1), bstart + k - 1 + b_dim1, bstart + b_dim1 + 1);
+                        Writevec(n, b, nrhs);
+                    }
+                    else if (root == 1)
+                    {
+                        /*           Multiply by inv(U(K)), where U(K) is the transformation */
+                        /*           stored in columns K-1 and K of A. */
+                        char[] TT = { 'T' };
+                        BlasLike.dgemv(TT, k - 1, nrhs, 1, b/*[b_offset]*/, ldb, ap/*[kc]*/
+                            , 1, 1, b/*[k + b_dim1]*/, ldb, bstart + b_offset, astart + kc, bstart + k + b_dim1);
+                        BlasLike.dgemv(TT, k - 1, nrhs, 1, b/*[b_offset]*/, ldb, ap/*[kc
+                        + k]*/, 1, 1, b/*[k + 1 + b_dim1]*/, ldb, bstart + b_offset, astart + kc + k, bstart + k + 1 + b_dim1);
                         Writevec(n, b, nrhs);
                     }
                     if (root == 0)
@@ -1446,8 +1460,9 @@ namespace Blas
 
                         if (k < n)
                         {
-                            BlasLike.dger(n - k, nrhs, 1, ap/*[kc + 1]*/, 1, b/*[k + b_dim1]*/,
-                                ldb, b/*[k + 1 + b_dim1]*/, ldb, astart + kc + 1, bstart + k + b_dim1, bstart + k + 1 + b_dim1);
+                            char[] TT = { 'T' };
+                            BlasLike.dgemv(TT, n - k, nrhs, 1, b/*[k + 1 + b_dim1]*/,
+                                ldb, ap/*[kc + 1]*/, 1, 1, b/*[k + b_dim1]*/, ldb, bstart + k + 1 + b_dim1, astart + kc + 1, bstart + k + b_dim1);
                             Writevec(n, b, nrhs);
                         }
                     }
@@ -1488,7 +1503,7 @@ namespace Blas
                         Writevec(n, b, nrhs);
                     }
 
-                    //       if (root == 0) 
+                           if (root == 0||root==-1) 
                     {
                         /*           Multiply by inv(L(K)), where L(K) is the transformation */
                         /*           stored in columns K and K+1 of A. */
@@ -1500,6 +1515,22 @@ namespace Blas
                             Writevec(n, b, nrhs);
                             BlasLike.dger(n - k - 1, nrhs, -1, ap/*[kc + n - k + 2]*/, 1, b/*[k +
                             1 + b_dim1]*/, ldb, b/*[k + 2 + b_dim1]*/, ldb, astart + kc + n - k + 2, bstart + k + 1 + b_dim1, bstart + k + 2 + b_dim1);
+                            Writevec(n, b, nrhs);
+                        }
+                    }
+                      else      if (root == 1) 
+                    {
+                        /*           Multiply by inv(L(K)), where L(K) is the transformation */
+                        /*           stored in columns K and K+1 of A. */
+
+                        if (k < n)
+                        {
+                            char[] TT = { 'T' };
+                            BlasLike.dgemv(TT, n - k, nrhs, 1, b/*[k + 1 + b_dim1]*/,
+                                ldb, ap/*[kc + 1]*/, 1, 1, b/*[k + b_dim1]*/, ldb, bstart + k + 1 + b_dim1, astart + kc + 1, bstart + k + b_dim1);
+                            BlasLike.dgemv(TT, n - k, nrhs, 1, b/*[k + 1 + b_dim1]*/,
+                                ldb, ap/*[kc - (n - k)]*/, 1, 1, b/*[k - 1 +
+                            b_dim1]*/, ldb, bstart + k + 1 + b_dim1, astart + kc - (n - k), bstart + k - 1 + b_dim1);
                             Writevec(n, b, nrhs);
                         }
                     }

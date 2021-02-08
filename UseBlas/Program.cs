@@ -254,7 +254,7 @@ namespace UseBlas
                 Console.WriteLine($"{error} back={back} backT={backT} negpiv={negpiv} negpivT={negpivT}\n {unit1[0]},{unit1[1]},{unit1[2]},{unit1[3]} \n {unit1T[0]},{unit1T[1]},{unit1T[2]},{unit1T[3]} \n {c[0]},{c[1]},{c[2]},{c[3]} \n {cT[0]},{cT[1]},{cT[2]},{cT[3]}");
             }
             {
-                var n = 3;
+                var n = 29;
                 var tdata = 30;
                 char[] way = { 'U' };
                 var cov = new double[n * (n + 1) / 2];
@@ -310,8 +310,12 @@ namespace UseBlas
                 Console.WriteLine($"{r[0]} {r[1]} {r[2]}");
                 Console.WriteLine($"{r[3]} {r[4]} {r[5]}");
                 Console.WriteLine($"{r[6]} {r[7]} {r[8]}");
-                var whichroot = 1;
-                var symback = (way[0] == 'U') ? Factorise.dsptrs(way, n, n, M, piv, r, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, MT, piv, r, n, 0, 0, 0, whichroot);
+                var whichroot = 0;
+                var rI = new double[n * n];
+                for (int i = 0; i < n; ++i) rI[i * n + i] = 1;
+                var symback = (way[0] == 'U') ? Factorise.dsptrs(way, n, n, M, piv, rI, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, MT, piv, rI, n, 0, 0, 0, whichroot);
+                whichroot = -1;
+                symback = (way[0] == 'U') ? Factorise.dsptrs(way, n, n, M, piv, r, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, MT, piv, r, n, 0, 0, 0, whichroot);
                 if (symback != -10)
                 {
                     if (whichroot != 0 && way[0] == 'L') Factorise.dmx_transpose(n, n, r, r);
