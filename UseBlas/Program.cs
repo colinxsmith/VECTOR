@@ -415,13 +415,8 @@ namespace UseBlas
                 {
                     for (int j = 0; j < n; ++j)
                     {
-                        var workij = 0.0;
-                        for (int k = 0; k < n; ++k)
-                        {
-                            workij = 0;
-                        }
-                        workij = FM[i * n + j];
-                        for (int k = i + 1; k < n; ++k)
+                        var   workij = FM[i * n + j];
+                     for (int k = i + 1; k < n; ++k)
                         {
                             workij += M[k * (k + 1) / 2 + i] * FM[k * n + j];
                         }
