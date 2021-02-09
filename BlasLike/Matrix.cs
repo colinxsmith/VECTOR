@@ -1191,13 +1191,9 @@ namespace Blas
                     {
                         /*           Multiply by (U(K)), where U(K) is the transformation */
                         /*           stored in column K of A. */
-                        //BlasLike.dger(k - 1, nrhs, 1, ap/*[kc]*/, 1, b/*[k + b_dim1]*/, ldb, b/*[
-                        //b_dim1 + 1]*/, ldb, astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
                         char[] TT = { 'T' };
-                        BlasLike.dger(k - 1, nrhs, 1, ap/*[kc]*/, 1, b/*[k + b_dim1]*/, ldb, b/*[
-                        b_dim1 + 1]*/, ldb, astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
-                        //   BlasLike.dgemv(TT, k - 1, nrhs, 1, b/*[b_offset]*/, ldb, ap/*[kc]*/
-                        //       , 1, 1, b/*[k + b_dim1]*/, ldb, bstart + b_offset, astart + kc, bstart + k + b_dim1);
+                           BlasLike.dgemv(TT, k - 1, nrhs, 1, b/*[b_offset]*/, ldb, ap/*[kc]*/
+                               , 1, 1, b/*[k + b_dim1]*/, ldb, bstart + b_offset, astart + kc, bstart + k + b_dim1);
 
                         Writevec(n, b, nrhs);
                     }
@@ -1208,7 +1204,7 @@ namespace Blas
                     }
                     else if (root == 1)
                     {
-                        if (ap[kc + k - 1 + astart] < BlasLike.lm_eps) ap[kc + k - 1 + astart] = Math.Max(ap[kc + k - 1 + astart], BlasLike.lm_eps);
+                        if (ap[kc + k - 1 + astart] <BlasLike.lambdatest) ap[kc + k - 1 + astart] = Math.Max(ap[kc + k - 1 + astart], BlasLike.lm_eps);
                         if (ap[kc + k - 1 + astart] < 0) return -10;
                         BlasLike.dscal(nrhs, Math.Sqrt(ap[kc + k - 1 + astart]), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
                     }
@@ -1279,9 +1275,9 @@ namespace Blas
                         var lambda = new double[2];
                         var t = new double[4];
                         Factorise.Eigen2(S, lambda, t);
-                        if (lambda[0] < BlasLike.lm_eps) lambda[0] = Math.Max(lambda[0], BlasLike.lm_eps);
+                        if (lambda[0] <BlasLike.lambdatest) lambda[0] = Math.Max(lambda[0], BlasLike.lm_eps);
                         if (lambda[0] < 0) return -10;
-                        if (lambda[1] < BlasLike.lm_eps) lambda[1] = Math.Max(lambda[1], BlasLike.lm_eps);
+                        if (lambda[1] <BlasLike.lambdatest) lambda[1] = Math.Max(lambda[1], BlasLike.lm_eps);
                         if (lambda[1] < 0) return -10;
                         //if(lambda[0]<0)lambda[0]=BlasLike.lm_eps;
                         //if(lambda[0]<0)lambda[1]=BlasLike.lm_eps;
@@ -1303,9 +1299,9 @@ namespace Blas
                         var lambda = new double[2];
                         var t = new double[4];
                         Factorise.Eigen2(S, lambda, t);
-                        if (lambda[0] < BlasLike.lm_eps) lambda[0] = Math.Max(lambda[0], BlasLike.lm_eps);
+                        if (lambda[0] <BlasLike.lambdatest) lambda[0] = Math.Max(lambda[0], BlasLike.lm_eps);
                         if (lambda[0] < 0) return -10;
-                        if (lambda[1] < BlasLike.lm_eps) lambda[1] = Math.Max(lambda[1], BlasLike.lm_eps);
+                        if (lambda[1] <BlasLike.lambdatest) lambda[1] = Math.Max(lambda[1], BlasLike.lm_eps);
                         if (lambda[1] < 0) return -10;
                         //if(lambda[0]<0)lambda[0]=BlasLike.lm_eps;
                         //if(lambda[0]<0)lambda[1]=BlasLike.lm_eps;
@@ -1475,7 +1471,7 @@ namespace Blas
                     }
                     else if (root == 1)
                     {
-                        if (ap[kc + astart] < BlasLike.lm_eps) ap[kc + astart] = Math.Max(ap[kc + astart], BlasLike.lm_eps);
+                        if (ap[kc + astart] <BlasLike.lambdatest) ap[kc + astart] = Math.Max(ap[kc + astart], BlasLike.lm_eps);
                         if (ap[kc + astart] < 0) return -10;
                         BlasLike.dscal(nrhs, Math.Sqrt(ap[kc + astart]), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
                     }
@@ -1558,9 +1554,9 @@ namespace Blas
                             var lambda = new double[2];
                             var t = new double[4];
                             Factorise.Eigen2(S, lambda, t);
-                            if (lambda[0] < BlasLike.lm_eps) lambda[0] = Math.Max(lambda[0], BlasLike.lm_eps);
+                            if (lambda[0] <BlasLike.lambdatest) lambda[0] = Math.Max(lambda[0], BlasLike.lm_eps);
                             if (lambda[0] < 0) return -10;
-                            if (lambda[1] < BlasLike.lm_eps) lambda[1] = Math.Max(lambda[1], BlasLike.lm_eps);
+                            if (lambda[1] <BlasLike.lambdatest) lambda[1] = Math.Max(lambda[1], BlasLike.lm_eps);
                             if (lambda[1] < 0) return -10;
                             for (j = 1; j <= nrhs; ++j)
                             {
@@ -1581,9 +1577,9 @@ namespace Blas
                             var lambda = new double[2];
                             var t = new double[4];
                             Factorise.Eigen2(S, lambda, t);
-                            if (lambda[0] < BlasLike.lm_eps) lambda[0] = Math.Max(lambda[0], BlasLike.lm_eps);
+                            if (lambda[0] <BlasLike.lambdatest) lambda[0] = Math.Max(lambda[0], BlasLike.lm_eps);
                             if (lambda[0] < 0) return -10;
-                            if (Math.Abs(lambda[1]) < BlasLike.lm_eps) lambda[1] = Math.Max(lambda[1], BlasLike.lm_eps);
+                            if (Math.Abs(lambda[1]) <BlasLike.lambdatest) lambda[1] = Math.Max(lambda[1], BlasLike.lm_eps);
                             if (lambda[1] < 0) return -10;
                             for (j = 1; j <= nrhs; ++j)
                             {
@@ -3210,9 +3206,9 @@ namespace Blas
             t[1] = t[3] = 1;
             var bot = Math.Sqrt(t[0] * t[0] + 1);
             t[0] /= bot;
-            t[1] /= bot;
-            bot = Math.Sqrt(t[2] * t[2] + 1);
             t[2] /= bot;
+            bot = Math.Sqrt(t[2] * t[2] + 1);
+            t[1] /= bot;
             t[3] /= bot;
         }
         public static void dmx_transpose(int n, int m, double[] a, double[] b, int astart = 0, int bstart = 0)

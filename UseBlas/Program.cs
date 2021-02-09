@@ -193,8 +193,8 @@ namespace UseBlas
                 /* 
                 Generate 2 random symmetric matrices such that the lower packed version of
                 one is equal to the upper packed version of the other.
-                Test that upper and lower of the solver are working, but this shows that the
-                working is not identical!
+                Test that upper and lower of the solver are workijng, but this shows that the
+                workijng is not identical!
                 */
                 var n = 100;
                 var cov = new double[n * (n + 1) / 2];
@@ -254,9 +254,9 @@ namespace UseBlas
                 Console.WriteLine($"{error} back={back} backT={backT} negpiv={negpiv} negpivT={negpivT}\n {unit1[0]},{unit1[1]},{unit1[2]},{unit1[3]} \n {unit1T[0]},{unit1T[1]},{unit1T[2]},{unit1T[3]} \n {c[0]},{c[1]},{c[2]},{c[3]} \n {cT[0]},{cT[1]},{cT[2]},{cT[3]}");
             }
             {
-                var n = 29;
-                var tdata = 30;
-                char[] way = { 'U' };
+                var n = 500;
+                var tdata = 300;
+                char[] way = { 'L' };
                 var cov = new double[n * (n + 1) / 2];
                 var M = new double[n * (n + 1) / 2];
                 var MT = new double[n * (n + 1) / 2];
@@ -314,7 +314,7 @@ namespace UseBlas
                 var rI = new double[n * n];
                 for (int i = 0; i < n; ++i) rI[i * n + i] = 1;
                 var symback = (way[0] == 'U') ? Factorise.dsptrs(way, n, n, M, piv, rI, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, MT, piv, rI, n, 0, 0, 0, whichroot);
-                whichroot = -1;
+                whichroot = 1;
                 symback = (way[0] == 'U') ? Factorise.dsptrs(way, n, n, M, piv, r, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, MT, piv, r, n, 0, 0, 0, whichroot);
                 if (symback != -10)
                 {
@@ -324,14 +324,129 @@ namespace UseBlas
                     Console.WriteLine($"{r[6]} {r[7]} {r[8]}");
                 }
                 var rr2 = new double[n * (n + 1) / 2];
-                double[] rt = new double[n * n];
+                double[] lower = new double[n * n];
 
-                Factorise.dmx_transpose(n, n, r, rt);
+                Factorise.dmx_transpose(n, n, r, lower);
                 for (int i = 0, ij = 0; i < n; ++i)
                 {
                     for (int j = 0; j <= i; j++, ij++)
                     {
-                        rr2[ij] = way[0] == 'L' ? BlasLike.ddotvec(n, r, r, i * n, j * n) : BlasLike.ddotvec(n, rt, rt, i * n, j * n);
+                        rr2[ij] = way[0] == 'L' ? BlasLike.ddotvec(n, lower, lower, i * n, j * n) : BlasLike.ddotvec(n, r, r, i * n, j * n);
+                    }
+                }
+            }
+            {
+                var n = 3;
+                var tdata = 30;
+                char[] way = { 'U' };
+                var cov = new double[n * (n + 1) / 2];
+                var M = new double[n * (n + 1) / 2];
+                var MT = new double[n * (n + 1) / 2];
+                var timeD = new double[n, tdata];
+
+                for (int i = 0; i < n; ++i)
+                {
+                    for (int time = 0; time < tdata; ++time)
+                    {
+                        var dat = new Random();
+                        timeD[i, time] = dat.NextDouble();
+                    }
+                }
+                for (int i = 0; i < n; ++i)
+                {
+                    for (int j = 0; j <= i; ++j)
+                    {
+                        cov[i * (i + 1) / 2 + j] = 0;
+                        var ti = 0.0;
+                        var tj = 0.0;
+                        for (int time = 0; time < tdata; ++time)
+                        {
+                            ti += timeD[i, time];
+                            tj += timeD[j, time];
+                            cov[i * (i + 1) / 2 + j] += timeD[i, time] * timeD[j, time];
+                        }
+                        cov[i * (i + 1) / 2 + j] = cov[i * (i + 1) / 2 + j] / tdata - ti / tdata * tj / tdata;
+                    }
+                }
+                for (int i = 0; i < n; ++i)
+                {
+                    for (int j = 0; j <= i; ++j)
+                    {
+                        M[i * (i + 1) / 2 + j] = cov[i * (i + 1) / 2 + j];
+                        MT[j * n - j * (j - 1) / 2 + i - j] = cov[i * (i + 1) / 2 + j];
+                    }
+                }
+                var piv = new int[n];
+                var back = Factorise.dsptrf(way, n, M, piv);
+                var FM = new double[n * n];
+                var rootFM = new double[n * n];
+                for (int i = 0; i < n; ++i)
+                {
+                    for (int j = 0; j <= i; ++j)
+                    {
+                        rootFM[i * n + j] = FM[i * n + j] = (i != j) ? M[i * (i + 1) / 2 + j] : 1;
+                    }
+                    for (int j = i + 1; j < n; ++j)
+                    {
+                        rootFM[i * n + j] = FM[i * n + j] = 0;
+                    }
+                }
+                if (n == 3)
+                {
+                    Console.WriteLine($"{FM[0]} {FM[1]} {FM[2]} ");
+                    Console.WriteLine($"{FM[3]} {FM[4]} {FM[5]} ");
+                    Console.WriteLine($"{FM[6]} {FM[7]} {FM[8]} ");
+                }
+                for (int i = 0; i < n; ++i)
+                {
+                    for (int j = 0; j < n; ++j)
+                    {
+                        FM[i * n + j] *= M[i * (i + 3) / 2];
+                        rootFM[i * n + j] *= Math.Sqrt(M[i * (i + 3) / 2]);
+                    }
+                }
+                if (n == 3)
+                {
+                    Console.WriteLine($"\n{FM[0]} {FM[1]} {FM[2]} ");
+                    Console.WriteLine($"{FM[3]} {FM[4]} {FM[5]} ");
+                    Console.WriteLine($"{FM[6]} {FM[7]} {FM[8]} ");
+                }
+                for (int i = 0; i < n; ++i)
+                {
+                    for (int j = 0; j < n; ++j)
+                    {
+                        var workij = 0.0;
+                        for (int k = 0; k < n; ++k)
+                        {
+                            workij = 0;
+                        }
+                        workij = FM[i * n + j];
+                        for (int k = i + 1; k < n; ++k)
+                        {
+                            workij += M[k * (k + 1) / 2 + i] * FM[k * n + j];
+                        }
+                        FM[i * n + j] = workij;
+                    }
+                }
+
+                if (n == 3)
+                {
+                    Console.WriteLine($"\n{FM[0]} {FM[1]} {FM[2]} ");
+                    Console.WriteLine($"{FM[3]} {FM[4]} {FM[5]} ");
+                    Console.WriteLine($"{FM[6]} {FM[7]} {FM[8]} ");
+
+                    Console.WriteLine($"\n{rootFM[0]} {rootFM[1]} {rootFM[2]} ");
+                    Console.WriteLine($"{rootFM[3]} {rootFM[4]} {rootFM[5]} ");
+                    Console.WriteLine($"{rootFM[6]} {rootFM[7]} {rootFM[8]} ");
+                }
+
+                var checkFM = new double[n * (n + 1) / 2];
+                Factorise.dmx_transpose(n, n, rootFM, rootFM);
+                for (int i = 0; i < n; ++i)
+                {
+                    for (int j = 0; j <= i; ++j)
+                    {
+                        checkFM[i * (i + 1) / 2 + j] = BlasLike.ddotvec(n, rootFM, rootFM, i * n, j * n);
                     }
                 }
             }
