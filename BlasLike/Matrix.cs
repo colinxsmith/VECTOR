@@ -3202,13 +3202,13 @@ namespace Blas
                 lambda[1] = ab + d;
             }
             t[0] = ((lambda[0]) - S[2]) / S[1];
-            t[2] = ((lambda[1]) - S[2]) / S[1];
-            t[1] = t[3] = 1;
+            t[3] = ((lambda[1]) - S[2]) / S[1];
+            t[1] = t[2] = 1;
             var bot = Math.Sqrt(t[0] * t[0] + 1);
             t[0] /= bot;
-            t[1] /= bot;
-            bot = Math.Sqrt(t[2] * t[2] + 1);
             t[2] /= bot;
+            bot = Math.Sqrt(t[3] * t[3] + 1);
+            t[1] /= bot;
             t[3] /= bot;
         }
         public static void dmx_transpose(int n, int m, double[] a, double[] b, int astart = 0, int bstart = 0)

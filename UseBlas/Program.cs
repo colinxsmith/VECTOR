@@ -255,8 +255,8 @@ namespace UseBlas
             }
             {
                 var n = 500;
-                var tdata = 300;
-                char[] way = { 'L' };
+                var tdata = 480;
+                char[] way = { 'U' };
                 var cov = new double[n * (n + 1) / 2];
                 var M = new double[n * (n + 1) / 2];
                 var MT = new double[n * (n + 1) / 2];
@@ -325,7 +325,12 @@ namespace UseBlas
                 }
                 var rr2 = new double[n * (n + 1) / 2];
                 double[] lower = new double[n * n];
-
+                var negpiv = 0;
+                for (int i = 0; i < n; ++i)
+                {
+                    if (piv[i] < 0) negpiv++;
+                }
+                Console.WriteLine($"{negpiv} negative pivots");
                 Factorise.dmx_transpose(n, n, r, lower);
                 for (int i = 0, ij = 0; i < n; ++i)
                 {
@@ -334,6 +339,10 @@ namespace UseBlas
                         rr2[ij] = way[0] == 'L' ? BlasLike.ddotvec(n, lower, lower, i * n, j * n) : BlasLike.ddotvec(n, r, r, i * n, j * n);
                     }
                 }
+                var diff=new double[n*(n+1)/2];
+                BlasLike.dsubvec(n*(n+1)/2,cov,rr2,diff);
+                var error=BlasLike.ddotvec(n*(n+1)/2,diff,diff)/(n*(n+1)/2);
+                Console.WriteLine($"error in new covariance {error}");
             }
             {
                 var n = 3;
