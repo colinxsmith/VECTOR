@@ -310,10 +310,14 @@ namespace UseBlas
                 Console.WriteLine($"{r[0]} {r[1]} {r[2]}");
                 Console.WriteLine($"{r[3]} {r[4]} {r[5]}");
                 Console.WriteLine($"{r[6]} {r[7]} {r[8]}");
-                var whichroot = 0;
                 var rI = new double[n * n];
                 for (int i = 0; i < n; ++i) rI[i * n + i] = 1;
-                var symback = (way[0] == 'U') ? Factorise.dsptrs(way, n, n, M, piv, rI, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, MT, piv, rI, n, 0, 0, 0, whichroot);
+                var rBack = new double[n * n];
+                for (int i = 0; i < n; ++i) rBack[i * n + i] = 1;
+                var whichroot = 2;
+                var symback = (way[0] == 'U') ? Factorise.dsptrs(way, n, n, M, piv, rBack, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, MT, piv, rBack, n, 0, 0, 0, whichroot);
+                whichroot=0;
+                symback = (way[0] == 'U') ? Factorise.dsptrs(way, n, n, M, piv, rI, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, MT, piv, rI, n, 0, 0, 0, whichroot);
                 whichroot = 1;
                 symback = (way[0] == 'U') ? Factorise.dsptrs(way, n, n, M, piv, r, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, MT, piv, r, n, 0, 0, 0, whichroot);
                 if (symback != -10)
@@ -339,9 +343,9 @@ namespace UseBlas
                         rr2[ij] = way[0] == 'L' ? BlasLike.ddotvec(n, lower, lower, i * n, j * n) : BlasLike.ddotvec(n, r, r, i * n, j * n);
                     }
                 }
-                var diff=new double[n*(n+1)/2];
-                BlasLike.dsubvec(n*(n+1)/2,cov,rr2,diff);
-                var error=BlasLike.ddotvec(n*(n+1)/2,diff,diff)/(n*(n+1)/2);
+                var diff = new double[n * (n + 1) / 2];
+                BlasLike.dsubvec(n * (n + 1) / 2, cov, rr2, diff);
+                var error = BlasLike.ddotvec(n * (n + 1) / 2, diff, diff) / (n * (n + 1) / 2);
                 Console.WriteLine($"error in new covariance {error}");
             }
             {
@@ -422,12 +426,9 @@ namespace UseBlas
                 }
                 for (int i = 0; i < n; ++i)
                 {
-                    for (int j = 0; j < n; ++j)
+                    for (int k = i + 1; k < n; ++k)
                     {
-                        for (int k = i + 1; k < n; ++k)
-                        {
-                            FM[i * n + j] += M[k * (k + 1) / 2 + i] * FM[k * n + j];
-                        }
+                        BlasLike.daxpy(n, M[k * (k + 1) / 2 + i], FM, n, FM, n, k, i);
                     }
                 }
 

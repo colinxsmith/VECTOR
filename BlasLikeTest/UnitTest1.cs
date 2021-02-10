@@ -460,7 +460,7 @@ namespace BlasLikeTest
             lt[1] = (M[1] * t[0] + M[2] * t[1]) / lambda[0];
             lt[2] = (M[0] * t[2] + M[1] * t[3]) / lambda[1];
             lt[3] = (M[1] * t[2] + M[2] * t[3]) / lambda[1];
-            Assert.IsTrue(Math.Abs(lt[0] - t[0]) < 4 * BlasLike.lm_eps, $"\n{M[0]} {M[1]} {lambda[0]} {t[0]} {t[2]}\n{M[1]} {M[2]} {lambda[1]} {t[1]} {t[3]}");
+            Assert.IsTrue(Math.Abs(lt[0] - t[0]) < 4 * BlasLike.lm_eps, $"{lt[0]} {t[0]}\n{M[0]} {M[1]} {lambda[0]} {t[0]} {t[2]}\n{M[1]} {M[2]} {lambda[1]} {t[1]} {t[3]}");
         }
         [TestMethod]
         public void Test_transpose()
