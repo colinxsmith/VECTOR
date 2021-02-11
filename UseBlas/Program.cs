@@ -267,8 +267,7 @@ namespace UseBlas
                         ST[i * n - i * (i - 1) / 2 + j - i] = S[j * (j + 1) / 2 + i] = cov[j * (j + 1) / 2 + i];
                     }
                 }
-
-                char[] way = { 'L' };
+                char[] way = { 'U' };
                 var piv = new int[n];
                 var back = way[0] == 'L' ? Factorise.dsptrf(way, n, ST, piv) : Factorise.dsptrf(way, n, S, piv);
                 var Sback = new double[n * n];
@@ -278,17 +277,18 @@ namespace UseBlas
                 whichroot = 0;
                 info = way[0] == 'L' ? Factorise.dsptrs(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
                 for (int i = 0; i < n; ++i) Sback[n * i + i] += -1;
-                var error = Math.Sqrt(BlasLike.ddotvec(n * n, Sback, Sback))/n;
+                var error = Math.Sqrt(BlasLike.ddotvec(n * n, Sback, Sback)) / n;
                 Console.WriteLine($"{error}");
-                way[0]='U';
+                way[0] = 'L';
                 back = way[0] == 'L' ? Factorise.dsptrf(way, n, ST, piv) : Factorise.dsptrf(way, n, S, piv);
+                BlasLike.dzerovec(Sback.Length, Sback);
                 for (int i = 0; i < n; ++i) Sback[i * n + i] = 1;
-                whichroot=2;
+                whichroot = 2;
                 info = way[0] == 'L' ? Factorise.dsptrs(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
-                whichroot=0;
+                whichroot = 0;
                 info = way[0] == 'L' ? Factorise.dsptrs(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
                 for (int i = 0; i < n; ++i) Sback[n * i + i] += -1;
-                error = Math.Sqrt(BlasLike.ddotvec(n * n, Sback, Sback))/n;
+                error = Math.Sqrt(BlasLike.ddotvec(n * n, Sback, Sback)) / n;
                 Console.WriteLine($"{error}");
             }
             {
