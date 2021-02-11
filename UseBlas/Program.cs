@@ -254,9 +254,47 @@ namespace UseBlas
                 Console.WriteLine($"{error} back={back} backT={backT} negpiv={negpiv} negpivT={negpivT}\n {unit1[0]},{unit1[1]},{unit1[2]},{unit1[3]} \n {unit1T[0]},{unit1T[1]},{unit1T[2]},{unit1T[3]} \n {c[0]},{c[1]},{c[2]},{c[3]} \n {cT[0]},{cT[1]},{cT[2]},{cT[3]}");
             }
             {
+                var n = 40;
+                var cov = new double[n * (n + 1) / 2];
+                for (int i = 0; i < cov.Length; ++i) cov[i] = i + 1;
+                cov[4] = -cov[4];
+                var S = new double[n * (n + 1) / 2];
+                var ST = new double[n * (n + 1) / 2];
+                for (var i = 0; i < n; ++i)
+                {
+                    for (var j = i; j < n; j++)
+                    {
+                        ST[i * n - i * (i - 1) / 2 + j - i] = S[j * (j + 1) / 2 + i] = cov[j * (j + 1) / 2 + i];
+                    }
+                }
+
+                char[] way = { 'L' };
+                var piv = new int[n];
+                var back = way[0] == 'L' ? Factorise.dsptrf(way, n, ST, piv) : Factorise.dsptrf(way, n, S, piv);
+                var Sback = new double[n * n];
+                for (int i = 0; i < n; ++i) Sback[i * n + i] = 1;
+                var whichroot = 2;
+                var info = way[0] == 'L' ? Factorise.dsptrs(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
+                whichroot = 0;
+                info = way[0] == 'L' ? Factorise.dsptrs(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
+                for (int i = 0; i < n; ++i) Sback[n * i + i] += -1;
+                var error = Math.Sqrt(BlasLike.ddotvec(n * n, Sback, Sback))/n;
+                Console.WriteLine($"{error}");
+                way[0]='U';
+                back = way[0] == 'L' ? Factorise.dsptrf(way, n, ST, piv) : Factorise.dsptrf(way, n, S, piv);
+                for (int i = 0; i < n; ++i) Sback[i * n + i] = 1;
+                whichroot=2;
+                info = way[0] == 'L' ? Factorise.dsptrs(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
+                whichroot=0;
+                info = way[0] == 'L' ? Factorise.dsptrs(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
+                for (int i = 0; i < n; ++i) Sback[n * i + i] += -1;
+                error = Math.Sqrt(BlasLike.ddotvec(n * n, Sback, Sback))/n;
+                Console.WriteLine($"{error}");
+            }
+            {
                 var n = 500;
                 var tdata = 480;
-                char[] way = { 'U' };
+                char[] way = { 'L' };
                 var cov = new double[n * (n + 1) / 2];
                 var M = new double[n * (n + 1) / 2];
                 var MT = new double[n * (n + 1) / 2];
@@ -316,7 +354,7 @@ namespace UseBlas
                 for (int i = 0; i < n; ++i) rBack[i * n + i] = 1;
                 var whichroot = 2;
                 var symback = (way[0] == 'U') ? Factorise.dsptrs(way, n, n, M, piv, rBack, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, MT, piv, rBack, n, 0, 0, 0, whichroot);
-                whichroot=0;
+                whichroot = 0;
                 symback = (way[0] == 'U') ? Factorise.dsptrs(way, n, n, M, piv, rI, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, MT, piv, rI, n, 0, 0, 0, whichroot);
                 whichroot = 1;
                 symback = (way[0] == 'U') ? Factorise.dsptrs(way, n, n, M, piv, r, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, MT, piv, r, n, 0, 0, 0, whichroot);

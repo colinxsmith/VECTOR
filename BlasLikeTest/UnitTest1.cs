@@ -491,6 +491,45 @@ namespace BlasLikeTest
             xxx[0] = 1;
             Factorise.dmxmulv(3, 2, am, xxx, yyy);
             Assert.IsTrue(yyy[0] == am[0] && yyy[1] == am[1] && yyy[2] == am[2]);
-        }
-    }
+        }[TestMethod]
+        public void Test_SemiDefinateInverse()
+            {
+                var n = 40;
+                var cov = new double[n * (n + 1) / 2];
+                for (int i = 0; i < cov.Length; ++i) cov[i] = i + 1;
+                cov[4] = -cov[4];
+                var S = new double[n * (n + 1) / 2];
+                var ST = new double[n * (n + 1) / 2];
+                for (var i = 0; i < n; ++i)
+                {
+                    for (var j = i; j < n; j++)
+                    {
+                        ST[i * n - i * (i - 1) / 2 + j - i] = S[j * (j + 1) / 2 + i] = cov[j * (j + 1) / 2 + i];
+                    }
+                }
+
+                char[] way = { 'L' };
+                var piv = new int[n];
+                var back = way[0] == 'L' ? Factorise.dsptrf(way, n, ST, piv) : Factorise.dsptrf(way, n, S, piv);
+                var Sback = new double[n * n];
+                for (int i = 0; i < n; ++i) Sback[i * n + i] = 1;
+                var whichroot = 2;
+                var info = way[0] == 'L' ? Factorise.dsptrs(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
+                whichroot = 0;
+                info = way[0] == 'L' ? Factorise.dsptrs(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
+                for (int i = 0; i < n; ++i) Sback[n * i + i] += -1;
+                var error = Math.Sqrt(BlasLike.ddotvec(n * n, Sback, Sback))/n;
+                Assert.IsTrue(error<BlasLike.lm_eps*128,$"error is {error}");
+                way[0]='U';
+                back = way[0] == 'L' ? Factorise.dsptrf(way, n, ST, piv) : Factorise.dsptrf(way, n, S, piv);
+                for (int i = 0; i < n; ++i) Sback[i * n + i] = 1;
+                whichroot=2;
+                info = way[0] == 'L' ? Factorise.dsptrs(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
+                whichroot=0;
+                info = way[0] == 'L' ? Factorise.dsptrs(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
+                for (int i = 0; i < n; ++i) Sback[n * i + i] += -1;
+                error = Math.Sqrt(BlasLike.ddotvec(n * n, Sback, Sback))/n;
+                Assert.IsTrue(error<BlasLike.lm_eps*128,$"error is {error}");
+            }
+                }
 }
