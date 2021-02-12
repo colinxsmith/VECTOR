@@ -1200,7 +1200,8 @@ namespace Blas
                     /*           Multiply by the inverse of the diagonal block. */
                     if (root == 0)
                     {
-                        BlasLike.dscal(nrhs, 1.0 / ap[kc + k - 1 + astart], b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
+                        var bot = ap[kc + k - 1 + astart] > 0 ? Math.Max(ap[kc + k - 1 + astart], BlasLike.lm_eps * BlasLike.lm_eps) : Math.Min(ap[kc + k - 1 + astart], -BlasLike.lm_eps * BlasLike.lm_eps);
+                        BlasLike.dscal(nrhs, 1.0 / bot, b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
                     }
                     else if (root == 2)
                     {
@@ -1208,15 +1209,15 @@ namespace Blas
                     }
                     else if (root == 1)
                     {
-                        if (ap[kc + k - 1 + astart] < BlasLike.lambdatest) ap[kc + k - 1 + astart] = Math.Max(ap[kc + k - 1 + astart], 0);
-                        if (ap[kc + k - 1 + astart] < 0) return -10;
-                        BlasLike.dscal(nrhs, Math.Sqrt(ap[kc + k - 1 + astart]), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
+                        var bot = Math.Max(ap[kc + k - 1 + astart], 0);
+                        if(ap[kc + k - 1 + astart]<0)return -10;
+                        BlasLike.dscal(nrhs, Math.Sqrt(bot), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
                     }
                     else if (root == -1)
                     {
-                        if (ap[kc + k - 1 + astart] <= BlasLike.lm_eps) ap[kc + k - 1 + astart] = Math.Max(ap[kc + k - 1 + astart], BlasLike.lm_eps);
-                        if (ap[kc + k - 1 + astart] < 0) return -10;
-                        BlasLike.dscal(nrhs, Math.Sqrt(1.0 / ap[kc + k - 1 + astart]), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
+                        var bot = Math.Max(ap[kc + k - 1 + astart], BlasLike.lm_eps * BlasLike.lm_eps);
+                        if(ap[kc+ k - 1 +astart]<-BlasLike.lm_eps * BlasLike.lm_eps)return -10;
+                        BlasLike.dscal(nrhs, Math.Sqrt(1.0 / bot), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
                     }
                     Writevec(n, b, nrhs);
                     --k;
@@ -1279,6 +1280,8 @@ namespace Blas
                         var lambda = new double[2];
                         var t = new double[4];
                         Factorise.Eigen2(S, lambda, t);
+                        lambda[0] = lambda[0] > 0 ? Math.Max(lambda[0], BlasLike.lm_eps * BlasLike.lm_eps) : Math.Min(lambda[0], -BlasLike.lm_eps * BlasLike.lm_eps);
+                        lambda[1] = lambda[1] > 0 ? Math.Max(lambda[1], BlasLike.lm_eps * BlasLike.lm_eps) : Math.Min(lambda[1], -BlasLike.lm_eps * BlasLike.lm_eps);
                         for (j = 1; j <= nrhs; ++j)
                         {
                             bkm1 = b[k - 1 + j * b_dim1 + bstart] * t[0] + b[k + j * b_dim1 + bstart] * t[1];
@@ -1297,8 +1300,6 @@ namespace Blas
                         var lambda = new double[2];
                         var t = new double[4];
                         Factorise.Eigen2(S, lambda, t);
-                        //if(lambda[0]<0)lambda[0]=BlasLike.lm_eps;
-                        //if(lambda[0]<0)lambda[1]=BlasLike.lm_eps;
                         for (j = 1; j <= nrhs; ++j)
                         {
                             bkm1 = b[k - 1 + j * b_dim1 + bstart] * t[0] + b[k + j * b_dim1 + bstart] * t[1];
@@ -1316,12 +1317,10 @@ namespace Blas
                         var lambda = new double[2];
                         var t = new double[4];
                         Factorise.Eigen2(S, lambda, t);
-                        if (lambda[0] < BlasLike.lambdatest) lambda[0] = Math.Max(lambda[0], 0);
-                        if (lambda[0] < 0) return -10;
-                        if (lambda[1] < BlasLike.lambdatest) lambda[1] = Math.Max(lambda[1], 0);
-                        if (lambda[1] < 0) return -10;
-                        //if(lambda[0]<0)lambda[0]=BlasLike.lm_eps;
-                        //if(lambda[0]<0)lambda[1]=BlasLike.lm_eps;
+                        if(lambda[0]<0)return -10;
+                        if(lambda[1]<0)return -10;
+                        lambda[0] = Math.Max(lambda[0], 0);
+                        lambda[1] = Math.Max(lambda[1], 0);
                         for (j = 1; j <= nrhs; ++j)
                         {
                             bkm1 = b[k - 1 + j * b_dim1 + bstart] * t[0] + b[k + j * b_dim1 + bstart] * t[1];
@@ -1339,12 +1338,10 @@ namespace Blas
                         var lambda = new double[2];
                         var t = new double[4];
                         Factorise.Eigen2(S, lambda, t);
-                        if (lambda[0] < BlasLike.lambdatest) lambda[0] = Math.Max(lambda[0], BlasLike.lm_eps);
-                        if (lambda[0] < 0) return -10;
-                        if (lambda[1] < BlasLike.lambdatest) lambda[1] = Math.Max(lambda[1], BlasLike.lm_eps);
-                        if (lambda[1] < 0) return -10;
-                        //if(lambda[0]<0)lambda[0]=BlasLike.lm_eps;
-                        //if(lambda[0]<0)lambda[1]=BlasLike.lm_eps;
+                        if(lambda[0]<-BlasLike.lm_eps * BlasLike.lm_eps)return -10;
+                        if(lambda[1]<-BlasLike.lm_eps * BlasLike.lm_eps)return -10;
+                        lambda[0] = Math.Max(lambda[0], BlasLike.lm_eps * BlasLike.lm_eps);
+                        lambda[1] = Math.Max(lambda[1], BlasLike.lm_eps * BlasLike.lm_eps);
                         for (j = 1; j <= nrhs; ++j)
                         {
                             bkm1 = b[k - 1 + j * b_dim1 + bstart] * t[0] + b[k + j * b_dim1 + bstart] * t[1];
@@ -1523,7 +1520,8 @@ namespace Blas
                     /*           Multiply by the inverse of the diagonal block. */
                     if (root == 0)
                     {
-                        BlasLike.dscal(nrhs, 1.0 / ap[kc + astart], b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
+                        var bot = ap[kc + astart] > 0 ? Math.Max(ap[kc + astart], BlasLike.lm_eps * BlasLike.lm_eps) : Math.Min(ap[kc + astart], -BlasLike.lm_eps * BlasLike.lm_eps);
+                        BlasLike.dscal(nrhs, 1.0 / bot, b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
                     }
                     else if (root == 2)
                     {
@@ -1531,15 +1529,15 @@ namespace Blas
                     }
                     else if (root == 1)
                     {
-                        if (ap[kc + astart] < BlasLike.lambdatest) ap[kc + astart] = Math.Max(ap[kc + astart], 0);
-                        if (ap[kc + astart] < 0) return -10;
-                        BlasLike.dscal(nrhs, Math.Sqrt(ap[kc + astart]), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
+                        var bot = Math.Max(ap[kc + astart], 0);
+                        if(ap[kc+astart]<0)return -10;
+                        BlasLike.dscal(nrhs, Math.Sqrt(bot), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
                     }
                     else if (root == -1)
                     {
-                        if (ap[kc + astart] < 4 * BlasLike.lm_eps) ap[kc + astart] = Math.Max(ap[kc + astart], BlasLike.lm_eps);
-                        if (ap[kc + astart] < 0) return -10;
-                        BlasLike.dscal(nrhs, Math.Sqrt(1.0 / ap[kc + astart]), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
+                        var bot = Math.Max(ap[kc + astart], BlasLike.lm_eps * BlasLike.lm_eps);
+                        if(ap[kc+astart]<-BlasLike.lm_eps * BlasLike.lm_eps)return -10;
+                        BlasLike.dscal(nrhs, Math.Sqrt(1.0 / bot), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
                     }
                     Writevec(n, b, nrhs);
                     kc = kc + n - k + 1;
@@ -1579,14 +1577,14 @@ namespace Blas
                         /*           Multiply by inv(L(K)), where L(K) is the transformation */
                         /*           stored in columns K and K+1 of A. */
 
-                        if (k < n-1)
+                        if (k < n - 1)
                         {
                             char[] TT = { 'T' };
-                            BlasLike.dgemv(TT, n - k-1, nrhs, 1, b/*[k + 1 + b_dim1]*/,
+                            BlasLike.dgemv(TT, n - k - 1, nrhs, 1, b/*[k + 1 + b_dim1]*/,
                                 ldb, ap/*[kc + 1]*/, 1, 1, b/*[k + b_dim1]*/, ldb, bstart + k + 2 + b_dim1, astart + kc + 2, bstart + k + b_dim1);
-                            BlasLike.dgemv(TT, n - k-1, nrhs, 1, b/*[k + 1 + b_dim1]*/,
+                            BlasLike.dgemv(TT, n - k - 1, nrhs, 1, b/*[k + 1 + b_dim1]*/,
                                 ldb, ap/*[kc - (n - k)]*/, 1, 1, b/*[k - 1 +
-                            b_dim1]*/, ldb, bstart + k + 2 + b_dim1, astart + kc+n - k + 2, bstart + k + 1 + b_dim1);
+                            b_dim1]*/, ldb, bstart + k + 2 + b_dim1, astart + kc + n - k + 2, bstart + k + 1 + b_dim1);
                             Writevec(n, b, nrhs);
                         }
                     }
@@ -1613,6 +1611,8 @@ namespace Blas
                         var lambda = new double[2];
                         var t = new double[4];
                         Factorise.Eigen2(S, lambda, t);
+                        lambda[0] = lambda[0] > 0 ? Math.Max(lambda[0], BlasLike.lm_eps * BlasLike.lm_eps) : Math.Min(lambda[0], -BlasLike.lm_eps * BlasLike.lm_eps);
+                        lambda[1] = lambda[1] > 0 ? Math.Max(lambda[1], BlasLike.lm_eps * BlasLike.lm_eps) : Math.Min(lambda[1], -BlasLike.lm_eps * BlasLike.lm_eps);
                         for (j = 1; j <= nrhs; ++j)
                         {
                             bkm1 = b[k + j * b_dim1 + bstart] * t[0] + b[k + 1 + j * b_dim1 + bstart] * t[1];
@@ -1630,10 +1630,10 @@ namespace Blas
                         var lambda = new double[2];
                         var t = new double[4];
                         Factorise.Eigen2(S, lambda, t);
-                        if (lambda[0] < BlasLike.lambdatest) lambda[0] = Math.Max(lambda[0], 0);
-                        if (lambda[0] < 0) return -10;
-                        if (lambda[1] < BlasLike.lambdatest) lambda[1] = Math.Max(lambda[1], 0);
-                        if (lambda[1] < 0) return -10;
+                        if(lambda[0]<0)return -10;
+                        if(lambda[1]<0)return -10;
+                        lambda[0] = Math.Max(lambda[0], 0);
+                        lambda[1] = Math.Max(lambda[1], 0);
                         for (j = 1; j <= nrhs; ++j)
                         {
                             bkm1 = b[k + j * b_dim1 + bstart] * t[0] + b[k + 1 + j * b_dim1 + bstart] * t[1];
@@ -1669,10 +1669,10 @@ namespace Blas
                             var lambda = new double[2];
                             var t = new double[4];
                             Factorise.Eigen2(S, lambda, t);
-                            if (lambda[0] < BlasLike.lambdatest) lambda[0] = Math.Max(lambda[0], 0);
-                            if (lambda[0] < 0) return -10;
-                            if (Math.Abs(lambda[1]) < BlasLike.lambdatest) lambda[1] = Math.Max(lambda[1], 0);
-                            if (lambda[1] < 0) return -10;
+                        if(lambda[0]<-BlasLike.lm_eps * BlasLike.lm_eps)return -10;
+                        if(lambda[1]<-BlasLike.lm_eps * BlasLike.lm_eps)return -10;
+                            lambda[0] = Math.Max(lambda[0], BlasLike.lm_eps * BlasLike.lm_eps);
+                            lambda[1] = Math.Max(lambda[1], BlasLike.lm_eps * BlasLike.lm_eps);
                             for (j = 1; j <= nrhs; ++j)
                             {
                                 bkm1 = b[k + j * b_dim1 + bstart] * t[0] + b[k + 1 + j * b_dim1 + bstart] * t[1];
@@ -1777,13 +1777,13 @@ namespace Blas
 
                     else if (root == 2)
                     {
-                        if (k < n )
+                        if (k < n)
                         {
                             BlasLike.dger(n - k, nrhs, 1, ap/*[kc + 2]*/, 1, b/*[k + b_dim1]*/,
                                 ldb, b/*[k + 2 + b_dim1]*/, ldb, astart + kc + 1, bstart + k + b_dim1, bstart + k + 1 + b_dim1);
                             Writevec(n, b, nrhs);
                             BlasLike.dger(n - k, nrhs, 1, ap/*[kc + n - k + 2]*/, 1, b/*[k +
-                            1 + b_dim1]*/, ldb, b/*[k + 2 + b_dim1]*/, ldb, astart  + kc - (n - k), bstart + k - 1 + b_dim1, bstart + k + 1 + b_dim1);
+                            1 + b_dim1]*/, ldb, b/*[k + 2 + b_dim1]*/, ldb, astart + kc - (n - k), bstart + k - 1 + b_dim1, bstart + k + 1 + b_dim1);
                             Writevec(n, b, nrhs);
                         }
                     }
@@ -3334,7 +3334,7 @@ namespace Blas
         public static void dmx_transpose(int n, int m, double[] a, double[] b, int astart = 0, int bstart = 0)
         {
             int size = m * n;
-            if (b != a)
+            if (b != a || bstart!=astart)
             {
                 int pa = astart, pb = bstart, pbmn = pb + size, panm = pa + size, paij;
                 while (pb < pbmn) for (paij = pa++; paij < panm; paij += n)
@@ -3356,7 +3356,7 @@ namespace Blas
                     if (current > i)
                     {
                         double temp = a[i + astart];
-                        a[i] = a[current + astart];
+                        a[i+astart] = a[current + astart];
                         a[current + astart] = temp;
                     }
                 }

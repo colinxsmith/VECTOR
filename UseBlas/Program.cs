@@ -293,8 +293,8 @@ namespace UseBlas
             }
             {
                 var n = 500;
-                var tdata = 480;
-                char[] way = { 'L' };
+                var tdata = 40;
+                char[] way = { 'U' };
                 var cov = new double[n * (n + 1) / 2];
                 var M = new double[n * (n + 1) / 2];
                 var MT = new double[n * (n + 1) / 2];
@@ -358,13 +358,11 @@ namespace UseBlas
                 symback = (way[0] == 'U') ? Factorise.dsptrs(way, n, n, M, piv, rI, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, MT, piv, rI, n, 0, 0, 0, whichroot);
                 whichroot = 1;
                 symback = (way[0] == 'U') ? Factorise.dsptrs(way, n, n, M, piv, r, n, 0, 0, 0, whichroot) : Factorise.dsptrs(way, n, n, MT, piv, r, n, 0, 0, 0, whichroot);
-                if (symback != -10)
-                {
-                    if (whichroot != 0 && way[0] == 'L') Factorise.dmx_transpose(n, n, r, r);
-                    Console.WriteLine($"{r[0]} {r[1]} {r[2]}");
-                    Console.WriteLine($"{r[3]} {r[4]} {r[5]}");
-                    Console.WriteLine($"{r[6]} {r[7]} {r[8]}");
-                }
+                if (whichroot != 0 && way[0] == 'L') Factorise.dmx_transpose(n, n, r, r);
+                Console.WriteLine($"{r[0]} {r[1]} {r[2]}");
+                Console.WriteLine($"{r[3]} {r[4]} {r[5]}");
+                Console.WriteLine($"{r[6]} {r[7]} {r[8]}");
+
                 var rr2 = new double[n * (n + 1) / 2];
                 double[] lower = new double[n * n];
                 var negpiv = 0;
@@ -514,6 +512,69 @@ namespace UseBlas
                     Console.WriteLine($"{xxx[0]},{xxx[1]}   {yyy[0]},{yyy[1]},{yyy[2]}");
                     xxx[i] = 0;
                 }
+            }
+            {
+                var n = 50;
+                var tdata = 4000;
+                var cov = new double[n * (n + 1) / 2];
+                var timeD = new double[n, tdata];
+
+                for (int i = 0; i < n; ++i)
+                {
+                    for (int time = 0; time < tdata; ++time)
+                    {
+                        var dat = new Random();
+                        timeD[i, time] = dat.NextDouble();
+                    }
+                }
+                for (int i = 0; i < n; ++i)
+                {
+                    for (int j = 0; j <= i; ++j)
+                    {
+                        cov[i * (i + 1) / 2 + j] = 0;
+                        var ti = 0.0;
+                        var tj = 0.0;
+                        for (int time = 0; time < tdata; ++time)
+                        {
+                            ti += timeD[i, time];
+                            tj += timeD[j, time];
+                            cov[i * (i + 1) / 2 + j] += timeD[i, time] * timeD[j, time];
+                        }
+                        cov[i * (i + 1) / 2 + j] = cov[i * (i + 1) / 2 + j] / tdata - ti / tdata * tj / tdata;
+                    }
+                }
+
+                var piv = new int[n];
+                var S = new double[n * (n + 1)];
+                BlasLike.dcopyvec(cov.Length, cov, S);
+                for (int i = 0; i < n; ++i)
+                {
+                    for (int j = 0; j <= i; ++j)
+                    {
+                        S[j * n - j * (j - 1) / 2 + i - j + cov.Length] = cov[i * (i + 1) / 2 + j];
+                    }
+                }
+                char[] way = { 'U' };
+                var R = new double[n * n * 2];
+                var whichroot = 0;
+                var back = Factorise.dsptrf(way, n, S, piv, way[0] == 'U' ? 0 : cov.Length);
+                var npiv = 0;
+                for (int i = 0; i < n; ++i) if (piv[i] < 0) npiv++;
+                Console.WriteLine($"{npiv} negative pivots");
+                BlasLike.dzerovec(R.Length, R);
+                for (int i = 0; i < n; i++) R[i * n + i] = 1;
+                for (int i = 0; i < n; i++) R[i * n + i + n * n] = 1;
+                whichroot = 1;
+                var symprob = Factorise.dsptrs(way, n, n, S, piv, R, n, way[0] == 'U' ? 0 : cov.Length, 0, 0, whichroot);
+                whichroot = -1;
+                symprob = Factorise.dsptrs(way, n, n, S, piv, R, n, way[0] == 'U' ? 0 : cov.Length, 0, n * n, whichroot);
+                if (symprob == -10) Console.WriteLine("not positive definite!");
+                var unit = new double[n * n];
+                Factorise.dmx_transpose(n, n, R, R, n * n, n * n);
+                for (int i = 0; i < n; ++i)
+                    Factorise.dmxmulv(n, n, R, R, unit, 0, n * n + i * n, i * n);
+                var testunit=BlasLike.ddotvec(unit.Length,unit,unit);
+                Console.WriteLine($"test unit {testunit}");
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
