@@ -1176,7 +1176,6 @@ namespace Blas
                     if (kp != k)
                     {
                         BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
-                        Writevec(n, b, nrhs);
                     }
 
                     if (root == 0 || root == -1)
@@ -1185,7 +1184,6 @@ namespace Blas
                         /*           stored in column K of A. */
                         BlasLike.dger(k - 1, nrhs, -1, ap/*[kc]*/, 1, b/*[k + b_dim1]*/, ldb, b/*[
                         b_dim1 + 1]*/, ldb, astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
-                        Writevec(n, b, nrhs);
                     }
                     else if (root == 1 || root == 2)
                     {
@@ -1195,7 +1193,6 @@ namespace Blas
                         BlasLike.dgemv(TT, k - 1, nrhs, 1, b/*[b_offset]*/, ldb, ap/*[kc]*/
                             , 1, 1, b/*[k + b_dim1]*/, ldb, bstart + b_offset, astart + kc, bstart + k + b_dim1);
 
-                        Writevec(n, b, nrhs);
                     }
                     /*           Multiply by the inverse of the diagonal block. */
                     if (root == 0)
@@ -1219,7 +1216,6 @@ namespace Blas
                         if(ap[kc+ k - 1 +astart]<-BlasLike.lm_eps * BlasLike.lm_eps)return -10;
                         BlasLike.dscal(nrhs, Math.Sqrt(1.0 / bot), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
                     }
-                    Writevec(n, b, nrhs);
                     --k;
                 }
                 else
@@ -1233,7 +1229,6 @@ namespace Blas
                     if (kp != k - 1)
                     {
                         BlasLike.dswap(nrhs, b/*[k - 1 + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k - 1 + b_dim1, bstart + kp + b_dim1);
-                        Writevec(n, b, nrhs);
                     }
 
                     if (root == 0 || root == -1)
@@ -1244,7 +1239,6 @@ namespace Blas
                         b_dim1 + 1]*/, ldb, astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
                         BlasLike.dger(k - 2, nrhs, -1, ap/*[kc - (k - 1)]*/, 1, b/*[k - 1 +
                         b_dim1]*/, ldb, b/*[b_dim1 + 1]*/, ldb, astart + kc - (k - 1), bstart + k - 1 + b_dim1, bstart + b_dim1 + 1);
-                        Writevec(n, b, nrhs);
                     }
                     else if (root == 1 || root == 2)
                     {
@@ -1255,7 +1249,6 @@ namespace Blas
                             , 1, 1, b/*[k + b_dim1]*/, ldb, bstart + b_offset, astart + kc, bstart + k + b_dim1);
                         BlasLike.dgemv(TT, k - 2, nrhs, 1, b/*[b_offset]*/, ldb, ap/*[kc
                         + k]*/, 1, 1, b/*[k + 1 + b_dim1]*/, ldb, bstart + b_offset, astart + kc - (k - 1), bstart + k - 1 + b_dim1);
-                        Writevec(n, b, nrhs);
                     }
                     if (root == 30)
                     {
@@ -1354,7 +1347,6 @@ namespace Blas
                         }
                     }
 
-                    Writevec(n, b, nrhs);
                     kc = kc - k + 1;
                     k += -2;
                 }
@@ -1390,7 +1382,6 @@ namespace Blas
                         BlasLike.dgemv(TT, k - 1, nrhs, -1, b/*[b_offset]*/, ldb, ap/*[kc]*/
                             , 1, 1, b/*[k + b_dim1]*/, ldb, bstart + b_offset, astart + kc, bstart + k + b_dim1);
 
-                        Writevec(n, b, nrhs);
                     }
                     else if (root == 2)
                     {
@@ -1398,7 +1389,6 @@ namespace Blas
                         /*           stored in column K of A. */
                         BlasLike.dger(k - 1, nrhs, 1, ap/*[kc]*/, 1, b/*[k + b_dim1]*/, ldb, b/*[
                         b_dim1 + 1]*/, ldb, astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
-                        Writevec(n, b, nrhs);
                     }
                     /*           Interchange rows K and IPIV(K). */
 
@@ -1406,7 +1396,6 @@ namespace Blas
                     if (kp != k)
                     {
                         BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
-                        Writevec(n, b, nrhs);
                     }
 
                     kc += k;
@@ -1426,7 +1415,6 @@ namespace Blas
                         BlasLike.dgemv(TT, k - 1, nrhs, -1, b/*[b_offset]*/, ldb, ap/*[kc
                         + k]*/, 1, 1, b/*[k + 1 + b_dim1]*/, ldb, bstart + b_offset, astart + kc + k, bstart + k + 1 + b_dim1);
 
-                        Writevec(n, b, nrhs);
                     }
                     else if (root == 2)
                     {
@@ -1434,7 +1422,6 @@ namespace Blas
                         b_dim1 + 1]*/, ldb, astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
                         BlasLike.dger(k - 1, nrhs, 1, ap/*[kc - (k - 1)]*/, 1, b/*[k - 1 +
                         b_dim1]*/, ldb, b/*[b_dim1 + 1]*/, ldb, astart + kc + k, bstart + k + 1 + b_dim1, bstart + b_dim1 + 1);
-                        Writevec(n, b, nrhs);
                     }
                     /*           Interchange rows K and -IPIV(K). */
 
@@ -1442,7 +1429,6 @@ namespace Blas
                     if (kp != k)
                     {
                         BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
-                        Writevec(n, b, nrhs);
                     }
 
                     kc = kc + (k << 1) + 1;
@@ -1486,7 +1472,6 @@ namespace Blas
                     if (kp != k)
                     {
                         BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
-                        Writevec(n, b, nrhs);
                     }
 
                     if (root == 0 || root == -1)
@@ -1498,7 +1483,6 @@ namespace Blas
                         {
                             BlasLike.dger(n - k, nrhs, -1, ap/*[kc + 1]*/, 1, b/*[k + b_dim1]*/,
                                 ldb, b/*[k + 1 + b_dim1]*/, ldb, astart + kc + 1, bstart + k + b_dim1, bstart + k + 1 + b_dim1);
-                            Writevec(n, b, nrhs);
                         }
                     }
 
@@ -1512,7 +1496,6 @@ namespace Blas
                             char[] TT = { 'T' };
                             BlasLike.dgemv(TT, n - k, nrhs, 1, b/*[k + 1 + b_dim1]*/,
                                 ldb, ap/*[kc + 1]*/, 1, 1, b/*[k + b_dim1]*/, ldb, bstart + k + 1 + b_dim1, astart + kc + 1, bstart + k + b_dim1);
-                            Writevec(n, b, nrhs);
                         }
                     }
 
@@ -1539,7 +1522,6 @@ namespace Blas
                         if(ap[kc+astart]<-BlasLike.lm_eps * BlasLike.lm_eps)return -10;
                         BlasLike.dscal(nrhs, Math.Sqrt(1.0 / bot), b/*[k + b_dim1]*/, ldb, bstart + k + b_dim1);
                     }
-                    Writevec(n, b, nrhs);
                     kc = kc + n - k + 1;
                     ++k;
                 }
@@ -1554,7 +1536,6 @@ namespace Blas
                     if (kp != k + 1)
                     {
                         BlasLike.dswap(nrhs, b/*[k + 1 + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + 1 + b_dim1, bstart + kp + b_dim1);
-                        Writevec(n, b, nrhs);
                     }
 
                     if (root == 0 || root == -1)
@@ -1566,10 +1547,8 @@ namespace Blas
                         {
                             BlasLike.dger(n - k - 1, nrhs, -1, ap/*[kc + 2]*/, 1, b/*[k + b_dim1]*/,
                                 ldb, b/*[k + 2 + b_dim1]*/, ldb, astart + kc + 2, bstart + k + b_dim1, bstart + k + 2 + b_dim1);
-                            Writevec(n, b, nrhs);
                             BlasLike.dger(n - k - 1, nrhs, -1, ap/*[kc + n - k + 2]*/, 1, b/*[k +
                             1 + b_dim1]*/, ldb, b/*[k + 2 + b_dim1]*/, ldb, astart + kc + n - k + 2, bstart + k + 1 + b_dim1, bstart + k + 2 + b_dim1);
-                            Writevec(n, b, nrhs);
                         }
                     }
                     else if (root == 1 || root == 2)
@@ -1585,7 +1564,6 @@ namespace Blas
                             BlasLike.dgemv(TT, n - k - 1, nrhs, 1, b/*[k + 1 + b_dim1]*/,
                                 ldb, ap/*[kc - (n - k)]*/, 1, 1, b/*[k - 1 +
                             b_dim1]*/, ldb, bstart + k + 2 + b_dim1, astart + kc + n - k + 2, bstart + k + 1 + b_dim1);
-                            Writevec(n, b, nrhs);
                         }
                     }
 
@@ -1685,7 +1663,6 @@ namespace Blas
                             }
                         }
                     }
-                    Writevec(n, b, nrhs);
                     kc = kc + (n - k << 1) + 1;
                     k += 2;
                 }
@@ -1725,7 +1702,6 @@ namespace Blas
                             char[] TT = { 'T' };
                             BlasLike.dgemv(TT, n - k, nrhs, -1, b/*[k + 1 + b_dim1]*/,
                                 ldb, ap/*[kc + 1]*/, 1, 1, b/*[k + b_dim1]*/, ldb, bstart + k + 1 + b_dim1, astart + kc + 1, bstart + k + b_dim1);
-                            Writevec(n, b, nrhs);
                         }
                     }
 
@@ -1740,7 +1716,6 @@ namespace Blas
                         {
                             BlasLike.dger(n - k, nrhs, 1, ap/*[kc + 1]*/, 1, b/*[k + b_dim1]*/,
                                 ldb, b/*[k + 1 + b_dim1]*/, ldb, astart + kc + 1, bstart + k + b_dim1, bstart + k + 1 + b_dim1);
-                            Writevec(n, b, nrhs);
                         }
                     }
                     /*           Interchange rows K and IPIV(K). */
@@ -1749,7 +1724,6 @@ namespace Blas
                     if (kp != k)
                     {
                         BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
-                        Writevec(n, b, nrhs);
                     }
 
                     --k;
@@ -1771,7 +1745,6 @@ namespace Blas
                             BlasLike.dgemv(TT, n - k, nrhs, -1, b/*[k + 1 + b_dim1]*/,
                                 ldb, ap/*[kc - (n - k)]*/, 1, 1, b/*[k - 1 +
                             b_dim1]*/, ldb, bstart + k + 1 + b_dim1, astart + kc - (n - k), bstart + k - 1 + b_dim1);
-                            Writevec(n, b, nrhs);
                         }
                     }
 
@@ -1781,10 +1754,8 @@ namespace Blas
                         {
                             BlasLike.dger(n - k, nrhs, 1, ap/*[kc + 2]*/, 1, b/*[k + b_dim1]*/,
                                 ldb, b/*[k + 2 + b_dim1]*/, ldb, astart + kc + 1, bstart + k + b_dim1, bstart + k + 1 + b_dim1);
-                            Writevec(n, b, nrhs);
                             BlasLike.dger(n - k, nrhs, 1, ap/*[kc + n - k + 2]*/, 1, b/*[k +
                             1 + b_dim1]*/, ldb, b/*[k + 2 + b_dim1]*/, ldb, astart + kc - (n - k), bstart + k - 1 + b_dim1, bstart + k + 1 + b_dim1);
-                            Writevec(n, b, nrhs);
                         }
                     }
                     /*           Interchange rows K and -IPIV(K). */
@@ -1793,7 +1764,6 @@ namespace Blas
                     if (kp != k)
                     {
                         BlasLike.dswap(nrhs, b/*[k + b_dim1]*/, ldb, b/*[kp + b_dim1]*/, ldb, bstart + k + b_dim1, bstart + kp + b_dim1);
-                        Writevec(n, b, nrhs);
                     }
 
                     kc -= n - k + 2;
