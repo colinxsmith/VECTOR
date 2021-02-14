@@ -514,7 +514,7 @@ namespace UseBlas
                 }
             }
             {
-                var n = 50;
+                var n = 3;
                 var tdata = 4000;
                 var cov = new double[n * (n + 1) / 2];
                 var timeD = new double[n, tdata];
@@ -554,8 +554,9 @@ namespace UseBlas
                         S[j * n - j * (j - 1) / 2 + i - j + cov.Length] = cov[i * (i + 1) / 2 + j];
                     }
                 }
-                char[] way = { 'U' };
+                char[] way = { 'L' };
                 var R = new double[n * n * 2];
+                var R_Inverse = new double[n * n + n * (n + 1) / 2];
                 var whichroot = 0;
                 var back = Factorise.dsptrf(way, n, S, piv, way[0] == 'U' ? 0 : cov.Length);
                 var npiv = 0;
@@ -563,17 +564,25 @@ namespace UseBlas
                 Console.WriteLine($"{npiv} negative pivots");
                 BlasLike.dzerovec(R.Length, R);
                 for (int i = 0; i < n; i++) R[i * n + i] = 1;
+                for (int i = 0; i < n; i++) R_Inverse[i * n + i] = 1;
                 for (int i = 0; i < n; i++) R[i * n + i + n * n] = 1;
                 whichroot = 1;
                 var symprob = Factorise.dsptrs(way, n, n, S, piv, R, n, way[0] == 'U' ? 0 : cov.Length, 0, 0, whichroot);
                 whichroot = -1;
                 symprob = Factorise.dsptrs(way, n, n, S, piv, R, n, way[0] == 'U' ? 0 : cov.Length, 0, n * n, whichroot);
                 if (symprob == -10) Console.WriteLine("not positive definite!");
+                whichroot = 0;
+                symprob = Factorise.dsptrs(way, n, n, S, piv, R_Inverse, n, way[0] == 'U' ? 0 : cov.Length, 0, 0, whichroot);
                 var unit = new double[n * n];
+                for(int i=0;i<n;++i){//Check inv(R)*inv(RT) is inverse of cov
+                    for(int j =0;j<=i;++j){
+                        R_Inverse[n*n+i*(i+1)/2+j]=BlasLike.ddotvec(n,R,R,i*n+n*n,j*n+n*n);
+                    }
+                }
                 Factorise.dmx_transpose(n, n, R, R, n * n, n * n);
-                for (int i = 0; i < n; ++i)
+                for (int i = 0; i < n; ++i)//Check R*inv(RT)=I
                     Factorise.dmxmulv(n, n, R, R, unit, 0, n * n + i * n, i * n);
-                var testunit=BlasLike.ddotvec(unit.Length,unit,unit);
+                var testunit = BlasLike.ddotvec(unit.Length, unit, unit);
                 Console.WriteLine($"test unit {testunit}");
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
