@@ -2168,7 +2168,7 @@ double beta, double[] y, int incy, int astart = 0, int xstart = 0, int ystart = 
                 fixed (double* yy = y)
                     return dgemv(tt, m, n, alpha, aa + astart, lda, xx + xstart, incx, beta, yy + ystart, incy);
             }/* System generated locals */
-            int a_dim1, a_offset, i__1, i__2;
+            int a_dim1, a_offset;
 
             /* Local variables */
             int i__, j, ix, iy, jx, jy, kx, ky, info;
@@ -2291,8 +2291,7 @@ double beta, double[] y, int incy, int astart = 0, int xstart = 0, int ystart = 
                 {
                     if (beta == 0.0)
                     {
-                        i__1 = leny;
-                        for (i__ = 1; i__ <= i__1; ++i__)
+                        for (i__ = 1; i__ <= leny; ++i__)
                         {
                             y[i__ + ystart] = 0.0;
                             /* L10: */
@@ -2300,8 +2299,7 @@ double beta, double[] y, int incy, int astart = 0, int xstart = 0, int ystart = 
                     }
                     else
                     {
-                        i__1 = leny;
-                        for (i__ = 1; i__ <= i__1; ++i__)
+                        for (i__ = 1; i__ <= leny; ++i__)
                         {
                             y[i__ + ystart] = beta * y[i__ + ystart];
                             /* L20: */
@@ -2313,8 +2311,7 @@ double beta, double[] y, int incy, int astart = 0, int xstart = 0, int ystart = 
                     iy = ky;
                     if (beta == 0.0)
                     {
-                        i__1 = leny;
-                        for (i__ = 1; i__ <= i__1; ++i__)
+                        for (i__ = 1; i__ <= leny; ++i__)
                         {
                             y[iy + ystart] = 0.0;
                             iy += incy;
@@ -2323,8 +2320,7 @@ double beta, double[] y, int incy, int astart = 0, int xstart = 0, int ystart = 
                     }
                     else
                     {
-                        i__1 = leny;
-                        for (i__ = 1; i__ <= i__1; ++i__)
+                        for (i__ = 1; i__ <= leny; ++i__)
                         {
                             y[iy + ystart] = beta * y[iy + ystart];
                             iy += incy;
@@ -2345,12 +2341,10 @@ double beta, double[] y, int incy, int astart = 0, int xstart = 0, int ystart = 
                 jx = kx;
                 if (incy == 1)
                 {
-                    i__1 = n;
-                    for (j = 1; j <= i__1; ++j)
+                    for (j = 1; j <= n; ++j)
                     {
                         temp = (alpha * x[jx + xstart]);
-                        i__2 = m;
-                        for (i__ = 1; i__ <= i__2; ++i__)
+                        for (i__ = 1; i__ <= m; ++i__)
                         {
                             y[i__ + ystart] += temp * a[i__ + j * a_dim1 + astart];
                             /* L50: */
@@ -2361,15 +2355,13 @@ double beta, double[] y, int incy, int astart = 0, int xstart = 0, int ystart = 
                 }
                 else
                 {
-                    i__1 = n;
-                    for (j = 1; j <= i__1; ++j)
+                    for (j = 1; j <= n; ++j)
                     {
                         temp = (alpha * x[jx + xstart]);
                         iy = ky;
-                        i__2 = m;
                         if (temp != 0)
                         {
-                            for (i__ = 1; i__ <= i__2; ++i__, iy += incy)
+                            for (i__ = 1; i__ <= m; ++i__, iy += incy)
                             {
                                 y[iy + ystart] += temp * a[i__ + j * a_dim1 + astart];
                                 /* L70: */
@@ -2388,12 +2380,10 @@ double beta, double[] y, int incy, int astart = 0, int xstart = 0, int ystart = 
                 jy = ky;
                 if (incx == 1)
                 {
-                    i__1 = n;
-                    for (j = 1; j <= i__1; ++j)
+                    for (j = 1; j <= n; ++j)
                     {
                         temp = 0.0;
-                        i__2 = m;
-                        for (i__ = 1; i__ <= i__2; ++i__)
+                        for (i__ = 1; i__ <= m; ++i__)
                         {
                             temp += a[i__ + j * a_dim1 + astart] * x[i__ + xstart];
                             /* L90: */
@@ -2405,13 +2395,11 @@ double beta, double[] y, int incy, int astart = 0, int xstart = 0, int ystart = 
                 }
                 else
                 {
-                    i__1 = n;
-                    for (j = 1; j <= i__1; ++j)
+                    for (j = 1; j <= n; ++j)
                     {
                         temp = 0.0;
                         ix = kx;
-                        i__2 = m;
-                        for (i__ = 1; i__ <= i__2; ++i__)
+                        for (i__ = 1; i__ <= m; ++i__)
                         {
                             temp += a[i__ + j * a_dim1 + astart] * x[ix + xstart];
                             ix += incx;
