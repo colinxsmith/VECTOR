@@ -710,16 +710,31 @@ namespace Blas
                         {
                             /*           Multiply by inv(U(K)), where U(K) is the transformation */
                             /*           stored in column K of A. */
-                            BlasLike.dger(k - 1, nrhs, -1, ap, 1, b, ldb, b, ldb, astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
-
+                            //                    BlasLike.dger(k - 1, nrhs, -1, ap, 1, b, ldb, b, ldb, astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
+                            //      x     y       a
+                            for (int jj = 0, jy = 0; jj < nrhs; ++jj)
+                            {
+                                if (b[jy + ldb * jj + bstart + k + b_dim1] != 0.0)
+                                {
+                                    BlasLike.daxpyvec(k - 1, -b[jy + ldb * jj + bstart + k + b_dim1], ap, b, astart + kc, bstart + b_dim1 + 1 + jj * ldb);
+                                }
+                            }
                         }
                         else if (root == 1 || root == 2)
                         {
                             /*           Multiply by (U(K)), where U(K) is the transformation */
                             /*           stored in column K of A. */
                             char[] TT = { 'T' };
-                            BlasLike.dgemv(TT, k - 1, nrhs, 1, b, ldb, ap, 1, 1, b, ldb, bstart + b_offset, astart + kc, bstart + k + b_dim1);
-
+                            //BlasLike.dgemv(TT, k - 1, nrhs, 1, b, ldb, ap, 1, 1, b, ldb, bstart + b_offset, astart + kc, bstart + k + b_dim1);
+                            for (int i2 = 0, iy = 0; i2 < ldb; ++i2, iy += ldb)
+                            {
+                                var sum = 0.0;
+                                for (var i1 = 0; i1 < k - 1; ++i1)
+                                {
+                                    sum += b[bstart + b_offset + i1 + i2 * ldb] * ap[astart + kc + i1];
+                                }
+                                b[bstart + k + b_dim1 + iy] += sum;
+                            }
                         }
                         /*           Multiply by the inverse of the diagonal block. */
                         if (root == 0)
