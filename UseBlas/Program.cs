@@ -554,7 +554,7 @@ namespace UseBlas
                         S[j * n - j * (j - 1) / 2 + i - j + cov.Length] = cov[i * (i + 1) / 2 + j];
                     }
                 }
-                char[] way = { 'L' };
+                char[] way = { 'U' };
                 var R = new double[n * n * 2];
                 var R_Inverse = new double[n * n + n * (n + 1) / 2];
                 var whichroot = 0;
@@ -595,7 +595,7 @@ namespace UseBlas
                 double[] L ={1,1,2,
                              1,3,
                              1};
-                char[] way = { 'U' };
+                char[] way = { 'L' };
                 var unit = new double[n * n * 2];
                 var piv = new int[n];
                 for (int i = 0; i < n; i++)
