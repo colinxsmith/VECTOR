@@ -486,6 +486,8 @@ namespace BlasLikeTest
             Factorise.dmxmulv(2, 3, am, xx, yy);
             Assert.IsTrue(yy[0] == am[2] && yy[1] == am[3]);
             Factorise.dmx_transpose(2, 3, am, am);
+            Factorise.dmxmulv(2, 3, am, xx, yy, 0, 0, 0, true);
+            Assert.IsTrue(yy[0] == am[1] && yy[1] == am[4]);
             var xxx = new double[2];
             var yyy = new double[3];
             xxx[0] = 1;
