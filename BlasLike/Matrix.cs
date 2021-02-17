@@ -1244,13 +1244,20 @@ namespace Blas
                 BlasLike.dzerovec(n, y, ystart);
                 var N = new char[1];
                 N[0] = atran ? 'T' : 'N';
-                if (atran) for (int j = 0; j < m; ++j) BlasLike.dgemv(N, m, n, 1, A, m, x, 1, 0, y, 1, astart, xstart, ystart);
-                else for (int j = 0; j < m; ++j) BlasLike.dgemv(N, n, m, 1, A, n, x, 1, 0, y, 1, astart, xstart, ystart);
+                if (atran) BlasLike.dgemv(N, m, n, 1, A, m, x, 1, 0, y, 1, astart, xstart, ystart);
+                else BlasLike.dgemv(N, n, m, 1, A, n, x, 1, 0, y, 1, astart, xstart, ystart);
             }
-            else
+            else if (way == 3)
             {
                 if (atran) for (int i = 0; i < n; i++) y[i + ystart] = BlasLike.ddot(m, x, 1, A, 1, xstart, i * m + astart);
                 else for (int i = 0; i < n; i++) y[i + ystart] = BlasLike.ddot(m, x, 1, A, n, xstart, i + astart);
+            }
+            else
+            {//This is wrong somewhere!!!!!!
+                BlasLike.dzerovec(n, y, ystart);
+                Console.WriteLine($"\t\t\t\t{atran}\tm={m} n={n}");
+                if (atran) for (int i = 0; i < m; i++) BlasLike.dger1(m, 1, 1, x, 1, x, 1, A, m, xstart, xstart, astart + i);
+                else for (int i = 0; i < n; ++i) BlasLike.dger1(1, n, 1, A, 1, x, 1, y, 1, astart + i * n, xstart, ystart + i);
             }
         }
     }

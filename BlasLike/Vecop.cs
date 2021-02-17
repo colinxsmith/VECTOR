@@ -6,7 +6,7 @@ namespace Blas
     {
         public static int baseref = 0;//Set to an array address for debug output
         public static double lm_eps = Math.Abs((((double)4) / 3 - 1) * 3 - 1);
-        public static double lambdatest=lm_eps;
+        public static double lambdatest = lm_eps;
         public static double lm_min = 2.2250738585072014e-308;
         public static double lm_rootmin = Math.Sqrt(lm_min);
         public static double lm_rooteps = Math.Sqrt(lm_eps);
@@ -923,20 +923,14 @@ namespace Blas
                     //#pragma omp parallel for private(j) schedule(dynamic)
                     for (j = 0; j < n; ++j/*,py+=incy*/)
                     {
-                        if (y[jy + incy * j + ystart] != 0.0)
-                        {
-                            daxpyvec(m, alpha * y[jy + incy * j + ystart], x, a, xstart, astart + j * a_dim1);
-                        }
+                        daxpyvec(m, alpha * y[jy + incy * j + ystart], x, a, xstart, astart + j * a_dim1);
                     }
                 }
                 else
                 {
                     for (j = 0; j < n; ++j/*,py+=incy*/)
                     {
-                        if (y[jy + incy * j + ystart] != 0.0)
-                        {
-                            daxpyvec(m, alpha * y[jy + incy * j + ystart], x, a, xstart, astart + j * a_dim1);
-                        }
+                        daxpyvec(m, alpha * y[jy + incy * j + ystart], x, a, xstart, astart + j * a_dim1);
                     }
                 }
             }
@@ -955,20 +949,14 @@ namespace Blas
                     //#pragma omp parallel for private(j) schedule(dynamic)
                     for (j = 0; j < n; ++j/*,py+=incy*/)
                     {
-                        if (y[jy + incy * j + ystart] != 0.0)
-                        {
-                            daxpy(m, alpha * y[jy + incy * j + ystart], x, incx, a, 1, xstart + kx, astart + j * a_dim1);
-                        }
+                        daxpy(m, alpha * y[jy + incy * j + ystart], x, incx, a, 1, xstart + kx, astart + j * a_dim1);
                     }
                 }
                 else
                 {
                     for (j = 0; j < n; ++j/*,py+=incy*/)
                     {
-                        if (y[jy + incy * j + ystart] != 0.0)
-                        {
-                            daxpy(m, alpha * y[jy + incy * j + ystart], x, incx, a, 1, xstart + kx, astart + j * a_dim1);
-                        }
+                        daxpy(m, alpha * y[jy + incy * j + ystart], x, incx, a, 1, xstart + kx, astart + j * a_dim1);
                     }
                 }
             }

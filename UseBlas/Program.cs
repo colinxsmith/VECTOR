@@ -595,7 +595,7 @@ namespace UseBlas
                 double[] L ={1,1,2,
                              1,3,
                              1};
-                char[] way = { 'L' };
+                char[] way = { 'U' };
                 var unit = new double[n * n * 2];
                 var piv = new int[n];
                 for (int i = 0; i < n; i++)
