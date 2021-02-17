@@ -103,10 +103,7 @@ namespace Blas
                             //      x     y       a
                             for (int jj = 0; jj < nrhs; ++jj)
                             {
-                                if (b[ldb * jj + bstart + k + b_dim1] != 0.0)
-                                {
-                                    BlasLike.daxpyvec(k - 1, -b[ldb * jj + bstart + k + b_dim1], ap, b, astart + kc, bstart + b_dim1 + 1 + jj * ldb);
-                                }
+                                BlasLike.daxpyvec(k - 1, -b[ldb * jj + bstart + k + b_dim1], ap, b, astart + kc, bstart + b_dim1 + 1 + jj * ldb);
                             }
                         }
                         else if (root == 1 || root == 2)
@@ -117,10 +114,7 @@ namespace Blas
                             //BlasLike.dgemv(TT, k - 1, nrhs, 1, b, ldb, ap, 1, 1, b, ldb, bstart + b_offset, astart + kc, bstart + k + b_dim1);
                             for (int l = 0; l < k - 1; ++l)
                             {
-                                if (ap[l + astart + kc] != 0.0)
-                                {
-                                    BlasLike.daxpy(nrhs, ap[l + astart + kc], b, ldb, b, ldb, l + bstart + b_offset, bstart + k + b_dim1);
-                                }
+                                BlasLike.daxpy(nrhs, ap[l + astart + kc], b, ldb, b, ldb, l + bstart + b_offset, bstart + k + b_dim1);
                             }
                         }
                         /*           Multiply by the inverse of the diagonal block. */
@@ -167,18 +161,12 @@ namespace Blas
                             //BlasLike.dger(k - 2, nrhs, -1, ap, 1, b, ldb, b, ldb, astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
                             for (int jj = 0; jj < nrhs; ++jj)
                             {
-                                if (b[ldb * jj + bstart + k + b_dim1] != 0.0)
-                                {
-                                    BlasLike.daxpyvec(k - 2, -b[ldb * jj + bstart + k + b_dim1], ap, b, astart + kc, bstart + b_dim1 + 1 + jj * ldb);
-                                }
+                                BlasLike.daxpyvec(k - 2, -b[ldb * jj + bstart + k + b_dim1], ap, b, astart + kc, bstart + b_dim1 + 1 + jj * ldb);
                             }
                             //BlasLike.dger(k - 2, nrhs, -1, ap, 1, b, ldb, b, ldb, astart + kc - (k - 1), bstart + k - 1 + b_dim1, bstart + b_dim1 + 1);
                             for (int jj = 0; jj < nrhs; ++jj)
                             {
-                                if (b[ldb * jj + bstart + k - 1 + b_dim1] != 0.0)
-                                {
-                                    BlasLike.daxpyvec(k - 2, -b[ldb * jj + bstart + k - 1 + b_dim1], ap, b, astart + kc - (k - 1), bstart + b_dim1 + 1 + jj * ldb);
-                                }
+                                BlasLike.daxpyvec(k - 2, -b[ldb * jj + bstart + k - 1 + b_dim1], ap, b, astart + kc - (k - 1), bstart + b_dim1 + 1 + jj * ldb);
                             }
                         }
                         else if (root == 1 || root == 2)
@@ -189,18 +177,12 @@ namespace Blas
                             //BlasLike.dgemv(TT, k - 2, nrhs, 1, b, ldb, ap, 1, 1, b, ldb, bstart + b_offset, astart + kc, bstart + k + b_dim1);
                             for (int l = 0; l < k - 2; ++l)
                             {
-                                if (ap[l + astart + kc] != 0.0)
-                                {
-                                    BlasLike.daxpy(nrhs, ap[l + astart + kc], b, ldb, b, ldb, l + bstart + b_offset, bstart + k + b_dim1);
-                                }
+                                BlasLike.daxpy(nrhs, ap[l + astart + kc], b, ldb, b, ldb, l + bstart + b_offset, bstart + k + b_dim1);
                             }
                             //BlasLike.dgemv(TT, k - 2, nrhs, 1, b, ldb, ap, 1, 1, b, ldb, bstart + b_offset, astart + kc - (k - 1), bstart + k - 1 + b_dim1); 
                             for (int l = 0; l < k - 2; ++l)
                             {
-                                if (ap[l + astart + kc - (k - 1)] != 0.0)
-                                {
-                                    BlasLike.daxpy(nrhs, ap[l + astart + kc - (k - 1)], b, ldb, b, ldb, l + bstart + b_offset, bstart + k - 1 + b_dim1);
-                                }
+                                BlasLike.daxpy(nrhs, ap[l + astart + kc - (k - 1)], b, ldb, b, ldb, l + bstart + b_offset, bstart + k - 1 + b_dim1);
                             }
                         }
                         if (root == 30)
@@ -320,10 +302,7 @@ namespace Blas
                             //BlasLike.dgemv(TT, k - 1, nrhs, -1, b, ldb, ap, 1, 1, b, ldb, bstart + b_offset, astart + kc, bstart + k + b_dim1);
                             for (int l = 0; l < k - 1; ++l)
                             {
-                                if (ap[l + astart + kc] != 0.0)
-                                {
-                                    BlasLike.daxpy(nrhs, -ap[l + astart + kc], b, ldb, b, ldb, l + bstart + b_offset, bstart + k + b_dim1);
-                                }
+                                BlasLike.daxpy(nrhs, -ap[l + astart + kc], b, ldb, b, ldb, l + bstart + b_offset, bstart + k + b_dim1);
                             }
                         }
                         else if (root == 2)
@@ -333,10 +312,7 @@ namespace Blas
                             //BlasLike.dger(k - 1, nrhs, 1, ap, 1, b, ldb, b, ldb, astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
                             for (int jj = 0; jj < nrhs; ++jj)
                             {
-                                if (b[ldb * jj + bstart + k + b_dim1] != 0.0)
-                                {
-                                    BlasLike.daxpyvec(k - 1, b[ldb * jj + bstart + k + b_dim1], ap, b, astart + kc, bstart + b_dim1 + 1 + jj * ldb);
-                                }
+                                BlasLike.daxpyvec(k - 1, b[ldb * jj + bstart + k + b_dim1], ap, b, astart + kc, bstart + b_dim1 + 1 + jj * ldb);
                             }
                         }
                         /*           Interchange rows K and IPIV(K). */
@@ -362,18 +338,12 @@ namespace Blas
                             //BlasLike.dgemv(TT, k - 1, nrhs, -1, b, ldb, ap, 1, 1, b, ldb, bstart + b_offset, astart + kc, bstart + k + b_dim1);
                             for (int l = 0; l < k - 1; ++l)
                             {
-                                if (ap[l + astart + kc] != 0.0)
-                                {
-                                    BlasLike.daxpy(nrhs, -ap[l + astart + kc], b, ldb, b, ldb, l + bstart + b_offset, bstart + k + b_dim1);
-                                }
+                                BlasLike.daxpy(nrhs, -ap[l + astart + kc], b, ldb, b, ldb, l + bstart + b_offset, bstart + k + b_dim1);
                             }
                             //BlasLike.dgemv(TT, k - 1, nrhs, -1, b, ldb, ap, 1, 1, b, ldb, bstart + b_offset, astart + kc + k, bstart + k + 1 + b_dim1);
                             for (int l = 0; l < k - 1; ++l)
                             {
-                                if (ap[l + astart + kc + k] != 0.0)
-                                {
-                                    BlasLike.daxpy(nrhs, -ap[l + astart + kc + k], b, ldb, b, ldb, l + bstart + b_offset, bstart + k + 1 + b_dim1);
-                                }
+                                BlasLike.daxpy(nrhs, -ap[l + astart + kc + k], b, ldb, b, ldb, l + bstart + b_offset, bstart + k + 1 + b_dim1);
                             }
                         }
                         else if (root == 2)
@@ -381,18 +351,12 @@ namespace Blas
                             //BlasLike.dger(k - 1, nrhs, 1, ap, 1, b, ldb, b, ldb, astart + kc, bstart + k + b_dim1, bstart + b_dim1 + 1);
                             for (int jj = 0; jj < nrhs; ++jj)
                             {
-                                if (b[ldb * jj + bstart + k + b_dim1] != 0.0)
-                                {
-                                    BlasLike.daxpyvec(k - 1, b[ldb * jj + bstart + k + b_dim1], ap, b, astart + kc, bstart + b_dim1 + 1 + jj * ldb);
-                                }
+                                BlasLike.daxpyvec(k - 1, b[ldb * jj + bstart + k + b_dim1], ap, b, astart + kc, bstart + b_dim1 + 1 + jj * ldb);
                             }
                             //BlasLike.dger(k - 1, nrhs, 1, ap, 1, b, ldb, b, ldb, astart + kc + k, bstart + k + 1 + b_dim1, bstart + b_dim1 + 1);
                             for (int jj = 0; jj < nrhs; ++jj)
                             {
-                                if (b[ldb * jj + bstart + k + 1 + b_dim1] != 0.0)
-                                {
-                                    BlasLike.daxpyvec(k - 1, b[ldb * jj + bstart + k + 1 + b_dim1], ap, b, astart + kc + k, bstart + b_dim1 + 1 + jj * ldb);
-                                }
+                                BlasLike.daxpyvec(k - 1, b[ldb * jj + bstart + k + 1 + b_dim1], ap, b, astart + kc + k, bstart + b_dim1 + 1 + jj * ldb);
                             }
                         }
                         /*           Interchange rows K and -IPIV(K). */
@@ -445,10 +409,7 @@ namespace Blas
                                 //BlasLike.dger(n - k, nrhs, -1, ap, 1, b, ldb, b, ldb, astart + kc + 1, bstart + k + b_dim1, bstart + k + 1 + b_dim1);
                                 for (int jj = 0; jj < nrhs; ++jj)
                                 {
-                                    if (b[ldb * jj + bstart + k + b_dim1] != 0.0)
-                                    {
-                                        BlasLike.daxpyvec(n - k, -b[ldb * jj + bstart + k + b_dim1], ap, b, astart + kc + 1, bstart + k + b_dim1 + 1 + jj * ldb);
-                                    }
+                                    BlasLike.daxpyvec(n - k, -b[ldb * jj + bstart + k + b_dim1], ap, b, astart + kc + 1, bstart + k + b_dim1 + 1 + jj * ldb);
                                 }
                             }
                         }
@@ -464,10 +425,7 @@ namespace Blas
                                 //BlasLike.dgemv(TT, n - k, nrhs, 1, b, ldb, ap, 1, 1, b, ldb, bstart + k + 1 + b_dim1, astart + kc + 1, bstart + k + b_dim1);
                                 for (int l = 0; l < n - k; ++l)
                                 {
-                                    if (ap[l + astart + kc + 1] != 0.0)
-                                    {
-                                        BlasLike.daxpy(nrhs, ap[l + astart + kc + 1], b, ldb, b, ldb, l + bstart + k + 1 + b_dim1, bstart + k + b_dim1);
-                                    }
+                                    BlasLike.daxpy(nrhs, ap[l + astart + kc + 1], b, ldb, b, ldb, l + bstart + k + 1 + b_dim1, bstart + k + b_dim1);
                                 }
                             }
                         }
@@ -521,18 +479,12 @@ namespace Blas
                                 //BlasLike.dger(n - k - 1, nrhs, -1, ap, 1, b, ldb, b, ldb, astart + kc + 2, bstart + k + b_dim1, bstart + k + 2 + b_dim1);
                                 for (int jj = 0; jj < nrhs; ++jj)
                                 {
-                                    if (b[ldb * jj + bstart + k + b_dim1] != 0.0)
-                                    {
-                                        BlasLike.daxpyvec(n - k - 1, -b[ldb * jj + bstart + k + b_dim1], ap, b, astart + kc + 2, bstart + k + 2 + b_dim1 + jj * ldb);
-                                    }
+                                    BlasLike.daxpyvec(n - k - 1, -b[ldb * jj + bstart + k + b_dim1], ap, b, astart + kc + 2, bstart + k + 2 + b_dim1 + jj * ldb);
                                 }
                                 //BlasLike.dger(n - k - 1, nrhs, -1, ap, 1, b, ldb, b, ldb, astart + kc + n - k + 2, bstart + k + 1 + b_dim1, bstart + k + 2 + b_dim1);
                                 for (int jj = 0; jj < nrhs; ++jj)
                                 {
-                                    if (b[ldb * jj + bstart + k + b_dim1] != 0.0)
-                                    {
-                                        BlasLike.daxpyvec(n - k - 1, -b[ldb * jj + bstart + k + 1 + b_dim1], ap, b, astart + kc + n - k + 2, bstart + k + 2 + b_dim1 + jj * ldb);
-                                    }
+                                    BlasLike.daxpyvec(n - k - 1, -b[ldb * jj + bstart + k + 1 + b_dim1], ap, b, astart + kc + n - k + 2, bstart + k + 2 + b_dim1 + jj * ldb);
                                 }
                             }
                         }
@@ -547,18 +499,12 @@ namespace Blas
                                 //BlasLike.dgemv(TT, n - k - 1, nrhs, 1, b, ldb, ap, 1, 1, b, ldb, bstart + k + 2 + b_dim1, astart + kc + 2, bstart + k + b_dim1);
                                 for (int l = 0; l < n - k - 1; ++l)
                                 {
-                                    if (ap[l + astart + kc + 2] != 0.0)
-                                    {
-                                        BlasLike.daxpy(nrhs, ap[l + astart + kc + 2], b, ldb, b, ldb, l + bstart + k + 2 + b_dim1, bstart + k + b_dim1);
-                                    }
+                                    BlasLike.daxpy(nrhs, ap[l + astart + kc + 2], b, ldb, b, ldb, l + bstart + k + 2 + b_dim1, bstart + k + b_dim1);
                                 }
                                 //BlasLike.dgemv(TT, n - k - 1, nrhs, 1, b, ldb, ap, 1, 1, b, ldb, bstart + k + 2 + b_dim1, astart + kc + n - k + 2, bstart + k + 1 + b_dim1);
-                                 for (int l = 0; l < n - k - 1; ++l)
+                                for (int l = 0; l < n - k - 1; ++l)
                                 {
-                                    if (ap[l + astart + kc + n - k + 2] != 0.0)
-                                    {
-                                        BlasLike.daxpy(nrhs, ap[l + astart + kc + n - k + 2], b, ldb, b, ldb, l + bstart + k + 2 + b_dim1, bstart + k + 1 + b_dim1);
-                                    }
+                                    BlasLike.daxpy(nrhs, ap[l + astart + kc + n - k + 2], b, ldb, b, ldb, l + bstart + k + 2 + b_dim1, bstart + k + 1 + b_dim1);
                                 }
                             }
                         }
@@ -689,10 +635,7 @@ namespace Blas
 
                                 for (int l = 0; l < n - k; ++l)
                                 {
-                                    if (ap[l + astart + kc + 1] != 0.0)
-                                    {
-                                        BlasLike.daxpy(nrhs, -ap[l + astart + kc + 1], b, ldb, b, ldb, l + bstart + k + 1 + b_dim1, bstart + k + b_dim1);
-                                    }
+                                    BlasLike.daxpy(nrhs, -ap[l + astart + kc + 1], b, ldb, b, ldb, l + bstart + k + 1 + b_dim1, bstart + k + b_dim1);
                                 }
                             }
                         }
@@ -709,10 +652,7 @@ namespace Blas
                                 //BlasLike.dger(n - k, nrhs, 1, ap, 1, b, ldb, b, ldb, astart + kc + 1, bstart + k + b_dim1, bstart + k + 1 + b_dim1);
                                 for (int jj = 0; jj < nrhs; ++jj)
                                 {
-                                    if (b[ldb * jj + bstart + k + b_dim1] != 0.0)
-                                    {
-                                        BlasLike.daxpyvec(n - k, b[ldb * jj + bstart + k + b_dim1], ap, b, astart + kc + 1, bstart + k + 1 + b_dim1 + jj * ldb);
-                                    }
+                                    BlasLike.daxpyvec(n - k, b[ldb * jj + bstart + k + b_dim1], ap, b, astart + kc + 1, bstart + k + 1 + b_dim1 + jj * ldb);
                                 }
                             }
                         }
@@ -740,18 +680,12 @@ namespace Blas
                                 //BlasLike.dgemv(TT, n - k, nrhs, -1, b, ldb, ap, 1, 1, b, ldb, bstart + k + 1 + b_dim1, astart + kc + 1, bstart + k + b_dim1);
                                 for (int l = 0; l < n - k; ++l)
                                 {
-                                    if (ap[l + astart + kc + 1] != 0.0)
-                                    {
-                                        BlasLike.daxpy(nrhs, -ap[l + astart + kc + 1], b, ldb, b, ldb, l + bstart + k + 1 + b_dim1, bstart + k + b_dim1);
-                                    }
+                                    BlasLike.daxpy(nrhs, -ap[l + astart + kc + 1], b, ldb, b, ldb, l + bstart + k + 1 + b_dim1, bstart + k + b_dim1);
                                 }
                                 //BlasLike.dgemv(TT, n - k, nrhs, -1, b, ldb, ap, 1, 1, b, ldb, bstart + k + 1 + b_dim1, astart + kc - (n - k), bstart + k - 1 + b_dim1);
                                 for (int l = 0; l < n - k; ++l)
                                 {
-                                    if (ap[l + astart + kc - (n - k)] != 0.0)
-                                    {
-                                        BlasLike.daxpy(nrhs, -ap[l + astart + kc - (n - k)], b, ldb, b, ldb, l + bstart + k + 1 + b_dim1, bstart + k - 1 + b_dim1);
-                                    }
+                                    BlasLike.daxpy(nrhs, -ap[l + astart + kc - (n - k)], b, ldb, b, ldb, l + bstart + k + 1 + b_dim1, bstart + k - 1 + b_dim1);
                                 }
                             }
                         }
@@ -763,18 +697,12 @@ namespace Blas
                                 //BlasLike.dger(n - k, nrhs, 1, ap, 1, b, ldb, b, ldb, astart + kc + 1, bstart + k + b_dim1, bstart + k + 1 + b_dim1);
                                 for (int jj = 0; jj < nrhs; ++jj)
                                 {
-                                    if (b[ldb * jj + bstart + k + b_dim1] != 0.0)
-                                    {
-                                        BlasLike.daxpyvec(n - k, b[ldb * jj + bstart + k + b_dim1], ap, b, astart + kc + 1, bstart + k + 1 + b_dim1 + jj * ldb);
-                                    }
+                                    BlasLike.daxpyvec(n - k, b[ldb * jj + bstart + k + b_dim1], ap, b, astart + kc + 1, bstart + k + 1 + b_dim1 + jj * ldb);
                                 }
                                 //BlasLike.dger(n - k, nrhs, 1, ap, 1, b, ldb, b, ldb, astart + kc - (n - k), bstart + k - 1 + b_dim1, bstart + k + 1 + b_dim1);
                                 for (int jj = 0; jj < nrhs; ++jj)
                                 {
-                                    if (b[ldb * jj + bstart + k - 1 + b_dim1] != 0.0)
-                                    {
-                                        BlasLike.daxpyvec(n - k, b[ldb * jj + bstart + k - 1 + b_dim1], ap, b, astart + kc - (n - k), bstart + k + 1 + b_dim1 + jj * ldb);
-                                    }
+                                    BlasLike.daxpyvec(n - k, b[ldb * jj + bstart + k - 1 + b_dim1], ap, b, astart + kc - (n - k), bstart + k + 1 + b_dim1 + jj * ldb);
                                 }
                             }
                         }
