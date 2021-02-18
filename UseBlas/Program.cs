@@ -615,8 +615,40 @@ namespace UseBlas
                 Console.WriteLine($"\n{unit[start + 0]} {unit[start + 1]} {unit[start + 2]} ");
                 Console.WriteLine($"{unit[start + 3]} {unit[start + 4]} {unit[start + 5]} ");
                 Console.WriteLine($"{unit[start + 6]} {unit[start + 7]} {unit[start + 8]} ");
-                if(way[0]=='L')Console.WriteLine($"{unit[start+6]} {-unit[6]+unit[3]*unit[7]}");
-                else if(way[0]=='U')Console.WriteLine($"{unit[start+2]} {-unit[2]+unit[1]*unit[5]}");
+                if (way[0] == 'L') Console.WriteLine($"{unit[start + 6]} {-unit[6] + unit[3] * unit[7]}");
+                else if (way[0] == 'U') Console.WriteLine($"{unit[start + 2]} {-unit[2] + unit[1] * unit[5]}");
+            }
+            {
+                //double[] S = { 3, 20, 2, 0.1, -0.1, 1 }; //not positive definite
+                double[] S = { 10, 0.1, 2, 0.1, 0.1, 3 }; //positive definite
+                var n = 3;
+                var piv = new int[n];
+                char[] way = { 'U' };
+                var info = Factorise.Factor(way, n, S, piv);
+                var root = new double[n * n];
+                for (int i = 0; i < n; ++i) root[i + i * n] = 1;
+                var rootinv = new double[n * n];
+                var result = new double[n * n];
+                for (int i = 0; i < n; ++i) rootinv[i + i * n] = 1;
+                var symback = Factorise.Solve(way, n, n, S, piv, root, n, 0, 0, 0, 1, true);
+                symback = Factorise.Solve(way, n, n, S, piv, rootinv, n, 0, 0, 0, -1, true);
+                if (symback == 0)
+                {
+                    for (int i = 0; i < n; ++i)
+                    {
+                        Factorise.dmxmulv(n, n, root, rootinv, result, 0, i * n, i * n, true);
+                    }
+                    Console.WriteLine($"\n{result[0]},{result[1]},{result[2]}");
+                    Console.WriteLine($"{result[3]},{result[4]},{result[5]}");
+                    Console.WriteLine($"{result[6]},{result[7]},{result[8]}");
+                    for (int i = 0; i < n; ++i)
+                    {
+                        Factorise.dmxmulv(n, n, rootinv, root, result, 0, i * n, i * n, true);
+                    }
+                    Console.WriteLine($"\n{result[0]},{result[1]},{result[2]}");
+                    Console.WriteLine($"{result[3]},{result[4]},{result[5]}");
+                    Console.WriteLine($"{result[6]},{result[7]},{result[8]}");
+                }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
@@ -658,10 +690,13 @@ namespace UseBlas
                 {
                     Console.WriteLine("exception" + prob);
                 }
-                lic = new Byte[3];
-                lic[0] = 110;
-                lic[1] = 111;
-                lic[2] = 112;
+                lic = new Byte[20];
+                var fiddlelic = "18;ed;58;7a;e8;46;d1;6e;1d;5a;04;ae;0b;ad;66;83;ff;03;00;00";
+                var il = 0;
+                foreach (string ll in fiddlelic.Split(';'))
+                {
+                    lic.SetValue((Byte)(Convert.ToInt32(ll, 16)), il++);
+                }
                 licence = "";
                 for (int i = 0; i < (lic != null ? lic.Length : 0); ++i)
                 {

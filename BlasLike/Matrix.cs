@@ -18,7 +18,7 @@ namespace Blas
             fixed (double* bb = b)
                 Writevec(n, bb + bstart, ib);
         }
-        public static int Solve(char[] uplo, int n, int nrhs, double[] ap, int[] ipiv, double[] b, int ldb, int astart = 0, int pstart = 0, int bstart = 0, int root = 0)
+        public static int Solve(char[] uplo, int n, int nrhs, double[] ap, int[] ipiv, double[] b, int ldb, int astart = 0, int pstart = 0, int bstart = 0, int root = 0, bool fix = false)
         {
             int b_dim1, b_offset;
             int j, k;
@@ -130,13 +130,15 @@ namespace Blas
                         else if (root == 1)
                         {
                             var bot = Math.Max(ap[kc + k - 1 + astart], 0);
-                            if (ap[kc + k - 1 + astart] < 0) return -10;
+                            if (fix) bot = Math.Max(bot, BlasLike.lm_eps * BlasLike.lm_eps);
+                            else if (ap[kc + k - 1 + astart] < 0) return -10;
                             BlasLike.dscal(nrhs, Math.Sqrt(bot), b, ldb, bstart + k + b_dim1);
                         }
                         else if (root == -1)
                         {
-                            var bot = Math.Max(ap[kc + k - 1 + astart], BlasLike.lm_eps * BlasLike.lm_eps);
-                            if (ap[kc + k - 1 + astart] < -BlasLike.lm_eps * BlasLike.lm_eps) return -10;
+                            var bot = Math.Max(ap[kc + k - 1 + astart], 0);
+                            if (fix) bot = Math.Max(bot, BlasLike.lm_eps * BlasLike.lm_eps);
+                            else if (ap[kc + k - 1 + astart] < -BlasLike.lm_eps * BlasLike.lm_eps) return -10;
                             BlasLike.dscal(nrhs, Math.Sqrt(1.0 / bot), b, ldb, bstart + k + b_dim1);
                         }
                         --k;
@@ -242,10 +244,10 @@ namespace Blas
                             var lambda = new double[2];
                             var t = new double[4];
                             Factorise.Eigen2(S, lambda, t);
-                            if (lambda[0] < 0) return -10;
-                            if (lambda[1] < 0) return -10;
-                            lambda[0] = Math.Max(lambda[0], 0);
-                            lambda[1] = Math.Max(lambda[1], 0);
+                            if (fix) lambda[0] = Math.Max(lambda[0], BlasLike.lm_eps * BlasLike.lm_eps);
+                            else if (lambda[0] < 0) return -10;
+                            if (fix) lambda[1] = Math.Max(lambda[1], BlasLike.lm_eps * BlasLike.lm_eps);
+                            else if (lambda[1] < 0) return -10;
                             for (j = 1; j <= nrhs; ++j)
                             {
                                 bkm1 = b[k - 1 + j * b_dim1 + bstart] * t[0] + b[k + j * b_dim1 + bstart] * t[1];
@@ -262,10 +264,10 @@ namespace Blas
                             var lambda = new double[2];
                             var t = new double[4];
                             Factorise.Eigen2(S, lambda, t);
-                            if (lambda[0] < -BlasLike.lm_eps * BlasLike.lm_eps) return -10;
-                            if (lambda[1] < -BlasLike.lm_eps * BlasLike.lm_eps) return -10;
-                            lambda[0] = Math.Max(lambda[0], BlasLike.lm_eps * BlasLike.lm_eps);
-                            lambda[1] = Math.Max(lambda[1], BlasLike.lm_eps * BlasLike.lm_eps);
+                            if (fix) lambda[0] = Math.Max(lambda[0], BlasLike.lm_eps * BlasLike.lm_eps);
+                            else if (lambda[0] < 0) return -10;
+                            if (fix) lambda[1] = Math.Max(lambda[1], BlasLike.lm_eps * BlasLike.lm_eps);
+                            else if (lambda[1] < 0) return -10;
                             for (j = 1; j <= nrhs; ++j)
                             {
                                 bkm1 = b[k - 1 + j * b_dim1 + bstart] * t[0] + b[k + j * b_dim1 + bstart] * t[1];
@@ -444,13 +446,15 @@ namespace Blas
                         else if (root == 1)
                         {
                             var bot = Math.Max(ap[kc + astart], 0);
-                            if (ap[kc + astart] < 0) return -10;
+                            if (fix) bot = Math.Max(bot, BlasLike.lm_eps * BlasLike.lm_eps);
+                            else if (ap[kc + astart] < 0) return -10;
                             BlasLike.dscal(nrhs, Math.Sqrt(bot), b, ldb, bstart + k + b_dim1);
                         }
                         else if (root == -1)
                         {
-                            var bot = Math.Max(ap[kc + astart], BlasLike.lm_eps * BlasLike.lm_eps);
-                            if (ap[kc + astart] < -BlasLike.lm_eps * BlasLike.lm_eps) return -10;
+                            var bot = Math.Max(ap[kc + astart], 0);
+                            if (fix) bot = Math.Max(bot, BlasLike.lm_eps * BlasLike.lm_eps);
+                            else if (ap[kc + astart] < -BlasLike.lm_eps * BlasLike.lm_eps) return -10;
                             BlasLike.dscal(nrhs, Math.Sqrt(1.0 / bot), b, ldb, bstart + k + b_dim1);
                         }
                         kc = kc + n - k + 1;
@@ -548,10 +552,10 @@ namespace Blas
                             var lambda = new double[2];
                             var t = new double[4];
                             Factorise.Eigen2(S, lambda, t);
-                            if (lambda[0] < 0) return -10;
-                            if (lambda[1] < 0) return -10;
-                            lambda[0] = Math.Max(lambda[0], 0);
-                            lambda[1] = Math.Max(lambda[1], 0);
+                            if (fix) lambda[0] = Math.Max(lambda[0], BlasLike.lm_eps * BlasLike.lm_eps);
+                            else if (lambda[0] < 0) return -10;
+                            if (fix) lambda[1] = Math.Max(lambda[1], BlasLike.lm_eps * BlasLike.lm_eps);
+                            else if (lambda[1] < 0) return -10;
                             for (j = 1; j <= nrhs; ++j)
                             {
                                 bkm1 = b[k + j * b_dim1 + bstart] * t[0] + b[k + 1 + j * b_dim1 + bstart] * t[1];
@@ -580,24 +584,22 @@ namespace Blas
                         }
                         else if (root == -1)
                         {
+                            double[] S = { ap[kc + astart], ap[kc + 1 + astart], ap[kc + n - k + 1 + astart] };
+                            var lambda = new double[2];
+                            var t = new double[4];
+                            Factorise.Eigen2(S, lambda, t);
+                            if (fix) lambda[0] = Math.Max(lambda[0], BlasLike.lm_eps * BlasLike.lm_eps);
+                            else if (lambda[0] < 0) return -10;
+                            if (fix) lambda[1] = Math.Max(lambda[1], BlasLike.lm_eps * BlasLike.lm_eps);
+                            else if (lambda[1] < 0) return -10;
+                            for (j = 1; j <= nrhs; ++j)
                             {
-                                double[] S = { ap[kc + astart], ap[kc + 1 + astart], ap[kc + n - k + 1 + astart] };
-                                var lambda = new double[2];
-                                var t = new double[4];
-                                Factorise.Eigen2(S, lambda, t);
-                                if (lambda[0] < -BlasLike.lm_eps * BlasLike.lm_eps) return -10;
-                                if (lambda[1] < -BlasLike.lm_eps * BlasLike.lm_eps) return -10;
-                                lambda[0] = Math.Max(lambda[0], BlasLike.lm_eps * BlasLike.lm_eps);
-                                lambda[1] = Math.Max(lambda[1], BlasLike.lm_eps * BlasLike.lm_eps);
-                                for (j = 1; j <= nrhs; ++j)
-                                {
-                                    bkm1 = b[k + j * b_dim1 + bstart] * t[0] + b[k + 1 + j * b_dim1 + bstart] * t[1];
-                                    bk = b[k + j * b_dim1 + bstart] * t[2] + b[k + 1 + j * b_dim1 + bstart] * t[3];
-                                    bkm1 /= Math.Sqrt(lambda[0]);
-                                    bk /= Math.Sqrt(lambda[1]);
-                                    b[k + j * b_dim1 + bstart] = bkm1 * t[0] + bk * t[2];
-                                    b[k + 1 + j * b_dim1 + bstart] = bkm1 * t[1] + bk * t[3];
-                                }
+                                bkm1 = b[k + j * b_dim1 + bstart] * t[0] + b[k + 1 + j * b_dim1 + bstart] * t[1];
+                                bk = b[k + j * b_dim1 + bstart] * t[2] + b[k + 1 + j * b_dim1 + bstart] * t[3];
+                                bkm1 /= Math.Sqrt(lambda[0]);
+                                bk /= Math.Sqrt(lambda[1]);
+                                b[k + j * b_dim1 + bstart] = bkm1 * t[0] + bk * t[2];
+                                b[k + 1 + j * b_dim1 + bstart] = bkm1 * t[1] + bk * t[3];
                             }
                         }
                         kc = kc + (n - k << 1) + 1;
