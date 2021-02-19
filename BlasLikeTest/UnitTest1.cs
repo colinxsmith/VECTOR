@@ -1,5 +1,6 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Blas;
+using Solver;
 using System;
 namespace BlasLikeTest
 {
@@ -582,7 +583,7 @@ namespace BlasLikeTest
             BlasLike.dzerovec(n * n, resolve);
             for (int ii = 0; ii < n; ++ii) resolve[ii + n * ii] = 1;
             Factorise.Solve(way, n, n, S, piv, resolve, n, 0, 0, 0, 0, true);
-            Assert.IsTrue(resolve[n*n-1] == 1, $"\n{resolve[0]} {resolve[1]} {resolve[2]} \n{resolve[3]} {resolve[4]} {resolve[5]} \n{resolve[6]} {resolve[7]} {resolve[8]} "); 
+            Assert.IsTrue(resolve[n * n - 1] == 1, $"\n{resolve[0]} {resolve[1]} {resolve[2]} \n{resolve[3]} {resolve[4]} {resolve[5]} \n{resolve[6]} {resolve[7]} {resolve[8]} ");
             info = Factorise.Factor(way, n, S, piv);
 
             way[0] = 'L';
@@ -592,6 +593,22 @@ namespace BlasLikeTest
             for (int ii = 0; ii < n; ++ii) resolve[ii + n * ii] = 1;
             Factorise.Solve(way, n, n, S, piv, resolve, n, 0, 0, 0, 0, true);
             Assert.IsTrue(resolve[0] == 1, $"\n{resolve[0]} {resolve[1]} {resolve[2]} \n{resolve[3]} {resolve[4]} {resolve[5]} \n{resolve[6]} {resolve[7]} {resolve[8]} ");
+        }
+        [TestMethod]
+        public void Test_ordering()
+        {
+            double[] S = { 1.2, 4, -2.1, 5, 45 };
+            var order = new int[S.Length];
+            Ordering.Order.getorder(S.Length, S, order);
+            Ordering.Order.Reorder_gen(S.Length, order, S);
+            Assert.IsTrue(S[0] == 45 && S[4] == -2.1, $"\n{order[0]} {order[1]} {order[2]} {order[3]} {order[4]} \n{S[0]} {S[1]} {S[2]} {S[3]} {S[4]} ");
+            var inverse = new int[S.Length];
+            for (int i = 0; i < S.Length; ++i) inverse[order[i]] = i;
+            Ordering.Order.Reorder_gen(S.Length, inverse, S);
+            Assert.IsTrue(S[0] == 1.2 && S[4] == 45, $"\n{S[0]} {S[1]} {S[2]} {S[3]} {S[4]} ");
+            Ordering.Order.getorderabs(S.Length, S, order);
+            Ordering.Order.Reorder_gen(S.Length, order, S);
+            Assert.IsTrue(S[0] == 45 && S[4] == 1.2, $"\n{S[0]} {S[1]} {S[2]} {S[3]} {S[4]} ");
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using Blas;
+using Solver;
 using Microsoft.Win32;
 
 namespace UseBlas
@@ -670,8 +671,8 @@ namespace UseBlas
                     Console.WriteLine($"{resolve[3]} {resolve[4]} {resolve[5]} ");
                     Console.WriteLine($"{resolve[6]} {resolve[7]} {resolve[8]} ");
                 }
-                
-                way[0]='U';
+
+                way[0] = 'U';
                 BlasLike.dcopyvec(S.Length, M, S);
                 info = Factorise.Factor(way, n, S, piv);
                 for (int i = 0; i < 2; ++i)
@@ -683,6 +684,22 @@ namespace UseBlas
                     Console.WriteLine($"{resolve[3]} {resolve[4]} {resolve[5]} ");
                     Console.WriteLine($"{resolve[6]} {resolve[7]} {resolve[8]} ");
                 }
+            }
+            {
+                double[] S = { 1.2, 4, -2.1, 5, 45 };
+                var order = new int[S.Length];
+                Ordering.Order.getorder(S.Length, S, order);
+                Ordering.Order.Display(order,"New Order");
+                Ordering.Order.Reorder_gen(S.Length, order, S);
+                Ordering.Order.Display(S,"S big at the start");
+                var inverse = new int[S.Length];
+                for (int i = 0; i < S.Length; ++i) inverse[order[i]] = i;
+                Ordering.Order.Display(inverse,"Inverse Order");
+                Ordering.Order.Reorder_gen(S.Length, inverse, S);
+                Ordering.Order.Display(S,"Original S");
+                Ordering.Order.getorderabs(S.Length, S, order);
+                Ordering.Order.Reorder_gen(S.Length, order, S);
+                Ordering.Order.Display(S,"abs(S) big at the start");
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry

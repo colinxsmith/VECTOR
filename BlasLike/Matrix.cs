@@ -1,6 +1,6 @@
 using System;
-using System.Diagnostics;
-namespace Blas
+using Blas;
+namespace Solver
 {
     public static class Factorise
     {
