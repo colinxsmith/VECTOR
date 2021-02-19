@@ -571,16 +571,27 @@ namespace BlasLikeTest
         {
             var n = 3;
             char[] way = { 'U' };
-            double[] S ={1,
+            double[] M ={1,
                            1,1,
                            1,1,1};//singular
+            var S = new double[n * (n + 1) / 2];
+            BlasLike.dcopyvec(S.Length, M, S);
             var piv = new int[n];
             var info = Factorise.Factor(way, n, S, piv);
             var resolve = new double[n * n];
             BlasLike.dzerovec(n * n, resolve);
             for (int ii = 0; ii < n; ++ii) resolve[ii + n * ii] = 1;
             Factorise.Solve(way, n, n, S, piv, resolve, n, 0, 0, 0, 0, true);
-            Assert.IsTrue(resolve[0] == 0, $"\n{resolve[0]} {resolve[1]} {resolve[2]} \n{resolve[3]} {resolve[4]} {resolve[5]} \n{resolve[6]} {resolve[7]} {resolve[8]} ");
+            Assert.IsTrue(resolve[n*n-1] == 1, $"\n{resolve[0]} {resolve[1]} {resolve[2]} \n{resolve[3]} {resolve[4]} {resolve[5]} \n{resolve[6]} {resolve[7]} {resolve[8]} "); 
+            info = Factorise.Factor(way, n, S, piv);
+
+            way[0] = 'L';
+            BlasLike.dcopyvec(S.Length, M, S);
+            info = Factorise.Factor(way, n, S, piv);
+            BlasLike.dzerovec(n * n, resolve);
+            for (int ii = 0; ii < n; ++ii) resolve[ii + n * ii] = 1;
+            Factorise.Solve(way, n, n, S, piv, resolve, n, 0, 0, 0, 0, true);
+            Assert.IsTrue(resolve[0] == 1, $"\n{resolve[0]} {resolve[1]} {resolve[2]} \n{resolve[3]} {resolve[4]} {resolve[5]} \n{resolve[6]} {resolve[7]} {resolve[8]} ");
         }
     }
 }

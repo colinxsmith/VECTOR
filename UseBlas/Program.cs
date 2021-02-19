@@ -652,13 +652,28 @@ namespace UseBlas
             }
             {
                 var n = 3;
-                char[] way = { 'U' };
-                double[] S ={1,
+                char[] way = { 'L' };
+                double[] M ={1,
                            1,1,
                            1,1,1};//singular
+                var S = new double[n * (n + 1) / 2];
+                BlasLike.dcopyvec(S.Length, M, S);
                 var piv = new int[n];
                 var info = Factorise.Factor(way, n, S, piv);
                 var resolve = new double[n * n];
+                for (int i = 0; i < 2; ++i)
+                {
+                    BlasLike.dzerovec(n * n, resolve);
+                    for (int ii = 0; ii < n; ++ii) resolve[ii + n * ii] = 1;
+                    Factorise.Solve(way, n, n, S, piv, resolve, n, 0, 0, 0, 0, i == 0 ? false : true);
+                    Console.WriteLine($"{resolve[0]} {resolve[1]} {resolve[2]} ");
+                    Console.WriteLine($"{resolve[3]} {resolve[4]} {resolve[5]} ");
+                    Console.WriteLine($"{resolve[6]} {resolve[7]} {resolve[8]} ");
+                }
+                
+                way[0]='U';
+                BlasLike.dcopyvec(S.Length, M, S);
+                info = Factorise.Factor(way, n, S, piv);
                 for (int i = 0; i < 2; ++i)
                 {
                     BlasLike.dzerovec(n * n, resolve);
