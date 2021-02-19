@@ -6,6 +6,7 @@ namespace Blas
     {
         public static int baseref = 0;//Set to an array address for debug output
         public static double lm_eps = Math.Abs((((double)4) / 3 - 1) * 3 - 1);
+        public static double lm_eps2 = lm_eps*lm_eps;
         public static double lambdatest = lm_eps;
         public static double lm_min = 2.2250738585072014e-308;
         public static double lm_rootmin = Math.Sqrt(lm_min);
