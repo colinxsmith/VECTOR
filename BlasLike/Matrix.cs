@@ -121,7 +121,7 @@ namespace Blas
                         if (root == 0)
                         {
                             var bot = ap[kc + k - 1 + astart] > 0 ? Math.Max(ap[kc + k - 1 + astart], BlasLike.lm_eps2) : Math.Min(ap[kc + k - 1 + astart], -BlasLike.lm_eps2);
-                            BlasLike.dscal(nrhs, 1.0 / bot, b, ldb, bstart + k + b_dim1);
+                            BlasLike.dscal(nrhs, (fix && (Math.Abs(bot) <= BlasLike.lm_eps2)) ? 0 : 1.0 / bot, b, ldb, bstart + k + b_dim1);
                         }
                         else if (root == 2)
                         {
@@ -139,7 +139,7 @@ namespace Blas
                             var bot = Math.Max(ap[kc + k - 1 + astart], 0);
                             if (fix) bot = Math.Max(bot, BlasLike.lm_eps2);
                             else if (ap[kc + k - 1 + astart] < -BlasLike.lm_eps2) return -10;
-                            BlasLike.dscal(nrhs, Math.Sqrt(1.0 / bot), b, ldb, bstart + k + b_dim1);
+                            BlasLike.dscal(nrhs, Math.Sqrt(bot), b, ldb, bstart + k + b_dim1);
                         }
                         --k;
                     }
@@ -215,8 +215,11 @@ namespace Blas
                             {
                                 bkm1 = b[k - 1 + j * b_dim1 + bstart] * t[0] + b[k + j * b_dim1 + bstart] * t[1];
                                 bk = b[k - 1 + j * b_dim1 + bstart] * t[2] + b[k + j * b_dim1 + bstart] * t[3];
-                                bkm1 /= lambda[0];
-                                bk /= lambda[1];
+                                if (fix && (Math.Abs(lambda[0]) <= BlasLike.lm_eps2)) bkm1 = 0;
+                                else bkm1 /= lambda[0];
+                                if (fix && (Math.Abs(lambda[1]) <= BlasLike.lm_eps2))
+                                    bk = 0;
+                                else bk /= lambda[1];
                                 b[k - 1 + j * b_dim1 + bstart] = bkm1 * t[0] + bk * t[2];
                                 b[k + j * b_dim1 + bstart] = bkm1 * t[1] + bk * t[3];
                             }
@@ -437,7 +440,7 @@ namespace Blas
                         if (root == 0)
                         {
                             var bot = ap[kc + astart] > 0 ? Math.Max(ap[kc + astart], BlasLike.lm_eps2) : Math.Min(ap[kc + astart], -BlasLike.lm_eps2);
-                            BlasLike.dscal(nrhs, 1.0 / bot, b, ldb, bstart + k + b_dim1);
+                            BlasLike.dscal(nrhs, (fix && (Math.Abs(bot) <= BlasLike.lm_eps2)) ? 0 : 1.0 / bot, b, ldb, bstart + k + b_dim1);
                         }
                         else if (root == 2)
                         {
@@ -540,8 +543,10 @@ namespace Blas
                             {
                                 bkm1 = b[k + j * b_dim1 + bstart] * t[0] + b[k + 1 + j * b_dim1 + bstart] * t[1];
                                 bk = b[k + j * b_dim1 + bstart] * t[2] + b[k + 1 + j * b_dim1 + bstart] * t[3];
-                                bkm1 /= lambda[0];
-                                bk /= lambda[1];
+                                if (fix && (Math.Abs(lambda[0]) <= BlasLike.lm_eps2)) bkm1 = 0;
+                                else bkm1 /= lambda[0];
+                                if (fix && (Math.Abs(lambda[1]) <= BlasLike.lm_eps2)) bk = 0;
+                                else bk /= lambda[1];
                                 b[k + j * b_dim1 + bstart] = bkm1 * t[0] + bk * t[2];
                                 b[k + 1 + j * b_dim1 + bstart] = bkm1 * t[1] + bk * t[3];
                             }

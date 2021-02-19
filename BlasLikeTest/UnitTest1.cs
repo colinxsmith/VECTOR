@@ -536,7 +536,7 @@ namespace BlasLikeTest
             Assert.IsTrue(error < BlasLike.lm_eps * 128, $"error is {error}");
         }
         [TestMethod]
-        public void TestTriangleInverse()
+        public void Test_TriangleInverse()
         {
             var n = 3;
             double[] U = {1,
@@ -565,6 +565,22 @@ namespace BlasLikeTest
                 if (way[0] == 'L') Assert.IsTrue(unit[start + 6] == (-unit[6] + unit[3] * unit[7]), $"{unit[start + 6]} {-unit[6] + unit[3] * unit[7]}");
                 else if (way[0] == 'U') Assert.IsTrue(unit[start + 2] == (-unit[2] + unit[1] * unit[5]), $"{unit[start + 2]} {-unit[2] + unit[1] * unit[5]}");
             }
+        }
+        [TestMethod]
+        public void Test_FixSingular()
+        {
+            var n = 3;
+            char[] way = { 'U' };
+            double[] S ={1,
+                           1,1,
+                           1,1,1};//singular
+            var piv = new int[n];
+            var info = Factorise.Factor(way, n, S, piv);
+            var resolve = new double[n * n];
+            BlasLike.dzerovec(n * n, resolve);
+            for (int ii = 0; ii < n; ++ii) resolve[ii + n * ii] = 1;
+            Factorise.Solve(way, n, n, S, piv, resolve, n, 0, 0, 0, 0, true);
+            Assert.IsTrue(resolve[0] == 0, $"\n{resolve[0]} {resolve[1]} {resolve[2]} \n{resolve[3]} {resolve[4]} {resolve[5]} \n{resolve[6]} {resolve[7]} {resolve[8]} ");
         }
     }
 }
