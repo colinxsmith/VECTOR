@@ -41,7 +41,7 @@ namespace Ordering
                 Array.Sort(xx, order, cmp);
             }
         }
-        public static void Reorder(int n, int[] order, double[] array)
+        public static void Reorder<T>(int n, int[] order, T[] array)
         {
             if (array == null || order == null) return;
             int i;
@@ -54,7 +54,7 @@ namespace Ordering
                 {
                     for (j = i, k = order[j]; k != i; k = order[j = k])
                     {
-                        double aa = array[k];
+                        T aa = array[k];
                         array[k] = array[j];
                         array[j] = aa;
                         marked[k] = true;
@@ -64,25 +64,22 @@ namespace Ordering
             }
         }
 
-        public static void Reorder_gen(int n, int[] order, double[] array, int m = 1)
+        public static void Reorder_gen<T>(int n, int[] order, T[] array, int m = 1, int im = 1)
         {
-            if (m == 1){ Reorder(n, order, array);return;}
+            if (m == 1 && im == 1) { Reorder(n, order, array); return; }
             if (array == null || order == null) return;
-            int i;
             var marked = new bool[n];
-            int j, k;
-            for (i = 0; i < n; ++i) marked[i] = false;
-            for (i = 0; i < n; i++)
+            for (var i = 0; i < n; i++)
             {
                 if (!marked[i])
                 {
-                    for (j = i, k = order[j]; k != i; k = order[j = k])
+                    for (int j = i, k = order[j]; k != i; k = order[j = k])
                     {
-                        for (int l = 0; l < m; ++l)
+                        for (int l = 0, ll = 0; l < m; l++, ll += im)
                         {
-                            double aa = array[k + l];
-                            array[k + l] = array[j + l];
-                            array[j + l] = aa;
+                            var aa = array[k + ll];
+                            array[k + ll] = array[j + ll];
+                            array[j + ll] = aa;
                         }
                         marked[k] = true;
                     }
@@ -90,21 +87,27 @@ namespace Ordering
                 }
             }
         }
-        public static void Display(double[] arr1, string lab = "")
+        public static void Display<T>(T[] arr1, string lab = "", int m = 1)
         {
             if (lab != "") Console.WriteLine(lab);
-            for (int i = 0; i < arr1.Length; i++)
+            var columns = arr1.Length / m;
+            if (columns == 1)
             {
-                Console.Write(arr1[i] + " ");
+                for (var i = 0; i < arr1.Length; i++)
+                {
+                    Console.Write(arr1[i] + " ");
+                }
             }
-            Console.Write("\n");
-        }
-        public static void Display(int[] arr1, string lab = "")
-        {
-            if (lab != "") Console.WriteLine(lab);
-            for (int i = 0; i < arr1.Length; i++)
+            else
             {
-                Console.Write(arr1[i] + " ");
+                for (var i = 0; i < m; ++i)
+                {
+                    for (var j = 0; j < columns; ++j)
+                    {
+                        Console.Write(arr1[i * columns + j] + " ");
+                    }
+                    Console.Write("\n");
+                }
             }
             Console.Write("\n");
         }

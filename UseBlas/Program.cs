@@ -689,17 +689,32 @@ namespace UseBlas
                 double[] S = { 1.2, 4, -2.1, 5, 45 };
                 var order = new int[S.Length];
                 Ordering.Order.getorder(S.Length, S, order);
-                Ordering.Order.Display(order,"New Order");
+                Ordering.Order.Display(order, "New Order");
                 Ordering.Order.Reorder_gen(S.Length, order, S);
-                Ordering.Order.Display(S,"S big at the start");
+                Ordering.Order.Display(S, "S big at the start");
                 var inverse = new int[S.Length];
                 for (int i = 0; i < S.Length; ++i) inverse[order[i]] = i;
-                Ordering.Order.Display(inverse,"Inverse Order");
+                Ordering.Order.Display(inverse, "Inverse Order");
                 Ordering.Order.Reorder_gen(S.Length, inverse, S);
-                Ordering.Order.Display(S,"Original S");
+                Ordering.Order.Display(S, "Original S");
                 Ordering.Order.getorderabs(S.Length, S, order);
                 Ordering.Order.Reorder_gen(S.Length, order, S);
-                Ordering.Order.Display(S,"abs(S) big at the start");
+                Ordering.Order.Display(S, "abs(S) big at the start");
+                double[] MN = {11,12,13,14,15,
+                            21,22,23,24,25};
+                var m = 2;
+                int[] ord = { 0,1,2,4,3 };
+                Ordering.Order.Display(MN, "Two rows", m);
+                Ordering.Order.Reorder_gen(MN.Length/m,ord,MN,m,MN.Length/m);
+                Ordering.Order.Display(MN, "Two rows", m);
+                Factorise.dmx_transpose(MN.Length/m,m,MN,MN);
+                Ordering.Order.Display(MN, "Two Columns", MN.Length/m);
+                Factorise.dmx_transpose(m,MN.Length/m,MN,MN);
+                Ordering.Order.Reorder_gen(MN.Length/m,ord,MN,m,MN.Length/m);
+                Ordering.Order.Display(MN, "Two Rows", m);
+                Factorise.dmx_transpose(MN.Length/m,m,MN,MN);
+                Ordering.Order.Reorder_gen(MN.Length/m,ord,MN,m,m);
+                Ordering.Order.Display(MN, "Two Columns", MN.Length/m);
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
