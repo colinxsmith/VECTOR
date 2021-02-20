@@ -713,7 +713,7 @@ namespace UseBlas
                 Ordering.Order.Reorder_gen(MN.Length/m,ord,MN,m,MN.Length/m);
                 Ordering.Order.Display(MN, "Two Rows", m);
                 Factorise.dmx_transpose(MN.Length/m,m,MN,MN);
-                Ordering.Order.Reorder_gen(MN.Length/m,ord,MN,m,m);
+                Ordering.Order.Reorder_gen(MN.Length/m,ord,MN,m);
                 Ordering.Order.Display(MN, "Two Columns", MN.Length/m);
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
