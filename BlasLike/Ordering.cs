@@ -44,7 +44,7 @@ namespace Ordering
         {
             if (array == null || order == null) return;
             int i;
-            var marked = new bool[n];
+            var marked = new bool[n];//This will set marked[i] = false for all i
             int j, k;
             for (i = 0; i < n; ++i) marked[i] = false;
             for (i = 0; i < n; i++)
@@ -66,7 +66,7 @@ namespace Ordering
         {
             if (m == 1 && im == 1) { Reorder(n, order, array); return; }
             if (array == null || order == null) return;
-            var marked = new bool[n];
+            var marked = new bool[n];//This will set marked[i] = false for all i
             for (var i = 0; i < n; i++)
             {
                 if (!marked[i])
