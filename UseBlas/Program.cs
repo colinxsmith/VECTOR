@@ -700,25 +700,25 @@ namespace UseBlas
                 Ordering.Order.getorderabs(S.Length, S, order);
                 Ordering.Order.Reorder_gen(S.Length, order, S);
                 Ordering.Order.Display(S, "abs(S) big at the start");
-                string[] MN = {"11","12","13","14","15",
-                            "21","22","23","24","25"};
+                string[] MN = { "11", "12", "13", "14", "15",
+                                "21", "22", "23", "24", "25" };
                 var m = 2;
-                int[] ord = { 0,1,2,4,3 };
+                int[] ord = { 0, 1, 2, 4, 3 };
                 Ordering.Order.Display(MN, "Two Rows", m);
-                Ordering.Order.Reorder_gen(MN.Length/m,ord,MN,m,MN.Length/m);
+                Ordering.Order.Reorder_gen(MN.Length / m, ord, MN, m, MN.Length / m);
                 Ordering.Order.Display(MN, "Two Rows", m);
-                Factorise.dmx_transpose(MN.Length/m,m,MN,MN);
-                Ordering.Order.Display(MN, "Two Columns", MN.Length/m);
-                Factorise.dmx_transpose(m,MN.Length/m,MN,MN);
-                Ordering.Order.Reorder_gen(MN.Length/m,ord,MN,m,MN.Length/m);
+                Factorise.dmx_transpose(MN.Length / m, m, MN, MN);
+                Ordering.Order.Display(MN, "Two Columns", MN.Length / m);
+                Factorise.dmx_transpose(m, MN.Length / m, MN, MN);
+                Ordering.Order.Reorder_gen(MN.Length / m, ord, MN, m, MN.Length / m);
                 Ordering.Order.Display(MN, "Two Rows", m);
-                Factorise.dmx_transpose(MN.Length/m,m,MN,MN);
-                Ordering.Order.Display(MN, "Two Columns", MN.Length/m);
-                Ordering.Order.Reorder_gen(MN.Length/m,ord,MN,m);
-                Ordering.Order.Display(MN, "Two Columns", MN.Length/m);
-                Factorise.dmx_transpose(m,MN.Length/m,MN,MN);
+                Factorise.dmx_transpose(MN.Length / m, m, MN, MN);
+                Ordering.Order.Display(MN, "Two Columns", MN.Length / m);
+                Ordering.Order.Reorder_gen(MN.Length / m, ord, MN, m);
+                Ordering.Order.Display(MN, "Two Columns", MN.Length / m);
+                Factorise.dmx_transpose(m, MN.Length / m, MN, MN);
                 Ordering.Order.Display(MN, "Two Rows", m);
-                Ordering.Order.Reorder_gen(MN.Length/m,ord,MN,m,MN.Length/m);
+                Ordering.Order.Reorder_gen(MN.Length / m, ord, MN, m, MN.Length / m);
                 Ordering.Order.Display(MN, "Two Rows", m);
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
