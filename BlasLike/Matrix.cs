@@ -1206,7 +1206,7 @@ namespace Solver
             t[2] /= bot;
             t[3] /= bot;
         }
-        public static void dmx_transpose(int n, int m, double[] a, double[] b, int astart = 0, int bstart = 0)
+        public static void dmx_transpose<T>(int n, int m, T[] a, T[] b, int astart = 0, int bstart = 0)
         {
             int size = m * n;
             if (b != a || bstart != astart)
@@ -1230,7 +1230,7 @@ namespace Solver
                     } while (current < i);
                     if (current > i)
                     {
-                        double temp = a[i + astart];
+                        T temp = a[i + astart];
                         a[i + astart] = a[current + astart];
                         a[current + astart] = temp;
                     }

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 namespace Ordering
 {
-
     class compare : IComparer<double>
     {
         public int Compare(double x, double y)
@@ -63,7 +62,6 @@ namespace Ordering
                 }
             }
         }
-
         public static void Reorder_gen<T>(int n, int[] order, T[] array, int m = 1, int im = 1)
         {
             if (m == 1 && im == 1) { Reorder(n, order, array); return; }
@@ -75,11 +73,23 @@ namespace Ordering
                 {
                     for (int j = i, k = order[j]; k != i; k = order[j = k])
                     {
-                        for (int l = 0, ll = 0; l < m; l++, ll += im)
+                        if (im == 1)
                         {
-                            var aa = array[k + ll];
-                            array[k + ll] = array[j + ll];
-                            array[j + ll] = aa;
+                            for (int l = 0; l < m; l++)
+                            {
+                                var aa = array[k * m + l];
+                                array[k * m + l] = array[j * m + l];
+                                array[j * m + l] = aa;
+                            }
+                        }
+                        else
+                        {
+                            for (int l = 0, ll = 0; l < m; l++, ll += im)
+                            {
+                                var aa = array[k + ll];
+                                array[k + ll] = array[j + ll];
+                                array[j + ll] = aa;
+                            }
                         }
                         marked[k] = true;
                     }
