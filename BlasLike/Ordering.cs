@@ -248,6 +248,11 @@ namespace Ordering
         }
         public unsafe static void byte_reverse(int n, byte* b)
         {
+          var bb = new byte[n];
+            for (int i = 0; i < n; ++i) bb[i] = b[i];
+            byte_reverse(n, bb);
+            for (int i = 0; i < n; ++i) b[i] = bb[i];
+            return;
             byte* B = (byte*)b;
             byte* e = B + n;
             byte t;
@@ -260,6 +265,26 @@ namespace Ordering
                 *B++ = t;
             }
         }
+        public static void byte_reverse(int n, byte[] b, int bstart = 0)
+        {
+            //    byte* B = (byte*)b;
+            //    byte* e = B + n;
+            byte t;
+
+            int N = n;
+            n >>= 1;
+            int ib = 0, ie = 0;
+            while (n-- > 0)
+            {
+                /*t = *--e;*/
+                t = b[bstart + N + --ie];
+                /**e = *B;*/
+                b[bstart + N + ie] = b[bstart + ib];
+                /**B++ = t;*/
+                b[bstart + ib++] = t;
+            }
+        }
+
         public unsafe static void bound_reorganise(int f, int n, int nn, int m, double[] bb)
         {
             //	BEFORE bound_reorganise(1,n,temp_stocks,m,L);
@@ -271,9 +296,9 @@ namespace Ordering
                 ns[1 - f] = n - nn + m;
                 ns[f] = m;
                 fixed (double* b = bb)
-                    byte_reverse(ns[0] * sizeof(double), (byte*)(b+nn));
+                    byte_reverse(ns[0] * sizeof(double), (byte*)(b + nn));
                 fixed (double* b = bb)
-                    byte_reverse(ns[1] * sizeof(double), (byte*)(b+nn));
+                    byte_reverse(ns[1] * sizeof(double), (byte*)(b + nn));
             }
         }
     }
