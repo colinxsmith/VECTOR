@@ -248,36 +248,38 @@ namespace Ordering
         }
         public unsafe static void byte_reverse(int n, byte* b)
         {
-          var bb = new byte[n];
+            //From Robin Becker's C code.
+          /*  var bb = new byte[n];      //Testing with safe code
             for (int i = 0; i < n; ++i) bb[i] = b[i];
             byte_reverse(n, bb);
             for (int i = 0; i < n; ++i) b[i] = bb[i];
-            return;
-            byte* B = (byte*)b;
-            byte* e = B + n;
-            byte t;
-
+            return;*/
+            var B = (byte*)b;
+            var e = B + n;
             n >>= 1;
             while (n-- > 0)
             {
-                t = *--e;
+                var t = *--e;
                 *e = *B;
                 *B++ = t;
             }
         }
+        public static void byte_reverse<T>(int n, T[] b, int bstart = 0)
+        {
+            //Not really just for bytes.
+            if (n > 1) Array.Reverse(b, bstart, n);
+        }
         public static void byte_reverse(int n, byte[] b, int bstart = 0)
         {
-            //    byte* B = (byte*)b;
-            //    byte* e = B + n;
-            byte t;
-
+            //Safe version of Robin Becker's code, but can't use unless there's a safe way
+            //to cast double[] to byte[]
             int N = n;
             n >>= 1;
             int ib = 0, ie = 0;
             while (n-- > 0)
             {
                 /*t = *--e;*/
-                t = b[bstart + N + --ie];
+                var t = b[bstart + N + --ie];
                 /**e = *B;*/
                 b[bstart + N + ie] = b[bstart + ib];
                 /**B++ = t;*/
@@ -285,7 +287,7 @@ namespace Ordering
             }
         }
 
-        public unsafe static void bound_reorganise(int f, int n, int nn, int m, double[] bb)
+        public static void bound_reorganise(int f, int n, int nn, int m, double[] bb)
         {
             //	BEFORE bound_reorganise(1,n,temp_stocks,m,L);
             //	AFTER  bound_reorganise(0,n,temp_stocks,m,L);
@@ -295,10 +297,14 @@ namespace Ordering
                 int[] ns = new int[2];
                 ns[1 - f] = n - nn + m;
                 ns[f] = m;
+                byte_reverse(ns[0], bb, nn);
+                byte_reverse(ns[1], bb, nn);
+                /*
                 fixed (double* b = bb)
                     byte_reverse(ns[0] * sizeof(double), (byte*)(b + nn));
                 fixed (double* b = bb)
                     byte_reverse(ns[1] * sizeof(double), (byte*)(b + nn));
+                    */
             }
         }
     }

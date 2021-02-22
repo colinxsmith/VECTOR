@@ -739,9 +739,9 @@ namespace UseBlas
             }
             {
                 double[] xx = { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-                var n = 8;
-                var nn = 6;
-                var m = 1;
+                var n = 7;
+                var nn = 4;
+                var m = 2;
                 Ordering.Order.Display(xx,"Before");
                 Ordering.Order.bound_reorganise(1,n,nn,m,xx);
                 Ordering.Order.Display(xx,"After");
