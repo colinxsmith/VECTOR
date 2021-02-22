@@ -53,7 +53,7 @@ namespace Ordering
                 {
                     for (j = i, k = order[j]; k != i; k = order[j = k])
                     {
-                        T aa = array[k];
+                        var aa = array[k];
                         array[k] = array[j];
                         array[j] = aa;
                         marked[k] = true;
@@ -61,6 +61,102 @@ namespace Ordering
                     marked[i] = true;
                 }
             }
+        }
+
+
+        public static void ReorderSymm<T>(int n, int[] order, T[] array, char way = 'U')
+        {
+            if (array == null || order == null) return;
+            var marked = new bool[n];//This will set marked[i] = false for all i
+            if (way == 'U')
+            {
+                for (var i = 0; i < n; i++)
+                {
+                    if (!marked[i])
+                    {
+                        for (int j = i, k = order[j]; k != i; k = order[j = k])
+                        {
+                            var aa = array[j * (j + 3) / 2];
+                            array[j * (j + 3) / 2] = array[k * (k + 3) / 2];
+                            array[k * (k + 3) / 2] = aa;
+                            for (int l = 0; l < n; ++l)
+                            {
+                                if (l < j && l < k)
+                                {
+                                    aa = array[j * (j + 1) / 2 + l];
+                                    array[j * (j + 1) / 2 + l] = array[k * (k + 1) / 2 + l];
+                                    array[k * (k + 1) / 2 + l] = aa;
+                                }
+                                else if (l > j && l > k)
+                                {
+                                    aa = array[l * (l + 1) / 2 + j];
+                                    array[l * (l + 1) / 2 + j] = array[l * (l + 1) / 2 + k];
+                                    array[l * (l + 1) / 2 + k] = aa;
+                                }
+                                else if (l > j && l < k)
+                                {
+                                    aa = array[l * (l + 1) / 2 + j];
+                                    array[l * (l + 1) / 2 + j] = array[k * (k + 1) / 2 + l];
+                                    array[k * (k + 1) / 2 + l] = aa;
+                                }
+                                else if (l < j && l > k)
+                                {
+                                    aa = array[j * (j + 1) / 2 + l];
+                                    array[j * (j + 1) / 2 + l] = array[l * (l + 1) / 2 + k];
+                                    array[l * (l + 1) / 2 + k] = aa;
+                                }
+                            }
+                            marked[k] = true;
+                        }
+                        marked[i] = true;
+                    }
+                }
+            }
+            else if (way == 'L')
+            {
+                for (var i = 0; i < n; i++)
+                {
+                    if (!marked[i])
+                    {
+                        for (int j = i, k = order[j]; k != i; k = order[j = k])
+                        {
+                            var aa = array[j * n - j * (j - 1) / 2];
+                            array[j * n - j * (j - 1) / 2] = array[k * n - k * (k - 1) / 2];
+                            array[k * n - k * (k - 1) / 2] = aa;
+                            marked[k] = true;
+                            for (int l = 0; l < n; ++l)
+                            {
+                                if (l > j && l > k)
+                                {
+                                    aa = array[j * n - j * (j - 1) / 2 + l - j];
+                                    array[j * n - j * (j - 1) / 2 + l - j] = array[k * n - k * (k - 1) / 2 + l - k];
+                                    array[k * n - k * (k - 1) / 2 + l - k] = aa;
+                                }
+                                else if (l < j && l < k)
+                                {
+                                    aa = array[l * n - l * (l - 1) / 2 + j - l];
+                                    array[l * n - l * (l - 1) / 2 + j - l] = array[l * n - l * (l - 1) / 2 + k - l];
+                                    array[l * n - l * (l - 1) / 2 + k - l] = aa;
+                                }
+                                else if (l > j && l < k)
+                                {
+                                    aa = array[j * n - j * (j - 1) / 2 + l - j];
+                                    array[j * n - j * (j - 1) / 2 + l - j] = array[l * n - l * (l - 1) / 2 + k - l];
+                                    array[l * n - l * (l - 1) / 2 + k - l] = aa;
+                                }
+                                else if (l < j && l > k)
+                                {
+                                    aa = array[j * n - j * (j - 1) / 2 + l - j];
+                                    array[j * n - j * (j - 1) / 2 + l - j] = array[k * n - k * (k - 1) / 2 + l - k];
+                                    array[k * n - k * (k - 1) / 2 + l - k] = aa;
+                                }
+                            }
+                        }
+                        marked[i] = true;
+                    }
+                }
+            }
+            else return;
         }
         public static void Reorder_gen<T>(int n, int[] order, T[] array, int m = 1, int im = 1)
         {
@@ -96,6 +192,35 @@ namespace Ordering
                     marked[i] = true;
                 }
             }
+        }
+        public static void Display<T>(int n, T[] arr1, string lab = "", char way = 'U')
+        {
+            if (lab != "") Console.WriteLine(lab);
+            if (way == 'U')
+            {
+                for (int i = 0, ij = 0; i < n; ++i)
+                {
+                    for (int j = 0; j <= i; ++j)
+                    {
+                        Console.Write(arr1[ij++] + " ");
+                    }
+                    Console.Write("\n");
+                }
+                Console.Write("\n");
+            }
+            else if (way == 'L')
+            {
+                for (int i = 0, ij = 0; i < n; ++i)
+                {
+                    for (int j = i; j < n; ++j)
+                    {
+                        Console.Write(arr1[ij++] + " ");
+                    }
+                    Console.Write("\n");
+                }
+                Console.Write("\n");
+            }
+            else return;
         }
         public static void Display<T>(T[] arr1, string lab = "", int m = 1)
         {

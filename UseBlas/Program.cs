@@ -703,7 +703,7 @@ namespace UseBlas
                 string[] MN = { "11", "12", "13", "14", "15",
                                 "21", "22", "23", "24", "25" };
                 var m = 2;
-                int[] ord = { 0, 1, 2, 4, 3 };
+                int[] ord = { 0,3,2,1,4 };
                 Ordering.Order.Display(MN, "Two Rows", m);
                 Ordering.Order.Reorder_gen(MN.Length / m, ord, MN, m, MN.Length / m);
                 Ordering.Order.Display(MN, "Two Rows", m);
@@ -720,6 +720,22 @@ namespace UseBlas
                 Ordering.Order.Display(MN, "Two Rows", m);
                 Ordering.Order.Reorder_gen(MN.Length / m, ord, MN, m, MN.Length / m);
                 Ordering.Order.Display(MN, "Two Rows", m);
+                string[]symm={"11",
+                              "21","22",
+                              "31","32","33",
+                              "41","42","43","44",
+                              "51","52","53","54","55"};
+                Ordering.Order.Display(5,symm,"Symmetric",'U');
+                Ordering.Order.ReorderSymm(5,ord,symm);
+                Ordering.Order.Display(5,symm,"Symmetric");
+                string[] symmL={"11","12","13","14","15",
+                                   "22","23","24","25",
+                                        "33","34","35",
+                                             "44","45",
+                                                  "55"};
+                Ordering.Order.Display(5,symmL,"Symmetric",'L');
+                Ordering.Order.ReorderSymm(5,ord,symmL,'L');
+                Ordering.Order.Display(5,symmL,"Symmetric",'L');
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry

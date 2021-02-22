@@ -609,6 +609,21 @@ namespace BlasLikeTest
             Ordering.Order.getorderabs(S.Length, S, order);
             Ordering.Order.Reorder_gen(S.Length, order, S);
             Assert.IsTrue(S[0] == 45 && S[4] == 1.2, $"\n{S[0]} {S[1]} {S[2]} {S[3]} {S[4]} ");
+            string[] symmU ={"11",
+                              "21","22",
+                              "31","32","33",
+                              "41","42","43","44",
+                              "51","52","53","54","55"};
+            Ordering.Order.ReorderSymm(5, order, symmU, 'U');
+            Assert.IsTrue(symmU[0] == "55" && symmU[14] == "11", $"\n{order[0]} {order[1]} {order[2]} {order[3]} {order[4]}\n{symmU[0]},{symmU[14]}");
+            string[] symmL ={"11","12","13","14","15",
+                                  "22","23","24","25",
+                                       "33","34","35",
+                                            "44","45",
+                                                 "55"};
+            Assert.IsTrue(symmL[1] == "12" && symmL[8] == "25", $"{symmL[1]},{symmL[8]}");
+            Ordering.Order.ReorderSymm(5, order, symmL, 'L');
+            Assert.IsTrue(symmL[1] == "45" && symmL[8] == "14", $"\n{order[0]} {order[1]} {order[2]} {order[3]} {order[4]}\n{symmL[1]},{symmL[8]}");
         }
     }
 }
