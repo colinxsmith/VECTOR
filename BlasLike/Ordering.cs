@@ -246,5 +246,35 @@ namespace Ordering
             }
             Console.Write("\n");
         }
+        public unsafe static void byte_reverse(int n, byte* b)
+        {
+            byte* B = (byte*)b;
+            byte* e = B + n;
+            byte t;
+
+            n >>= 1;
+            while (n-- > 0)
+            {
+                t = *--e;
+                *e = *B;
+                *B++ = t;
+            }
+        }
+        public unsafe static void bound_reorganise(int f, int n, int nn, int m, double[] bb)
+        {
+            //	BEFORE bound_reorganise(1,n,temp_stocks,m,L);
+            //	AFTER  bound_reorganise(0,n,temp_stocks,m,L);
+
+            if (bb != null && n > nn)
+            {
+                int[] ns = new int[2];
+                ns[1 - f] = n - nn + m;
+                ns[f] = m;
+                fixed (double* b = bb)
+                    byte_reverse(ns[0] * sizeof(double), (byte*)(b+nn));
+                fixed (double* b = bb)
+                    byte_reverse(ns[1] * sizeof(double), (byte*)(b+nn));
+            }
+        }
     }
 }
