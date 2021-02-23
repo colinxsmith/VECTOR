@@ -10,17 +10,19 @@ namespace UseBlas
     {
         static unsafe void Main(string[] args)
         {
-            var a = 4.0;
-            double[] x = { 1, 2, 3 };
-            double[] y = { 4, 5, 6 };
-            BlasLike.daxpyvec(x.Length, a, x, y);
-            var iy = 0;
-            foreach (var yy in y)
             {
-                Console.WriteLine($"y[{iy}]={y.GetValue(iy)} {y[iy++]}");
+                var a = 4.0;
+                double[] x = { 1, 2, 3 };
+                double[] y = { 4, 5, 6 };
+                BlasLike.daxpyvec(x.Length, a, x, y);
+                var iy = 0;
+                foreach (var yy in y)
+                {
+                    Console.WriteLine($"y[{iy}]={y.GetValue(iy)} {y[iy++]}");
+                }
             }
             {
-                double[] aref = new double[1];
+                var aref = new double[1];
                 fixed (double* aq = aref)
                     BlasLike.baseref = 0;
                 int n = 4;
