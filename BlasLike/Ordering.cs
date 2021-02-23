@@ -2,42 +2,72 @@ using System;
 using System.Collections.Generic;
 namespace Ordering
 {
-    class compare : IComparer<double>
+    public class compareitem
     {
-        public int Compare(double x, double y)
+        public double x;
+        public byte bad;
+        public compareitem(){
+
+        }
+        public compareitem(double x, byte bad)
         {
-            return (y - x) > 0 ? 0 : -1;//smallest have largest index
+            this.x = x;
+            this.bad = bad;
         }
     }
-    class compareAbs : IComparer<double>
+    class compare : IComparer<compareitem>
     {
-        public int Compare(double x, double y)
+        public int Compare(compareitem x, compareitem y)
         {
-            return (Math.Abs(y) - Math.Abs(x)) > 0 ? 0 : -1;//smallest have largest index
+            if ((y.x - x.x) > 0 && (y.bad == x.bad)) return 0;//smallest have largest index
+            else if ((y.bad == x.bad)) return -1;
+            else if (y.bad > 0) return 0;
+            else return -1;
+        }
+    }
+    class compareAbs : IComparer<compareitem>
+    {
+        public int Compare(compareitem x, compareitem y)
+        {
+            if ((Math.Abs(y.x) - Math.Abs(x.x)) > 0 && (y.bad == x.bad)) return 0;//smallest have largest index
+            else if ((y.bad == x.bad)) return -1;
+            else if (y.bad > 0) return 0;
+            else return -1;
         }
     }
     public class Order
     {
-        public static void getorder(int n, double[] x, int[] order = null)
+        public static void getorder(int n, double[] x, int[] order = null, byte[] dropbad = null, double init = 0, byte sign = 1)
         {
             var cmp = new compare();
-            if (order == null) Array.Sort(x, cmp);
+            var xx = new compareitem[n];
+            for (int i = 0; i < n; ++i)
+            {
+                xx[i] = new compareitem((x[i] - init) * sign, dropbad == null ? 0 : dropbad[i]);
+            }
+            if (order == null) Array.Sort(xx, cmp);
             else
             {
-                var xx = (double[])x.Clone();
+                var xxx = (compareitem[])xx.Clone();
                 for (int i = 0; i < n; ++i) order[i] = i;
-                Array.Sort(xx, order, cmp);
+                Array.Sort(xxx, order, cmp);
             }
         }
-        public static void getorderabs(int n, double[] x, int[] order = null)
+        public static void getorderabs(int n, double[] x, int[] order = null, byte[] dropbad = null)
         {
             var cmp = new compareAbs();
-            if (order == null) Array.Sort(x, cmp);
+            var xx = new compareitem[n];
+            
+            for (int i = 0; i < n; ++i)
+            {
+                xx[i] = new compareitem(x[i], dropbad == null ? 0 : dropbad[i]);
+            }
+            if (order == null) Array.Sort(xx, cmp);
             else
             {
-                var xx = (double[])x.Clone();
+                var xxx = (compareitem[])xx.Clone();
                 for (int i = 0; i < n; ++i) order[i] = i;
-                Array.Sort(xx, order, cmp);
+                Array.Sort(xxx, order, cmp);
             }
         }
         public static void Reorder<T>(int n, int[] order, T[] array)
@@ -76,34 +106,42 @@ namespace Ordering
                     {
                         for (int j = i, k = order[j]; k != i; k = order[j = k])
                         {
-                            var aa = array[j * (j + 3) / 2];
-                            array[j * (j + 3) / 2] = array[k * (k + 3) / 2];
-                            array[k * (k + 3) / 2] = aa;
+                            var jj = j * (j + 1) / 2;
+                            var kk = k * (k + 1) / 2;
                             for (int l = 0; l < n; ++l)
                             {
-                                if (l < j && l < k)
+                                var ll = l * (l + 1) / 2;
+                                if (l == j)
                                 {
-                                    aa = array[j * (j + 1) / 2 + l];
-                                    array[j * (j + 1) / 2 + l] = array[k * (k + 1) / 2 + l];
-                                    array[k * (k + 1) / 2 + l] = aa;
+                                    var jjj = jj + j;
+                                    var kkk = kk + k;
+                                    var aa = array[jjj];
+                                    array[jjj] = array[kkk];
+                                    array[kkk] = aa;
+                                }
+                                else if (l < j && l < k)
+                                {
+                                    var aa = array[jj + l];
+                                    array[jj + l] = array[kk + l];
+                                    array[kk + l] = aa;
                                 }
                                 else if (l > j && l > k)
                                 {
-                                    aa = array[l * (l + 1) / 2 + j];
-                                    array[l * (l + 1) / 2 + j] = array[l * (l + 1) / 2 + k];
-                                    array[l * (l + 1) / 2 + k] = aa;
+                                    var aa = array[ll + j];
+                                    array[ll + j] = array[ll + k];
+                                    array[ll + k] = aa;
                                 }
                                 else if (l > j && l < k)
                                 {
-                                    aa = array[l * (l + 1) / 2 + j];
-                                    array[l * (l + 1) / 2 + j] = array[k * (k + 1) / 2 + l];
-                                    array[k * (k + 1) / 2 + l] = aa;
+                                    var aa = array[ll + j];
+                                    array[ll + j] = array[kk + l];
+                                    array[kk + l] = aa;
                                 }
                                 else if (l < j && l > k)
                                 {
-                                    aa = array[j * (j + 1) / 2 + l];
-                                    array[j * (j + 1) / 2 + l] = array[l * (l + 1) / 2 + k];
-                                    array[l * (l + 1) / 2 + k] = aa;
+                                    var aa = array[jj + l];
+                                    array[jj + l] = array[ll + k];
+                                    array[ll + k] = aa;
                                 }
                             }
                             marked[k] = true;
@@ -120,37 +158,43 @@ namespace Ordering
                     {
                         for (int j = i, k = order[j]; k != i; k = order[j = k])
                         {
-                            var aa = array[j * n - j * (j - 1) / 2];
-                            array[j * n - j * (j - 1) / 2] = array[k * n - k * (k - 1) / 2];
-                            array[k * n - k * (k - 1) / 2] = aa;
-                            marked[k] = true;
+                            var jj = j * n - j * (j - 1) / 2;
+                            var kk = k * n - k * (k - 1) / 2;
                             for (int l = 0; l < n; ++l)
                             {
-                                if (l > j && l > k)
+                                var ll = l * n - l * (l - 1) / 2;
+                                if (l == j)
                                 {
-                                    aa = array[j * n - j * (j - 1) / 2 + l - j];
-                                    array[j * n - j * (j - 1) / 2 + l - j] = array[k * n - k * (k - 1) / 2 + l - k];
-                                    array[k * n - k * (k - 1) / 2 + l - k] = aa;
+                                    var aa = array[jj];
+                                    array[jj] = array[kk];
+                                    array[kk] = aa;
+                                }
+                                else if (l > j && l > k)
+                                {
+                                    var aa = array[jj + l - j];
+                                    array[jj + l - j] = array[kk + l - k];
+                                    array[kk + l - k] = aa;
                                 }
                                 else if (l < j && l < k)
                                 {
-                                    aa = array[l * n - l * (l - 1) / 2 + j - l];
-                                    array[l * n - l * (l - 1) / 2 + j - l] = array[l * n - l * (l - 1) / 2 + k - l];
-                                    array[l * n - l * (l - 1) / 2 + k - l] = aa;
+                                    var aa = array[ll + j - l];
+                                    array[ll + j - l] = array[ll + k - l];
+                                    array[ll + k - l] = aa;
                                 }
                                 else if (l > j && l < k)
                                 {
-                                    aa = array[j * n - j * (j - 1) / 2 + l - j];
-                                    array[j * n - j * (j - 1) / 2 + l - j] = array[l * n - l * (l - 1) / 2 + k - l];
-                                    array[l * n - l * (l - 1) / 2 + k - l] = aa;
+                                    var aa = array[jj + l - j];
+                                    array[jj + l - j] = array[ll + k - l];
+                                    array[ll + k - l] = aa;
                                 }
                                 else if (l < j && l > k)
                                 {
-                                    aa = array[j * n - j * (j - 1) / 2 + l - j];
-                                    array[j * n - j * (j - 1) / 2 + l - j] = array[k * n - k * (k - 1) / 2 + l - k];
-                                    array[k * n - k * (k - 1) / 2 + l - k] = aa;
+                                    var aa = array[jj + l - j];
+                                    array[jj + l - j] = array[kk + l - k];
+                                    array[kk + l - k] = aa;
                                 }
                             }
+                            marked[k] = true;
                         }
                         marked[i] = true;
                     }
@@ -249,11 +293,11 @@ namespace Ordering
         public unsafe static void byte_reverse(int n, byte* b)
         {
             //From Robin Becker's C code.
-          /*  var bb = new byte[n];      //Testing with safe code
-            for (int i = 0; i < n; ++i) bb[i] = b[i];
-            byte_reverse(n, bb);
-            for (int i = 0; i < n; ++i) b[i] = bb[i];
-            return;*/
+            /*  var bb = new byte[n];      //Testing with safe code
+              for (int i = 0; i < n; ++i) bb[i] = b[i];
+              byte_reverse(n, bb);
+              for (int i = 0; i < n; ++i) b[i] = bb[i];
+              return;*/
             var B = (byte*)b;
             var e = B + n;
             n >>= 1;

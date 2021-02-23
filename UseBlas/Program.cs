@@ -688,7 +688,9 @@ namespace UseBlas
             {
                 double[] S = { 1.2, 4, -2.1, 5, 45 };
                 var order = new int[S.Length];
-                Ordering.Order.getorder(S.Length, S, order);
+                var dropbad = new byte[S.Length];
+                dropbad[2] = 1;
+                Ordering.Order.getorder(S.Length, S, order, dropbad);
                 Ordering.Order.Display(order, "New Order");
                 Ordering.Order.Reorder_gen(S.Length, order, S);
                 Ordering.Order.Display(S, "S big at the start");
@@ -697,7 +699,9 @@ namespace UseBlas
                 Ordering.Order.Display(inverse, "Inverse Order");
                 Ordering.Order.Reorder_gen(S.Length, inverse, S);
                 Ordering.Order.Display(S, "Original S");
-                Ordering.Order.getorderabs(S.Length, S, order);
+                dropbad[2] = 0;
+                dropbad[0] = 1;
+                Ordering.Order.getorderabs(S.Length, S, order, dropbad);
                 Ordering.Order.Reorder_gen(S.Length, order, S);
                 Ordering.Order.Display(S, "abs(S) big at the start");
                 string[] MN = { "11", "12", "13", "14", "15",
@@ -742,11 +746,11 @@ namespace UseBlas
                 var n = 7;
                 var nn = 4;
                 var m = 2;
-                Ordering.Order.Display(xx,"Before");
-                Ordering.Order.bound_reorganise(1,n,nn,m,xx);
-                Ordering.Order.Display(xx,"After");
-                Ordering.Order.bound_reorganise(0,n,nn,m,xx);
-                Ordering.Order.Display(xx,"Reset");
+                Ordering.Order.Display(xx, "Before");
+                Ordering.Order.bound_reorganise(1, n, nn, m, xx);
+                Ordering.Order.Display(xx, "After");
+                Ordering.Order.bound_reorganise(0, n, nn, m, xx);
+                Ordering.Order.Display(xx, "Reset");
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry

@@ -599,13 +599,23 @@ namespace BlasLikeTest
         {
             double[] S = { 1.2, 4, -2.1, 5, 45 };
             var order = new int[S.Length];
+            var inverse = new int[S.Length];
+            var dropbad=new byte[S.Length];
             Ordering.Order.getorder(S.Length, S, order);
             Ordering.Order.Reorder_gen(S.Length, order, S);
             Assert.IsTrue(S[0] == 45 && S[4] == -2.1, $"\n{order[0]} {order[1]} {order[2]} {order[3]} {order[4]} \n{S[0]} {S[1]} {S[2]} {S[3]} {S[4]} ");
-            var inverse = new int[S.Length];
+            
             for (int i = 0; i < S.Length; ++i) inverse[order[i]] = i;
             Ordering.Order.Reorder_gen(S.Length, inverse, S);
             Assert.IsTrue(S[0] == 1.2 && S[4] == 45, $"\n{S[0]} {S[1]} {S[2]} {S[3]} {S[4]} ");
+            
+            dropbad[2]=1;
+            Ordering.Order.getorder(S.Length, S, order,dropbad);
+            Ordering.Order.Reorder_gen(S.Length, order, S);
+            Assert.IsTrue(S[0] == -2.1 && S[4] == 1.2, $"\n{order[0]} {order[1]} {order[2]} {order[3]} {order[4]} \n{S[0]} {S[1]} {S[2]} {S[3]} {S[4]} ");
+            for (int i = 0; i < S.Length; ++i) inverse[order[i]] = i;
+            Ordering.Order.Reorder_gen(S.Length, inverse, S);
+
             Ordering.Order.getorderabs(S.Length, S, order);
             Ordering.Order.Reorder_gen(S.Length, order, S);
             Assert.IsTrue(S[0] == 45 && S[4] == 1.2, $"\n{S[0]} {S[1]} {S[2]} {S[3]} {S[4]} ");
