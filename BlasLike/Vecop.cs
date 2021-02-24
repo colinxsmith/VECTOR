@@ -6,9 +6,12 @@ namespace Blas
     {
         public static int baseref = 0;//Set to an array address for debug output
         public static double lm_eps = Math.Abs((((double)4) / 3 - 1) * 3 - 1);
-        public static double lm_eps2 = lm_eps*lm_eps;
+        public static double lm_eps2 = lm_eps * lm_eps;
         public static double lambdatest = lm_eps;
         public static double lm_min = 2.2250738585072014e-308;
+        public static double lm_max = 1.7976931348623157e+308;
+        public static double lm_safe_range = 5.5626846462680084e-309;
+        public static double lm_rsafe_range = 1.7976931348623143e+308;
         public static double lm_rootmin = Math.Sqrt(lm_min);
         public static double lm_rooteps = Math.Sqrt(lm_eps);
         public unsafe static void daxpy(int n, double da, double* dx,
@@ -339,7 +342,6 @@ namespace Blas
                 a[i + astart] = 0;
             }
         }
-
         public unsafe static void dzerovec(int n, double* a)
         {
             while (n-- > 0)
@@ -512,6 +514,10 @@ namespace Blas
                     iy += incy;
                 }
             }
+        }
+        public unsafe static void dcopyvec(int n, double* a, double* b)
+        {
+            dcopy(n, a, 1, b, 1);
         }
         public static void dcopyvec(int n, double[] a, double[] b)
         {
@@ -3150,35 +3156,6 @@ double* x, int incx, double* ap)
                 psumsq[0] = sumsq;
             }
         }
-
-        public static void dsssqvec(int n, double[] x, double[] pscale, double[] psumsq, int px = 0)
-        {
-            if (n > 0)
-            {
-                double absxi, d, sumsq = psumsq[0], scale = pscale[0];
-                Debug.Assert(scale >= 0);
-                for (int i = 0; i < n; ++i)
-                {
-                    absxi = x[i + px];
-                    if (absxi == 0) continue;
-                    if (absxi < 0) absxi = -absxi;
-                    if (scale < absxi)
-                    {
-                        d = scale / absxi;
-                        sumsq = sumsq * (d * d) + 1;
-                        scale = absxi;
-                    }
-                    else
-                    {
-                        d = absxi / scale;
-                        sumsq += d * d;
-                    }
-                }
-                pscale[0] = scale;
-                psumsq[0] = sumsq;
-            }
-        }
-
         public static double dsum(int n, double[] x, int ix = 1, int px = 0)
         {
             double back = 0;
@@ -3797,6 +3774,11 @@ double* x, int incx, double* ap)
 
             /*     End of DGER  . */
 
+        }
+        public static double dsign(double a, double b)
+        {
+            if (a < 0) a = -a;
+            return (b >= 0 ? a : -a);
         }
     }
 }

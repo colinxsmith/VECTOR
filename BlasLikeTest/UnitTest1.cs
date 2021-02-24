@@ -2,6 +2,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Blas;
 using Solver;
 using System;
+using ActiveSet;
 namespace BlasLikeTest
 {
     [TestClass]
@@ -246,7 +247,7 @@ namespace BlasLikeTest
             double s1 = 1;
             double[] scale = { s1 };
             double[] sumsq = { 0 };
-            BlasLike.dsssqvec(a.Length, a, scale, sumsq);
+            ActiveSet.Linear.dsssqvec(a.Length, a, scale, sumsq);
             Assert.IsTrue(scale[0] == 10 && sumsq[0] == 3.85, $"scale is {scale[0]}, sumsq is {sumsq[0]}");
         }
         [TestMethod]
@@ -600,17 +601,17 @@ namespace BlasLikeTest
             double[] S = { 1.2, 4, -2.1, 5, 45 };
             var order = new int[S.Length];
             var inverse = new int[S.Length];
-            var dropbad=new byte[S.Length];
+            var dropbad = new byte[S.Length];
             Ordering.Order.getorder(S.Length, S, order);
             Ordering.Order.Reorder_gen(S.Length, order, S);
             Assert.IsTrue(S[0] == 45 && S[4] == -2.1, $"\n{order[0]} {order[1]} {order[2]} {order[3]} {order[4]} \n{S[0]} {S[1]} {S[2]} {S[3]} {S[4]} ");
-            
+
             for (int i = 0; i < S.Length; ++i) inverse[order[i]] = i;
             Ordering.Order.Reorder_gen(S.Length, inverse, S);
             Assert.IsTrue(S[0] == 1.2 && S[4] == 45, $"\n{S[0]} {S[1]} {S[2]} {S[3]} {S[4]} ");
-            
-            dropbad[2]=1;
-            Ordering.Order.getorder(S.Length, S, order,dropbad);
+
+            dropbad[2] = 1;
+            Ordering.Order.getorder(S.Length, S, order, dropbad);
             Ordering.Order.Reorder_gen(S.Length, order, S);
             Assert.IsTrue(S[0] == -2.1 && S[4] == 1.2, $"\n{order[0]} {order[1]} {order[2]} {order[3]} {order[4]} \n{S[0]} {S[1]} {S[2]} {S[3]} {S[4]} ");
             for (int i = 0; i < S.Length; ++i) inverse[order[i]] = i;
