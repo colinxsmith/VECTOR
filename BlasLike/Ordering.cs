@@ -290,7 +290,7 @@ namespace Ordering
             }
             Console.Write("\n");
         }
-        public unsafe static void byte_reverse(int n, byte* b)
+        unsafe static void byte_reverse(int n, byte* b)
         {
             //From Robin Becker's C code.
             /*  var bb = new byte[n];      //Testing with safe code
@@ -308,12 +308,12 @@ namespace Ordering
                 *B++ = t;
             }
         }
-        public static void byte_reverse<T>(int n, T[] b, int bstart = 0)
+        static void byte_reverseA<T>(int n, T[] b, int bstart = 0)
         {
-            //Not really just for bytes.
+            //Should be identical to byte_reverse<T>
             if (n > 1) Array.Reverse(b, bstart, n);
         }
-        public static void byte_reverse(int n, byte[] b, int bstart = 0)
+        static void byte_reverse<T>(int n, T[] b, int bstart = 0)
         {
             //Safe version of Robin Becker's code, but can't use unless there's a safe way
             //to cast double[] to byte[]
