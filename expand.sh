@@ -4,6 +4,7 @@ cp ../safeqp/lapack-release/SRC/ieeeck.f lapack
 cp ../safeqp/lapack-release/SRC/ilaenv.f lapack
 cp ../safeqp/lapack-release/SRC/dsptrf.f lapack
 cp ../safeqp/lapack-release/SRC/dsptrs.f lapack
+cp ../safeqp/lapack-release/BLAS/SRC/drotg.f lapack
 cp ../safeqp/lapack-release/BLAS/SRC/idamax.f lapack
 cp ../safeqp/lapack-release/BLAS/SRC/dswap.f lapack
 cp ../safeqp/lapack-release/BLAS/SRC/dspr.f lapack

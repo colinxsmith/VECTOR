@@ -4,6 +4,8 @@ namespace Blas
 {
     public static class BlasLike
     {
+        public static double lm_reps = 4503599627370496;
+        public static double lm_rrooteps = 67108864;
         public static int baseref = 0;//Set to an array address for debug output
         public static double lm_eps = Math.Abs((((double)4) / 3 - 1) * 3 - 1);
         public static double lm_eps2 = lm_eps * lm_eps;
@@ -3079,7 +3081,7 @@ double* x, int incx, double* ap)
         {
             dsccopy(n, a, x, 1, y, 1);
         }
-        public unsafe static void dsssq(int n, double* x, int ix, double[] pscale, double[] psumsq, int px = 0)
+        public unsafe static void dsssq(int n, double* x, int ix, double* pscale, double* psumsq, int px = 0)
         {
             /*
                   dsssqvec returns the values scl and smsq such that
@@ -3094,7 +3096,7 @@ double* x, int incx, double* ap)
           */
             if (n > 0)
             {
-                double absxi, d, sumsq = psumsq[0], scale = pscale[0];
+                double absxi, d, sumsq = *psumsq, scale = *pscale;
                 Debug.Assert(scale >= 0);
                 for (int i = 0, iix = ix < 0 ? -(n - 1) * ix : 0; i < n; ++i, iix += ix)
                 {
@@ -3113,8 +3115,8 @@ double* x, int incx, double* ap)
                         sumsq += d * d;
                     }
                 }
-                pscale[0] = scale;
-                psumsq[0] = sumsq;
+                *pscale = scale;
+                *psumsq = sumsq;
             }
         }
 
@@ -3780,5 +3782,205 @@ double* x, int incx, double* ap)
             if (a < 0) a = -a;
             return (b >= 0 ? a : -a);
         }
+        public unsafe static double dprotdiv(double* a, double* b, int* fail)
+        {
+
+            /*
+                dprotdiv returns the value div given by
+                    div =	( a/b                 if a/b does not overflow,
+                            (
+                        ( 0.0                 if a == 0.0,
+                        (
+                        ( sign( a/b )*flmax   if a != 0.0  and a/b would overflow,
+
+                where  flmax  is a large value. in addition if
+                a/b would overflow then  fail is returned as 1, otherwise  fail is
+                returned as 0
+                note that when  a and b  are both zero, fail is returned as 1, but
+                div  is returned as  0.0. in all other cases of overflow  div is such
+                that  abs( div ) = flmax
+
+                when  b = 0  then  sign( a/b )  is taken as  sign( a )
+            */
+            double absb, div;
+            int dfail;
+
+            if (fail == null) fail = &dfail;
+
+            if (*a == 0.0)
+            {
+                div = 0.0;
+                *fail = *b == 0 ? 1 : 0;
+            }
+            else if (*b == 0.0)
+            {
+                div = dsign(lm_rsafe_range, *a);
+                *fail = 1;
+            }
+            else
+            {
+                absb = Math.Abs(*b);
+                if (absb >= 1.0)
+                {
+                    *fail = 0;
+                    div = (Math.Abs(*a) >= absb * lm_safe_range ? *a / *b : 0.0);
+                }
+                else if (Math.Abs(*a) <= absb * lm_rsafe_range)
+                {
+                    *fail = 0;
+                    div = *a / *b;
+                }
+                else
+                {
+                    *fail = 1;
+                    div = lm_rsafe_range;
+                    if ((*a < 0.0 && *b > 0.0) || (*a > 0.0 && *b < 0.0)) div = -div;
+                }
+            }
+            return div;
+        }
+
+        public unsafe static void drotg(double* a, double* b, double* c, double* s)
+        {
+            int fail;
+            double t;
+
+            /*
+            DROTG BLAS,  except that c is always returned as non-negative and  b
+            is overwritten by the tangent of the angle that defines the plane rotation.
+            c and s are given as c = 1.0/sqrt( 1.0 + t**2 ),   s = c*t   where   t = b/a.
+            When  abs( b ) <= eps*abs( a ),  where  eps is the relative machine 
+            precision,  then  c and s  are always returned as c = 1.0  and  s = 0.0
+            and when  abs( a ) <  eps*abs( b ) then c and s are always returned 
+            as c = 0.0  and  s = sign( t ).
+
+            Note that t is always returned as  b/a, unless this would overflow in 
+            which  case the value  sign( t )/lm_min is returned.
+            */
+            if (*b == 0)
+            {
+                *c = 1;
+                *s = 0;
+            }
+            else
+            {
+                t = dprotdiv(b, a, &fail);
+                *c = dcossint(t, s);
+                *a = *c * *a + *s * *b;
+                *b = t;
+            }
+        }
+        public unsafe static int drotg1(double* da, double* db, double* c__,
+    double* s)
+        {
+            /* System generated locals */
+            double d__1, d__2;
+
+
+            /* Local variables */
+            double r__, z__, roe, scale;
+
+
+            /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
+            /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     November 2017 */
+
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+
+            /*  ===================================================================== */
+
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+            roe = *db;
+            if (Math.Abs(*da) > Math.Abs(*db))
+            {
+                roe = *da;
+            }
+            scale = Math.Abs(*da) + Math.Abs(*db);
+            if (scale == 0.0)
+            {
+                *c__ = 1.0;
+                *s = 0.0;
+                r__ = 0.0;
+                z__ = 0.0;
+            }
+            else
+            {
+                /* Computing 2nd power */
+                d__1 = *da / scale;
+                /* Computing 2nd power */
+                d__2 = *db / scale;
+                r__ = scale * Math.Sqrt(d__1 * d__1 + d__2 * d__2);
+                r__ = dsign(1, roe) * r__;//CHECK was d_sign(1,roe)
+                *c__ = *da / r__;
+                *s = *db / r__;
+                z__ = 1.0;
+                if (Math.Abs(*da) > Math.Abs(*db))
+                {
+                    z__ = *s;
+                }
+                if (Math.Abs(*db) >= Math.Abs(*da) && *c__ != 0.0)
+                {
+                    z__ = 1.0 / *c__;
+                }
+            }
+            *da = r__;
+            *db = z__;
+            return 0;
+        }
+        public unsafe static double dcossint(double t, double* s)
+        {/*
+	dcossint(t,&s) returns c and sets s where
+		c = cos( theta ),   s = sin( theta )
+		for a given value of t = tan( theta ).
+
+	c is always non-negative and s has the same sign as t, so that
+		c = 1.0/sqrt( 1.0 + t**2 ),   s = t/sqrt( 1.0 + t**2 ).
+
+	If  abs( t ) <= eps, where eps is the relative machine precision
+		c = 1.0   and   s = 0.0.
+
+	If  abs( t ) .ge. 1/eps  then c and s are returned as
+		c = 0.0   and   s = sign( t ).
+
+	R. G. Becker	October 1992
+*/
+            double abst, c;
+
+            abst = Math.Abs(t);
+
+            if (abst <= lm_eps)
+            {
+                c = 1;
+                *s = 0;
+            }
+            else if (abst >= lm_reps)
+            {
+                c = 0;
+                *s = dsign(1.0, t);
+            }
+            else if (abst < lm_rooteps)
+            {
+                c = 1;
+                *s = t;
+            }
+            else if (abst > lm_rrooteps)
+            {
+                c = 1 / abst;
+                *s = dsign(1.0, t);
+            }
+            else
+            {
+                /* Computing 2nd power */
+                c = 1 / Math.Sqrt(abst * abst + 1);
+                *s = c * t;
+            }
+            return c;
+        }
+
     }
 }

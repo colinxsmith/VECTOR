@@ -215,7 +215,9 @@ namespace BlasLikeTest
             double[] scale = { s1 };
             double[] sumsq = { 0 };
             fixed (double* aa = a)
-                BlasLike.dsssq(a.Length / 2, aa + 1, -2, scale, sumsq);
+            fixed (double* sscale = scale)
+            fixed (double* ssumsq = sumsq)
+                BlasLike.dsssq(a.Length / 2, aa + 1, -2, sscale, ssumsq);
             Assert.IsTrue(scale[0] == 10 && sumsq[0] == 2.2, $"scale is {scale[0]}, sumsq is {sumsq[0]}");
         }
         [TestMethod]
@@ -226,7 +228,9 @@ namespace BlasLikeTest
             double[] scale = { s1 };
             double[] sumsq = { 0 };
             fixed (double* aa = &(a[1]))
-                BlasLike.dsssq(a.Length / 2, aa, -2, scale, sumsq);
+            fixed (double* sscale = scale)
+            fixed (double* ssumsq = sumsq)
+                BlasLike.dsssq(a.Length / 2, aa, -2, sscale, ssumsq);
             Assert.IsTrue(scale[0] == 10 && sumsq[0] == 2.2, $"scale is {scale[0]}, sumsq is {sumsq[0]}");
         }
 
