@@ -3119,7 +3119,30 @@ double* x, int incx, double* ap)
                 *psumsq = sumsq;
             }
         }
-
+public unsafe static void dsssqvec(int n, double* x, double *pscale, double *psumsq)
+{
+	if(n>0){
+		double absxi, d, sumsq= *psumsq, scale = *pscale;
+		while(n-->0){
+			absxi = *x++;
+			if(absxi==0) continue;
+			if(absxi<0) absxi = -absxi;
+			if(scale < absxi){
+				/* Computing 2nd power */
+		    		d = scale / absxi;
+		    		sumsq = sumsq * (d * d) + 1;
+		    		scale = absxi;
+				}
+			else	{
+				/* Computing 2nd power */
+				d = absxi / scale;
+				sumsq += d * d;
+				}
+			}
+		*pscale = scale;
+		*psumsq = sumsq;
+		}
+}
         public static void dsssq(int n, double[] x, int ix, double[] pscale, double[] psumsq, int px = 0)
         {
             /*

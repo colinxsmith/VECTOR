@@ -3670,7 +3670,7 @@ public unsafe static void dhhrflctgen(int *n, double *alpha, double *x, int *inc
 	the remaining elements of z are overwritten on x and beta is
 	overwritten on alpha
 */
-    double beta, work;
+    double beta, work; //work was work[1] makes no sense!
     double scale, tl, ssq;
 
     --x;
@@ -3691,7 +3691,7 @@ public unsafe static void dhhrflctgen(int *n, double *alpha, double *x, int *inc
 	} else {
 	    if (*alpha != 0) {
 		work = *alpha;//I MADE CHANGES  TO WORK; compare with libsafeqp
-		BlasLike.dsssq(1, &work,1, &scale, &ssq);
+		BlasLike.dsssqvec(1, &work, &scale, &ssq);
 		beta = -BlasLike.dsign(sc_norm(scale, ssq), *alpha);
 		*z1 = (beta - *alpha) / beta;
 	    } else {
