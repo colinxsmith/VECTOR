@@ -5,6 +5,7 @@ namespace Blas
     public static class BlasLike
     {
         public static double lm_reps = 4503599627370496;
+        public static double lm_rootmax=        1.3407807929942596e+154;
         public static double lm_rrooteps = 67108864;
         public static int baseref = 0;//Set to an array address for debug output
         public static double lm_eps = Math.Abs((((double)4) / 3 - 1) * 3 - 1);

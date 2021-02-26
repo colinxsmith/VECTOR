@@ -1,11 +1,32 @@
 using System;
 using Blas;
+using Solver;
 using System.Diagnostics;
 namespace ActiveSet
 {
     public class Optimise
     {
+        public static int DAS_Sol_nout = 0;
+        public static int DAS_Sol_msg = 0;
+        public static int DAS_Sol_istart = 0;
+        public static int DAS_Sol_asize = 0;
+        public static int DAS_Sol_dtmax = 0;
+        public static int DAS_Sol_dtmin = 0;
+        public static int DAS_Sol_nrowrt = 0;
+        public static int DAS_Sol_ncolrt = 0;
+        public static int DAS_Sol_nq = 0;
+        public static int DAS_Sol_ncqp = 0;
+        public static int DAS_Sol_nrowqp = 0;
+        public static int DAS_Sol_scldqp = 0;
+        public static double DAS_Sol_zgfacc = -1.0;
+        public static unsafe void** DAS_Sol_ploc;
         public static int msg;
+        public static bool scldqp;
+        public unsafe static int nrowqp;
+        public unsafe static int* pKACTV;
+        public unsafe static int* pKFREE;
+        public unsafe static int[] loclc;
+        public unsafe static int[] locnp;
         public static int istart;
         public static int[] parm;
         public static int nq;
@@ -51,7 +72,7 @@ namespace ActiveSet
             timebase = t;
             return timeaquired;
         }
-        public unsafe static void dlpcore(bool lp, int minsum, bool orthog, bool* unitq, int vertex, int* inform, int* iter,
+        public unsafe static void dlpcore(bool lp, int minsum, bool orthog, int* unitq, int vertex, int* inform, int* iter,
                 int itmax, byte lcrash, int n, int* nclin, int* nctotl, int* nrowa, int* nactiv,
                 int* nfree, int* numinf, int* istate, int* kactiv, int* kfree, double* obj, double* xnorm,
                 double* a, double* ax, double* bl, double* bu, double* clamda, double* cvec, double* featol, double* x, int* iw, double* w)
@@ -118,7 +139,8 @@ namespace ActiveSet
             int mstall;
             double ztgnrm;
             int nstall;
-            bool firstv, hitlow;
+            bool firstv;
+            int hitlow;
             bool unitpg;
             double bnd;
             double gtp;
@@ -329,7 +351,7 @@ namespace ActiveSet
         */
         L80:
             ++ndel;
-            ddelcon(modfyg, orthog, CB(*unitq), CN(jdel), CN(kdel), CN(*nactiv), CN(ncolz), CN(*nfree), n,
+            ddelcon(modfyg, orthog, *unitq, CN(jdel), CN(kdel), CN(*nactiv), CN(ncolz), CN(*nfree), n,
                 CN(nq), CN(*nrowa), CN(nrowrt), &kactiv[1], &kfree[1], &a[a_offset],
                 pQTG, pRT, pZY);
             ++ncolz;
@@ -435,11 +457,11 @@ namespace ActiveSet
             {
                 *obj = objlp;
             }
-            if (hitlow)
+            if (hitlow != 0)
             {
                 istate[jadd] = 1;
             }
-            if (!hitlow)
+            if (hitlow == 0)
             {
                 istate[jadd] = 2;
             }
@@ -454,7 +476,7 @@ namespace ActiveSet
             /*     OTHER CLOSER CONSTRAINT.) */
             iadd = jadd - n;
             if (jadd > (int)n) goto L200;
-            bnd = (hitlow ? bl : bu)[jadd];
+            bnd = (hitlow != 0 ? bl : bu)[jadd];
             if (alfa >= 0) x[jadd] = bnd;
             for (ifix = 1; ifix <= *nfree; ++ifix)
             {
@@ -811,7 +833,7 @@ namespace ActiveSet
         {
             Console.WriteLine($"{name} iteration {n}");
         }
-        public unsafe static void dlpcrsh(bool orthog, bool* unitq, int vertex, byte lcrash, int n, int* nclin, int* nctotl,
+        public unsafe static void dlpcrsh(bool orthog, int* unitq, int vertex, byte lcrash, int n, int* nclin, int* nctotl,
         int* Nq, int* nrowa, int* Nrowrt, int* Ncolrt, int* nactiv, int* ncolz,
         int* nfree, int* istate, int* kactiv, int* kfree, double* bigbnd, double* tolact,
         double* xnorm, double* a, double* anorm, double* ax, double* bl, double* bu, double* x, double* qtg, double* rt,
@@ -934,7 +956,7 @@ namespace ActiveSet
             }
             dtmax = 1;
             dtmin = 1;
-            *unitq = true;
+            *unitq = 1;
             /*     COMPUTE THE 2-NORMS OF THE CONSTRAINT ROWS. */
             asize = 1;
             if (*nclin == 0)
@@ -1426,7 +1448,7 @@ namespace ActiveSet
             /* if feasible, install true objective */
             if (lp && *numinf == 0) BlasLike.dcopyvec(n, &cvec[1], &grad[1]);
         }
-        public unsafe static void dzyprod(short mode, int n, int nactiv, int ncolz, int nfree, int nq, bool unitq, int* kactiv, int* kfree, double* v, double* zy, double* wrk)
+        public unsafe static void dzyprod(short mode, int n, int nactiv, int ncolz, int nfree, int nq, int unitq, int* kactiv, int* kfree, double* v, double* zy, double* wrk)
         {
             /*
                 dzyprod transforms the vector  v  in various ways using the 
@@ -1479,7 +1501,7 @@ namespace ActiveSet
                 /*SET  WRK  =  RELEVANT PART OF  ZY * V. */
                 if (lenv > 0)
                 {
-                    if (unitq) BlasLike.dcopyvec(lenv, &v[j1], &wrk[j1]);
+                    if (unitq==1) BlasLike.dcopyvec(lenv, &v[j1], &wrk[j1]);
                     else for (j = j1; j <= j2; ++j)
                             if (v[j] != 0)
                                 BlasLike.daxpy(nfree, v[j], &zy[j * nq + 1], 1, &wrk[1], 1);
@@ -1527,7 +1549,7 @@ namespace ActiveSet
                     /*SET  V  =  RELEVANT PART OF  ZY(T) * WRK*/
                     if (lenv > 0)
                     {
-                        if (unitq) BlasLike.dcopyvec(lenv, &wrk[j1], &v[j1]);
+                        if (unitq==1) BlasLike.dcopyvec(lenv, &wrk[j1], &v[j1]);
                         else for (j = j1; j <= j2; ++j)
                                 v[j] = BlasLike.ddotvec(nfree, zy + j * nq + 1, wrk + 1);
                     }
@@ -1663,17 +1685,13 @@ namespace ActiveSet
             }
             Console.Write("\n");
         }
-        public static void lm_wmsg(string mess, int n1)
+        public static void lm_wmsg<T>(string mess, T n1)
         {
             Console.WriteLine($"{mess} {n1}");
         }
         public static void lm_wmsg(string mess, int n1, double n2, int n3)
         {
             Console.WriteLine($"{mess} {n1} {n2} {n3}");
-        }
-        public static void lm_wmsg(string mess, double n1)
-        {
-            Console.WriteLine($"{mess} {n1}");
         }
         public static void lm_wmsg(string mess, double n1, double n2, double n3)
         {
@@ -1683,7 +1701,11 @@ namespace ActiveSet
         {
             Console.WriteLine($"{mess} {n1} {n2} {n3} {n4}");
         }
-        public static void lm_wmsg(string mess, int n1, int n2, int n3, int n4, int n5, bool n6)
+        public static void lm_wmsg<T>(string mess, int n1, int n2, int n3, int n4, int n5, T n6)
+        {
+            Console.WriteLine($"{mess} {n1} {n2} {n3} {n4} {n5} {n6}");
+        }
+        public static void lm_wmsg(string mess, string n1, string n2, string n3, int n4, double n5, double n6)
         {
             Console.WriteLine($"{mess} {n1} {n2} {n3} {n4} {n5} {n6}");
         }
@@ -1703,11 +1725,7 @@ namespace ActiveSet
         {
             Console.WriteLine($"{mess} {n1} {n2} {n3}");
         }
-        public static void lm_wmsg(string mess, string n1, string n2)
-        {
-            Console.WriteLine($"{mess} {n1} {n2}");
-        }
-        public static void lm_wmsg(string mess, int n1, double n2)
+        public static void lm_wmsg<T>(string mess, string n1, T n2)
         {
             Console.WriteLine($"{mess} {n1} {n2}");
         }
@@ -1754,7 +1772,7 @@ namespace ActiveSet
             }
             if (msg >= 80) lm_wmsg("\n//LPBGST// JBIGST         BIGGST\n//LPBGST//%7ld%15.4lg", CL(*jbigst), biggst);
         }
-        public unsafe static void ddelcon(bool modfyg, bool orthog, bool unitq, int jdel, int kdel, int nactiv, int ncolz, int nfree, int n, int Nq, int nrowa, int Nrowrt, int* kactiv, int* kfree, double* a, double* qtg, double* rt, double* zy)
+        public unsafe static void ddelcon(bool modfyg, bool orthog, int unitq, int jdel, int kdel, int nactiv, int ncolz, int nfree, int n, int Nq, int nrowa, int Nrowrt, int* kactiv, int* kfree, double* a, double* qtg, double* rt, double* zy)
         {/*
 	ddelcon updates the factorization of the matrix of
 	constraints in the working set,  A(free)*(Z Y) = (0 T)
@@ -1782,7 +1800,7 @@ namespace ActiveSet
                 ifreed = kdel - nactiv;
                 if (msg >= 80)
                     lm_wmsg("BOUND DELETED", CL(nactiv), CL(ncolz), CL(nfree), CL(ifreed),
-                        CL(jdel), CB(unitq));
+                        CL(jdel), unitq);
                 nactv1 = nactiv;
                 nfree1 = nfree + 1;
                 ibegin = 1;
@@ -1807,7 +1825,7 @@ namespace ActiveSet
                 }
 
                 /*COPY THE INCOMING COLUMN OF A INTO THE END OF  T. */
-                if (!unitq)
+                if (unitq!=0)
                 {
                     for (ka = 1; ka <= nactiv; ++ka)
                     {
@@ -1825,7 +1843,7 @@ namespace ActiveSet
                 /*A GENERAL CONSTRAINT IS BEING DELETED FROM THE WORKING SET*/
                 if (msg >= 80)
                     lm_wmsg("CONSTRAINT DELETED", CL(nactiv), CL(ncolz), CL(nfree), CL(kdel),
-                        CL(jdel), CB(unitq));
+                        CL(jdel), unitq);
                 nactv1 = nactiv - 1;
                 nfree1 = nfree;
                 ibegin = kdel;
@@ -1879,7 +1897,7 @@ namespace ActiveSet
                 dtmin = dtmin_c;
             }
         }
-        public unsafe static void dfindp(bool* nullr, bool* unitpg, bool* unitq, int n, int* nclin, int* Nq, int* nrowa, int* Nrowrt, int* ncolr, int* ncolz, int* nfree, int* istate, int* kfree, bool negligible, double* gtp, double* pnorm, double* rdlast, double* a, double* ap, double* p, double* qtg, double* rt, double* v, double* zy, double* work)
+        public unsafe static void dfindp(bool* nullr, bool* unitpg, int* unitq, int n, int* nclin, int* Nq, int* nrowa, int* Nrowrt, int* ncolr, int* ncolz, int* nfree, int* istate, int* kfree, bool negligible, double* gtp, double* pnorm, double* rdlast, double* a, double* ap, double* p, double* qtg, double* rt, double* v, double* zy, double* work)
         {
             /*
                 findp computes the following quantities for  lpcore,  qpcore  and
@@ -1980,7 +1998,7 @@ namespace ActiveSet
             }
             return;
         }
-        public unsafe static short dbndalf(bool firstv, bool* hitlow, int* istate, int* jadd, int n, int nctotl, int numinf, double* alfa, double* palfa, double* atphit, double* bigalf, double* bigbnd, double* pnorm, double* anorm, double* ap, double* ax, double* bl, double* bu, double* featol, double* p, double* x)
+        public unsafe static short dbndalf(bool firstv, int* hitlow, int* istate, int* jadd, int n, int nctotl, int numinf, double* alfa, double* palfa, double* atphit, double* bigalf, double* bigbnd, double* pnorm, double* anorm, double* ap, double* ax, double* bl, double* bu, double* featol, double* p, double* x)
         {
             /*
                 dbndalf finds a step  alfa  such that the point  x + alfa*p
@@ -2183,7 +2201,7 @@ namespace ActiveSet
             *palfa = palfa1;
             *jadd = jadd1;
             *atphit = atp1;
-            *hitlow = hlow1;
+            *hitlow = hlow1 ? 1 : 0;
             if (numinf != 0 && jadd2 != 0 && (alfa2 < alfa1 || (alfa2 <= palfa1 && apmax2 >= apmax1)))
             {
                 /*
@@ -2194,7 +2212,7 @@ namespace ActiveSet
                 *alfa = alfa2;
                 *jadd = jadd2;
                 *atphit = atp2;
-                *hitlow = hlow2;
+                *hitlow = hlow2 ? 1 : 0;
             }
             else if (*alfa < -BlasLike.lm_eps)
             {
@@ -2229,7 +2247,7 @@ namespace ActiveSet
             return inform;
         }
         public unsafe static
-short daddcon(bool modfyg, bool modfyr, bool orthog, bool* unitq, int* ifix, int* iadd, int* jadd, int* nactiv, int* ncolr, int* ncolz, int* nfree, int n, int* Nq, int* nrowa, int* Nrowrt, int* kfree, double* condmx, double* cslast, double* snlast, double* a, double* qtg, double* rt, double* zy, double* wrk1, double* wrk2)
+short daddcon(bool modfyg, bool modfyr, bool orthog, int* unitq, int* ifix, int* iadd, int* jadd, int* nactiv, int* ncolr, int* ncolz, int* nfree, int n, int* Nq, int* nrowa, int* Nrowrt, int* kfree, double* condmx, double* cslast, double* snlast, double* a, double* qtg, double* rt, double* zy, double* wrk1, double* wrk2)
         {
 
             /*
@@ -2314,7 +2332,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, bool* unitq, int* ifix, int
             */
             nfree1 = *nfree - 1;
             nact1 = *nactiv;
-            if (*unitq)
+            if (*unitq!=0)
             {
                 goto L20;
             }
@@ -2362,7 +2380,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, bool* unitq, int* ifix, int
             BlasLike.dcopy(n, &a[*iadd + a_dim1], *nrowa, &wrk1[1], 1);
             dzyprod(8, n, *nactiv, *ncolz, *nfree, *Nq, *unitq, &kfree[1], &kfree[1], &
                 wrk1[1], &zy[zy_offset], &wrk2[1]);
-            if (!(*unitq))
+            if ((*unitq)==0)
             {
                 goto L100;
             }
@@ -2375,7 +2393,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, bool* unitq, int* ifix, int
                 BlasLike.dzerovec(*nfree, &zy[j * zy_dim1 + 1]);
                 zy[j + j * zy_dim1] = 1.0;
             }
-            *unitq = false;
+            *unitq = 0;
         /*
              check that the incoming row is not dependent upon those
              already in the working set
@@ -2435,7 +2453,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, bool* unitq, int* ifix, int
             {
                 goto L360;
             }
-            if (modfyr || *unitq)
+            if (modfyr || *unitq!=0)
             {
                 goto L320;
             }
@@ -2556,7 +2574,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, bool* unitq, int* ifix, int
                 */
                 kp1 = k + 1;
                 delmgen(orthog, &wrk1[kp1], &wrk1[k], &cs, &sn);
-                if (!(*unitq))
+                if ((*unitq)==0)
                 {
                     delm(orthog, CN(*nfree), &zy[kp1 * zy_dim1 + 1], 1, &zy[k *
                         zy_dim1 + 1], 1, cs, sn);
@@ -2779,7 +2797,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, bool* unitq, int* ifix, int
                 return sc_norm(scale, ssq);
             }
         }
-        public unsafe static void dtqadd(bool orthog, bool* unitq, int* inform, int* k1, int* k2, int* nactiv, int* ncolz, int* nfree, int* n, int* nq, int* nrowa, int* nrowrt, int* ncolrt, int* istate, int* kactiv, int* kfree, double* condmx, double* a, double* qtg, double* rt, double* zy, double* wrk1, double* wrk2)
+        public unsafe static void dtqadd(bool orthog, int* unitq, int* inform, int* k1, int* k2, int* nactiv, int* ncolz, int* nfree, int* n, int* nq, int* nrowa, int* nrowrt, int* ncolrt, int* istate, int* kactiv, int* kfree, double* condmx, double* a, double* qtg, double* rt, double* zy, double* wrk1, double* wrk2)
         {
             int a_dim1, a_offset, rt_dim1, rt_offset, zy_dim1, zy_offset, i__1;
 
@@ -3649,60 +3667,1407 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             /*z is zero only if nzero=n*/
             if (nzero < n) *itrans = 1;
         }
-public unsafe static void dhhrflctgen(int *n, double *alpha, double *x, int *incx, double *tol, double *z1)
-{
+        public unsafe static void dhhrflctgen(int* n, double* alpha, double* x, int* incx, double* tol, double* z1)
+        {
 
-/*
-	dhhrflctgen generates details of a householder reflection, p, such that
-		p*( alpha ) = ( beta ),   p'*p = i
-		  (   x   )   (   0  )
+            /*
+                dhhrflctgen generates details of a householder reflection, p, such that
+                    p*( alpha ) = ( beta ),   p'*p = i
+                      (   x   )   (   0  )
 
-	p is given in the form
-		p = i - ( 1/z( 1 ) )*z*z',
+                p is given in the form
+                    p = i - ( 1/z( 1 ) )*z*z',
 
-	where z is an ( n + 1 ) element vector
-	z( 1 ) is returned in z1. if the elements of x are all zero, or if
-	the elements of x are all less than tol*abs( alpha ) in absolute
-	value, then z1 is returned as zero and p can be taken to be the
-	unit matrix. otherwise z1 always lies in the range ( 1.0, 2.0 )
-	if tol is not in the range ( 0.0, 1.0 ) then the value 0.0 is used in
-	place of tol
-	the remaining elements of z are overwritten on x and beta is
-	overwritten on alpha
-*/
-    double beta, work; //work was work[1] makes no sense!
-    double scale, tl, ssq;
+                where z is an ( n + 1 ) element vector
+                z( 1 ) is returned in z1. if the elements of x are all zero, or if
+                the elements of x are all less than tol*abs( alpha ) in absolute
+                value, then z1 is returned as zero and p can be taken to be the
+                unit matrix. otherwise z1 always lies in the range ( 1.0, 2.0 )
+                if tol is not in the range ( 0.0, 1.0 ) then the value 0.0 is used in
+                place of tol
+                the remaining elements of z are overwritten on x and beta is
+                overwritten on alpha
+            */
+            double beta, work; //work was work[1] makes no sense!
+            double scale, tl, ssq;
 
-    --x;
+            --x;
 
-    if (*n < 1) {
-	*z1 = 0;
-    } else {
-	if (*tol <= 0 || *tol > 1) {
-	    tl = 0;
-	} else {
-	    tl = Math.Abs(*alpha) * *tol;
-	}
-	ssq = 1;
-	scale = 0;
-	BlasLike.dsssq(*n, &x[1], *incx, &scale, &ssq);
-	if (scale == 0 || scale < tl) {
-	    *z1 = 0;
-	} else {
-	    if (*alpha != 0) {
-		work = *alpha;//I MADE CHANGES  TO WORK; compare with libsafeqp
-		BlasLike.dsssqvec(1, &work, &scale, &ssq);
-		beta = -BlasLike.dsign(sc_norm(scale, ssq), *alpha);
-		*z1 = (beta - *alpha) / beta;
-	    } else {
-		beta = -sc_norm(scale, ssq);
-		*z1 = 1;
-	    }
-	    BlasLike.dscal(*n, -1/beta, &x[1], *incx);
-	    *alpha = beta;
-	}
-    }
-}
+            if (*n < 1)
+            {
+                *z1 = 0;
+            }
+            else
+            {
+                if (*tol <= 0 || *tol > 1)
+                {
+                    tl = 0;
+                }
+                else
+                {
+                    tl = Math.Abs(*alpha) * *tol;
+                }
+                ssq = 1;
+                scale = 0;
+                BlasLike.dsssq(*n, &x[1], *incx, &scale, &ssq);
+                if (scale == 0 || scale < tl)
+                {
+                    *z1 = 0;
+                }
+                else
+                {
+                    if (*alpha != 0)
+                    {
+                        work = *alpha;//I MADE CHANGES  TO WORK; compare with libsafeqp
+                        BlasLike.dsssqvec(1, &work, &scale, &ssq);
+                        beta = -BlasLike.dsign(sc_norm(scale, ssq), *alpha);
+                        *z1 = (beta - *alpha) / beta;
+                    }
+                    else
+                    {
+                        beta = -sc_norm(scale, ssq);
+                        *z1 = 1;
+                    }
+                    BlasLike.dscal(*n, -1 / beta, &x[1], *incx);
+                    *alpha = beta;
+                }
+            }
+        }
+        public unsafe static short dqpsol(short itmax, short msglvl, int n, int nclin, int nctotl, int nrowa, int nrowh, int ncolh, double* bigbnd, double* a, double* bl, double* bu, double* cvec, double* featol, double* hess, int cold, int lp, int orthog, double* x, int* istate, short* iter, double* obj, double* clamda, int* iw, int leniw, double* w, int lenw, short ifail)
+        {
+
+            /*
+                dqpsol solves quadratic programming (QP) problems of the form 
+                minimize     c'*x  +  1/2 x'*H*X 
+                subject to		(  x  ) 
+                        BL  <=  (     ) <=  BU 
+                            ( A*x ) 
+
+                where ' denotes the transpose of a column vector. 
+                The symmetric matrix  H  may be positive-definite, positive 
+                semi-definite, or indefinite. 
+                n  is the number of variables (dimension of  x). 
+                nclin  is the number of general linear constraints (rows of  a). 
+                (nclin may be zero.) 
+
+                The matrix   H  is defined by the subroutine  qphess, which 
+                must compute the matrix-vector product  H*x  for any vector  x. 
+                the vector  c  is entered in the one-dimensional array  cvec. 
+                the first  n  components of  bl  and   bu  are lower and upper 
+                bounds on the variables.  the next  nclin  components are 
+                lower and upper bounds on the general linear constraints. 
+                the matrix  a  of coefficients in the general linear constraints 
+                is entered as the two-dimensional array a (of dimension 
+                nrowa  by  n). if nclin = 0,  a  is not accessed. 
+                the vector  x  must contain an initial estimate of the solution, 
+                and will contain the computed solution on output. 
+            */
+            int itmx;
+            string l = (lp != 0 ? ((lp & 2) != 0 ? "FP" : "LP") : "QP");
+
+            //double bigdx;
+            int nfree, ncnln;
+            int unitq;
+            double xnorm;// epspt9;
+            int lscale, maxact, minact;
+            byte lcrash;
+            //double tolact;
+            int minfxd, inform, mxfree, nactiv, numinf;
+            int litotl;
+            short nerror;
+            int minsum;
+            int mxcolz;
+            int vertex;
+            int lwtotl;
+            int lax;
+
+            //#define NCLIN &nclin_
+            int nclin_ = nclin;
+            //#define NCTOTL &nctotl_
+            int nctotl_ = nctotl;
+            //#define NROWA &nrowa_
+            int nrowa_ = nrowa;
+            int iter_;
+            //#define NROWH &nrowh_
+            int nrowh_ = nrowh;
+            //#define NCOLH &ncolh_
+            int ncolh_ = ncolh;
+            --w;
+            --iw;
+            --clamda;
+            --istate;
+            --x;
+            --featol;
+            --cvec;
+            --bu;
+            --bl;
+
+            /*IF ITMAX IS NOT POSITIVE ON ENTRY SET IT TO 50*/
+            itmx = itmax;
+            if (itmx <= 0) itmx = 50;
+
+            /*
+            IF THERE IS NO FEASIBLE POINT FOR THE LINEAR CONSTRAINTS AND
+            BOUNDS, COMPUTE THE MINIMUM SUM OF INFEASIBILITIES
+            IT IS NOT NECESSARY TO START THE QP PHASE AT A VERTEX
+            */
+            minsum = (lp & 2) != 0 ? 0 : 1;
+            vertex = 0;
+            /*
+            ANY CHANGE IN X THAT IS GREATER THAN  BIGDX  WILL BE REGARDED
+            AS AN INFINITE STEP
+            */
+            //bigdx = 1e20;
+
+            /*
+            DURING SELECTION OF THE INITIAL WORKING SET (BY CRASH),
+            CONSTRAINTS WITH RESIDUALS LESS THAN  TOLACT  WILL BE MADE ACTIVE. 
+            */
+            //tolact = .01;
+            //epspt9 = pow(lm_eps, 0.9);
+            /*	parm[0] = *bigbnd;
+                parm[1] = bigdx;
+                parm[2] = tolact;
+                parm[3] = epspt9;*/
+
+            /*
+            assign the dimensions of arrays in the parameter list of qpcore
+            economies of storage are possible if the minimum number of active
+            constraints and the minimum number of fixed variables are known in
+            advance.  the expert user should alter  minact  and  minfxd
+            accordingly
+            if a linear program is being solved and the matrix of general
+            constraints is fat,  i.e.,  nclin < n,  a non-zero value is
+            known for  minfxd.  note that in this case,  vertex  must be 1
+            */
+            minact = 0;
+            minfxd = 0;
+            /*	Vadim Moroz's data showed that this can lead to errors!  Colin 19-7-2000
+                if (lp && nclin < n)
+                {
+                    minfxd = n - nclin - 1;
+                    vertex = 1;
+                }*/
+            mxfree = n - minfxd;
+            maxact = Math.Min(n, nclin);
+            maxact = Math.Max(1, maxact);
+            mxcolz = n - (minfxd + minact);
+            nq = Math.Max(1, mxfree);
+            nrowrt = Math.Max(mxcolz, maxact);
+            ncolrt = Math.Max(1, mxfree);
+            ncnln = 0;
+
+            /*allocate certain arrays that are not done in  alloc*/
+            litotl = 0;
+            lax = 1;
+            lwtotl = lax + nrowa - 1;
+            /*allocate remaining work arrays*/
+            dalloc(2, n, nclin, ncnln, nctotl, iw, w, &litotl, &lwtotl);
+            /*set the message level for  lpdump, qpdump, chkdat  and  lpcore*/
+            msg = 0;
+            if (msglvl >= 5) msg = 5;
+            if (lp != 0 || msglvl >= 15) msg = msglvl;
+            /*
+            *** the following statement must be executed if  istart   ***
+            *** is not set in the calling routine.                    ***
+            */
+            istart = 0;
+            lcrash = 1;
+            if (cold != 0) lcrash = 0;
+            /*check input parameters and storage limits*/
+            if (msglvl == 99)
+                dlpdump(n, nclin, nctotl, nrowa, lcrash, lp, minsum,
+                vertex, &istate[1], a, &w[lax], &bl[1], &bu[1],
+                &cvec[1], &x[1]);
+            if (msglvl == 99)
+                dqpdump(n, nrowh, ncolh, &cvec[1], hess, pWRK, pPX);
+
+            nerror = dchkdat(leniw, lenw, litotl, lwtotl, nrowa, n, nclin,
+                    nctotl, &istate[1], pKACTV, lcrash,
+                    bigbnd, a, &bl[1], &bu[1], &featol[1], &x[1]);
+            *iter = 0;
+            if (nerror != 0)
+            {
+                if (msglvl > 0)
+                    lm_wmsg(
+            " EXIT QPSOL-%6ld ERRORS FOUND IN THE INPUT PARAMETERS.  PROBLEM ABANDONED.",
+                    CL(nerror));
+                return lm_check_fail((short)CS(ifail), CS((short)9), "QPSOL");
+            }
+
+            /*
+            no scaling is provided by this version of  dqpsol
+            give a fake value for the start of the scale array
+            */
+            scldqp = false;
+            lscale = 1;
+
+            /*
+            ---------------------------------------------------------------------
+            call  lpcore  to obtain a feasible point, or solve a linear
+            problem
+            ---------------------------------------------------------------------
+            */
+            dlpcore((lp & 1) != 0, minsum, orthog != 0, &unitq, vertex, &inform, &iter_,
+            itmx, lcrash, n, &nclin, &nctotl, &nrowa, &nactiv, &nfree, &numinf,
+                &istate[1], pKACTV, pKFREE, obj, &xnorm, a, &
+                w[lax], &bl[1], &bu[1], &clamda[1], &cvec[1], &featol[1], &x[1], &
+                iw[1], &w[1]);
+            *iter = (short)iter_;
+            if (lp != 0)
+            {
+                /*THE PROBLEM WAS AN LP, NOT A QP*/
+                if (inform > 2) inform += 4;
+                if (inform == 1) inform = 6;
+            }
+            else if (inform == 0)
+            {
+                /*
+                ---------------------------------------------------------------------
+                call  qpcore  to solve a quadratic problem
+                ---------------------------------------------------------------------
+                */
+                msg = msglvl;
+                /*
+                *** the following statement must be executed if  istart   ***
+                *** is not set in the calling routine.                    ***
+                */
+                istart = 0;
+                var nrowrt_c = nrowrt;
+                dqpcore(orthog, &unitq, &inform, &iter_, &itmx, n, &nclin, &nctotl,
+                        &nrowrt_c, &nrowh, &ncolh, &nactiv, &nfree, &istate[1],
+                        pKACTV, pKFREE, obj, &xnorm, a, &w[lax], &bl[1], &bu[1], &clamda[1], &cvec[1], &featol[1], hess,
+                        &w[lscale], &x[1], &iw[1], &w[1]);
+                nrowrt = nrowrt_c;
+                *iter = (short)iter_;
+            }
+            else
+            {
+                /*
+                trouble in  lpcore
+                inform cannot be given the value  2  when finding a feasible
+                point, so it is necessary to decrement all the values of  inform
+                that are greater than  2
+                */
+                if (inform > 2) --inform;
+                inform += 5;
+            }
+            /*print messages if required*/
+            if (msglvl > 0)
+            {
+                switch (inform)
+                {
+                    case 0:
+                        lm_wmsg("\nEXIT QPSOL- OPTIMAL %.2s SOLUTION.", l);
+                        break;
+                    case 1:
+                        Console.WriteLine("WEAK LOCAL MINIMUM.");
+                        break;
+                    case 2:
+                        lm_wmsg("\nEXIT dqpsol- %.2s SOLUTION IS UNBOUNDED.", l);
+                        break;
+                    case 3:
+                        Console.WriteLine("ZERO MULTIPLIERS.");
+                        break;
+                    case 4:
+                        Console.WriteLine("TOO MANY ITERATIONS WITHOUT CHANGING X.");
+                        break;
+                    case 5:
+                        Console.WriteLine("TOO MANY ITERATIONS.");
+                        break;
+                    case 6:
+                        Console.WriteLine("CANNOT SATISFY THE LINEAR CONSTRAINTS.");
+                        break;
+                    case 7:
+                        Console.WriteLine("TOO MANY ITERATIONS WITHOUT CHANGING X IN THE LP PHASE.");
+                        break;
+                    case 8:
+                        Console.WriteLine("TOO MANY ITERATIONS DURING THE LP PHASE.");
+                        break;
+                }
+                if (numinf == 0) lm_wmsg("\n FINAL %.2s OBJECTIVE VALUE =%20.9lg", l, *obj);
+                else lm_wmsg("\n FINAL SUM OF INFEASIBILITIES =%20.9lg", *obj);
+            }
+
+            return (short)(inform == 0 ? 0 : lm_check_fail((short)CS(ifail), (short)CS(inform), "QPSOL"));
+        }
+        public unsafe static void dlpdump(int n, int nclin, int nctotl, int nrowa, int lcrash, int lp, int minsum, int vertex, int* istate, double* a, double* ax, double* bl, double* bu, double* cvec, double* x)
+        {
+            int j, k;
+            double atx;
+
+            Console.WriteLine("\n\n\n\n\n\nOUTPUT FROM LPDUMP\n ******************");
+            lm_wmsg("\nLCRASH =%d LP=%d MINSUM=%d VERTEX=%d", lcrash, lp, minsum, vertex);
+
+            /*PRINT  A  BY ROWS AND COMPUTE  AX = A*X. */
+            for (k = 0; k < nclin; ++k)
+            {
+                lm_wmsg("\nROW%6ld OF A ...", CL(k + 1));
+                lm_gdvwri(n, a + k, nrowa);
+                ax[k] = BlasLike.ddot(n, a + k, nrowa, x, 1);
+            }
+
+            /*PRINT  BL, BU  AND  X OR AX. */
+            Console.WriteLine("\n              J      BL(J)          BU(J)           X(J)");
+            for (j = 0; j < nctotl; ++j)
+            {
+                if (j < n)
+                {
+                    k = j;
+                    atx = x[j];
+                }
+                else
+                {
+                    k = j - n;
+                    atx = ax[k];
+                    if (k != 0)
+                        Console.WriteLine("\n              I    BL(N+I)        BU(N+I)         A(I)*X");
+                }
+                lm_wmsg("", CL(k + 1), bl[j], bu[j], atx);
+            }
+            if ((lp & 1) != 0) lm_mdvwri("\nCVEC ...", n, cvec);
+            if (lcrash != 0) lm_mdvwri("\nISTATE ...", nctotl, &istate[1]);
+        }
+        public unsafe static void lm_gdvwri(int n, double* x, int inc)
+        {
+            int i;
+            for (i = 0; i < n; i++)
+            {
+                Console.Write($"{*x} ");
+                x += inc;
+                if (i % 6 == 5) Console.Write("\n");
+            }
+            Console.Write("\n");
+        }
+        public unsafe static void set_addr(int i, int l, int* iloc, void* a, int sa, void** ploc)
+        {
+            while (i <= l)
+            {
+                ploc[i] = ((byte*)a) + iloc[i] * sa;
+                i++;
+            }
+        }
+        public unsafe static void dalloc(byte nalg, int n, int nclin, int ncnln, int nctotl, int* iw, double* w, int* litotl, int* lwtotl)
+        {
+            int ladx, laqp, lrho, lslk, lqtg, lwrk, lcsl1, lmax1, lmax2, lslk1,
+                lztg2, ldlam, lcjdx, lrlam, ldslk, lxbwd, lxfwd, lqpdx, lgrad2,
+                lkfree, lcslam, lsigma, lshare, lenaqp = 1000000000, lkactv, lanorm, lqpadx,
+                lg1, lg2, lqptol, liqpst, lnpwrk, lqpwrk, lx1, lx2, lbl, lap, lbu,
+                ldx, lrt, lpx, lzy, lcs1, lcs2;
+            int* loclp = null;
+
+            switch (nalg)
+            {
+                case 1:
+                case 2:
+                    /*
+                    allocate the addresses for  lpcore  and  qpcore
+                    */
+                    lkactv = *litotl + 1;
+                    lkfree = lkactv + n;
+                    *litotl = lkfree + n - 1;
+                    lanorm = *lwtotl + 1;
+                    lap = lanorm + nclin;
+                    lpx = lap + nclin;
+                    lqtg = lpx + n;
+                    lrlam = lqtg + n;
+                    lrt = lrlam + n;
+                    lzy = lrt + nrowrt * ncolrt;
+                    lwrk = lzy + nq * nq;
+                    *lwtotl = lwrk + n - 1;
+                    loclp[0] = lkactv;
+                    loclp[1] = lkfree;
+                    loclp[2] = lanorm;
+                    loclp[3] = lap;
+                    loclp[4] = lpx;
+                    loclp[5] = lqtg;
+                    loclp[6] = lrlam;
+                    loclp[7] = lrt;
+                    loclp[8] = lzy;
+                    loclp[9] = lwrk;
+                    set_addr(0, 1, loclp, iw, sizeof(int), DAS_Sol_ploc);
+                    set_addr(2, 9, loclp, w, sizeof(double), DAS_Sol_ploc);
+                    break;
+                case 3:
+                    /*
+                    allocate the addresses for npcore
+                    */
+                    lkactv = *litotl + 1;
+                    lkfree = lkactv + n;
+                    liqpst = lkfree + n;
+                    *litotl = liqpst + nctotl - 1;
+                    /*
+                    variables used not only by  dnpcore,  but also dlpcore and  dqpcore
+                    */
+                    lanorm = *lwtotl + 1;
+                    lqtg = lanorm + nrowqp;
+                    lrlam = lqtg + n;
+                    lrt = lrlam + n;
+                    lzy = lrt + nrowrt * ncolrt;
+                    loclp[1] = lkactv;
+                    loclp[2] = lkfree;
+                    loclp[3] = lanorm;
+                    loclp[6] = lqtg;
+                    loclp[7] = lrlam;
+                    loclp[8] = lrt;
+                    loclp[9] = lzy;
+                    /*
+                    assign the addresses for the workspace arrays used by  dnpiqp
+                    */
+                    lqpadx = lzy + nq * nq;
+                    lqpdx = lqpadx + nrowqp;
+                    lqpwrk = lqpdx + n;
+                    loclp[4] = lqpadx;
+                    loclp[5] = lqpdx;
+                    loclp[10] = lqpwrk;
+                    /*
+                    assign the addresses for arrays used in  npcore
+                    */
+                    if (ncnln == 0) lenaqp = 0;
+                    if (ncnln > 0) lenaqp = nrowqp * n;
+                    laqp = lqpwrk + n;
+                    ladx = laqp + lenaqp;
+                    lbl = ladx + nrowqp;
+                    lbu = lbl + nctotl;
+                    ldx = lbu + nctotl;
+                    lg1 = ldx + n;
+                    lg2 = lg1 + n;
+                    lqptol = lg2 + n;
+                    lx1 = lqptol + nctotl;
+                    lnpwrk = lx1 + n;
+                    locnp[0] = liqpst;
+                    locnp[1] = laqp;
+                    locnp[2] = ladx;
+                    locnp[3] = lbl;
+                    locnp[4] = lbu;
+                    locnp[5] = ldx;
+                    locnp[6] = lg1;
+                    locnp[7] = lg2;
+                    locnp[8] = lqptol;
+                    locnp[9] = lx1;
+                    locnp[10] = lnpwrk;
+                    lcs1 = lnpwrk + nctotl;
+                    lcs2 = lcs1 + ncnln;
+                    lcsl1 = lcs2 + ncnln;
+                    lcslam = lcsl1 + ncnln;
+                    lcjdx = lcslam + ncnln;
+                    ldlam = lcjdx + ncnln;
+                    ldslk = ldlam + ncnln;
+                    lrho = ldslk + ncnln;
+                    lsigma = lrho + ncnln;
+                    lslk1 = lsigma + ncnln;
+                    lslk = lslk1 + ncnln;
+                    locnp[11] = lcs1;
+                    locnp[12] = lcs2;
+                    locnp[13] = lcsl1;
+                    locnp[14] = lcslam;
+                    locnp[15] = lcjdx;
+                    locnp[16] = ldlam;
+                    locnp[17] = ldslk;
+                    locnp[18] = lrho;
+                    locnp[19] = lsigma;
+                    locnp[20] = lslk1;
+                    locnp[21] = lslk;
+                    *lwtotl = lslk + ncnln - 1;
+                    break;
+                case 4:
+                    /*
+                    allocate the addresses for  lccore
+                    */
+                    lkactv = *litotl + 1;
+                    lkfree = lkactv + n;
+                    *litotl = lkfree + n - 1;
+                    lztg2 = *lwtotl + 1;
+                    loclc[0] = lztg2;
+                    /*
+                    arrays used not only by  dlccore,  but also  dlpcore
+                    */
+                    lanorm = lztg2 + n;
+                    lap = lanorm + nclin;
+                    lpx = lap + nclin;
+                    lqtg = lpx + n;
+                    lrlam = lqtg + n;
+                    lrt = lrlam + n;
+                    lzy = lrt + nrowrt * ncolrt;
+                    lwrk = lzy + nq * nq;
+                    loclp[1] = lkactv;
+                    loclp[2] = lkfree;
+                    loclp[3] = lanorm;
+                    loclp[4] = lap;
+                    loclp[5] = lpx;
+                    loclp[6] = lqtg;
+                    loclp[7] = lrlam;
+                    loclp[8] = lrt;
+                    loclp[9] = lzy;
+                    loclp[10] = lwrk;
+                    lshare = lwrk + n;
+                    /*
+                    assign the addresses of the workspace used by  dlcsrch
+                    this workspace is shared by  dlcappg
+                    */
+                    lx2 = lshare;
+                    lgrad2 = lx2 + n;
+                    lmax1 = lgrad2 + n - 1;
+                    /*
+                    assign the addresses of the workspace used by  dlcappg
+                    this workspace is shared by  dlcsrch
+                    */
+                    lxfwd = lshare;
+                    lxbwd = lxfwd + n;
+                    lmax2 = lxbwd + n - 1;
+                    *lwtotl = Math.Max(lmax1, lmax2);
+                    loclc[1] = lx2;
+                    loclc[2] = lgrad2;
+                    loclc[3] = lxfwd;
+                    loclc[4] = lxbwd;
+                    break;
+            }
+        }
+        public unsafe static void dqpdump(int n, int nrowh, int ncolh, double* cvec, double* hess, double* wrk, double* hx)
+        {
+            int j, i;
+
+            Console.WriteLine("\n\n\n\n\n\nOUTPUT FROM QPDUMP\n******************");
+            lm_mdvwri("\nCVEC ...", n, cvec);
+
+            /*PRINT  HESS  UNLESS IT APPEARS TO BE IMPLICIT. */
+            lm_wmsg("\nNROWH =%6ld NCOLH =%6ld", CL(nrowh), CL(ncolh));
+            if (nrowh > 1 || ncolh > 1)
+            {
+                if (ncolh == 1) lm_mdvwri("\nHESS ...", nrowh, hess);
+                else
+                {
+                    i = Math.Min(ncolh, n);
+                    for (j = 1; j <= i; ++j)
+                    {
+                        lm_wmsg("\nCOLUMN%6ld OF  HESS ...", CL(j));
+                        lm_gdvwri(i, hess + j - 1, CI(nrowh));
+                    }
+                }
+            }
+            /*CALL  QPHESS  TO COMPUTE EACH COLUMN OF THE HESSIAN. */
+            Console.WriteLine("\n\n THE FOLLOWING IS RETURNED BY  QPHESS.");
+            BlasLike.dzerovec(n, wrk);
+            for (j = 1; j <= n; ++j)
+            {
+                wrk[i = j - 1] = 1.0;
+                qphess(n, nrowh, ncolh, j, hess, wrk, hx);
+                lm_wmsg("\nCOLUMN%6ld FROM  QPHESS ...", CL(j));
+                lm_gdvwri(n, hx, 1);
+                wrk[i] = 0.0;
+            }
+        }
+        public unsafe static void qphess(int n, int nrowh, int ncolh, int j, double* hess, double* wrk, double* hx)
+        {
+            Solver.Factorise.dsmxmulv(n, hess, wrk, hx);
+        }
+        public unsafe static short dchkdat(int liwork, int lwork, int litotl, int lwtotl, int nrowa, int n, int nclin, int nctotl, int* istate, int* kactiv, int lcrash, double* bigbnd, double* a, double* bl, double* bu, double* featol, double* x)
+        {
+
+            string id = "VARBL LNCON NLCON ";
+
+            short nerror;
+            int nplin = n + nclin;
+
+            double ftol;
+            double test;
+            int j, k;
+            double b1, b2;
+            //    int l1;
+            bool ok;
+            int was_is;
+
+            /*     CHKDAT  CHECKS THE DATA INPUT TO THE VARIOUS OPTIMIZERS. */
+            /*     THE FOLLOWING QUANTITIES ARE NOT CHECKED... */
+            /*     NROWA, N, NCLIN, NCTOTL */
+            /*     KACTIV */
+            /*     A, X */
+            --x;
+            --featol;
+            --bu;
+            --bl;
+            --kactiv;
+            --istate;
+
+            nerror = 0;
+            /* --------------------------------------------------------------------- 
+            */
+            /*     CHECK THAT THERE IS ENOUGH WORKSPACE TO SOLVE THE PROBLEM. */
+            /* --------------------------------------------------------------------- 
+            */
+            ok = litotl <= liwork && lwtotl <= lwork;
+            if (ok && msg <= 0)
+            {
+                goto L20;
+            }
+            if (msg >= 0)
+                lm_wmsg(
+            "\nWORKSPACE PROVIDED IS     IW(%6ld),  W(%6ld).\nTO SOLVE PROBLEM WE NEED  IW(%6ld),  W(%6ld).",
+                    CL(liwork), CL(lwork), CL(litotl), CL(lwtotl));
+            if (ok)
+                goto L20;
+            ++nerror;
+            if (msg >= 0)
+                Console.WriteLine("\nXXX  NOT ENOUGH WORKSPACE TO SOLVE PROBLEM.");
+            /* --------------------------------------------------------------------- 
+            */
+            /*     CHECK THE BOUNDS ON ALL VARIABLES AND CONSTRAINTS. */
+            /* --------------------------------------------------------------------- 
+            */
+            L20:
+            for (j = 1; j <= (int)nctotl; ++j)
+            {
+                b1 = bl[j];
+                b2 = bu[j];
+                ok = b1 <= b2;
+                if (ok)
+                {
+                    goto L40;
+                }
+                ++nerror;
+                k = j;
+                //      l1 = 1;
+                if (j > (int)n)
+                {
+                    k = j - n;
+                }
+                //   if (j > (int)n)
+                //   {
+                //      l1 = 4;
+                //  }
+                if (j > (int)nplin)
+                {
+                    k -= nclin;
+                }
+                //   if (j > (int)nplin)
+                //   {
+                //      l1 = 7;
+                //  }
+                if (msg >= 0)
+                    lm_wmsg(
+            "\nXXX THE BOUNDS ON %.2s%.2s%.1s%3ld ARE INCONSISTENT BL =%16.7lg BU =%16.7lg",
+                    id, id + 2, id + 4, CL(k), b1,
+                        b2);
+                L40:
+                ;
+            }
+            /* --------------------------------------------------------------------- 
+            */
+            /*     CHECK  BIGBND  AND  FEATOL. */
+            /* --------------------------------------------------------------------- 
+            */
+            ok = *bigbnd > 0;
+            if (ok) goto L60;
+            ++nerror;
+            if (msg >= 0)
+                lm_wmsg("\nXXX BIGBND IS NOT POSITIVE...%20.9lg", *bigbnd);
+            L60:
+            for (j = 1; j <= (int)nctotl; ++j)
+            {
+                ftol = featol[j];
+                test = 1 + ftol;
+                ok = test > 1;
+                if (!ok && msg >= 0)
+                    lm_wmsg(
+            "\n*** WARNING -- FEATOL(%4ld) IS LESS THAN MACHINE PRECISION...%16.6lg",
+                    CL(j), ftol);
+            }
+            /* --------------------------------------------------------------------- 
+            */
+            /*     IF WARM START, CHECK  ISTATE. */
+            /* --------------------------------------------------------------------- 
+            */
+            /* L100: */
+            if (lcrash != 0)
+            {
+                for (j = 1; j <= (int)nplin; ++j)
+                {
+                    was_is = istate[j];
+                    ok = was_is >= -2 && was_is <= 4;
+                    if (!ok)
+                    {
+                        ++nerror;
+                        if (msg >= 0)
+                            lm_wmsg(
+                        "\nXXX COMPONENT%5ld OF ISTATE IS OUT OF RANGE...%10ld",
+                        CL(j), CL(was_is));
+                    }
+                }
+            }
+            return nerror;
+        }
+        public unsafe static void dqpcore(int orthog, int* unitq, int* inform, int* iter, int* itmax, int n, int* nclin, int* nctotl, int* nrowa, int* nrowh, int* ncolh, int* nactiv, int* nfree, int* istate, int* kactiv, int* kfree, double* objqp, double* xnorm, double* a, double* ax, double* bl, double* bu, double* clamda, double* cvec, double* featol, double* hess, double* scale, double* x, int* iw, double* w)
+        {
+
+            /*
+                dqpcore, a subroutine for indefinite quadratic programming.
+                it is assumed that a previous call to either  dlpcore  or  dqpcore
+
+                has defined an initial working set of linear constraints and
+                bounds. istate, kactiv	and  kfree  will have been set
+                accordingly, and the arrays  rt	 and  zy  will contain the TQ
+                factorization of the matrix whose rows are the gradients of the
+                active linear constraints with the columns corresponding to the
+                active bounds removed.	the TQ factorization of the resulting
+                (nactiv by nfree) matrix is  a(free)*q = (0 t),	 where	q  is
+                (nfree by nfree) and  t	 is reverse-triangular.
+                values of istate(j) for the linear constraints.......
+
+                istate(j)
+                ---------
+                0		constraint	j	is not in the working set
+                1		constraint	j	is in the working set at its lower bound
+                2		constraint	j	is in the working set at its upper bound
+                3		constraint	j	is in the working set as an equality
+                4		variable	j	is temporarily fixed at the value x(j)
+                                    the corresponding artificial bound is included in the
+                                    working set (the  TQ  factorization is adjusted accordingly)
+
+                constraint  j  may be violated by as much as  featol(j)
+            */
+            string lprob = "QP";
+            int mstall = 2000;
+
+            int i;
+
+            int iadd, jadd;
+            double alfa;
+            int jdel, kdel;
+            double emax;
+            int ifix;
+            double palfa;
+            int ifail;
+            double condh, bigdx;
+            int isdel = 0;
+            double condt, drmin, anorm, dinky, drmax, hsize;
+            int ncnln, ncolr, ncolz;
+            double pnorm;
+            //	int nrowj;
+            int nhess;
+            bool nullr, stall, uncon;
+            int nclin0, kb;
+            double bigalf, bigbnd, epspt9;
+            double gfixed, alfhit;
+            bool refine;
+            int jdsave, nfixed;
+            bool posdef;
+            int modfyg, negligible;
+            double condmx, atphit, cslast, gfnorm, rdlast, objsiz, snlast;
+            int idummy, issave = 0, msglvl;
+            int jsmlst, ksmlst;
+            double smllst;
+            int nstall, numinf;
+            double ztgnrm;
+            int firstv, hitlow;
+            bool nocurv, renewr, unitpg, zerolm;
+            int modfyr;
+            double bnd;
+            double gtp = 0;
+            --w;
+            --iw;
+            --x;
+            --scale;
+            --featol;
+            --cvec;
+            --clamda;
+            --bu;
+            --bl;
+            --ax;
+            --kfree;
+            --kactiv;
+            --istate;
+
+            /*INITIALIZE */
+            *iter = 0;
+            jadd = 0;
+            jdel = 0;
+            jdsave = 0;
+            nclin0 = Math.Max(*nclin, 1);
+            ncnln = 0;
+            ncolz = *nfree - *nactiv;
+            //	nrowj = 1;
+            nstall = 0;
+            nhess = 0;
+            numinf = 0;
+            msglvl = msg;
+            msg = 0;
+            if (istart == 0) msg = msglvl;
+            bigbnd = parm[0];
+            bigdx = parm[1];
+            epspt9 = parm[3];
+            alfa = 0;
+            condmx = BlasLike.lm_max;
+            drmax = 1;
+            drmin = 1;
+            emax = 0;
+            hsize = 1;
+            firstv = 0;
+            modfyr = 1;
+            modfyg = 1;
+            nocurv = false;
+            nullr = false;
+            posdef = true;
+            refine = false;
+            stall = true;
+            uncon = false;
+            unitpg = false;
+            zerolm = false;
+
+            /*
+            given the  TQ  factorization of the matrix of constraints in the
+            working set, compute the following quantities....
+            (1)	the cholesky factor  r,	 of  z(t)hz  (if  z(t)hz  is not
+                positive definite, find a positive-definite  (ncolr)-th	 order
+                principal submatrix of	z(t)h z,
+            (2)	the  qp	 objective function,
+            (3)	the vector  q(free)(t)g(free),
+            (4)	the vector  g(fixed).
+                use the array  rlam  as temporary work space.
+            */
+            int nhess_conv = nhess;
+            ncolr = dqpcrsh(*unitq, n, ncolz, *nfree, &nhess_conv,
+                nq, *nrowh, *ncolh, nrowrt, &kfree[1], &hsize, hess,
+                pRT, &scale[1], pZY, pRLAM, pWRK);
+            dqpgrad(1, *unitq, n, CN(*nactiv), CN(*nfree), &nhess_conv, nq,
+                CN(*nrowh), CN(*ncolh), jadd, &kactiv[1], &kfree[1], alfa, objqp, &gfixed,
+                gtp, &cvec[1], hess, pPX, pQTG, &scale[1], &x[1], pZY, pWRK, pRLAM);
+            nhess = nhess_conv;
+
+            /*
+            during the main loop, one of three things will happen
+                (i)	the convergence criterion will be satisfied and the
+                    algorithm will terminate.
+                (ii)	a linear constraint will be deleted.
+                (iii)	a direction of search will be computed and a constraint may
+                    be added to the working set (note that a zero step may be taken
+                    along the search direction).
+
+            these computations occur in sections i, ii, and iii of the main loop
+            */
+            while (true)
+            {
+                clocker();
+                /*
+                ******* section i.  test for convergence *******
+                compute the norms of the projected gradient and the gradient with
+                respect to the free variables.
+                */
+                ztgnrm = 0;
+                if (ncolr > 0) ztgnrm = dnrm2vec(ncolr, pQTG);
+                gfnorm = ztgnrm;
+                if (*nfree > 0 && *nactiv > 0) gfnorm = dnrm2vec(*nfree, pQTG);
+
+                /*
+                define small quantities that reflect the magnitude of  c,  x,  h
+                and the matrix of constraints in the working set
+                */
+                objsiz = (BlasLike.lm_eps + Math.Abs(*objqp)) / (BlasLike.lm_eps + *xnorm);
+                anorm = 0;
+                if (*nactiv > 0) anorm = Math.Abs(dtmax);
+                /*Computing MAX */
+                dinky = Math.Max(anorm, objsiz);
+                dinky = Math.Max(epspt9, DAS_Sol_zgfacc) * Math.Max(dinky, gfnorm);
+
+                if (msg >= 80) wdinky("QPCORE", ztgnrm, dinky);
+
+                /*
+                print the details of this iteration
+                use the largest and smallest diagonals of r to estimate the
+                condition number of the projected hessian matrix
+                */
+                var dtmax_c = dtmax;
+                var dtmin_c = dtmin;
+                condt = dprotdiv(&dtmax_c, &dtmin_c, &ifail);
+                dtmax = dtmax_c;
+                dtmin = dtmin_c;
+                if (ifail != 0 && dtmax == 0) condt = BlasLike.lm_max;
+                if (ncolr > 0) BlasLike.dxminmax(ncolr, pRT, nrowrt + 1, &drmax, &drmin);
+                condh = dprotdiv(&drmax, &drmin, &ifail);
+                if (ifail != 0 && drmax == 0) condh = BlasLike.lm_max;
+                if (condh >= BlasLike.lm_rootmax) condh = BlasLike.lm_max;
+                if (condh < BlasLike.lm_rootmax) condh *= condh;
+                var nrowrt_c = nrowrt;
+                dqpprt(orthog, isdel, *iter, jadd, jdel, *nactiv, ncolz, *nfree,
+                    n, *nclin, *nrowa, *&nrowrt_c, nhess, &
+                    istate[1], &kfree[1], alfa, condh, condt, *objqp, gfnorm,
+                    ztgnrm, emax, a, pRT, &x[1], pWRK, pAP);
+                nrowrt = nrowrt_c;
+                jadd = 0;
+                jdel = 0;
+                negligible = (ztgnrm <= dinky) ? 1 : 0;
+                if (posdef)
+                {
+                    if (negligible != 0 || (uncon && (ztgnrm <= Math.Sqrt(dinky) || refine)))
+                    {
+                        /*
+                        the projected gradient is negligible and the projected hessian
+                        is positive definite.  if  r  is not complete it must be
+                        expanded.  otherwise, if the current point is not optimal,
+                        a constraint must be deleted from the working set
+                        */
+                        unitpg = negligible != 0;
+                        alfa = 0;
+                        uncon = false;
+                        refine = false;
+                        jdel = -(ncolr + 1);
+                        if (ncolr >= ncolz)
+                        {
+                            dgetlamd(lprob, n, *nactiv, ncolz, *nfree, *nrowa, nrowrt,
+                                &jsmlst, &ksmlst, &smllst, &istate[1], &kactiv[1], a,
+                                pANORM, pQTG, pRLAM, pRT);
+
+                            /*
+                            test for convergence.  if the least (adjusted) multiplier is
+                            greater than the small positive quantity  dinky,  an adequate
+                            solution has been found
+                            */
+                            if (smllst > dinky)
+                            {
+                                //AddLog((char*)"smllst %20.8e dinky %20.8e\n",smllst,dinky);
+                                /*OPTIMAL QP SOLUTION FOUND*/
+                                i = 0;
+                                break;
+                            }
+
+                            /*
+                            ***** section ii.  delete a constraint from the working set *****
+                            delete the constraint with the least (adjusted) multiplier
+                            first check if there are any tiny multipliers
+                            */
+                            if (smllst > -dinky) zerolm = true;
+                            jdel = jsmlst;
+                            jdsave = jsmlst;
+                            kdel = ksmlst;
+                            isdel = istate[jdel];
+                            issave = isdel;
+                            istate[jdel] = 0;
+
+                            /*update the TQ factorization of the matrix of constraints in the working set*/
+
+                            ddelcon(modfyg != 0, orthog != 0, *unitq, CN(jdel), CN(kdel),
+                                CN(*nactiv), CN(ncolz), CN(*nfree), n,
+                                CN(nq), CN(*nrowa), CN(nrowrt), &kactiv[1], &kfree[1], a,
+                                pQTG, pRT, pZY);
+                            ++ncolz;
+                            if (jdel <= (int)n) ++(*nfree);
+                            else --(*nactiv);
+                        }
+
+                        /*
+                        the projected hessian is expanded by a row and column. compute
+                        the elements of the new column of the cholesky factor r
+                        use the vector p as temporary work space
+                        */
+                        renewr = true;
+                        ++ncolr;
+                        var nq_ccc = nq;
+                        var nrowrt_ccc = nrowrt;
+                        dqpcolr(&nocurv, &posdef, &renewr, unitq, n, &ncolr,
+                            nfree, &nq_ccc, nrowh, ncolh, &nrowrt_ccc, &nhess, &kfree[1], &
+                            cslast, &snlast, &drmax, &emax, &hsize, &rdlast, hess,
+                            pRT, &scale[1], pZY, pPX, pWRK);
+                        nq = nq_ccc;
+                        nrowrt = nrowrt_ccc;
+                        /*REPEAT THE MAIN LOOP*/
+                        continue;
+                    }
+                    else if ((refine = uncon)) unitpg = false;
+                }
+                /*
+                ******* section iii.  compute the search direction *******
+                first, check for a weak local minimum. exit if the norm of the
+                projected gradient is small and the curvature along p is not
+                significant.  also, check for too many iterations and update the
+                iteration count.  the iteration counter is only updated when a
+                search direction is computed
+                */
+                if ((negligible != 0 && ncolr == ncolz && nocurv) || (zerolm && nocurv))
+                {
+                    //	AddLog("%d\tobjsiz ztgnrm gfnorm dinky%-.10e %-.10e %-.10e %-.10e\n",
+                    //		*iter,objsiz,ztgnrm,gfnorm,dinky);
+                    //	AddLog("\tnocurv %ld\n",nocurv);
+                    /*WEAK LOCAL MINIMUM*/
+                    i = 1;
+                    break;
+                }
+                if (*iter >= *itmax)
+                {
+                    /*too many iterations*/
+                    i = 5;
+                    break;
+                }
+
+                ++(*iter);
+                if (*iter >= istart) msg = msglvl;
+                var nq_c = nq;
+                nrowrt_c = nrowrt;
+                dfindp(&nullr, &unitpg, unitq, n, nclin, &nq_c, nrowa, &
+                    nrowrt_c, &ncolr, &ncolz, nfree, &istate[1], &kfree[1],
+                    negligible != 0, &gtp, &pnorm, &rdlast, a, pAP,
+                    pPX, pQTG, pRT, pWRK, pZY, pWRK);
+                nq = nq_c;
+                nrowrt = nrowrt_c;
+
+                /*
+                if a constraint has just been deleted and the projected gradient
+                is small (this can only occur here when the projected hessian is
+                indefinite), the sign of  p  may be incorrect because of rounding
+                errors in the computation of  ztg.  fix the sign of  p	by
+                forcing it to satisfy the constraint that was just deleted
+                */
+                if ((jdsave > 0 && negligible != 0) || zerolm) dqpchkp(n, CN(*nclin), issave, jdsave, pAP, pPX);
+
+                /*
+                find the constraint we bump into along p
+                update x and a*x if the step alfa is nonzero
+                alfhit	is initialized to  bigalf.  if it remains that way after
+                the call to bndalf, it will be regarded as infinite
+                */
+                bigalf = dprotdiv(&bigdx, &pnorm, &ifail);
+                if (ifail != 0 && bigdx == 0) bigalf = BlasLike.lm_max;
+                dbndalf(firstv != 0, &hitlow, &istate[1], &jadd, n,
+                    CN(*nctotl), numinf, &alfhit, &palfa, &atphit, &bigalf, &
+                    bigbnd, &pnorm, pANORM, pAP, &ax[1], &bl[1], &bu[1], &
+                    featol[1], pPX, &x[1]);
+
+                /*
+                if the projected hessian is positive definite, the step
+                alfa = 1.0 will be the step to the minimum of the quadratic
+                function on the current subspace
+                */
+                alfa = 1;
+
+                /*
+                if the step to the minimum on the subspace is less than the
+                distance to the nearest constraint,  the constraint is not added
+                to the working set
+                */
+                uncon = palfa > 1 && posdef;
+                if (uncon) jadd = 0;
+                else alfa = alfhit;
+                /*check for an unbounded solution*/
+                if (alfa >= bigalf)
+                {
+                    /*unbounded QP*/
+                    i = 2;
+                    break;
+                }
+                /*test if the change in	 x  is negligible*/
+                stall = Math.Abs(alfa * pnorm) <= epspt9 * *xnorm;
+                if (stall)
+                {
+                    /*
+                    take a zero step
+                    exit if more than  50  iterations occur without changing  x
+                    if such an exit is made when there are some near-zero
+                    multipliers, the user should call a separate routine that
+                    checks the solution
+                    */
+                    alfa = 0;
+                    ++nstall;
+                    if (nstall > mstall)
+                    {
+                        /*too many iterations without changing x*/
+                        i = zerolm ? 3 : 4;
+                        break;
+                    }
+                }
+                else
+                {
+                    /*
+                    compute the new value of the qp objective function.  if its
+                    value has not increased,  update  objqp,  q(free)(t)g(free)  and
+                    g(fixed). an increase in the objective can occur only after a
+                    move along a direction of negative curvature from a point with
+                    tiny multipliers. use the array	 rlam  as temporary storage
+                    */
+                    if (dqpgrad(2, *unitq, n, CN(*nactiv), CN(*nfree), &nhess_conv, nq,
+                        CN(*nrowh), CN(*ncolh), jadd, &kactiv[1], &kfree[1], alfa, objqp, &
+                        gfixed, gtp, &cvec[1], hess, pPX, pQTG, &
+                        scale[1], &x[1], pZY, pWRK, pRLAM) < -BlasLike.lm_eps)
+                    {
+                        nhess = nhess_conv;
+                        /*weak local minimum*/
+                        //		AddLog("PLACE 2\n");
+                        i = 1;
+                        break;
+                    }
+                    nhess = nhess_conv;
+                    /*
+                    change	x  to  x + alfa*p.  update  ax	also
+                    we no longer need to remember jdsave, the last constraint deleted
+                    */
+                    nstall = 0;
+                    jdsave = 0;
+                    zerolm = false;
+                    BlasLike.daxpy(n, alfa, pPX, 1, &x[1], 1);
+                    if (*nclin > 0) BlasLike.daxpy(*nclin, alfa, pAP, 1, &ax[1], 1);
+                    *xnorm = dnrm2vec(n, &x[1]);
+                }
+
+                /*if an unconstrained step was taken, repeat the main loop*/
+                if (uncon) continue;
+
+                /*add a constraint to the working set. update  istate*/
+                if (hitlow != 0) istate[jadd] = 1;
+                else istate[jadd] = 2;
+                if (bl[jadd] == bu[jadd]) istate[jadd] = 3;
+
+                /*
+                if a bound is to be added, move x exactly onto it, except when
+                a negative step was taken.  (bndalf  may have had to move to some
+                other closer constraint.)
+                */
+                iadd = jadd - n;
+                if (jadd <= (int)n)
+                {
+                    if (hitlow != 0) bnd = bl[jadd];
+                    else bnd = bu[jadd];
+                    if (alfa >= 0) x[jadd] = bnd;
+                    i = *nfree;
+                    for (ifix = 1; ifix <= (int)i; ++ifix) if (kfree[ifix] == jadd) break;
+                }
+                /*
+                update the TQ factors of the matrix of constraints in the
+                working set.  use the array  p	as temporary work space
+                */
+                var nq_cc = nq;
+                var nrowrt_cc = nrowrt;
+                daddcon(modfyg != 0, modfyr != 0, orthog != 0, unitq, &ifix, &iadd, &jadd,
+                    nactiv, &ncolr, &ncolz, nfree, n, &nq_cc, nrowa, &nrowrt_cc,
+                    &kfree[1], &condmx, &cslast, &snlast, a, pQTG,
+                    pRT, pZY, pWRK, pPX);
+                nq = nq_cc;
+                nrowrt_c = nrowrt_cc;
+                --ncolr;
+                --ncolz;
+                nfixed = n - *nfree;
+                if (nfixed != 0)
+                {
+                    kb = *nactiv + nfixed;
+                    i = nfixed;
+                    for (idummy = 1; idummy <= nfixed; ++idummy)
+                    {
+                        kactiv[kb + 1] = kactiv[kb];
+                        --kb;
+                    }
+                }
+                if (jadd <= (int)n)
+                {
+                    /*
+                    add a bound.  if stabilized eliminations are being used to update
+                    the  TQ	 factorization,	 recompute the component of the gradient
+                    corresponding to the newly fixed variable
+                    use the array  p  as temporary work space
+                    */
+                    --(*nfree);
+                    kactiv[*nactiv + 1] = jadd;
+                    int nhess_conv_c = nhess;
+                    if (orthog == 0)
+                    {
+                        dqpgrad(3, *unitq, n, CN(*nactiv), CN(*nfree), &nhess_conv, nq,
+                            CN(*nrowh), CN(*ncolh), jadd, &kactiv[1], &kfree[1], alfa, objqp,
+                            &pQTG[*nfree], gtp, &cvec[1], hess, pPX, pQTG, &
+                            scale[1], &x[1], pZY, pWRK, pPX);
+                        nhess = nhess_conv_c;
+                    }
+                }
+                else
+                {
+                    /*add a general linear constraint*/
+                    ++(*nactiv);
+                    kactiv[*nactiv] = iadd;
+                }
+
+                /*
+                repeat the main loop if the projected hessian that was used to
+                compute this search direction was positive definite
+                */
+                if (ncolr == 0) posdef = true;
+                if (ncolr == 0) emax = 0;
+
+                if (!posdef)
+                    /*
+                    the projected hessian was not sufficiently positive definite
+                    before the constraint was added.  either compute the true value
+                    of the last diagonal of	 r  or	recompute the whole of its last
+                    column. use the array  rlam  as temporary work space
+                    */
+                    nq_cc = nq;
+                nrowrt_cc = nrowrt;
+                dqpcolr(&nocurv, &posdef, &renewr, unitq, n, &ncolr,
+                    nfree, &nq_cc, nrowh, ncolh, &nrowrt_cc, &nhess, &
+                    kfree[1], &cslast, &snlast, &drmax, &emax, &hsize, &rdlast,
+                    hess, pRT, &scale[1], pZY, pRLAM,
+                    pWRK);
+                nq = nq_cc;
+                nrowrt = nrowrt_cc;
+                /*.........................END OF MAIN LOOP............................*/
+            }
+
+
+            *inform = i;
+            /*PRINT FULL SOLUTION*/
+            msg = msglvl;
+            if (msg >= 1) wrexit(lprob, i, *iter);
+            if (i > 0) dgetlamd(lprob, n, *nactiv, ncolz, *nfree, *nrowa,
+                     nrowrt, &jsmlst, &ksmlst, &smllst, &istate[1], &
+                     kactiv[1], a, pANORM, pQTG, pRLAM, pRT);
+            dprtsol(*nfree, *nrowa, n, *nclin, ncnln, *nctotl, bigbnd,
+                *nactiv, &istate[1], &kactiv[1], a,
+                &bl[1], &bu[1], &x[1], &clamda[1], pRLAM, &x[1]);
+        }
+        public unsafe static int dqpcrsh(int unitq, int n, int ncolz, int nfree, int* nhess, int Nq, int nrowh, int ncolh, int Nrowrt, int* kfree, double* hsize, double* hess, double* rt, double* scale, double* zy, double* hz1, double* wrk)
+        {
+
+            /*
+                 dqpcrsh  computes the cholesky factor  r  of the projected hessian
+                 z(t) h z,  given  z  and its dimensions  nfree by ncolz
+                 if the projected hessian is indefinite, a smaller cholesky
+                 factorization  r1(t) r1 = z1(t) h z1  is returned, where  z1  is
+                 composed of  ncolr  columns of  z.  column interchanges are
+                 used to maximize  ncolr.  these are applied to  z
+            */
+            int zy_offset;
+            double dmin_, dmax_, d, t;
+            int i, j, k, kmax, ksave, jthcol, ncolr;
+
+
+            if (ncolz == 0) return 0;
+            --wrk;
+            zy_offset = Nq + 1;
+            zy -= zy_offset;
+            --scale;
+            rt -= Nrowrt + 1;
+            --kfree;
+            ncolr = 0;
+            /*
+            compute  z(t) h z  and store the upper-triangular symmetric part
+            in the first  ncolz  columns of  rt
+            */
+            for (k = 1; k <= ncolz; ++k)
+            {
+
+                BlasLike.dzerovec(n, &wrk[1]);
+                if (unitq!=0)
+                {
+                    /* expand the column of  z  into an  n-vector */
+                    for (i = 1; i <= nfree; ++i)
+                    {
+                        j = kfree[i];
+                        wrk[j] = zy[i + k * Nq];
+                    }
+                    if (scldqp) Factorise.ddmxmulv(n, &scale[1], 1, &wrk[1], 1);
+                    jthcol = 0;
+                }
+                else
+                {
+                    /*
+                        only bounds are in the working set.  the  k-th column of  z is
+                        just a column of the identity matrix
+                    */
+                    jthcol = kfree[k];
+                    wrk[jthcol] = 1;
+                }
+                /*set  rt(*,k)  =  top of   h * (column of  z)*/
+                qphess(n, nrowh, ncolh, jthcol, hess, &wrk[1], hz1);
+                ++(*nhess);
+                if (unitq!=0 && scldqp) BlasLike.dscalvec(n, scale[jthcol], hz1);
+                if (scldqp) Factorise.ddmxmulv(n, &scale[1], 1, hz1, 1);
+                dzyprod(4, n, nfree, ncolz, nfree, Nq, unitq, &kfree[1], &kfree[1],
+                    hz1, &zy[zy_offset], &wrk[1]);
+                BlasLike.dcopyvec(ncolz, hz1, &rt[k * Nrowrt + 1]);
+                /*update an estimate of the size of the projected hessian*/
+                t = Math.Abs(rt[k + k * Nrowrt]);
+                if (t > *hsize) *hsize = t;
+            }
+            /*
+                 form the cholesky factorization  r(t) r  =  z(t) h z  as far as
+                 possible, using symmetric row and column interchanges
+            */
+            dmin_ = BlasLike.lm_eps * *hsize;
+            for (j = 1; j <= ncolz; ++j)
+            {
+                /*FIND THE MAXIMUM REMAINING DIAGONAL*/
+                kmax = j;
+                dmax_ = rt[j + j * Nrowrt];
+                for (k = j; k <= ncolz; ++k)
+                {
+                    d = rt[k + k * Nrowrt];
+                    if (dmax_ < d)
+                    {
+                        dmax_ = d;
+                        kmax = k;
+                    }
+                }
+                /*see if the diagonal is big enough*/
+                if (dmax_ <= dmin_) break;
+                ncolr = j;
+                /*permute the columns of z*/
+                if (kmax != j)
+                {
+                    if (unitq!=0)
+                    {
+                        BlasLike.dcopyvec(nfree, &zy[kmax * Nq + 1], &wrk[1]);
+                        BlasLike.dcopyvec(nfree, &zy[j * Nq + 1], &zy[kmax * Nq + 1]);
+                        BlasLike.dcopyvec(nfree, &wrk[1], &zy[j * Nq + 1]);
+                    }
+                    else
+                    {
+                        /*Z is not stored explicitly*/
+                        ksave = kfree[kmax];
+                        kfree[kmax] = kfree[j];
+                        kfree[j] = ksave;
+                    }
+                    /*interchange rows and columns of the projected hessian*/
+//#if 1
+			BlasLike.dswapvec( j, &rt[1+kmax*Nrowrt], &rt[1+j*Nrowrt]);
+			BlasLike.dswap(kmax-j+1,&rt[j+kmax*Nrowrt], 1, &rt[j+j*Nrowrt], Nrowrt );
+			BlasLike.dswap(ncolz+1-kmax,&rt[kmax+kmax*Nrowrt], Nrowrt, &rt[j+kmax*Nrowrt], Nrowrt );
+/*#else
+                    for (i = 1; i <= j; ++i)
+                    {
+                        t = rt[i + kmax * Nrowrt];
+                        rt[i + kmax * Nrowrt] = rt[i + j * Nrowrt];
+                        rt[i + j * Nrowrt] = t;
+                    }
+                    for (k = j; k <= kmax; ++k)
+                    {
+                        t = rt[k + kmax * Nrowrt];
+                        rt[k + kmax * Nrowrt] = rt[j + k * Nrowrt];
+                        rt[j + k * Nrowrt] = t;
+                    }
+                    for (k = kmax; k <= ncolz; ++k)
+                    {
+                        t = rt[kmax + k * Nrowrt];
+                        rt[kmax + k * Nrowrt] = rt[j + k * Nrowrt];
+                        rt[j + k * Nrowrt] = t;
+                    }
+#endif*/
+                    rt[kmax + kmax * Nrowrt] = rt[j + j * Nrowrt];
+                }
+                /*set the diagonal element of R*/
+                d = Math.Sqrt(dmax_);
+                rt[j + j * Nrowrt] = d;
+                if (j == ncolz) continue;
+                /*
+                set the above-diagonal elements of the k-th row of  r,
+                and update the elements of all remaining rows
+                */
+                i = j + 1;
+                for (k = i; k <= ncolz; ++k)
+                {
+                    t = rt[j + k * Nrowrt] / d;
+                    rt[j + k * Nrowrt] = t;
+                    /*R(I,K)  =  R(I,K)  - T * R(J,I),   I = i, k. */
+                    if (t != 0) BlasLike.daxpy(k - j, -t, &rt[j + i * Nrowrt], Nrowrt, &rt[i + k * Nrowrt], 1);
+                }
+            }
+            if (ncolr != ncolz && msg >= 80)
+                lm_wmsg("\n//QPCRSH//  INDEFINITE PROJECTED HESSIAN.\n//QPCRSH// NCOLR=%6ld      NCOLZ=%6ld",
+                    CL(ncolr), CL(ncolz));
+            return ncolr;
+        }
 
     }
 }

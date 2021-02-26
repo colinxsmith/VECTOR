@@ -1162,6 +1162,12 @@ namespace Solver
             for (i = 1, iS = 0, ix = 0; i <= n; i++, ix++, iS += i)
                 y[i - 1 + ystart] = BlasLike.ddot(i, S, -1, x, -1, iS + 1 - i) + BlasLike.didot(n - i, S, i + 1, x, 1, i + iS, 1 + ix);
         }
+        public unsafe static void dsmxmulv(int n, double* S, double* x, double* y)
+        {
+            int i, iS, ix;//This needed change to be compatable with BLAS ddot
+            for (i = 1, iS = 0, ix = 0; i <= n; i++, ix++, iS += i)
+                y[i - 1] = BlasLike.ddot(i, S + 1 - i, -1, x, -1) + BlasLike.didot(n - i, S + i, i + 1, x + ix, 1);
+        }
         public static void dsmxmulvT(int n, double[] S, double[] x, double[] y, int ystart = 0)
         {
             int i, iS, ix;
@@ -1258,6 +1264,20 @@ namespace Solver
             {
                 if (atran) for (int i = 0; i < n; i++) y[i + ystart] = BlasLike.ddot(m, x, 1, A, 1, xstart, i * m + astart);
                 else for (int i = 0; i < n; i++) y[i + ystart] = BlasLike.ddot(m, x, 1, A, n, xstart, i + astart);
+            }
+        }
+        public unsafe static
+void ddmxmulv(int n, double* d, int incd, double* x, int incx)
+        {
+            if (n != 0)
+            {
+                if (incd == 0 && incx != 0) BlasLike.dscal(n, d[0], x, incx);
+                else while (n-- > 0)
+                    {
+                        *x *= *d;
+                        x += incx;
+                        d += incd;
+                    }
             }
         }
     }
