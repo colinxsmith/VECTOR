@@ -3,7 +3,7 @@ using Blas;
 using System.Diagnostics;
 namespace ActiveSet
 {
-    public class Linear
+    public class Optimise
     {
         public static int msg;
         public static int istart;
@@ -52,7 +52,7 @@ namespace ActiveSet
             return timeaquired;
         }
         public unsafe static void dlpcore(bool lp, int minsum, bool orthog, bool* unitq, int vertex, int* inform, int* iter,
-                int* itmax, byte lcrash, int n, int* nclin, int* nctotl, int* nrowa, int* nactiv,
+                int itmax, byte lcrash, int n, int* nclin, int* nctotl, int* nrowa, int* nactiv,
                 int* nfree, int* numinf, int* istate, int* kactiv, int* kfree, double* obj, double* xnorm,
                 double* a, double* ax, double* bl, double* bu, double* clamda, double* cvec, double* featol, double* x, int* iw, double* w)
         {
@@ -348,7 +348,7 @@ namespace ActiveSet
         /* --------------------------------------------------------------------- 
         */
         L100:
-            if (*iter >= *itmax)
+            if (*iter >= itmax)
             {
                 goto L400;
             }

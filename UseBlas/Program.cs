@@ -754,6 +754,32 @@ namespace UseBlas
                 Ordering.Order.bound_reorganise(0, n, nn, m, xx);
                 Ordering.Order.Display(xx, "Reset");
             }
+            {
+      /*          unsafe
+                {
+                var n = 10;
+                var m = 1;
+                double[] c = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+                double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+                double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
+                double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+                var lp = true;
+                var minsum = 0;
+                var itmax = 2000;
+                var orthog = true;
+                    var unitq=true;
+                    var vertex=1;
+                    var inform=0;
+                    var iter=1;
+                    var lcrash=(byte)1;
+                    var nclin=m;
+                    var nctotl=n+m;
+                    var nrowa=m;
+                    var nactiv=0;
+
+                    ActiveSet.Linear.dlpcore(lp, minsum, orthog, &unitq, vertex, &inform, &iter, itmax, lcrash, n, &nclin, &nctotl, &nrowa, &nactiv, nfree, numinf, istate, kactiv, kfree, obj, xnorm, A, ax, L, U, clambda, cvec, featol, x, iw, w);
+                }*/
+            }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
             {
