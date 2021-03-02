@@ -759,8 +759,8 @@ namespace UseBlas
                 {
                     var n = 10;
                     var m = 1;
-                    var x = new double[n];
-                    double[] c = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+                    double[] x = { 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1 };
+                    double[] c = { 1, 2, 3, 4, 5, 6, 17, 8, 9, 10 };
                     double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
                     double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
                     double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
@@ -793,6 +793,7 @@ namespace UseBlas
                     BlasLike.dsetvec(n + m, 0, lambda);
                     BlasLike.dsetvec(n + m, featol, lambda, n + m);
                     short ifail = 89;
+                    short back;
                     fixed (int* pistate = istate)
                     fixed (double* plambda = lambda)
                     fixed (double* pA = A)
@@ -801,9 +802,10 @@ namespace UseBlas
                     fixed (double* pc = c)
                     fixed (double* px = x)
                     fixed (double* phess = hess)
-                        ActiveSet.Optimise.dqpsol(itmax, msglvl, n, m, n + m, m,
+                        back = ActiveSet.Optimise.dqpsol(itmax, msglvl, n, m, n + m, m,
                         n + n, 1, &bigbnd, pA, pL, pU, pc, plambda + n + m, phess, cold, lp, orthog, px,
                         pistate, &iter, &obj, plambda, pistate + n + m, n + n, plambda + (n + m + n + m), lwrk, ifail);
+                    Console.WriteLine($"back is {back} {BlasLike.ddotvec(n,x,c)}");
                 }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
