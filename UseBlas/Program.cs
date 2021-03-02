@@ -787,7 +787,7 @@ namespace UseBlas
                     var bigbnd = 1e10;
                     short msglvl = 1000;
                     var istate = new int[n + m + n + n];
-                    var lwrk = 2 * (n * (n + 2) + m) + 1;
+                    var lwrk = 2 * (n * (n + 2) + m);
                     Console.WriteLine($"work {lwrk} {lwrk + 2 * (n + m)}");
                     var lambda = new double[lwrk + n + m + n + m];
                     BlasLike.dsetvec(n + m, 0, lambda);
