@@ -755,30 +755,56 @@ namespace UseBlas
                 Ordering.Order.Display(xx, "Reset");
             }
             {
-      /*          unsafe
+                unsafe
                 {
-                var n = 10;
-                var m = 1;
-                double[] c = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-                double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-                double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
-                double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-                var lp = true;
-                var minsum = 0;
-                var itmax = 2000;
-                var orthog = true;
-                    var unitq=true;
-                    var vertex=1;
-                    var inform=0;
-                    var iter=1;
-                    var lcrash=(byte)1;
-                    var nclin=m;
-                    var nctotl=n+m;
-                    var nrowa=m;
-                    var nactiv=0;
-
-                    ActiveSet.Linear.dlpcore(lp, minsum, orthog, &unitq, vertex, &inform, &iter, itmax, lcrash, n, &nclin, &nctotl, &nrowa, &nactiv, nfree, numinf, istate, kactiv, kfree, obj, xnorm, A, ax, L, U, clambda, cvec, featol, x, iw, w);
-                }*/
+                    var n = 10;
+                    var m = 1;
+                    var x = new double[n];
+                    double[] c = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+                    double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+                    double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
+                    double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+                    double[] hess ={1,
+                                    0,1,
+                                    0,0,1,
+                                    0,0,0,1,
+                                    0,0,0,0,1,
+                                    0,0,0,0,0,1,
+                                    0,0,0,0,0,0,1,
+                                    0,0,0,0,0,0,0,1,
+                                    0,0,0,0,0,0,0,0,1,
+                                    0,0,0,0,0,0,0,0,0,1};
+                    var lp = 1;
+                    var itmax = (short)2000;
+                    var orthog = 1;
+                    short iter = 1000;
+                    var nclin = m;
+                    var nctotl = n + m;
+                    var nrowa = m;
+                    var obj = 1.0;
+                    var featol = 1e-8;
+                    int cold = 1;
+                    var bigbnd = 1e10;
+                    short msglvl = 1000;
+                    var istate = new int[n + m + n + n];
+                    var lwrk = 2 * (n * (n + 2) + m) + 1;
+                    Console.WriteLine($"work {lwrk} {lwrk + 2 * (n + m)}");
+                    var lambda = new double[lwrk + n + m + n + m];
+                    BlasLike.dsetvec(n + m, 0, lambda);
+                    BlasLike.dsetvec(n + m, featol, lambda, n + m);
+                    short ifail = 89;
+                    fixed (int* pistate = istate)
+                    fixed (double* plambda = lambda)
+                    fixed (double* pA = A)
+                    fixed (double* pL = L)
+                    fixed (double* pU = U)
+                    fixed (double* pc = c)
+                    fixed (double* px = x)
+                    fixed (double* phess = hess)
+                        ActiveSet.Optimise.dqpsol(itmax, msglvl, n, m, n + m, m,
+                        n + n, 1, &bigbnd, pA, pL, pU, pc, plambda + n + m, phess, cold, lp, orthog, px,
+                        pistate, &iter, &obj, plambda, pistate + n + m, n + n, plambda + (n + m + n + m), lwrk, ifail);
+                }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry

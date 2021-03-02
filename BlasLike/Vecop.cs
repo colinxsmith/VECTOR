@@ -737,16 +737,16 @@ namespace Blas
         {
             return ddot(n, a, 1, b, 1);
         }
-        public static void dset(int n, double a, double[] x, int ix)
+        public static void dset(int n, double a, double[] x, int ix,int xstart=0)
         {
             for (int i = 0, iix = ix < 0 ? -(n - 1) * ix : 0; i < n; i++, iix += ix)
             {
-                x[iix] = a;
+                x[iix+xstart] = a;
             }
         }
-        public static void dsetvec(int n, double a, double[] x)
+        public static void dsetvec(int n, double a, double[] x,int xstart=0)
         {
-            dset(n, a, x, 1);
+            dset(n, a, x, 1,xstart);
         }
         public static void dneg(int n, double[] x, int ix, int xstart = 0)
         {
@@ -759,6 +759,11 @@ namespace Blas
                 x[iix] = -x[iix];
         }
         public static void dnegvec(int n, double[] x)
+        {
+            for (int i = 0; i < n; ++i)
+                x[i] = -x[i];
+        }
+        public unsafe static void dnegvec(int n, double* x)
         {
             for (int i = 0; i < n; ++i)
                 x[i] = -x[i];
