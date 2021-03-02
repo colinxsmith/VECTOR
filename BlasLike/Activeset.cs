@@ -23,9 +23,7 @@ namespace ActiveSet
         public static int msg;
         public static bool scldqp;
         public static int nrowqp;
-        public unsafe static int* pKACTV;
         public static int[] KACTV;
-        public unsafe static int* pKFREE;
         public static int[] KFREE;
         public unsafe static int[] loclc;
         public unsafe static int[] locnp;
@@ -4045,12 +4043,14 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
             fixed (double* pWRK = WRK)
+            fixed (int* pKACTV = KACTV)
                 if (msglvl == 99)
                     dqpdump(n, nrowh, ncolh, &cvec[1], hess, pWRK, pPX);
 
-            nerror = dchkdat(leniw, lenw, litotl, lwtotl, nrowa, n, nclin,
-                    nctotl, &istate[1], pKACTV, lcrash,
-                    bigbnd, a, &bl[1], &bu[1], &featol[1], &x[1]);
+            fixed (int* pKACTV = KACTV)
+                nerror = dchkdat(leniw, lenw, litotl, lwtotl, nrowa, n, nclin,
+                        nctotl, &istate[1], pKACTV, lcrash,
+                        bigbnd, a, &bl[1], &bu[1], &featol[1], &x[1]);
             *iter = 0;
             if (nerror != 0)
             {
@@ -4074,11 +4074,13 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             problem
             ---------------------------------------------------------------------
             */
-            dlpcore((lp & 1) != 0, minsum, orthog != 0, &unitq, vertex, &inform, &iter_,
-            itmx, lcrash, n, &nclin, &nctotl, &nrowa, &nactiv, &nfree, &numinf,
-                &istate[1], pKACTV, pKFREE, obj, &xnorm, a, &
-                w[lax], &bl[1], &bu[1], &clamda[1], &cvec[1], &featol[1], &x[1], &
-                iw[1], &w[1]);
+            fixed (int* pKFREE = KFREE)
+            fixed (int* pKACTV = KACTV)
+                dlpcore((lp & 1) != 0, minsum, orthog != 0, &unitq, vertex, &inform, &iter_,
+                itmx, lcrash, n, &nclin, &nctotl, &nrowa, &nactiv, &nfree, &numinf,
+                    &istate[1], pKACTV, pKFREE, obj, &xnorm, a, &
+                    w[lax], &bl[1], &bu[1], &clamda[1], &cvec[1], &featol[1], &x[1], &
+                    iw[1], &w[1]);
             *iter = (short)iter_;
             if (lp != 0)
             {
@@ -4100,10 +4102,12 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 */
                 istart = 0;
                 var nrowrt_c = nrowrt;
-                dqpcore(orthog, &unitq, &inform, &iter_, &itmx, n, &nclin, &nctotl,
-                        &nrowrt_c, &nrowh, &ncolh, &nactiv, &nfree, &istate[1],
-                        pKACTV, pKFREE, obj, &xnorm, a, &w[lax], &bl[1], &bu[1], &clamda[1], &cvec[1], &featol[1], hess,
-                        &w[lscale], &x[1], &iw[1], &w[1]);
+                fixed (int* pKACTV = KACTV)
+                fixed (int* pKFREE = KFREE)
+                    dqpcore(orthog, &unitq, &inform, &iter_, &itmx, n, &nclin, &nctotl,
+                            &nrowrt_c, &nrowh, &ncolh, &nactiv, &nfree, &istate[1],
+                            pKACTV, pKFREE, obj, &xnorm, a, &w[lax], &bl[1], &bu[1], &clamda[1], &cvec[1], &featol[1], hess,
+                            &w[lscale], &x[1], &iw[1], &w[1]);
                 nrowrt = nrowrt_c;
                 *iter = (short)iter_;
             }
@@ -4235,6 +4239,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                     lkactv = *litotl + 1;
                     KACTV = new int[n];
                     lkfree = lkactv + n;
+                    KFREE = new int[n - 1];
                     *litotl = lkfree + n - 1;
                     lanorm = *lwtotl + 1;
                     ANORM = new double[nclin];
@@ -4251,7 +4256,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                     lzy = lrt + nrowrt * ncolrt;
                     ZY = new double[nq * nq];
                     lwrk = lzy + nq * nq;
-
+                    WRK = new double[n - 1];
                     *lwtotl = lwrk + n - 1;
                     loclp[0] = lkactv;
                     loclp[1] = lkfree;
@@ -4817,7 +4822,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 fixed (double* pPX = PX)
                 fixed (double* pRLAM = RLAM)
                 fixed (double* pAP = AP)
-            fixed (double* pWRK = WRK)
+                fixed (double* pWRK = WRK)
                     dqpprt(orthog, isdel, *iter, jadd, jdel, *nactiv, ncolz, *nfree,
                         n, *nclin, *nrowa, *&nrowrt_c, nhess, &
                         istate[1], &kfree[1], alfa, condh, condt, *objqp, gfnorm,
@@ -4916,7 +4921,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                         fixed (double* pPX = PX)
                         fixed (double* pRLAM = RLAM)
                         fixed (double* pAP = AP)
-            fixed (double* pWRK = WRK)
+                        fixed (double* pWRK = WRK)
                             dqpcolr(&nocurv, &posdef, &renewr, unitq, n, &ncolr,
                                 nfree, &nq_ccc, nrowh, ncolh, &nrowrt_ccc, &nhess, &kfree[1], &
                                 cslast, &snlast, &drmax, &emax, &hsize, &rdlast, hess,
@@ -4964,7 +4969,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 fixed (double* pPX = PX)
                 fixed (double* pRLAM = RLAM)
                 fixed (double* pAP = AP)
-            fixed (double* pWRK = WRK)
+                fixed (double* pWRK = WRK)
                     dfindp(&nullr, &unitpg, unitq, n, nclin, &nq_c, nrowa, &
                         nrowrt_c, &ncolr, &ncolz, nfree, &istate[1], &kfree[1],
                         negligible != 0, &gtp, &pnorm, &rdlast, a, pAP,
@@ -5067,7 +5072,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                     fixed (double* pPX = PX)
                     fixed (double* pRLAM = RLAM)
                     fixed (double* pAP = AP)
-            fixed (double* pWRK = WRK)
+                    fixed (double* pWRK = WRK)
                         if (dqpgrad(2, *unitq, n, CN(*nactiv), CN(*nfree), &nhess_conv, nq,
                             CN(*nrowh), CN(*ncolh), jadd, &kactiv[1], &kfree[1], alfa, objqp, &
                             gfixed, gtp, &cvec[1], hess, pPX, pQTG, &
@@ -5142,7 +5147,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 fixed (double* pPX = PX)
                 fixed (double* pRLAM = RLAM)
                 fixed (double* pAP = AP)
-            fixed (double* pWRK = WRK)
+                fixed (double* pWRK = WRK)
                     daddcon(modfyg != 0, modfyr != 0, orthog != 0, unitq, &ifix, &iadd, &jadd,
                         nactiv, &ncolr, &ncolz, nfree, n, &nq_cc, nrowa, &nrowrt_cc,
                         &kfree[1], &condmx, &cslast, &snlast, a, pQTG,
@@ -5183,7 +5188,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                         fixed (double* pPX = PX)
                         fixed (double* pRLAM = RLAM)
                         fixed (double* pAP = AP)
-            fixed (double* pWRK = WRK)
+                        fixed (double* pWRK = WRK)
                             dqpgrad(3, *unitq, n, CN(*nactiv), CN(*nfree), &nhess_conv, nq,
                                 CN(*nrowh), CN(*ncolh), jadd, &kactiv[1], &kfree[1], alfa, objqp,
                                 &pQTG[*nfree], gtp, &cvec[1], hess, pPX, pQTG, &
@@ -5221,7 +5226,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 fixed (double* pPX = PX)
                 fixed (double* pRLAM = RLAM)
                 fixed (double* pAP = AP)
-            fixed (double* pWRK = WRK)
+                fixed (double* pWRK = WRK)
                     dqpcolr(&nocurv, &posdef, &renewr, unitq, n, &ncolr,
                         nfree, &nq_cc, nrowh, ncolh, &nrowrt_cc, &nhess, &
                         kfree[1], &cslast, &snlast, &drmax, &emax, &hsize, &rdlast,
