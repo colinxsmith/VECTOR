@@ -781,13 +781,13 @@ namespace UseBlas
                     var nclin = m;
                     var nctotl = n + m;
                     var nrowa = m;
-                    var obj = 1.0;
+                    var obj = 1e10;
                     var featol = 1e-8;
                     int cold = 1;
                     var bigbnd = 1e10;
                     short msglvl = 1000;
                     var istate = new int[n + m + n + n];
-                    var lwrk = 2 * (n * (n + 2) + m);
+                    var lwrk = 2 * (n * (n + 2) + m) + m;
                     Console.WriteLine($"work {lwrk} {lwrk + 2 * (n + m)}");
                     var lambda = new double[lwrk + n + m + n + m];
                     BlasLike.dsetvec(n + m, 0, lambda);
@@ -805,7 +805,7 @@ namespace UseBlas
                         back = ActiveSet.Optimise.dqpsol(itmax, msglvl, n, m, n + m, m,
                         n + n, 1, &bigbnd, pA, pL, pU, pc, plambda + n + m, phess, cold, lp, orthog, px,
                         pistate, &iter, &obj, plambda, pistate + n + m, n + n, plambda + (n + m + n + m), lwrk, ifail);
-                    Console.WriteLine($"back is {back} {BlasLike.ddotvec(n,x,c)}");
+                    Console.WriteLine($"back is {back} {BlasLike.ddotvec(n, x, c)}");
                 }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);

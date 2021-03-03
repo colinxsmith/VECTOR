@@ -4018,7 +4018,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             lax = 1;
             lwtotl = lax + nrowa - 1;
             /*allocate remaining work arrays*/
-            dalloc(2, n, nclin, ncnln, nctotl, iw, w, &litotl, &lwtotl);
+            dalloc(2, n, nclin, ncnln, nctotl, &litotl, &lwtotl);
             /*set the message level for  lpdump, qpdump, chkdat  and  lpcore*/
             msg = 0;
             if (msglvl >= 5) msg = 5;
@@ -4217,200 +4217,35 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 i++;
             }
         }
-        public unsafe static void dalloc(byte nalg, int n, int nclin, int ncnln, int nctotl, int* iw, double* w, int* litotl, int* lwtotl)
+        public unsafe static void dalloc(byte nalg, int n, int nclin, int ncnln, int nctotl,int* litotl, int* lwtotl)
         {
-            int ladx, laqp, lrho, lslk, lqtg, lwrk, lcsl1, lmax1, lmax2, lslk1,
-                lztg2, ldlam, lcjdx, lrlam, ldslk, lxbwd, lxfwd, lqpdx, lgrad2,
-                lkfree, lcslam, lsigma, lshare, lenaqp = 1000000000, lkactv, lanorm, lqpadx,
-                lg1, lg2, lqptol, liqpst, lnpwrk, lqpwrk, lx1, lx2, lbl, lap, lbu,
-                ldx, lrt, lpx, lzy, lcs1, lcs2;
-
-            RT = new double[n];
-
-            var loclp = new int[11];
-
-            switch (nalg)
-            {
-                case 1:
-                case 2:
-                    /*
-                    allocate the addresses for  lpcore  and  qpcore
-                    */
-                    lkactv = *litotl + 1;
-                    KACTV = new int[n];
-                    lkfree = lkactv + n;
-                    KFREE = new int[n - 1];
-                    *litotl = lkfree + n - 1;
-                    lanorm = *lwtotl + 1;
-                    ANORM = new double[nclin];
-                    lap = lanorm + nclin;
-                    AP = new double[nclin];
-                    lpx = lap + nclin;
-                    PX = new double[n];
-                    lqtg = lpx + n;
-                    QTG = new double[n];
-                    lrlam = lqtg + n;
-                    RLAM = new double[n];
-                    lrt = lrlam + n;
-                    RT = new double[nrowrt * ncolrt];
-                    lzy = lrt + nrowrt * ncolrt;
-                    ZY = new double[nq * nq];
-                    lwrk = lzy + nq * nq;
-                    WRK = new double[n - 1];
-                    *lwtotl = lwrk + n - 1;
-                    loclp[0] = lkactv;
-                    loclp[1] = lkfree;
-                    loclp[2] = lanorm;
-                    loclp[3] = lap;
-                    loclp[4] = lpx;
-                    loclp[5] = lqtg;
-                    loclp[6] = lrlam;
-                    loclp[7] = lrt;
-                    loclp[8] = lzy;
-                    loclp[9] = lwrk;
-                    fixed (int* ploclp = loclp)
-                    fixed (byte* ploc = Sol_ploc)
-                        set_addr(0, 1, ploclp, iw, sizeof(int), &ploc);
-                    fixed (int* ploclp = loclp)
-                    fixed (byte* ploc = Sol_ploc)
-                        set_addr(2, 9, ploclp, w, sizeof(double), &ploc);
-                    for (int i = 0; i < Sol_ploc.Length; ++i)
-                        Console.WriteLine($"{Sol_ploc[i]}");
-                    break;
-                case 3:
-                    /*
-                    allocate the addresses for npcore
-                    */
-                    lkactv = *litotl + 1;
-                    lkfree = lkactv + n;
-                    liqpst = lkfree + n;
-                    *litotl = liqpst + nctotl - 1;
-                    /*
-                    variables used not only by  dnpcore,  but also dlpcore and  dqpcore
-                    */
-                    lanorm = *lwtotl + 1;
-                    lqtg = lanorm + nrowqp;
-                    lrlam = lqtg + n;
-                    lrt = lrlam + n;
-                    lzy = lrt + nrowrt * ncolrt;
-                    loclp[1] = lkactv;
-                    loclp[2] = lkfree;
-                    loclp[3] = lanorm;
-                    loclp[6] = lqtg;
-                    loclp[7] = lrlam;
-                    loclp[8] = lrt;
-                    loclp[9] = lzy;
-                    /*
-                    assign the addresses for the workspace arrays used by  dnpiqp
-                    */
-                    lqpadx = lzy + nq * nq;
-                    lqpdx = lqpadx + nrowqp;
-                    lqpwrk = lqpdx + n;
-                    loclp[4] = lqpadx;
-                    loclp[5] = lqpdx;
-                    loclp[10] = lqpwrk;
-                    /*
-                    assign the addresses for arrays used in  npcore
-                    */
-                    if (ncnln == 0) lenaqp = 0;
-                    if (ncnln > 0) lenaqp = nrowqp * n;
-                    laqp = lqpwrk + n;
-                    ladx = laqp + lenaqp;
-                    lbl = ladx + nrowqp;
-                    lbu = lbl + nctotl;
-                    ldx = lbu + nctotl;
-                    lg1 = ldx + n;
-                    lg2 = lg1 + n;
-                    lqptol = lg2 + n;
-                    lx1 = lqptol + nctotl;
-                    lnpwrk = lx1 + n;
-                    locnp[0] = liqpst;
-                    locnp[1] = laqp;
-                    locnp[2] = ladx;
-                    locnp[3] = lbl;
-                    locnp[4] = lbu;
-                    locnp[5] = ldx;
-                    locnp[6] = lg1;
-                    locnp[7] = lg2;
-                    locnp[8] = lqptol;
-                    locnp[9] = lx1;
-                    locnp[10] = lnpwrk;
-                    lcs1 = lnpwrk + nctotl;
-                    lcs2 = lcs1 + ncnln;
-                    lcsl1 = lcs2 + ncnln;
-                    lcslam = lcsl1 + ncnln;
-                    lcjdx = lcslam + ncnln;
-                    ldlam = lcjdx + ncnln;
-                    ldslk = ldlam + ncnln;
-                    lrho = ldslk + ncnln;
-                    lsigma = lrho + ncnln;
-                    lslk1 = lsigma + ncnln;
-                    lslk = lslk1 + ncnln;
-                    locnp[11] = lcs1;
-                    locnp[12] = lcs2;
-                    locnp[13] = lcsl1;
-                    locnp[14] = lcslam;
-                    locnp[15] = lcjdx;
-                    locnp[16] = ldlam;
-                    locnp[17] = ldslk;
-                    locnp[18] = lrho;
-                    locnp[19] = lsigma;
-                    locnp[20] = lslk1;
-                    locnp[21] = lslk;
-                    *lwtotl = lslk + ncnln - 1;
-                    break;
-                case 4:
-                    /*
-                    allocate the addresses for  lccore
-                    */
-                    lkactv = *litotl + 1;
-                    lkfree = lkactv + n;
-                    *litotl = lkfree + n - 1;
-                    lztg2 = *lwtotl + 1;
-                    loclc[0] = lztg2;
-                    /*
-                    arrays used not only by  dlccore,  but also  dlpcore
-                    */
-                    lanorm = lztg2 + n;
-                    lap = lanorm + nclin;
-                    lpx = lap + nclin;
-                    lqtg = lpx + n;
-                    lrlam = lqtg + n;
-                    lrt = lrlam + n;
-                    lzy = lrt + nrowrt * ncolrt;
-                    lwrk = lzy + nq * nq;
-                    loclp[1] = lkactv;
-                    loclp[2] = lkfree;
-                    loclp[3] = lanorm;
-                    loclp[4] = lap;
-                    loclp[5] = lpx;
-                    loclp[6] = lqtg;
-                    loclp[7] = lrlam;
-                    loclp[8] = lrt;
-                    loclp[9] = lzy;
-                    loclp[10] = lwrk;
-                    lshare = lwrk + n;
-                    /*
-                    assign the addresses of the workspace used by  dlcsrch
-                    this workspace is shared by  dlcappg
-                    */
-                    lx2 = lshare;
-                    lgrad2 = lx2 + n;
-                    lmax1 = lgrad2 + n - 1;
-                    /*
-                    assign the addresses of the workspace used by  dlcappg
-                    this workspace is shared by  dlcsrch
-                    */
-                    lxfwd = lshare;
-                    lxbwd = lxfwd + n;
-                    lmax2 = lxbwd + n - 1;
-                    *lwtotl = Math.Max(lmax1, lmax2);
-                    loclc[1] = lx2;
-                    loclc[2] = lgrad2;
-                    loclc[3] = lxfwd;
-                    loclc[4] = lxbwd;
-                    break;
-            }
+            int lqtg, lwrk,
+                 lrlam,
+                 lkfree, lkactv, lanorm,
+                 lap,
+                  lrt, lpx, lzy;
+            lkactv = *litotl + 1;
+            KACTV = new int[n];
+            lkfree = lkactv + n;
+            KFREE = new int[n - 1];
+            *litotl = lkfree + n - 1;
+            lanorm = *lwtotl + 1;
+            ANORM = new double[nclin];
+            lap = lanorm + nclin;
+            AP = new double[nclin];
+            lpx = lap + nclin;
+            PX = new double[n];
+            lqtg = lpx + n;
+            QTG = new double[n];
+            lrlam = lqtg + n;
+            RLAM = new double[n];
+            lrt = lrlam + n;
+            RT = new double[nrowrt * ncolrt];
+            lzy = lrt + nrowrt * ncolrt;
+            ZY = new double[nq * nq];
+            lwrk = lzy + nq * nq;
+            WRK = new double[n - 1];
+            *lwtotl = lwrk + n - 1;
         }
         public unsafe static void dqpdump(int n, int nrowh, int ncolh, double* cvec, double* hess, double* wrk, double* hx)
         {
