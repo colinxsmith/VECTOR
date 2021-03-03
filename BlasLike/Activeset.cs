@@ -456,6 +456,7 @@ namespace ActiveSet
             */
             /*     ALFA  IS INITIALIZED TO  BIGALF.  IF IT REMAINS THAT WAY AFTER */
             /*     THE CALL TO BNDALF, IT WILL BE REGARDED AS INFINITE. */
+            printV(n,&x[1]);
             bigalf = dprotdiv(&bigdx, &pnorm, &ifail);
             if (ifail != 0 && bigdx == 0) bigalf = BlasLike.lm_max;
             fixed (double* pANORM = ANORM)
@@ -468,6 +469,7 @@ namespace ActiveSet
                 *inform = dbndalf(firstv, &hitlow, &istate[1], &jadd, n,
                     CN(*nctotl), CN(*numinf), &alfa, &palfa, &atphit, &bigalf, &bigbnd,
                     &pnorm, pANORM, pAP, &ax[1], &bl[1], &bu[1], &featol[1], pPX, &x[1]);
+            printV(n,&x[1]);
             if (*inform != 0 || jadd == 0)
             {
                 goto L300;
@@ -506,17 +508,17 @@ namespace ActiveSet
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
                 BlasLike.daxpyvec(n, alfa, pPX, &x[1]);
-            if (*nclin > 0)
-            {
-                fixed (double* pANORM = ANORM)
-                fixed (double* pQTG = QTG)
-                fixed (double* pRT = RT)
-                fixed (double* pZY = ZY)
-                fixed (double* pPX = PX)
-                fixed (double* pRLAM = RLAM)
-                fixed (double* pAP = AP)
+
+            fixed (double* pANORM = ANORM)
+            fixed (double* pQTG = QTG)
+            fixed (double* pRT = RT)
+            fixed (double* pZY = ZY)
+            fixed (double* pPX = PX)
+            fixed (double* pRLAM = RLAM)
+            fixed (double* pAP = AP)
+                if (*nclin > 0)
                     BlasLike.daxpy(*nclin, alfa, pAP, 1, &ax[1], 1);
-            }
+
             *xnorm = dnrm2vec(n, &x[1]);
             if (lp) objlp = BlasLike.ddotvec(n, &cvec[1], &x[1]);
             /*     IF  X  IS NOT YET FEASIBLE,  COMPUTE  OBJ  AND  GRAD  AS THE VALUE 
@@ -4217,7 +4219,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 i++;
             }
         }
-        public unsafe static void dalloc(byte nalg, int n, int nclin, int ncnln, int nctotl,int* litotl, int* lwtotl)
+        public unsafe static void dalloc(byte nalg, int n, int nclin, int ncnln, int nctotl, int* litotl, int* lwtotl)
         {
             int lqtg, lwrk,
                  lrlam,
@@ -5642,6 +5644,24 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             /*REVERSE THE DIRECTION OF  P  AND  AP. */
             BlasLike.dnegvec(n, p);
             if (nclin > 0) BlasLike.dnegvec(nclin, ap);
+        }
+        public unsafe static void printV(int n,double* a)
+        {
+            for (int i = 0; i < n; ++i)
+            {
+                Console.Write($"{a[i]} ");
+                if (i % 5 == 4) Console.Write("\n");
+            }
+            Console.Write("\n");
+        }
+        public static void printV(double[] a)
+        {
+            for (int i = 0; i < a.Length; ++i)
+            {
+                Console.Write($"{a[i]} ");
+                if (i % 5 == 4) Console.Write("\n");
+            }
+            Console.Write("\n");
         }
     }
 }
