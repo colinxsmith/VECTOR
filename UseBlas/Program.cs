@@ -767,16 +767,16 @@ namespace UseBlas
                     double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.1 };
                     Factorise.dmx_transpose(n, m, A, A);
                     double[] hess ={1,
-                                    0,1,
-                                    0,0,1,
-                                    0,0,0,1,
-                                    0,0,0,0,1,
-                                    0,0,0,0,0,1,
-                                    0,0,0,0,0,0,1,
-                                    0,0,0,0,0,0,0,1,
-                                    0,0,0,0,0,0,0,0,1,
-                                    0,0,0,0,0,0,0,0,0,1};
-                    var lp = 1;
+                     0.1, 1,
+                     0, 0, 1,
+                     0.1, 0, 0, 1,
+                     0, 0, 0, 0, 1,
+                     0, 0, 0.1, 0, 0, 1,
+                     0, 0, 0, 0, 0, 0, 1,
+                     0, 0, 0, 0, 0.1, 0, 0, 1,
+                     0, 0, 0, 0, 0, 0, 0, 0, 1,
+                     0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+                    var lp = 0;
                     var itmax = (short)2000;
                     var orthog = 1;
                     short iter = 1000;
@@ -796,7 +796,7 @@ namespace UseBlas
                     BlasLike.dsetvec(n + m, featol, lambda, n + m);
                     short ifail = 89;
                     short back;
-                    Console.WriteLine($"initial {BlasLike.ddotvec(n, x, c)}");
+                    BlasLike.dscalvec(n*(n+1)/2,0.5,hess);
                     fixed (int* pistate = istate)
                     fixed (double* plambda = lambda)
                     fixed (double* pA = A)
@@ -808,7 +808,9 @@ namespace UseBlas
                         back = ActiveSet.Optimise.dqpsol(itmax, msglvl, n, m, n + m, m,
                         n + n, 1, &bigbnd, pA, pL, pU, pc, plambda + n + m, phess, cold, lp, orthog, px,
                         pistate, &iter, &obj, plambda, pistate + n + m, n + n, plambda + (n + m + n + m), lwrk, ifail);
-                    Console.WriteLine($"back is {back} {BlasLike.ddotvec(n, x, c)}");
+                    var implied=new double[n];
+                    Factorise.dsmxmulv(n,hess,x,implied);
+                    Console.WriteLine($"back is {back} {BlasLike.ddotvec(n, x, c)+BlasLike.ddotvec(n,implied,x)}");
                     ActiveSet.Optimise.printV(x);
                 }
             }
