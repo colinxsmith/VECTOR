@@ -758,12 +758,14 @@ namespace UseBlas
                 unsafe
                 {
                     var n = 10;
-                    var m = 1;
-                    double[] x = { 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1 };
+                    var m = 2;
+                    double[] x = { 0.5, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1 };
                     double[] c = { 1, 2, 3, 4, 5, 6, 17, 8, 9, 10 };
-                    double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
-                    double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
-                    double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+                    double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,
+                                   0, 0, 1, 1, 1, 0, 0, 0, 0, 0};
+                    double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0.1 };
+                    double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.1 };
+                    Factorise.dmx_transpose(n, m, A, A);
                     double[] hess ={1,
                                     0,1,
                                     0,0,1,
@@ -783,7 +785,7 @@ namespace UseBlas
                     var nrowa = m;
                     var obj = 1e10;
                     var featol = 1e-8;
-                    int cold = 1;
+                    int cold = 0; //Use cold = 1 starting pint satifies the constarints
                     var bigbnd = 1e10;
                     short msglvl = 1000;
                     var istate = new int[n + m + n + n];
