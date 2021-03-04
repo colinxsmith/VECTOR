@@ -475,7 +475,7 @@ namespace ActiveSet
                 goto L300;
             }
             /*     TEST IF  ALFA*PNORM  IS NEGLIGIBLE. */
-            stall = (Math.Abs(d__alfa * pnorm1)) <= epspt9 * *xnorm;
+            stall = (Math.Abs(alfa * pnorm)) <= epspt9 * *xnorm;
             if (!stall)
             {
                 goto L120;
@@ -1381,7 +1381,7 @@ namespace ActiveSet
             /*     IF A VERTEX IS REQUIRED BUT  TQADD  WAS UNABLE TO ADD ALL OF THE */
 
             /*     SELECTED GENERAL CONSTRAINTS, ADD MORE TEMPORARY BOUNDS. */
-            if (vertex != 0 || *ncolz == 0)
+            if (vertex == 0 || *ncolz == 0)
             {
                 goto L540;
             }
