@@ -681,7 +681,7 @@ namespace BlasLikeTest
             var nrowa = m;
             var obj = 1e10;
             var featol = 1e-8;
-            int cold = 1; //Use cold = 1 starting pint satifies the constraints
+            int cold = 1; //Use cold = 1 starting point satifies the constraints
             var bigbnd = 1e10;
             short msglvl = -1000;
             var istate = new int[n + m + n + n];
