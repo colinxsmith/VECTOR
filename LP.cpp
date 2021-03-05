@@ -39,5 +39,5 @@ int main()
     }
     std::valarray<double> implied(n);
     dsmxmulv(n, hess, x, &implied[0]);
-    printf("back=%d U=%f\n",back, ddotvec(n, c, x) * gamma / (1 - gamma) + 0.5 * ddotvec(n, x, &implied[0]));
+    printf("back=%d U=%f\n",back, -ddotvec(n, c, x) * gamma / (1 - gamma) + 0.5 * ddotvec(n, x, &implied[0]));
 }

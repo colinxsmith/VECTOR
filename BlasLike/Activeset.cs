@@ -456,7 +456,7 @@ namespace ActiveSet
             */
             /*     ALFA  IS INITIALIZED TO  BIGALF.  IF IT REMAINS THAT WAY AFTER */
             /*     THE CALL TO BNDALF, IT WILL BE REGARDED AS INFINITE. */
-            printV(n,&x[1]);
+            printV(n, &x[1]);
             bigalf = dprotdiv(&bigdx, &pnorm, &ifail);
             if (ifail != 0 && bigdx == 0) bigalf = BlasLike.lm_max;
             fixed (double* pANORM = ANORM)
@@ -469,7 +469,7 @@ namespace ActiveSet
                 *inform = dbndalf(firstv, &hitlow, &istate[1], &jadd, n,
                     CN(*nctotl), CN(*numinf), &alfa, &palfa, &atphit, &bigalf, &bigbnd,
                     &pnorm, pANORM, pAP, &ax[1], &bl[1], &bu[1], &featol[1], pPX, &x[1]);
-            printV(n,&x[1]);
+            printV(n, &x[1]);
             if (*inform != 0 || jadd == 0)
             {
                 goto L300;
@@ -5048,6 +5048,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 if (ncolr == 0) emax = 0;
 
                 if (!posdef)
+                {
                     /*
                     the projected hessian was not sufficiently positive definite
                     before the constraint was added.  either compute the true value
@@ -5055,22 +5056,23 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                     column. use the array  rlam  as temporary work space
                     */
                     nq_cc = nq;
-                nrowrt_cc = nrowrt;
-                fixed (double* pANORM = ANORM)
-                fixed (double* pQTG = QTG)
-                fixed (double* pRT = RT)
-                fixed (double* pZY = ZY)
-                fixed (double* pPX = PX)
-                fixed (double* pRLAM = RLAM)
-                fixed (double* pAP = AP)
-                fixed (double* pWRK = WRK)
-                    dqpcolr(&nocurv, &posdef, &renewr, unitq, n, &ncolr,
-                        nfree, &nq_cc, nrowh, ncolh, &nrowrt_cc, &nhess, &
-                        kfree[1], &cslast, &snlast, &drmax, &emax, &hsize, &rdlast,
-                        hess, pRT, &scale[1], pZY, pRLAM,
-                        pWRK);
-                nq = nq_cc;
-                nrowrt = nrowrt_cc;
+                    nrowrt_cc = nrowrt;
+                    fixed (double* pANORM = ANORM)
+                    fixed (double* pQTG = QTG)
+                    fixed (double* pRT = RT)
+                    fixed (double* pZY = ZY)
+                    fixed (double* pPX = PX)
+                    fixed (double* pRLAM = RLAM)
+                    fixed (double* pAP = AP)
+                    fixed (double* pWRK = WRK)
+                        dqpcolr(&nocurv, &posdef, &renewr, unitq, n, &ncolr,
+                            nfree, &nq_cc, nrowh, ncolh, &nrowrt_cc, &nhess, &
+                            kfree[1], &cslast, &snlast, &drmax, &emax, &hsize, &rdlast,
+                            hess, pRT, &scale[1], pZY, pRLAM,
+                            pWRK);
+                    nq = nq_cc;
+                    nrowrt = nrowrt_cc;
+                }
                 /*.........................END OF MAIN LOOP............................*/
             }
 
@@ -5133,7 +5135,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             {
 
                 BlasLike.dzerovec(n, &wrk[1]);
-                if (unitq != 0)
+                if (unitq == 0)
                 {
                     /* expand the column of  z  into an  n-vector */
                     for (i = 1; i <= nfree; ++i)
@@ -5190,7 +5192,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 /*permute the columns of z*/
                 if (kmax != j)
                 {
-                    if (unitq != 0)
+                    if (unitq == 0)
                     {
                         BlasLike.dcopyvec(nfree, &zy[kmax * Nq + 1], &wrk[1]);
                         BlasLike.dcopyvec(nfree, &zy[j * Nq + 1], &zy[kmax * Nq + 1]);
@@ -5645,7 +5647,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             BlasLike.dnegvec(n, p);
             if (nclin > 0) BlasLike.dnegvec(nclin, ap);
         }
-        public unsafe static void printV(int n,double* a)
+        public unsafe static void printV(int n, double* a)
         {
             for (int i = 0; i < n; ++i)
             {

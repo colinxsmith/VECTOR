@@ -1166,7 +1166,7 @@ namespace Solver
         {
             int i, iS, ix;//This needed change to be compatable with BLAS ddot
             for (i = 1, iS = 0, ix = 0; i <= n; i++, ix++, iS += i)
-                y[i - 1] = BlasLike.ddot(i, S + 1 - i, -1, x, -1) + BlasLike.didot(n - i, S + i, i + 1, x + ix, 1);
+                y[i - 1] = BlasLike.ddot(i, S + iS + 1 - i, -1, x, -1) + BlasLike.didot(n - i, S + i + iS, i + 1, x + 1 + ix, 1);
         }
         public static void dsmxmulvT(int n, double[] S, double[] x, double[] y, int ystart = 0)
         {
