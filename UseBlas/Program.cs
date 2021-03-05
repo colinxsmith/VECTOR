@@ -776,16 +776,16 @@ namespace UseBlas
                      0, 0, 0, 0, 0.1, 0, 0, 1,
                      0, 0, 0, 0, 0, 0, 0, 0, 1,
                      0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
-                    var lp = 0;
+                    var lp = 1;
                     var itmax = (short)2000;
-                    var orthog = 1;
+                    var orthog = 1; //orthog=1 is best
                     short iter = 1000;
                     var nclin = m;
                     var nctotl = n + m;
                     var nrowa = m;
                     var obj = 1e10;
                     var featol = 1e-8;
-                    int cold = 1; //Use cold = 1 starting pint satifies the constarints
+                    int cold = 1; //Use cold = 1 starting pint satifies the constraints
                     var bigbnd = 1e10;
                     short msglvl = 1000;
                     var istate = new int[n + m + n + n];
@@ -810,7 +810,7 @@ namespace UseBlas
                         pistate, &iter, &obj, plambda, pistate + n + m, n + n, plambda + (n + m + n + m), lwrk, ifail);
                     var implied=new double[n];
                     Factorise.dsmxmulv(n,hess,x,implied);
-                    Console.WriteLine($"back is {back} {BlasLike.ddotvec(n, x, c)+0.5*BlasLike.ddotvec(n,implied,x)} {obj}");
+                    Console.WriteLine($"back is {back} {BlasLike.ddotvec(n, x, c)+(1-lp)*0.5*BlasLike.ddotvec(n,implied,x)} {obj}");
                     ActiveSet.Optimise.printV(x);
                 }
             }

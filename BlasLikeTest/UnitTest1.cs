@@ -649,5 +649,66 @@ namespace BlasLikeTest
             Ordering.Order.ReorderSymm(5, order, symmL, 'L');
             Assert.IsTrue(symmL[1] == "45" && symmL[8] == "14", $"\n{order[0]} {order[1]} {order[2]} {order[3]} {order[4]}\n{symmL[1]},{symmL[8]}");
         }
+        [TestMethod]
+        public unsafe void Test_LPand_QP()
+        {
+
+            var n = 10;
+            var m = 2;
+            double[] x = { 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1 };
+            double[] c = { 1, 2, 3, 4, 5, 6, 17, 8, 9, 10 };
+            double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,
+                                   0, 0, 1, 1, 1, 0, 0, 0, 0, 0};
+            double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0.1 };
+            double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.1 };
+            Factorise.dmx_transpose(n, m, A, A);
+            double[] hess ={1,
+                     0.1, 1,
+                     0, 0, 1,
+                     0.1, 0, 0, 1,
+                     0, 0, 0, 0, 1,
+                     0, 0, 0.1, 0, 0, 1,
+                     0, 0, 0, 0, 0, 0, 1,
+                     0, 0, 0, 0, 0.1, 0, 0, 1,
+                     0, 0, 0, 0, 0, 0, 0, 0, 1,
+                     0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+            var lp = 1;
+            var itmax = (short)2000;
+            var orthog = 1; //orthog=1 is best
+            short iter = 1000;
+            var nclin = m;
+            var nctotl = n + m;
+            var nrowa = m;
+            var obj = 1e10;
+            var featol = 1e-8;
+            int cold = 1; //Use cold = 1 starting pint satifies the constraints
+            var bigbnd = 1e10;
+            short msglvl = -1000;
+            var istate = new int[n + m + n + n];
+            var lwrk = 2 * (n * (n + 2) + m) + m;
+            var lambda = new double[lwrk + n + m + n + m];
+            BlasLike.dsetvec(n + m, 0, lambda);
+            BlasLike.dsetvec(n + m, featol, lambda, n + m);
+            short ifail = 89;
+            short back;
+            for (int i = 0; i < 2; ++i)
+            {
+                lp = i;
+                fixed (int* pistate = istate)
+                fixed (double* plambda = lambda)
+                fixed (double* pA = A)
+                fixed (double* pL = L)
+                fixed (double* pU = U)
+                fixed (double* pc = c)
+                fixed (double* px = x)
+                fixed (double* phess = hess)
+                    back = ActiveSet.Optimise.dqpsol(itmax, msglvl, n, m, n + m, m,
+                    n + n, 1, &bigbnd, pA, pL, pU, pc, plambda + n + m, phess, cold, lp, orthog, px,
+                    pistate, &iter, &obj, plambda, pistate + n + m, n + n, plambda + (n + m + n + m), lwrk, ifail);
+                var implied = new double[n];
+                Factorise.dsmxmulv(n, hess, x, implied);
+                Assert.IsTrue(back == 0, $"back is {back} {BlasLike.ddotvec(n, x, c) + (1 - lp) * 0.5 * BlasLike.ddotvec(n, implied, x)} {obj}");
+            }
+        }
     }
 }
