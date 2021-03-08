@@ -652,62 +652,64 @@ namespace BlasLikeTest
         [TestMethod]
         public unsafe void Test_LPand_QP()
         {
-
             var n = 10;
             var m = 2;
-            double[] x = { 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1 };
+            var x = new double[n];
             double[] c = { 1, 2, 3, 4, 5, 6, 17, 8, 9, 10 };
             double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,
                                    0, 0, 1, 1, 1, 0, 0, 0, 0, 0};
             double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0.1 };
             double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.1 };
             Factorise.dmx_transpose(n, m, A, A);
-            double[] hess ={1,
-                     0.1, 1,
-                     0, 0, 1,
-                     0.1, 0, 0, 1,
-                     0, 0, 0, 0, 1,
-                     0, 0, 0.1, 0, 0, 1,
-                     0, 0, 0, 0, 0, 0, 1,
-                     0, 0, 0, 0, 0.1, 0, 0, 1,
-                     0, 0, 0, 0, 0, 0, 0, 0, 1,
-                     0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
-            var lp = 1;
-            var itmax = (short)2000;
-            var orthog = 1; //orthog=1 is best
-            short iter = 1000;
-            var nclin = m;
-            var nctotl = n + m;
-            var nrowa = m;
-            var obj = 1e10;
-            var featol = 1e-8;
-            int cold = 1; //Use cold = 1 starting point satifies the constraints
-            var bigbnd = 1e10;
-            short msglvl = -1000;
-            var istate = new int[n + m + n + n];
-            var lwrk = 2 * (n * (n + 2) + m) + m;
-            var lambda = new double[lwrk + n + m + n + m];
-            BlasLike.dsetvec(n + m, 0, lambda);
-            BlasLike.dsetvec(n + m, featol, lambda, n + m);
-            short ifail = 89;
+            double[] hess = new double[n * (n + 1) / 2];
+            var tdata = 2 * n;
+            var timeD = new double[n, tdata];
+
+            for (int i = 0; i < n; ++i)
+            {
+                for (int time = 0; time < tdata; ++time)
+                {
+                    var dat = new Random();
+                    timeD[i, time] = dat.NextDouble();
+                }
+            }
+            for (int i = 0; i < n; ++i)
+            {
+                for (int j = 0; j <= i; ++j)
+                {
+                    hess[i * (i + 1) / 2 + j] = 0;
+                    var ti = 0.0;
+                    var tj = 0.0;
+                    for (int time = 0; time < tdata; ++time)
+                    {
+                        ti += timeD[i, time];
+                        tj += timeD[j, time];
+                        hess[i * (i + 1) / 2 + j] += timeD[i, time] * timeD[j, time];
+                    }
+                    hess[i * (i + 1) / 2 + j] = hess[i * (i + 1) / 2 + j] / tdata - ti / tdata * tj / tdata;
+                }
+            }
+            BlasLike.dscalvec(hess.Length, 1e3, hess);
+            var obj = new double[1];
             short back;
+            var implied = new double[n];
             for (int i = 0; i < 2; ++i)
             {
-                lp = i;
-                fixed (int* pistate = istate)
-                fixed (double* plambda = lambda)
-                fixed (double* pA = A)
-                fixed (double* pL = L)
-                fixed (double* pU = U)
-                fixed (double* pc = c)
-                fixed (double* px = x)
-                fixed (double* phess = hess)
-                    back = ActiveSet.Optimise.dqpsol(itmax, msglvl, n, m, n + m, m,
-                    n + n, 1, &bigbnd, pA, pL, pU, pc, plambda + n + m, phess, cold, lp, orthog, px,
-                    pistate, &iter, &obj, plambda, pistate + n + m, n + n, plambda + (n + m + n + m), lwrk, ifail);
-                var implied = new double[n];
-                Factorise.dsmxmulv(n, hess, x, implied);
-                Assert.IsTrue(back == 0, $"back is {back} {BlasLike.ddotvec(n, x, c) + (1 - lp) * 0.5 * BlasLike.ddotvec(n, implied, x)} {obj}");
+                if (i == 1)
+                {
+                    BlasLike.dsetvec(x.Length, 1.0 / n, x);
+                    var budget = 1.0;
+                    back = ActiveSet.Optimise.LPopt(n, m, x, L, U, A, c, obj);
+                    Assert.IsTrue(back == 0 && Math.Abs(BlasLike.dsumvec(x.Length, x) - budget) < BlasLike.lm_eps*8, $"back is {back} {BlasLike.ddotvec(n, x, c)} {obj[0]}");
+                }
+                else
+                {
+                    BlasLike.dsetvec(x.Length, 1.0 / n, x);
+                    var budget = 1.0;
+                    back = ActiveSet.Optimise.QPopt(n, m, x, L, U, A, c, hess, obj);
+                    Factorise.dsmxmulv(n, hess, x, implied);
+                    Assert.IsTrue(back == 0 && Math.Abs(BlasLike.dsumvec(x.Length, x) - budget) < BlasLike.lm_eps*8, $"back is {back} {BlasLike.ddotvec(n, x, c) + 0.5 * BlasLike.ddotvec(n, implied, x)} {obj[0]}");
+                }
             }
         }
     }

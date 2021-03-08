@@ -6,35 +6,23 @@ namespace ActiveSet
 {
     public class Optimise
     {
-        public static int DAS_Sol_nout = 0;
-        public static int DAS_Sol_msg = 0;
-        public static int DAS_Sol_istart = 0;
-        public static int DAS_Sol_asize = 0;
-        public static int DAS_Sol_dtmax = 0;
-        public static int DAS_Sol_dtmin = 0;
-        public static int DAS_Sol_nrowrt = 0;
-        public static int DAS_Sol_ncolrt = 0;
-        public static int DAS_Sol_nq = 0;
-        public static int DAS_Sol_ncqp = 0;
-        public static int DAS_Sol_nrowqp = 0;
-        public static int DAS_Sol_scldqp = 0;
-        public static double DAS_Sol_zgfacc = -1.0;
-        public unsafe static byte[] Sol_ploc = new byte[15];
+        public static double[] Q;
+        public static double[] W;
+        public static double[] A;
+        public static double[] L;
+        public static double[] U;
+        public static double[] c;
+        public static double AccuracyModify = -1.0;
         public static int msg;
         public static bool scldqp;
-        public static int nrowqp;
         public static int[] KACTV;
         public static int[] KFREE;
-        public unsafe static int[] loclc;
-        public unsafe static int[] locnp;
         public static int istart;
-        public static double[] parm = new double[10];
+        public static double[] parm = new double[4];
         public static int nq;
         public static double asize;
         public static int nrowrt;
         public static int ncolrt;
-        public static double d__alfa;
-        public static double pnorm1;
         public static double dtmax;
         public static double dtmin;
         public static double[] ANORM;
@@ -49,8 +37,6 @@ namespace ActiveSet
         public static T CS<T>(T x) { return x; }
         public static int CN(int x) { return x; }
         public static int CI(int x) { return x; }
-        public static byte CB(byte x) { return x; }
-        public static bool CB(bool x) { return x; }
         public static T CL<T>(T x) { return x; }
         public static long timebase;
         public static double timeaquired;
@@ -958,6 +944,18 @@ namespace ActiveSet
                 }
             }
         }
+        public static void lm_mdvwri<T>(string nn, int na, T[] wrk, int wstart = 0)
+        {
+            if (wrk == null) return;
+            Console.WriteLine(nn);
+            for (int i = 0; i < na; ++i)
+            {
+                Console.Write($"{wrk[i + wstart]} ");
+                if (i % 6 == 5) Console.Write("\n");
+            }
+            Console.Write("\n");
+        }
+
         public unsafe static void lm_mdvwri(string nn, int na, double* wrk)
         {
             Console.WriteLine(nn);
@@ -3888,12 +3886,10 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
         }
         public unsafe static short dqpsol(short itmax, short msglvl, int n, int nclin, int nctotl, int nrowa, int nrowh, int ncolh, double* bigbnd, double* a, double* bl, double* bu, double* cvec, double* featol, double* hess, int cold, int lp, int orthog, double* x, int* istate, short* iter, double* obj, double* clamda, int* iw, int leniw, double* w, int lenw, short ifail)
         {
-            parm[0] = 1e10;//bigbnd
+            parm[0] = 1e10;
             parm[1] = 1e20;
-            parm[2] = 1e-6;//.01;//tolact
+            parm[2] = 1e-6;
             parm[3] = Math.Pow(BlasLike.lm_eps, 0.9);
-            for (int ii = 4; ii < 10; ++ii)
-                parm[ii] = 0;
             /*
                 dqpsol solves quadratic programming (QP) problems of the form 
                 minimize     c'*x  +  1/2 x'*H*X 
@@ -3931,12 +3927,12 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             byte lcrash;
             //double tolact;
             int minfxd, inform, mxfree, nactiv, numinf;
-            int litotl;
+            var litotl = new int[1];
             short nerror;
             int minsum;
             int mxcolz;
             int vertex;
-            int lwtotl;
+            var lwtotl = new int[1];
             int lax;
 
             //#define NCLIN &nclin_
@@ -4016,11 +4012,11 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             ncnln = 0;
 
             /*allocate certain arrays that are not done in  alloc*/
-            litotl = 0;
+            litotl[0] = 0;
             lax = 1;
-            lwtotl = lax + nrowa - 1;
+            lwtotl[0] = lax + nrowa - 1;
             /*allocate remaining work arrays*/
-            dalloc(2, n, nclin, ncnln, nctotl, &litotl, &lwtotl);
+            dalloc(2, n, nclin, ncnln, nctotl, litotl, lwtotl);
             /*set the message level for  lpdump, qpdump, chkdat  and  lpcore*/
             msg = 0;
             if (msglvl >= 5) msg = 5;
@@ -4037,20 +4033,20 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 dlpdump(n, nclin, nctotl, nrowa, lcrash, lp, minsum,
                 vertex, &istate[1], a, &w[lax], &bl[1], &bu[1],
                 &cvec[1], &x[1]);
-            fixed (double* pANORM = ANORM)
-            fixed (double* pQTG = QTG)
-            fixed (double* pRT = RT)
-            fixed (double* pZY = ZY)
-            fixed (double* pPX = PX)
-            fixed (double* pRLAM = RLAM)
-            fixed (double* pAP = AP)
-            fixed (double* pWRK = WRK)
-            fixed (int* pKACTV = KACTV)
-                if (msglvl == 99)
-                    dqpdump(n, nrowh, ncolh, &cvec[1], hess, pWRK, pPX);
+            /*            fixed (double* pANORM = ANORM)
+                        fixed (double* pQTG = QTG)
+                        fixed (double* pRT = RT)
+                        fixed (double* pZY = ZY)
+                        fixed (double* pPX = PX)
+                        fixed (double* pRLAM = RLAM)
+                        fixed (double* pAP = AP)
+                        fixed (double* pWRK = WRK)
+                        fixed (int* pKACTV = KACTV)*/
+            if (msglvl == 99)
+                dqpdump(n, nrowh, ncolh, c, Q, WRK, PX);
 
             fixed (int* pKACTV = KACTV)
-                nerror = dchkdat(leniw, lenw, litotl, lwtotl, nrowa, n, nclin,
+                nerror = dchkdat(leniw, lenw, litotl[0], lwtotl[0], nrowa, n, nclin,
                         nctotl, &istate[1], pKACTV, lcrash,
                         bigbnd, a, &bl[1], &bu[1], &featol[1], &x[1]);
             *iter = 0;
@@ -4211,6 +4207,18 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             }
             Console.Write("\n");
         }
+
+        public static void lm_gdvwri(int n, double[] x, int inc, int xstart = 0)
+        {
+            int i, ii;
+            for (i = 0, ii = 0; i < n; i++)
+            {
+                Console.Write($"{x[xstart + ii]} ");
+                ii += inc;
+                if (i % 6 == 5) Console.Write("\n");
+            }
+            Console.Write("\n");
+        }
         public unsafe static void set_addr(int i, int l, int* iloc, void* a, int sa, byte** ploc)
         {
             while (i <= l)
@@ -4221,11 +4229,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
         }
         public unsafe static void dalloc(byte nalg, int n, int nclin, int ncnln, int nctotl, int* litotl, int* lwtotl)
         {
-            int lqtg, lwrk,
-                 lrlam,
-                 lkfree, lkactv, lanorm,
-                 lap,
-                  lrt, lpx, lzy;
+            int lqtg, lwrk, lrlam, lkfree, lkactv, lanorm, lap, lrt, lpx, lzy;
             lkactv = *litotl + 1;
             KACTV = new int[n];
             lkfree = lkactv + n;
@@ -4248,6 +4252,33 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             lwrk = lzy + nq * nq;
             WRK = new double[n - 1];
             *lwtotl = lwrk + n - 1;
+        }
+
+        public static void dalloc(byte nalg, int n, int nclin, int ncnln, int nctotl, int[] litotl, int[] lwtotl)
+        {
+            int lqtg, lwrk, lrlam, lkfree, lkactv, lanorm, lap, lrt, lpx, lzy;
+            lkactv = litotl[0] + 1;
+            KACTV = new int[n];
+            lkfree = lkactv + n;
+            KFREE = new int[n - 1];
+            litotl[0] = lkfree + n - 1;
+            lanorm = lwtotl[0] + 1;
+            ANORM = new double[nclin];
+            lap = lanorm + nclin;
+            AP = new double[nclin];
+            lpx = lap + nclin;
+            PX = new double[n];
+            lqtg = lpx + n;
+            QTG = new double[n];
+            lrlam = lqtg + n;
+            RLAM = new double[n];
+            lrt = lrlam + n;
+            RT = new double[nrowrt * ncolrt];
+            lzy = lrt + nrowrt * ncolrt;
+            ZY = new double[nq * nq];
+            lwrk = lzy + nq * nq;
+            WRK = new double[n];
+            lwtotl[0] = lwrk + n - 1;
         }
         public unsafe static void dqpdump(int n, int nrowh, int ncolh, double* cvec, double* hess, double* wrk, double* hx)
         {
@@ -4282,6 +4313,46 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 lm_gdvwri(n, hx, 1);
                 wrk[i] = 0.0;
             }
+        }
+
+        public static void dqpdump(int n, int nrowh, int ncolh, double[] cvec, double[] hess, double[] wrk, double[] hx, int cstart = 0, int hstart = 0, int wstart = 0, int hxstart = 0)
+        {
+            int j, i;
+
+            Console.WriteLine("\n\n\n\n\n\nOUTPUT FROM QPDUMP\n******************");
+            lm_mdvwri("\nCVEC ...", n, cvec);
+
+            /*PRINT  HESS  UNLESS IT APPEARS TO BE IMPLICIT. */
+            lm_wmsg("\nNROWH =%6ld NCOLH =%6ld", CL(nrowh), CL(ncolh));
+            if (hess == null) return;
+            if (nrowh > 1 || ncolh > 1)
+            {
+                if (ncolh == 1) lm_mdvwri("\nHESS ...", nrowh, hess);
+                else
+                {
+                    i = Math.Min(ncolh, n);
+                    for (j = 1; j <= i; ++j)
+                    {
+                        lm_wmsg("\nCOLUMN%6ld OF  HESS ...", CL(j));
+                        lm_gdvwri(i, hess, CI(nrowh), j - 1);
+                    }
+                }
+            }
+            /*CALL  QPHESS  TO COMPUTE EACH COLUMN OF THE HESSIAN. */
+            Console.WriteLine("\n\n THE FOLLOWING IS RETURNED BY  QPHESS.");
+            BlasLike.dzerovec(n, wrk);
+            for (j = 1; j <= n; ++j)
+            {
+                wrk[i = j - 1] = 1.0;
+                qphess(n, nrowh, ncolh, j, hess, wrk, hx);
+                lm_wmsg("\nCOLUMN%6ld FROM  QPHESS ...", CL(j));
+                lm_gdvwri(n, hx, 1);
+                wrk[i] = 0.0;
+            }
+        }
+        public static void qphess(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx)
+        {
+            Solver.Factorise.dsmxmulv(n, hess, wrk, hx);
         }
         public unsafe static void qphess(int n, int nrowh, int ncolh, int j, double* hess, double* wrk, double* hx)
         {
@@ -4624,7 +4695,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 if (*nactiv > 0) anorm = Math.Abs(dtmax);
                 /*Computing MAX */
                 dinky = Math.Max(anorm, objsiz);
-                dinky = Math.Max(epspt9, DAS_Sol_zgfacc) * Math.Max(dinky, gfnorm);
+                dinky = Math.Max(epspt9, AccuracyModify) * Math.Max(dinky, gfnorm);
 
                 if (msg >= 80) wdinky("QPCORE", ztgnrm, dinky);
 
@@ -5156,15 +5227,18 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                     wrk[jthcol] = 1;
                 }
                 /*set  rt(*,k)  =  top of   h * (column of  z)*/
-                qphess(n, nrowh, ncolh, jthcol, hess, &wrk[1], hz1);
+                qphess(n, nrowh, ncolh, jthcol, Q, WRK, RLAM);
                 ++(*nhess);
                 if (unitq != 0 && scldqp) BlasLike.dscalvec(n, scale[jthcol], hz1);
                 if (scldqp) Factorise.ddmxmulv(n, &scale[1], 1, hz1, 1);
                 dzyprod(4, n, nfree, ncolz, nfree, Nq, unitq, &kfree[1], &kfree[1],
                     hz1, &zy[zy_offset], &wrk[1]);
-                BlasLike.dcopyvec(ncolz, hz1, &rt[k * Nrowrt + 1]);
+                //         BlasLike.dcopyvec(ncolz, hz1, &rt[k * Nrowrt + 1]);
+                //              BlasLike.dcopy(ncolz, RLAM, 1, RT, 1, 0, (k-1) * Nrowrt);
+                BlasLike.dcopyvec(ncolz, RLAM, RT, 0, (k - 1) * Nrowrt);
                 /*update an estimate of the size of the projected hessian*/
-                t = Math.Abs(rt[k + k * Nrowrt]);
+                //t = Math.Abs(rt[k + k * Nrowrt]);
+                t = Math.Abs(RT[k + (k - 1) * Nrowrt - 1]);
                 if (t > *hsize) *hsize = t;
             }
             /*
@@ -5176,10 +5250,12 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             {
                 /*FIND THE MAXIMUM REMAINING DIAGONAL*/
                 kmax = j;
-                dmax_ = rt[j + j * Nrowrt];
+             //   dmax_ = rt[j + j * Nrowrt];
+                dmax_ = RT[j + (j - 1) * Nrowrt - 1];
                 for (k = j; k <= ncolz; ++k)
                 {
-                    d = rt[k + k * Nrowrt];
+                    //d = rt[k + k * Nrowrt];
+                    d = RT[k + (k - 1) * Nrowrt - 1];
                     if (dmax_ < d)
                     {
                         dmax_ = d;
@@ -5664,6 +5740,86 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 if (i % 5 == 4) Console.Write("\n");
             }
             Console.Write("\n");
+        }
+        public unsafe static short LPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] objective)
+        {
+            var lp = 1;
+            var itmax = (short)2000;
+            var orthog = 1;
+            short iter = 1000;
+            var nclin = m;
+            var nctotl = n + m;
+            var nrowa = m;
+            var obj = 1e10;
+            var featol = 1e-8;
+            int cold = 1;
+            var bigbnd = 1e10;
+            short msglvl = -1000;
+            var istate = new int[n + m + n + n];
+            var lwrk = 2 * (n * (n + 2) + m) + m;
+            var lambda = new double[lwrk + n + m + n + m];
+            A = AA;
+            L = LL;
+            U = UU;
+            c = cc;
+            W = ww;
+            BlasLike.dsetvec(n + m, 0, lambda);
+            BlasLike.dsetvec(n + m, featol, lambda, n + m);
+            short ifail = 89;
+            short back;
+            fixed (int* pistate = istate)
+            fixed (double* plambda = lambda)
+            fixed (double* pA = A)
+            fixed (double* pL = L)
+            fixed (double* pU = U)
+            fixed (double* pc = c)
+            fixed (double* px = W)
+                back = dqpsol(itmax, msglvl, n, m, n + m, m,
+          n + n, 1, &bigbnd, pA, pL, pU, pc, plambda + n + m, null, cold, lp, orthog, px,
+          pistate, &iter, &obj, plambda, pistate + n + m, n + n, plambda + (n + m + n + m), lwrk, ifail);
+            objective[0] = obj;
+            return back;
+        }
+        public unsafe static short QPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] QQ, double[] objective)
+        {
+            var lp = 0;
+            var itmax = (short)2000;
+            var orthog = 1;
+            short iter = 1000;
+            var nclin = m;
+            var nctotl = n + m;
+            var nrowa = m;
+            var obj = 1e10;
+            var featol = 1e-8;
+            int cold = 1;
+            var bigbnd = 1e10;
+            short msglvl = -1000;
+            var istate = new int[n + m + n + n];
+            var lwrk = 2 * (n * (n + 2) + m) + m;
+            var lambda = new double[lwrk + n + m + n + m];
+            BlasLike.dsetvec(n + m, 0, lambda);
+            BlasLike.dsetvec(n + m, featol, lambda, n + m);
+            short ifail = 89;
+            short back;
+            A = AA;
+            L = LL;
+            U = UU;
+            c = cc;
+            W = ww;
+            Q = QQ;
+            fixed (int* pistate = istate)
+            fixed (double* plambda = lambda)
+            fixed (double* pA = A)
+            fixed (double* pL = L)
+            fixed (double* pU = U)
+            fixed (double* pc = c)
+            fixed (double* px = W)
+            fixed (double* phess = Q)
+                back = dqpsol(itmax, msglvl, n, m, n + m, m,
+          n + n, 1, &bigbnd, pA, pL, pU, pc, plambda + n + m, phess, cold, lp, orthog, px,
+          pistate, &iter, &obj, plambda, pistate + n + m, n + n, plambda + (n + m + n + m), lwrk, ifail);
+            objective[0] = obj;
+            return back;
         }
     }
 }

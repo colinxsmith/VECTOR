@@ -352,7 +352,7 @@ namespace Blas
                 *a++ = 0;
             }
         }
-        public static void dcopy(int n, double[] dx, int incx, double[] dy, int incy)
+        public static void dcopy(int n, double[] dx, int incx, double[] dy, int incy,int xstart=0,int ystart=0)
         {
             int i__, m, ix, iy;
             /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
@@ -391,7 +391,7 @@ namespace Blas
                 {
                     for (i__ = 0; i__ < m; ++i__)
                     {
-                        dy[i__] = dx[i__];
+                        dy[i__+ystart] = dx[i__+xstart];
                     }
                     if (n < 7)
                     {
@@ -400,13 +400,13 @@ namespace Blas
                 }
                 for (i__ = m; i__ < n; i__ += 7)
                 {
-                    dy[i__] = dx[i__];
-                    dy[i__ + 1] = dx[i__ + 1];
-                    dy[i__ + 2] = dx[i__ + 2];
-                    dy[i__ + 3] = dx[i__ + 3];
-                    dy[i__ + 4] = dx[i__ + 4];
-                    dy[i__ + 5] = dx[i__ + 5];
-                    dy[i__ + 6] = dx[i__ + 6];
+                    dy[i__+ystart] = dx[i__+xstart];
+                    dy[i__ + 1+ystart] = dx[i__ + 1+xstart];
+                    dy[i__ + 2+ystart] = dx[i__ + 2+xstart];
+                    dy[i__ + 3+ystart] = dx[i__ + 3+xstart];
+                    dy[i__ + 4+ystart] = dx[i__ + 4+xstart];
+                    dy[i__ + 5+ystart] = dx[i__ + 5+xstart];
+                    dy[i__ + 6+ystart] = dx[i__ + 6+xstart];
                 }
             }
             else
@@ -427,7 +427,7 @@ namespace Blas
                 }
                 for (i__ = 0; i__ < n; ++i__)
                 {
-                    dy[iy - 1] = dx[ix - 1];
+                    dy[iy - 1+ystart] = dx[ix - 1+xstart];
                     ix += incx;
                     iy += incy;
                 }
@@ -522,9 +522,9 @@ namespace Blas
         {
             dcopy(n, a, 1, b, 1);
         }
-        public static void dcopyvec(int n, double[] a, double[] b)
+        public static void dcopyvec(int n, double[] a, double[] b,int astart=0,int bstart=0)
         {
-            Buffer.BlockCopy(a, 0, b, 0, n * sizeof(double));
+            Buffer.BlockCopy(a, astart* sizeof(double), b, bstart* sizeof(double), n * sizeof(double));
         }
         public static void dsub(int n, double[] x, int ix, double[] y, int iy, double[] z, int iz)
         {

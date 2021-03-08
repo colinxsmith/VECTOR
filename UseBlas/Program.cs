@@ -754,65 +754,115 @@ namespace UseBlas
                 Ordering.Order.bound_reorganise(0, n, nn, m, xx);
                 Ordering.Order.Display(xx, "Reset");
             }
+
             {
-                unsafe
-                {
-                    var n = 10;
-                    var m = 2;
-                    double[] x = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
-                    double[] c = { 1, 2, 3, 4, 5, 6, 17, 8, 9, 10 };
-                    double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,
+                var n = 10;
+                var m = 2;
+                var x = new double[n];
+                double[] c = { 1, 2, 3, 4, 5, 6, 17, 8, 9, 10 };
+                double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,
                                    0, 0, 1, 1, 1, 0, 0, 0, 0, 0};
-                    double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0.1 };
-                    double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.1 };
-                    Factorise.dmx_transpose(n, m, A, A);
-                    double[] hess ={1,
-                     0.1, 1,
-                     0, 0, 1,
-                     0.1, 0, 0, 1,
-                     0, 0, 0, 0, 1,
-                     0, 0, 0.1, 0, 0, 1,
-                     0, 0, 0, 0, 0, 0, 1,
-                     0, 0, 0, 0, 0.1, 0, 0, 1,
-                     0, 0, 0, 0, 0, 0, 0, 0, 1,
-                     0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
-                    var lp = 1;
-                    var itmax = (short)2000;
-                    var orthog = 1; //orthog=1 is best
-                    short iter = 1000;
-                    var nclin = m;
-                    var nctotl = n + m;
-                    var nrowa = m;
-                    var obj = 1e10;
-                    var featol = 1e-8;
-                    int cold = 1; //Use cold = 1 starting point satifies the constraints
-                    var bigbnd = 1e10;
-                    short msglvl = 1000;
-                    var istate = new int[n + m + n + n];
-                    var lwrk = 2 * (n * (n + 2) + m) + m;
-                    Console.WriteLine($"work {lwrk} {lwrk + 2 * (n + m)}");
-                    var lambda = new double[lwrk + n + m + n + m];
-                    BlasLike.dsetvec(n + m, 0, lambda);
-                    BlasLike.dsetvec(n + m, featol, lambda, n + m);
-                    short ifail = 89;
-                    short back;
-               //     BlasLike.dscalvec(n*(n+1)/2,0.5,hess);
-                    fixed (int* pistate = istate)
-                    fixed (double* plambda = lambda)
-                    fixed (double* pA = A)
-                    fixed (double* pL = L)
-                    fixed (double* pU = U)
-                    fixed (double* pc = c)
-                    fixed (double* px = x)
-                    fixed (double* phess = hess)
-                        back = ActiveSet.Optimise.dqpsol(itmax, msglvl, n, m, n + m, m,
-                        n + n, 1, &bigbnd, pA, pL, pU, pc, plambda + n + m, phess, cold, lp, orthog, px,
-                        pistate, &iter, &obj, plambda, pistate + n + m, n + n, plambda + (n + m + n + m), lwrk, ifail);
-                    var implied=new double[n];
-                    Factorise.dsmxmulv(n,hess,x,implied);
-                    Console.WriteLine($"back is {back} {BlasLike.ddotvec(n, x, c)+(1-lp)*0.5*BlasLike.ddotvec(n,implied,x)} {obj}");
-                    ActiveSet.Optimise.printV(x);
+                double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0.1 };
+                double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.1 };
+                Factorise.dmx_transpose(n, m, A, A);
+                double[] hess = new double[n * (n + 1) / 2];
+                var tdata = 2 * n;
+                var timeD = new double[n, tdata];
+
+                for (int i = 0; i < n; ++i)
+                {
+                    for (int time = 0; time < tdata; ++time)
+                    {
+                        var dat = new Random();
+                        timeD[i, time] = dat.NextDouble();
+                    }
                 }
+                for (int i = 0; i < n; ++i)
+                {
+                    for (int j = 0; j <= i; ++j)
+                    {
+                        hess[i * (i + 1) / 2 + j] = 0;
+                        var ti = 0.0;
+                        var tj = 0.0;
+                        for (int time = 0; time < tdata; ++time)
+                        {
+                            ti += timeD[i, time];
+                            tj += timeD[j, time];
+                            hess[i * (i + 1) / 2 + j] += timeD[i, time] * timeD[j, time];
+                        }
+                        hess[i * (i + 1) / 2 + j] = hess[i * (i + 1) / 2 + j] / tdata - ti / tdata * tj / tdata;
+                    }
+                }
+                //   foreach (var a in hess) Console.WriteLine(a + ",");
+                double[] hesst ={0.07622384475840693,
+                                    -0.0016365991417207626,
+                                    0.08604333317714313,
+                                    -0.011316860823247121,
+                                    -0.030434772808639987,
+                                    0.11211083919582854,
+                                    -0.005442735249764186,
+                                    0.004464673502705685,
+                                    0.02884916845203872,
+                                    0.07030671358796253,
+                                    0.011709823440838929,
+                                    0.02086299454025381,
+                                    -0.015170796975208789,
+                                    -0.0005067292359139386,
+                                    0.059822876920856805,
+                                    0.030315371151201392,
+                                    0.0034082127351833247,
+                                    -0.022933127136383458,
+                                    0.0016861298409444059,
+                                    0.012600705278736524,
+                                    0.08316673826220947,
+                                    0.0115607066361883,
+                                    -0.0034806816621613668,
+                                    -0.0010519351552628065,
+                                    -0.0028576346296797506,
+                                    0.008573189337515441,
+                                    -0.025115408356197216,
+                                    0.08293672602298946,
+                                    0.014699977532219966,
+                                    -0.019735088940840084,
+                                    0.05551477101220931,
+                                    -0.019246450916202917,
+                                    -0.01412419584221336,
+                                    -0.0025011076826836065,
+                                    -0.013239288762594226,
+                                    0.0907984789770602,
+                                    -0.013526556333058826,
+                                    0.0098303768770443,
+                                    -0.042483694444829995,
+                                    -0.035685449490480525,
+                                    0.015581944899869915,
+                                    -0.0008483921768689395,
+                                    -0.006279985059017501,
+                                    -0.00375529364246191,
+                                    0.10266907898364636,
+                                    0.03999356589115988,
+                                    0.045353250040677695,
+                                    -0.0019274282309346968,
+                                    0.010712719440722496,
+                                    0.024816489058402724,
+                                    0.03416835576827826,
+                                    -0.001184721225989449,
+                                    -0.011735959703553567,
+                                    -0.04135384837511391,
+                                    0.12585651441173307};
+                hess = hesst;
+                var obj = new double[1];
+                short back;
+                BlasLike.dsetvec(x.Length, 1.0 / n, x);
+                back = ActiveSet.Optimise.LPopt(n, m, x, L, U, A, c, obj);
+                Console.WriteLine($"back is {back} {BlasLike.ddotvec(n, x, c)} {obj[0]}");
+                ActiveSet.Optimise.printV(x);
+                BlasLike.dsetvec(x.Length, 1.0 / n, x);
+                BlasLike.dscalvec(hess.Length, 1e3, hess);
+                back = ActiveSet.Optimise.QPopt(n, m, x, L, U, A, c, hess, obj);
+                var implied = new double[n];
+                Factorise.dsmxmulv(n, hess, x, implied);
+                Console.WriteLine($"back is {back} {BlasLike.ddotvec(n, x, c) + 0.5 * BlasLike.ddotvec(n, implied, x)} {obj[0]}");
+                ActiveSet.Optimise.printV(x);
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
