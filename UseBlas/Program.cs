@@ -863,6 +863,9 @@ namespace UseBlas
                 Factorise.dsmxmulv(n, hess, x, implied);
                 Console.WriteLine($"back is {back} {BlasLike.ddotvec(n, x, c) + 0.5 * BlasLike.ddotvec(n, implied, x)} {obj[0]}");
                 ActiveSet.Optimise.printV(x);
+                implied=new double[m];
+                Factorise.dmxmulv(m,n,A,x,implied);
+                foreach(var cc in implied)Console.WriteLine($"Constraint value {cc}");
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
