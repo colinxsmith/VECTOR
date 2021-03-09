@@ -15,6 +15,9 @@ namespace ActiveSet
         public static double AccuracyModify = -1.0;
         public static int msg;
         public static bool scldqp;
+        public static int[] istate;
+        public static double[] lambda;
+        public static double[] featol;
         public static int[] KACTV;
         public static int[] KFREE;
         public static int istart;
@@ -292,16 +295,9 @@ namespace ActiveSet
             /*     WE HAVE TO DELETE A CONSTRAINT BEFORE A MOVE CAN BE MADE. */
             /* --------------------------------------------------------------------- 
             */
-            fixed (double* pANORM = ANORM)
-            fixed (double* pQTG = QTG)
-            fixed (double* pRT = RT)
-            fixed (double* pZY = ZY)
-            fixed (double* pPX = PX)
-            fixed (double* pRLAM = RLAM)
-            fixed (double* pAP = AP)
-                dgetlamd(lprob, n, *nactiv, ncolz, *nfree, *nrowa, nrowrt,
-                    &jsmlst, &ksmlst, &smllst, &istate[1], &kactiv[1], &a[
-                    a_offset], pANORM, pQTG, pRLAM, pRT);
+            dgetlamd(lprob, n, *nactiv, ncolz, *nfree, *nrowa, nrowrt,
+                &jsmlst, &ksmlst, &smllst, &istate[1], &a[
+                a_offset]);
             /* --------------------------------------------------------------------- 
             */
             /*     TEST FOR CONVERGENCE.  IF THE LEAST (ADJUSTED) MULTIPLIER IS */
@@ -676,17 +672,8 @@ namespace ActiveSet
             {
                 wrexit("LP", *inform, *iter);
             }
-            fixed (double* pANORM = ANORM)
-            fixed (double* pQTG = QTG)
-            fixed (double* pRT = RT)
-            fixed (double* pZY = ZY)
-            fixed (double* pPX = PX)
-            fixed (double* pRLAM = RLAM)
-            fixed (double* pAP = AP)
-                if (*inform > 0) dgetlamd(lprob, n, *nactiv, ncolz, *nfree, *nrowa,
-                    nrowrt, &jsmlst, &ksmlst, &smllst, &istate[1], &
-                    kactiv[1], &a[a_offset], pANORM, pQTG, pRLAM,
-                    pRT);
+            if (*inform > 0) dgetlamd(lprob, n, *nactiv, ncolz, *nfree, *nrowa,
+                nrowrt, &jsmlst, &ksmlst, &smllst, &istate[1], &a[a_offset]);
             fixed (double* pANORM = ANORM)
             fixed (double* pQTG = QTG)
             fixed (double* pRT = RT)
@@ -703,7 +690,7 @@ namespace ActiveSet
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
                 dprtsol(*nfree, *nrowa, n, *nclin, ncnln, *nctotl, bigbnd,
-                    *nactiv, &istate[1], &kactiv[1], &a[a_offset],
+                    *nactiv, &istate[1], &a[a_offset],
                     &bl[1], &bu[1], &x[1], &clamda[1], pRLAM, &x[1]);
         }
         public unsafe static double dnrm2vec(int n, double* x)
@@ -1695,7 +1682,7 @@ namespace ActiveSet
                     BlasLike.dcopyvec(nfixed, &wrk[nfree + 1], &v[nfree + 1]);
             }
         }
-        public unsafe static void dgetlamd(string lprob, int n, int nactiv, int ncolz, int nfree, int nrowa, int Nrowrt, int* jsmlst, int* ksmlst, double* smllst, int* istate, int* kactiv, double* a, double* anorm, double* qtg, double* rlamda, double* rt)
+        public unsafe static void dgetlamd(string lprob, int n, int nactiv, int ncolz, int nfree, int nrowa, int Nrowrt, int* jsmlst, int* ksmlst, double* smllst, int* istate, double* a)
         {/*
 	dgetlamd first computes the lagrange multiplier estimates for the
 	given working set.  it then determines the values and indices of
@@ -1719,12 +1706,13 @@ namespace ActiveSet
             int i, j, k, l, jgfxd, ka, kb, was_is = -111111111, nfixed;
             int idiag;
 
-            rt -= Nrowrt + 1;
-            --rlamda;
-            --qtg;
-            --anorm;
+            //       rt -= Nrowrt + 1;
+            var rt_offset = nrowrt + 1;
+            // --rlamda;
+            // --qtg;
+            // --anorm;
             a -= nrowa + 1;
-            --kactiv;
+            // --kactiv;
             --istate;
 
             /*
@@ -1736,10 +1724,13 @@ namespace ActiveSet
             nlam = nfixed + nactiv;
             if (nactiv > 0)
             {
-                BlasLike.dcopyvec(nactiv, &qtg[ncolz + 1], &rlamda[1]);
+                //   BlasLike.dcopyvec(nactiv, &qtg[ncolz + 1], pRLAM);
+                BlasLike.dcopyvec(nactiv, QTG, RLAM, ncolz);
                 idiag = 1;
-                drtmxsolve(-2, nactiv, &rt[(ncolz + 1) * Nrowrt + 1], Nrowrt,
-                    &rlamda[1], &idiag);
+                fixed (double* pRT = RT)
+                fixed (double* pRLAM = RLAM)
+                    drtmxsolve(-2, nactiv, &pRT[(ncolz + 1) * Nrowrt + 1 - rt_offset], Nrowrt,
+                        pRLAM, &idiag);
             }
             /*
             now set elements nactiv, nactiv+1,... of rlamda equal to the
@@ -1748,15 +1739,15 @@ namespace ActiveSet
             for (l = 1; l <= nfixed; ++l)
             {
                 kb = nactiv + l;
-                j = kactiv[kb];
+                j = KACTV[kb - 1];
                 jgfxd = nfree + l;
-                blam = qtg[jgfxd];
+                blam = QTG[jgfxd - 1];
                 for (ka = 1; ka <= nactiv; ++ka)
                 {
-                    i = kactiv[ka];
-                    blam -= a[i + j * nrowa] * rlamda[ka];
+                    i = KACTV[ka - 1];
+                    blam -= a[i + j * nrowa] * RLAM[ka - 1];
                 }
-                rlamda[kb] = blam;
+                RLAM[kb - 1] = blam;
             }
 
             /*find  allmax and smllst*/
@@ -1765,11 +1756,11 @@ namespace ActiveSet
             *ksmlst = 0;
             for (k = 1; k <= nlam; ++k)
             {
-                j = kactiv[k];
+                j = KACTV[k - 1];
                 if (k > nactiv) anormj = 1;
                 else
                 {
-                    anormj = anorm[j];
+                    anormj = ANORM[j - 1];
                     j += n;
                 }
                 was_is = istate[j];
@@ -1780,7 +1771,7 @@ namespace ActiveSet
                 */
                 if (was_is != 3)
                 {
-                    rlam = rlamda[k] * anormj;
+                    rlam = RLAM[k - 1] * anormj;
                     /*not a fixed variable or an equality constraint*/
                     if (was_is == 2) rlam = -rlam;
                     else if (was_is == 4) rlam = -Math.Abs(rlam);
@@ -1796,9 +1787,13 @@ namespace ActiveSet
 
             /*if required, print the multipliers*/
             if (msg < 20) return;
-            if (nactiv > 0) w_lam(lprob, "CONSTRAINTS...", nactiv, &kactiv[1], &rlamda[1]);
+            fixed (double* pRLAM = RLAM)
+            fixed (int* pKACTV = KACTV)
+                if (nactiv > 0) w_lam(lprob, "CONSTRAINTS...", nactiv, pKACTV, pRLAM);
             l = nactiv + 1;
-            if (l <= nlam) w_lam(lprob, "BOUND CONSTRAINTS...", nlam - nactiv, &kactiv[l], &rlamda[l]);
+            fixed (double* pRLAM = RLAM)
+            fixed (int* pKACTV = KACTV)
+                if (l <= nlam) w_lam(lprob, "BOUND CONSTRAINTS...", nlam - nactiv, pKACTV, pRLAM);
             if (msg >= 80)
                 lm_wmsg("\n//dgetlam//  JSMLST     SMLLST     KSMLST\n//dgetlam//%8ld%11.2lg%11ld",
                     *jsmlst, *smllst, *ksmlst);
@@ -2839,7 +2834,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* unitq, int* ifix, int*
         }
         public unsafe static
         void dprtsol(int nfree, int nrowa, int n, int nclin, int ncnln, int nctotl,
-                    double bigbnd, int nactiv, int* istate, int* kactiv,
+                    double bigbnd, int nactiv, int* istate,
                     double* a, double* bl, double* bu, double* c, double* clamda, double* rlamda, double* x)
         {
 
@@ -2868,7 +2863,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* unitq, int* ifix, int*
             --bu;
             --bl;
             a -= nrowa + 1;
-            --kactiv;
+            // --kactiv;
             --istate;
 
             nplin = n + nclin;
@@ -2878,7 +2873,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* unitq, int* ifix, int*
             nlam = nactiv + nfixed;
             for (k = 1; k <= nlam; ++k)
             {
-                j = kactiv[k];
+                j = KACTV[k - 1];
                 if (k <= nactiv) j += n;
                 clamda[j] = rlamda[k];
             }
@@ -3905,7 +3900,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 }
             }
         }
-        public unsafe static short dqpsol(short itmax, short msglvl, int n, int nclin, int nctotl, int nrowa, int nrowh, int ncolh, double* bigbnd, double* a, double* bl, double* bu, double* cvec, double* featol, double* hess, int cold, int lp, int orthog, double* x, int* istate, short* iter, double* obj, double* clamda, int* iw, int leniw, double* w, int lenw, short ifail)
+        public unsafe static short dqpsol(short itmax, short msglvl, int n, int nclin, int nctotl, int nrowa, int nrowh, int ncolh, double* bigbnd, int cold, int lp, int orthog, short* iter, double* obj, int leniw, int lenw, short ifail)
         {
             parm[0] = 1e10;
             parm[1] = 1e20;
@@ -3944,12 +3939,11 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             int nfree, ncnln;
             int unitq;
             double xnorm;// epspt9;
-            int lscale, maxact, minact;
+            int maxact, minact;
             byte lcrash;
             //double tolact;
             int minfxd, inform, mxfree, nactiv, numinf;
             var litotl = new int[1];
-            short nerror;
             int minsum;
             int mxcolz;
             int vertex;
@@ -3967,15 +3961,15 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             int nrowh_ = nrowh;
             //#define NCOLH &ncolh_
             int ncolh_ = ncolh;
-            --w;
-            --iw;
-            --clamda;
-            --istate;
-            --x;
-            --featol;
-            --cvec;
-            --bu;
-            --bl;
+            // --w;
+            // --iw;
+            //--clamda;
+            //   --istate;
+            // --x;
+            //       --featol;
+            //  --cvec;
+            //         --bu;
+            //        --bl;
 
             /*IF ITMAX IS NOT POSITIVE ON ENTRY SET IT TO 50*/
             itmx = itmax;
@@ -4050,10 +4044,17 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             lcrash = 1;
             if (cold != 0) lcrash = 0;
             /*check input parameters and storage limits*/
-            if (msglvl == 99)
-                dlpdump(n, nclin, nctotl, nrowa, lcrash, lp, minsum,
-                vertex, &istate[1], a, &w[lax], &bl[1], &bu[1],
-                &cvec[1], &x[1]);
+            fixed (double* pW = W)
+            fixed (double* pA = A)
+            fixed (double* pc = c)
+            fixed (double* pL = L)
+            fixed (double* pU = U)
+            fixed (int* pIstate = istate)
+            fixed (double* plambda = lambda)
+                if (msglvl == 99)
+                    dlpdump(n, nclin, nctotl, nrowa, lcrash, lp, minsum,
+                    vertex, pIstate, pA, plambda + n + nclin + n + nclin, pL, pU,
+                    pc, pW);
             /*            fixed (double* pANORM = ANORM)
                         fixed (double* pQTG = QTG)
                         fixed (double* pRT = RT)
@@ -4067,25 +4068,22 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 dqpdump(n, nrowh, ncolh, c, Q, WRK, PX);
 
             fixed (int* pKACTV = KACTV)
-                nerror = dchkdat(leniw, lenw, litotl[0], lwtotl[0], nrowa, n, nclin,
-                        nctotl, &istate[1], pKACTV, lcrash,
-                        bigbnd, a, &bl[1], &bu[1], &featol[1], &x[1]);
-            *iter = 0;
-            if (nerror != 0)
-            {
-                if (msglvl > 0)
-                    lm_wmsg(
-            " EXIT QPSOL-%6ld ERRORS FOUND IN THE INPUT PARAMETERS.  PROBLEM ABANDONED.",
-                    nerror);
-                return lm_check_fail((short)ifail, (short)9, "QPSOL");
-            }
+            fixed (double* pW = W)
+            fixed (double* pA = A)
+            fixed (double* pc = c)
+            fixed (double* pL = L)
+            fixed (double* pU = U)
+            fixed (int* pIstate = istate)
+            fixed (double* pfeatol = featol)
+                *iter = 0;
+
 
             /*
             no scaling is provided by this version of  dqpsol
             give a fake value for the start of the scale array
             */
             scldqp = false;
-            lscale = 1;
+
 
             /*
             ---------------------------------------------------------------------
@@ -4095,10 +4093,18 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             */
             fixed (int* pKFREE = KFREE)
             fixed (int* pKACTV = KACTV)
+            fixed (double* pW = W)
+            fixed (double* pA = A)
+            fixed (double* pc = c)
+            fixed (double* pL = L)
+            fixed (double* pU = U)
+            fixed (int* pIstate = istate)
+            fixed (double* plambda = lambda)
+            fixed (double* pfeatol = featol)
                 dlpcore((lp & 1) != 0, minsum, orthog != 0, &unitq, vertex, &inform, &iter_,
                 itmx, lcrash, n, &nclin, &nctotl, &nrowa, &nactiv, &nfree, &numinf,
-                    &istate[1], pKACTV, pKFREE, obj, &xnorm, a, &bl[1], &bu[1], &clamda[1], &cvec[1], &featol[1], &x[1], &
-                    iw[1], &w[1]);
+                    pIstate, pKACTV, pKFREE, obj, &xnorm, pA, pL, pU, plambda, pc, pfeatol, pW,
+                    pIstate + maxact + n, plambda + n + nclin + n + nclin);
             *iter = (short)iter_;
             if (lp != 0)
             {
@@ -4122,10 +4128,19 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 var nrowrt_c = nrowrt;
                 fixed (int* pKACTV = KACTV)
                 fixed (int* pKFREE = KFREE)
+                fixed (double* pW = W)
+                fixed (double* pA = A)
+                fixed (double* pc = c)
+                fixed (double* pL = L)
+                fixed (double* pU = U)
+                fixed (int* pIstate = istate)
+                fixed (double* pQ = Q)
+                fixed (double* plambda = lambda)
+                fixed (double* pfeatol = featol)
                     dqpcore(orthog, &unitq, &inform, &iter_, &itmx, n, &nclin, &nctotl,
-                            &nrowrt_c, &nrowh, &ncolh, &nactiv, &nfree, &istate[1],
-                            pKACTV, pKFREE, obj, &xnorm, a, &bl[1], &bu[1], &clamda[1], &cvec[1], &featol[1], hess,
-                            &w[lscale], &x[1], &iw[1]);
+                            &nrowrt_c, &nrowh, &ncolh, &nactiv, &nfree, pIstate,
+                            pKACTV, pKFREE, obj, &xnorm, pA, pL, pU, plambda, pc, pfeatol, pQ,
+                            plambda + n + nclin + n + nclin, pW, pIstate + maxact + n);
                 nrowrt = nrowrt_c;
                 *iter = (short)iter_;
             }
@@ -4377,141 +4392,6 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
         public unsafe static void qphess(int n, int nrowh, int ncolh, int j, double* hess, double* wrk, double* hx)
         {
             Solver.Factorise.dsmxmulv(n, hess, wrk, hx);
-        }
-        public unsafe static short dchkdat(int liwork, int lwork, int litotl, int lwtotl, int nrowa, int n, int nclin, int nctotl, int* istate, int* kactiv, int lcrash, double* bigbnd, double* a, double* bl, double* bu, double* featol, double* x)
-        {
-
-            string id = "VARBL LNCON NLCON ";
-
-            short nerror;
-            int nplin = n + nclin;
-
-            double ftol;
-            double test;
-            int j, k;
-            double b1, b2;
-            //    int l1;
-            bool ok;
-            int was_is;
-
-            /*     CHKDAT  CHECKS THE DATA INPUT TO THE VARIOUS OPTIMIZERS. */
-            /*     THE FOLLOWING QUANTITIES ARE NOT CHECKED... */
-            /*     NROWA, N, NCLIN, NCTOTL */
-            /*     KACTIV */
-            /*     A, X */
-            --x;
-            --featol;
-            --bu;
-            --bl;
-            --kactiv;
-            --istate;
-
-            nerror = 0;
-            /* --------------------------------------------------------------------- 
-            */
-            /*     CHECK THAT THERE IS ENOUGH WORKSPACE TO SOLVE THE PROBLEM. */
-            /* --------------------------------------------------------------------- 
-            */
-            ok = litotl <= liwork && lwtotl <= lwork;
-            if (ok && msg <= 0)
-            {
-                goto L20;
-            }
-            if (msg >= 0)
-                lm_wmsg(
-            "\nWORKSPACE PROVIDED IS     IW(%6ld),  W(%6ld).\nTO SOLVE PROBLEM WE NEED  IW(%6ld),  W(%6ld).",
-                    liwork, lwork, litotl, lwtotl);
-            if (ok)
-                goto L20;
-            ++nerror;
-            if (msg >= 0)
-                Console.WriteLine("\nXXX  NOT ENOUGH WORKSPACE TO SOLVE PROBLEM.");
-            /* --------------------------------------------------------------------- 
-            */
-            /*     CHECK THE BOUNDS ON ALL VARIABLES AND CONSTRAINTS. */
-            /* --------------------------------------------------------------------- 
-            */
-            L20:
-            for (j = 1; j <= (int)nctotl; ++j)
-            {
-                b1 = bl[j];
-                b2 = bu[j];
-                ok = b1 <= b2;
-                if (ok)
-                {
-                    goto L40;
-                }
-                ++nerror;
-                k = j;
-                //      l1 = 1;
-                if (j > (int)n)
-                {
-                    k = j - n;
-                }
-                //   if (j > (int)n)
-                //   {
-                //      l1 = 4;
-                //  }
-                if (j > (int)nplin)
-                {
-                    k -= nclin;
-                }
-                //   if (j > (int)nplin)
-                //   {
-                //      l1 = 7;
-                //  }
-                if (msg >= 0)
-                    lm_wmsg(
-            "\nXXX THE BOUNDS ON %.2s%.2s%.1s%3ld ARE INCONSISTENT BL =%16.7lg BU =%16.7lg",
-                    id, id + 2, id + 4, k, b1,
-                        b2);
-                L40:
-                ;
-            }
-            /* --------------------------------------------------------------------- 
-            */
-            /*     CHECK  BIGBND  AND  FEATOL. */
-            /* --------------------------------------------------------------------- 
-            */
-            ok = *bigbnd > 0;
-            if (ok) goto L60;
-            ++nerror;
-            if (msg >= 0)
-                lm_wmsg("\nXXX BIGBND IS NOT POSITIVE...%20.9lg", *bigbnd);
-            L60:
-            for (j = 1; j <= (int)nctotl; ++j)
-            {
-                ftol = featol[j];
-                test = 1 + ftol;
-                ok = test > 1;
-                if (!ok && msg >= 0)
-                    lm_wmsg(
-            "\n*** WARNING -- FEATOL(%4ld) IS LESS THAN MACHINE PRECISION...%16.6lg",
-                    j, ftol);
-            }
-            /* --------------------------------------------------------------------- 
-            */
-            /*     IF WARM START, CHECK  ISTATE. */
-            /* --------------------------------------------------------------------- 
-            */
-            /* L100: */
-            if (lcrash != 0)
-            {
-                for (j = 1; j <= (int)nplin; ++j)
-                {
-                    was_is = istate[j];
-                    ok = was_is >= -2 && was_is <= 4;
-                    if (!ok)
-                    {
-                        ++nerror;
-                        if (msg >= 0)
-                            lm_wmsg(
-                        "\nXXX COMPONENT%5ld OF ISTATE IS OUT OF RANGE...%10ld",
-                        j, was_is);
-                    }
-                }
-            }
-            return nerror;
         }
         public unsafe static void dqpcore(int orthog, int* unitq, int* inform, int* iter, int* itmax, int n, int* nclin, int* nctotl, int* nrowa, int* nrowh, int* ncolh, int* nactiv, int* nfree, int* istate, int* kactiv, int* kfree, double* objqp, double* xnorm, double* a, double* bl, double* bu, double* clamda, double* cvec, double* featol, double* hess, double* scale, double* x, int* iw)
         {
@@ -4776,17 +4656,8 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                         jdel = -(ncolr + 1);
                         if (ncolr >= ncolz)
                         {
-
-                            fixed (double* pANORM = ANORM)
-                            fixed (double* pQTG = QTG)
-                            fixed (double* pRT = RT)
-                            fixed (double* pZY = ZY)
-                            fixed (double* pPX = PX)
-                            fixed (double* pRLAM = RLAM)
-                            fixed (double* pAP = AP)
-                                dgetlamd(lprob, n, *nactiv, ncolz, *nfree, *nrowa, nrowrt,
-                                    &jsmlst, &ksmlst, &smllst, &istate[1], &kactiv[1], a,
-                                    pANORM, pQTG, pRLAM, pRT);
+                            dgetlamd(lprob, n, *nactiv, ncolz, *nfree, *nrowa, nrowrt,
+                                &jsmlst, &ksmlst, &smllst, &istate[1], a);
 
                             /*
                             test for convergence.  if the least (adjusted) multiplier is
@@ -4839,18 +4710,10 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                         */
                         renewr = true;
                         ++ncolr;
-                        fixed (double* pANORM = ANORM)
-                        fixed (double* pQTG = QTG)
-                        fixed (double* pRT = RT)
-                        fixed (double* pZY = ZY)
                         fixed (double* pPX = PX)
-                        fixed (double* pRLAM = RLAM)
-                        fixed (double* pAP = AP)
-                        fixed (double* pWRK = WRK)
                             dqpcolr(&nocurv, &posdef, &renewr, unitq, n, &ncolr,
                                 nfree, nrowh, ncolh, &nhess, &kfree[1], &
-                                cslast, &snlast, &drmax, &emax, &hsize, &rdlast, hess,
-                                pRT, &scale[1], pZY, pPX, pWRK);
+                                cslast, &snlast, &drmax, &emax, &hsize, &rdlast, hess, &scale[1], pPX);
                         /*REPEAT THE MAIN LOOP*/
                         continue;
                     }
@@ -5137,19 +5000,11 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                     of the last diagonal of	 r  or	recompute the whole of its last
                     column. use the array  rlam  as temporary work space
                     */
-                    fixed (double* pANORM = ANORM)
-                    fixed (double* pQTG = QTG)
-                    fixed (double* pRT = RT)
-                    fixed (double* pZY = ZY)
-                    fixed (double* pPX = PX)
                     fixed (double* pRLAM = RLAM)
-                    fixed (double* pAP = AP)
-                    fixed (double* pWRK = WRK)
                         dqpcolr(&nocurv, &posdef, &renewr, unitq, n, &ncolr,
                             nfree, nrowh, ncolh, &nhess, &
                             kfree[1], &cslast, &snlast, &drmax, &emax, &hsize, &rdlast,
-                            hess, pRT, &scale[1], pZY, pRLAM,
-                            pWRK);
+                            hess, &scale[1], pRLAM);
                 }
                 /*.........................END OF MAIN LOOP............................*/
             }
@@ -5159,26 +5014,11 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             /*PRINT FULL SOLUTION*/
             msg = msglvl;
             if (msg >= 1) wrexit(lprob, i, *iter);
-
-            fixed (double* pANORM = ANORM)
-            fixed (double* pQTG = QTG)
-            fixed (double* pRT = RT)
-            fixed (double* pZY = ZY)
-            fixed (double* pPX = PX)
+            if (i > 0) dgetlamd(lprob, n, *nactiv, ncolz, *nfree, *nrowa,
+                     nrowrt, &jsmlst, &ksmlst, &smllst, &istate[1], a);
             fixed (double* pRLAM = RLAM)
-            fixed (double* pAP = AP)
-                if (i > 0) dgetlamd(lprob, n, *nactiv, ncolz, *nfree, *nrowa,
-                         nrowrt, &jsmlst, &ksmlst, &smllst, &istate[1], &
-                         kactiv[1], a, pANORM, pQTG, pRLAM, pRT);
-            fixed (double* pANORM = ANORM)
-            fixed (double* pQTG = QTG)
-            fixed (double* pRT = RT)
-            fixed (double* pZY = ZY)
-            fixed (double* pPX = PX)
-            fixed (double* pRLAM = RLAM)
-            fixed (double* pAP = AP)
                 dprtsol(*nfree, *nrowa, n, *nclin, ncnln, *nctotl, bigbnd,
-                    *nactiv, &istate[1], &kactiv[1], a,
+                    *nactiv, &istate[1], a,
                     &bl[1], &bu[1], &x[1], &clamda[1], pRLAM, &x[1]);
         }
         public unsafe static int dqpcrsh(int unitq, int n, int ncolz, int nfree, int* nhess, int Nq, int nrowh, int ncolh, int Nrowrt, int* kfree, double* hsize, double* hess, double* rt, double* scale, double* zzy, double* hz1, double* wrk)
@@ -5505,7 +5345,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 lm_gdvwri(ncolz, rt, nrowrt + 1);
             }
         }
-        public unsafe static void dqpcolr(bool* nocurv, bool* posdef, bool* renewr, int* unitq, int n, int* ncolr, int* nfree, int* nrowh, int* ncolh, int* nhess, int* kfree, double* cslast, double* snlast, double* drmax, double* emax, double* hsize, double* rdlast, double* hess, double* rt, double* scale, double* zy, double* hz1, double* wrk)
+        public unsafe static void dqpcolr(bool* nocurv, bool* posdef, bool* renewr, int* unitq, int n, int* ncolr, int* nfree, int* nrowh, int* ncolh, int* nhess, int* kfree, double* cslast, double* snlast, double* drmax, double* emax, double* hsize, double* rdlast, double* hess, double* scale, double* hz1)
         {
             /*
                 dqpcolr  is used to compute elements of the  (ncolr)-th  column of
@@ -5534,15 +5374,15 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             int ncolr1;
             int jthcol;
             double rdsmin, rdsmax;
-            --wrk;
+            //          --wrk;
             --hz1;
             zy_dim1 = nq;
             zy_offset = zy_dim1 + 1;
-            zy -= zy_offset;
+            //    zy -= zy_offset;
             --scale;
             rt_dim1 = nrowrt;
             rt_offset = rt_dim1 + 1;
-            rt -= rt_offset;
+            //    rt -= rt_offset;
             hess_dim1 = *nrowh;
             hess_offset = hess_dim1 + 1;
             hess -= hess_offset;
@@ -5563,7 +5403,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             the rotations used to update  r  when the constraint was added to
             the working set
             */
-            *rdlast = rt[*ncolr + *ncolr * rt_dim1];
+            *rdlast = RT[*ncolr + *ncolr * rt_dim1 - rt_offset];
             s = Math.Abs(*snlast);
             rdsq = (*cslast - s) * *rdlast * ((*cslast + s) * *rdlast);
             goto L120;
@@ -5574,7 +5414,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
         diagonal element
         */
         L20:
-            BlasLike.dzerovec(n, &wrk[1]);
+            BlasLike.dzerovec(n, WRK);
             if (*unitq != 0) goto L60;
             /*
                  expand the new column of z in to an n-vector
@@ -5583,10 +5423,11 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             for (k = 1; k <= i__1; ++k)
             {
                 j = kfree[k];
-                wrk[j] = ZY[k + *ncolr * zy_dim1 - zy_offset];
+                WRK[j - 1] = ZY[k + *ncolr * zy_dim1 - zy_offset];
                 /* L40: */
             }
-            if (scldqp) Factorise.ddmxmulv(n, &scale[1], 1, &wrk[1], 1);
+            fixed (double* pWRK = WRK)
+                if (scldqp) Factorise.ddmxmulv(n, &scale[1], 1, pWRK, 1);
             jthcol = 0;
             goto L80;
         /*
@@ -5596,33 +5437,39 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
         */
         L60:
             jthcol = kfree[*ncolr];
-            wrk[jthcol] = 1;
+            WRK[jthcol - 1] = 1;
         /*
              compute the hessian times the last column of z
         */
         L80:
-            qphess(n, *nrowh, *ncolh, jthcol, &hess[hess_offset], &wrk[1], &hz1[1]);
+            fixed (double* pWRK = WRK)
+                qphess(n, *nrowh, *ncolh, jthcol, &hess[hess_offset], pWRK, &hz1[1]);
             ++(*nhess);
             if (*unitq != 0 && scldqp) BlasLike.dscalvec(n, scale[jthcol], &hz1[1]);
             if (scldqp) Factorise.ddmxmulv(n, &scale[1], 1, &hz1[1], 1);
             /*
                  compute the  (ncolr)-th  column of  z(t)h z
             */
-            dzyprod(4, n, *nfree, *ncolr, *nfree, nq, *unitq, &kfree[1], &kfree[1], &
-                hz1[1], &wrk[1]);
-            BlasLike.dcopyvec(*ncolr, &hz1[1], &rt[*ncolr * rt_dim1 + 1]);
+            fixed (double* pWRK = WRK)
+                dzyprod(4, n, *nfree, *ncolr, *nfree, nq, *unitq, &kfree[1], &kfree[1], &
+                    hz1[1], pWRK);
+            fixed (double* pRT = RT)
+                BlasLike.dcopyvec(*ncolr, &hz1[1], &pRT[*ncolr * rt_dim1 + 1 - rt_offset]);
             /*
             compute the first  (ncolr - 1)  elements of the last column of  r.
             */
             ncolr1 = *ncolr - 1;
-            zthz1 = rt[*ncolr + *ncolr * rt_dim1];
+            zthz1 = RT[*ncolr + *ncolr * rt_dim1 - rt_offset];
             rdsq = zthz1;
             if (ncolr1 == 0)
             {
                 goto L100;
             }
-            idiag = dtmxsolve((short)-1, ncolr1, &rt[rt_offset], nrowrt, &rt[*ncolr * rt_dim1 + 1], (short)1);
-            rnorm = dnrm2vec(ncolr1, &rt[*ncolr * rt_dim1 + 1]);
+            fixed (double* pRT = RT)
+            {
+                idiag = dtmxsolve((short)-1, ncolr1, pRT, nrowrt, &pRT[*ncolr * rt_dim1 + 1 - rt_offset], (short)1);
+                rnorm = dnrm2vec(ncolr1, &pRT[*ncolr * rt_dim1 + 1 - rt_offset]);
+            }
             /*
             compute the square of the last diagonal element of  r
             */
@@ -5700,7 +5547,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
         */
         L180:
             *rdlast = Math.Sqrt((Math.Abs(rdsq)));
-            rt[*ncolr + *ncolr * rt_dim1] = *rdlast;
+            RT[*ncolr + *ncolr * rt_dim1 - rt_offset] = *rdlast;
             if (msg >= 80 && !(*posdef))
                 lm_wmsg(
             "\n//QPCOLR//  POSDEF NOCURV          EMAX        RDLAST\n//QPCOLR//%8ld%7ld%14.4lg%14.4lg",
@@ -5759,32 +5606,27 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             var nctotl = n + m;
             var nrowa = m;
             var obj = 1e10;
-            var featol = 1e-8;
+            var featolv = 1e-8;
             int cold = 1;
             var bigbnd = 1e10;
             short msglvl = -1000;
-            var istate = new int[n + m + n + n];
+            istate = new int[n + m + n + n];
             var lwrk = 2 * (n * (n + 2) + m) + m;
-            var lambda = new double[lwrk + n + m + n + m];
+            lambda = new double[lwrk + n + m + n + m];
+            featol = new double[n + m];
             A = AA;
             L = LL;
             U = UU;
             c = cc;
             W = ww;
             BlasLike.dsetvec(n + m, 0, lambda);
-            BlasLike.dsetvec(n + m, featol, lambda, n + m);
+            BlasLike.dsetvec(n + m, featolv, featol);
             short ifail = 89;
             short back;
-            fixed (int* pistate = istate)
             fixed (double* plambda = lambda)
-            fixed (double* pA = A)
-            fixed (double* pL = L)
-            fixed (double* pU = U)
-            fixed (double* pc = c)
-            fixed (double* px = W)
                 back = dqpsol(itmax, msglvl, n, m, n + m, m,
-          n + n, 1, &bigbnd, pA, pL, pU, pc, plambda + n + m, null, cold, lp, orthog, px,
-          pistate, &iter, &obj, plambda, pistate + n + m, n + n, plambda + (n + m + n + m), lwrk, ifail);
+          n + n, 1, &bigbnd, cold, lp, orthog,
+           &iter, &obj, n + n, lwrk, ifail);
             objective[0] = obj;
             return back;
         }
@@ -5798,15 +5640,16 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             var nctotl = n + m;
             var nrowa = m;
             var obj = 1e10;
-            var featol = 1e-8;
+            var featolv = 1e-8;
             int cold = 1;
             var bigbnd = 1e10;
             short msglvl = -1000;
-            var istate = new int[n + m + n + n];
+            istate = new int[n + m + n + n];
             var lwrk = 2 * (n * (n + 2) + m) + m;
-            var lambda = new double[lwrk + n + m + n + m];
+            lambda = new double[lwrk + n + m + n + m];
+            featol = new double[n + m];
             BlasLike.dsetvec(n + m, 0, lambda);
-            BlasLike.dsetvec(n + m, featol, lambda, n + m);
+            BlasLike.dsetvec(n + m, featolv, featol);
             short ifail = 89;
             short back;
             A = AA;
@@ -5815,17 +5658,10 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             c = cc;
             W = ww;
             Q = QQ;
-            fixed (int* pistate = istate)
             fixed (double* plambda = lambda)
-            fixed (double* pA = A)
-            fixed (double* pL = L)
-            fixed (double* pU = U)
-            fixed (double* pc = c)
-            fixed (double* px = W)
-            fixed (double* phess = Q)
                 back = dqpsol(itmax, msglvl, n, m, n + m, m,
-          n + n, 1, &bigbnd, pA, pL, pU, pc, plambda + n + m, phess, cold, lp, orthog, px,
-          pistate, &iter, &obj, plambda, pistate + n + m, n + n, plambda + (n + m + n + m), lwrk, ifail);
+          n + n, 1, &bigbnd, cold, lp, orthog,
+           &iter, &obj, n + n, lwrk, ifail);
             objective[0] = obj;
             return back;
         }
