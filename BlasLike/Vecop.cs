@@ -1187,8 +1187,8 @@ int* ldc)
             c__ -= c_offset;
 
             /* Function Body */
-            nota = (*transa == 'N') ? 1 : 0;//lsame_BITA(transa, "N", (ftnlen)1, (ftnlen)1);
-            notb = (*transb == 'N') ? 1 : 0;//lsame_BITA(transb, "N", (ftnlen)1, (ftnlen)1);
+            nota = (short)((*transa == 'N') ? 1 : 0);//lsame_BITA(transa, "N", (ftnlen)1, (ftnlen)1);
+            notb = (short)((*transb == 'N') ? 1 : 0);//lsame_BITA(transb, "N", (ftnlen)1, (ftnlen)1);
             if (nota != 0)
             {
                 nrowa = *m;
@@ -1468,7 +1468,7 @@ int ldc, int astart = 0, int bstart = 0, int cstart = 0)
 
             /* Local variables */
             int j, info, i__, l; double temp;
-            short nota, notb;
+            int nota, notb;
             int ncola;
             int nrowa, nrowb;
 

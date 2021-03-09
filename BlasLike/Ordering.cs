@@ -43,7 +43,7 @@ namespace Ordering
             var xx = new compareitem[n];
             for (int i = 0; i < n; ++i)
             {
-                xx[i] = new compareitem((x[i] - init) * sign, dropbad == null ? 0 : dropbad[i]);
+                xx[i] = new compareitem((x[i] - init) * sign, (dropbad == null) ? (byte)0 : dropbad[i]);
             }
             if (order == null) Array.Sort(xx, cmp);
             else
@@ -60,7 +60,7 @@ namespace Ordering
             
             for (int i = 0; i < n; ++i)
             {
-                xx[i] = new compareitem(x[i], dropbad == null ? 0 : dropbad[i]);
+                xx[i] = new compareitem(x[i], dropbad == null ? (byte)0 : dropbad[i]);
             }
             if (order == null) Array.Sort(xx, cmp);
             else
