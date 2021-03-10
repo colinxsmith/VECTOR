@@ -197,11 +197,15 @@ namespace ActiveSet
             fixed (double* pPX = PX)
             fixed (double* pRLAM = RLAM)
             fixed (double* pWRK = WRK)
+            fixed (double* plambda = lambda)
+            {
+                double* ww = plambda + (n + *nclin) * 2;
                 dlpcrsh(orthog, unitq, vertex, lcrash, n, nclin, nctotl,
                     nrowa, &nrowrt_c, &ncolrt_c, nactiv, &ncolz, nfree, &istate[1], &
                     kactiv[1], &kfree[1], &bigbnd, &tolact, xnorm, &a[a_offset],
-                    pANORM, pWRK, &bl[1], &bu[1], &x[1], pQTG, pRT, pZY,
+                    pANORM, ww, &bl[1], &bu[1], &x[1], pQTG, pRT, pZY,
                     pPX, pWRK, pRLAM);
+            }
             nrowrt = nrowrt_c;
             ncolrt = ncolrt_c;
             fixed (double* pANORM = ANORM)
@@ -439,9 +443,13 @@ namespace ActiveSet
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
             fixed (double* pWRK = WRK)
+            fixed (double* plambda = lambda)
+            {
+                double* ww = plambda + (n + *nclin) * 2;
                 *inform = dbndalf(firstv, &hitlow, &istate[1], &jadd, n,
                     *nctotl, *numinf, &alfa, &palfa, &atphit, &bigalf, &bigbnd,
-                    &pnorm, pANORM, pAP, pWRK, &bl[1], &bu[1], &featol[1], pPX, &x[1]);
+                    &pnorm, pANORM, pAP, ww, &bl[1], &bu[1], &featol[1], pPX, &x[1]);
+            }
             printV(n, &x[1]);
             if (*inform != 0 || jadd == 0)
             {
@@ -482,8 +490,12 @@ namespace ActiveSet
             fixed (double* pPX = PX)
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
+            fixed (double* plambda = lambda)
+            {
+                double* ww = plambda + (n + *nclin) * 2;
                 if (*nclin > 0)
-                    BlasLike.daxpy(*nclin, alfa, AP, 1, WRK, 1);
+                    BlasLike.daxpy(*nclin, alfa, pAP, 1, ww, 1);
+            }
 
             *xnorm = dnrm2vec(n, &x[1]);
             if (lp) objlp = BlasLike.ddotvec(n, &cvec[1], &x[1]);
@@ -3900,7 +3912,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 }
             }
         }
-        public unsafe static short dqpsol(short itmax, short msglvl, int n, int nclin, int nctotl, int nrowa, int nrowh, int ncolh, double* bigbnd, int cold, int lp, int orthog, short* iter, double* obj, int leniw, int lenw, short ifail)
+        public unsafe static short dqpsol(short itmax, short msglvl, int n, int nclin, int nctotl, int nrowa, int nrowh, int ncolh, int cold, int lp, int orthog, int[] iter, double* obj, int leniw, int lenw, short ifail)
         {
             parm[0] = 1e10;
             parm[1] = 1e20;
@@ -4066,7 +4078,12 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                         fixed (int* pKACTV = KACTV)*/
             if (msglvl == 99)
                 dqpdump(n, nrowh, ncolh, c, Q, WRK, PX);
-
+            var badConstraint = 0;
+            for (int ic = 0; ic < n + nclin; ++ic)
+            {
+                if (U[ic] < L[ic]) badConstraint += 1;
+            }
+            if (badConstraint > 0) return 10;
             fixed (int* pKACTV = KACTV)
             fixed (double* pW = W)
             fixed (double* pA = A)
@@ -4075,7 +4092,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             fixed (double* pU = U)
             fixed (int* pIstate = istate)
             fixed (double* pfeatol = featol)
-                *iter = 0;
+                iter[0] = 0;
 
 
             /*
@@ -4105,7 +4122,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 itmx, lcrash, n, &nclin, &nctotl, &nrowa, &nactiv, &nfree, &numinf,
                     pIstate, pKACTV, pKFREE, obj, &xnorm, pA, pL, pU, plambda, pc, pfeatol, pW,
                     pIstate + maxact + n, plambda + n + nclin + n + nclin);
-            *iter = (short)iter_;
+            iter[0] = (short)iter_;
             if (lp != 0)
             {
                 /*THE PROBLEM WAS AN LP, NOT A QP*/
@@ -4142,7 +4159,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                             pKACTV, pKFREE, obj, &xnorm, pA, pL, pU, plambda, pc, pfeatol, pQ,
                             plambda + n + nclin + n + nclin, pW, pIstate + maxact + n);
                 nrowrt = nrowrt_c;
-                *iter = (short)iter_;
+                iter[0] = (short)iter_;
             }
             else
             {
@@ -4793,10 +4810,14 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 fixed (double* pRLAM = RLAM)
                 fixed (double* pAP = AP)
                 fixed (double* pWRK = WRK)
+                fixed (double* plambda = lambda)
+                {
+                    double* ww = plambda + (n + *nclin) * 2;
                     dbndalf(firstv != 0, &hitlow, &istate[1], &jadd, n,
                         *nctotl, numinf, &alfhit, &palfa, &atphit, &bigalf, &
-                        bigbnd, &pnorm, pANORM, pAP, pWRK, &bl[1], &bu[1], &
+                        bigbnd, &pnorm, pANORM, pAP, ww, &bl[1], &bu[1], &
                         featol[1], pPX, &x[1]);
+                }
 
                 /*
                 if the projected hessian is positive definite, the step
@@ -4893,7 +4914,11 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                     fixed (double* pRLAM = RLAM)
                     fixed (double* pAP = AP)
                     fixed (double* pWRK = WRK)
-                        if (*nclin > 0) BlasLike.daxpy(*nclin, alfa, pAP, 1, pWRK, 1);
+                    fixed (double* plambda = lambda)
+                    {
+                        double* ww = plambda + (n + *nclin) * 2;
+                        if (*nclin > 0) BlasLike.daxpy(*nclin, alfa, pAP, 1, ww, 1);
+                    }
                     *xnorm = dnrm2vec(n, &x[1]);
                 }
 
@@ -5596,19 +5621,17 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             }
             Console.Write("\n");
         }
-        public unsafe static short LPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] objective)
+        public unsafe static short LPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] objective, int[] iter)
         {
             var lp = 1;
             var itmax = (short)2000;
             var orthog = 1;
-            short iter = 1000;
             var nclin = m;
             var nctotl = n + m;
             var nrowa = m;
             var obj = 1e10;
             var featolv = 1e-8;
             int cold = 1;
-            var bigbnd = 1e10;
             short msglvl = -1000;
             istate = new int[n + m + n + n];
             var lwrk = 2 * (n * (n + 2) + m) + m;
@@ -5623,26 +5646,23 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             BlasLike.dsetvec(n + m, featolv, featol);
             short ifail = 89;
             short back;
-            fixed (double* plambda = lambda)
-                back = dqpsol(itmax, msglvl, n, m, n + m, m,
-          n + n, 1, &bigbnd, cold, lp, orthog,
-           &iter, &obj, n + n, lwrk, ifail);
+            back = dqpsol(itmax, msglvl, n, m, n + m, m,
+      n + n, 1, cold, lp, orthog,
+       iter, &obj, n + n, lwrk, ifail);
             objective[0] = obj;
             return back;
         }
-        public unsafe static short QPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] QQ, double[] objective)
+        public unsafe static short QPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] QQ, double[] objective, int[] iter)
         {
             var lp = 0;
             var itmax = (short)2000;
             var orthog = 1;
-            short iter = 1000;
             var nclin = m;
             var nctotl = n + m;
             var nrowa = m;
             var obj = 1e10;
             var featolv = 1e-8;
             int cold = 1;
-            var bigbnd = 1e10;
             short msglvl = -1000;
             istate = new int[n + m + n + n];
             var lwrk = 2 * (n * (n + 2) + m) + m;
@@ -5658,10 +5678,9 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             c = cc;
             W = ww;
             Q = QQ;
-            fixed (double* plambda = lambda)
-                back = dqpsol(itmax, msglvl, n, m, n + m, m,
-          n + n, 1, &bigbnd, cold, lp, orthog,
-           &iter, &obj, n + n, lwrk, ifail);
+            back = dqpsol(itmax, msglvl, n, m, n + m, m,
+      n + n, 1, cold, lp, orthog,
+       iter, &obj, n + n, lwrk, ifail);
             objective[0] = obj;
             return back;
         }

@@ -691,6 +691,7 @@ namespace BlasLikeTest
             }
             BlasLike.dscalvec(hess.Length, 1e3, hess);
             var obj = new double[1];
+            var iter=new int[1];
             short back;
             var implied = new double[n];
             for (int i = 0; i < 2; ++i)
@@ -699,14 +700,14 @@ namespace BlasLikeTest
                 {
                     BlasLike.dsetvec(x.Length, 1.0 / n, x);
                     var budget = 1.0;
-                    back = ActiveSet.Optimise.LPopt(n, m, x, L, U, A, c, obj);
+                    back = ActiveSet.Optimise.LPopt(n, m, x, L, U, A, c, obj,iter);
                     Assert.IsTrue(back == 0 && Math.Abs(BlasLike.dsumvec(x.Length, x) - budget) < BlasLike.lm_eps*8, $"back is {back} {BlasLike.ddotvec(n, x, c)} {obj[0]}");
                 }
                 else
                 {
                     BlasLike.dsetvec(x.Length, 1.0 / n, x);
                     var budget = 1.0;
-                    back = ActiveSet.Optimise.QPopt(n, m, x, L, U, A, c, hess, obj);
+                    back = ActiveSet.Optimise.QPopt(n, m, x, L, U, A, c, hess, obj,iter);
                     Factorise.dsmxmulv(n, hess, x, implied);
                     Assert.IsTrue(back == 0 && Math.Abs(BlasLike.dsumvec(x.Length, x) - budget) < BlasLike.lm_eps*8, $"back is {back} {BlasLike.ddotvec(n, x, c) + 0.5 * BlasLike.ddotvec(n, implied, x)} {obj[0]}");
                 }

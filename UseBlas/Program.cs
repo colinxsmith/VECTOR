@@ -763,7 +763,7 @@ namespace UseBlas
                 double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,
                                    0, 0, 1, 1, 1, 0, 0, 0, 0, 0};
                 double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0.1 };
-                double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.1 };
+                double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.2 };
                 Factorise.dmx_transpose(n, m, A, A);
                 double[] hess = new double[n * (n + 1) / 2];
                 var tdata = 2 * n;
@@ -851,17 +851,21 @@ namespace UseBlas
                                     0.12585651441173307};
                 hess = hesst;
                 var obj = new double[1];
+                var iter = new int[1];
                 short back;
                 BlasLike.dsetvec(x.Length, 1.0 / n, x);
-                back = ActiveSet.Optimise.LPopt(n, m, x, L, U, A, c, obj);
-                Console.WriteLine($"back is {back} {BlasLike.ddotvec(n, x, c)} {obj[0]}");
+                back = ActiveSet.Optimise.LPopt(n, m, x, L, U, A, c, obj, iter);
+                Console.WriteLine($"back is {back} {BlasLike.ddotvec(n, x, c)} {obj[0]} {iter[0]} iterations");
                 ActiveSet.Optimise.printV(x);
+                var implied = new double[m];
+                Factorise.dmxmulv(m, n, A, x, implied);
+                foreach (var cc in implied) Console.WriteLine($"Constraint value {cc}");
                 BlasLike.dsetvec(x.Length, 1.0 / n, x);
                 BlasLike.dscalvec(hess.Length, 1e3, hess);
-                back = ActiveSet.Optimise.QPopt(n, m, x, L, U, A, c, hess, obj);
-                var implied = new double[n];
+                back = ActiveSet.Optimise.QPopt(n, m, x, L, U, A, c, hess, obj, iter);
+                implied = new double[n];
                 Factorise.dsmxmulv(n, hess, x, implied);
-                Console.WriteLine($"back is {back} {BlasLike.ddotvec(n, x, c) + 0.5 * BlasLike.ddotvec(n, implied, x)} {obj[0]}");
+                Console.WriteLine($"back is {back} {BlasLike.ddotvec(n, x, c) + 0.5 * BlasLike.ddotvec(n, implied, x)} {obj[0]}  {iter[0]} iterations");
                 ActiveSet.Optimise.printV(x);
                 implied = new double[m];
                 Factorise.dmxmulv(m, n, A, x, implied);
