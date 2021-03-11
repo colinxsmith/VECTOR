@@ -338,8 +338,8 @@ namespace ActiveSet
             /*     PREPARE TO DELETE THE CONSTRAINT WITH INDEX  JSMLST. */
             jdel = jsmlst;
             kdel = ksmlst;
-            isdel = istate[jdel];
-            istate[jdel] = 0;
+            isdel = istate[jdel - 1];
+            istate[jdel - 1] = 0;
             goto L80;
         /* --------------------------------------------------------------------- 
         */
@@ -379,10 +379,10 @@ namespace ActiveSet
             }
             jdel = jbigst;
             kdel = kbigst;
-            isdel = istate[jbigst];
+            isdel = istate[jbigst - 1];
 
             was_is = trulam > 0 ? -2 : -1;
-            istate[jbigst] = was_is;
+            istate[jbigst - 1] = was_is;
             firstv = true;
         /* --------------------------------------------------------------------- 
         */
@@ -444,8 +444,6 @@ namespace ActiveSet
             /*     ALFA  IS INITIALIZED TO  BIGALF.  IF IT REMAINS THAT WAY AFTER */
             /*     THE CALL TO BNDALF, IT WILL BE REGARDED AS INFINITE. */
 
-            fixed (double* px = W)
-                printV(n, px);
             bigalf = dprotdiv(&bigdx, &pnorm, &ifail);
             if (ifail != 0 && bigdx == 0) bigalf = BlasLike.lm_max;
             fixed (double* pANORM = ANORM)
@@ -466,8 +464,6 @@ namespace ActiveSet
                 *inform = dbndalf(firstv, &hitlow, pistate, &jadd, n,
         *nctotl, *numinf, &alfa, &palfa, &atphit, &bigalf, &bigbnd,
         &pnorm, pANORM, pAP, pLWRK, pL, pU, pFeatol, pPX, px);
-            fixed (double* px = W)
-                printV(n, px);
             if (*inform != 0 || jadd == 0)
             {
                 goto L300;
@@ -572,15 +568,15 @@ namespace ActiveSet
             }
             if (hitlow != 0)
             {
-                istate[jadd] = 1;
+                istate[jadd - 1] = 1;
             }
             if (hitlow == 0)
             {
-                istate[jadd] = 2;
+                istate[jadd - 1] = 2;
             }
             if (L[jadd - 1] == U[jadd - 1])
             {
-                istate[jadd] = 3;
+                istate[jadd - 1] = 3;
             }
             /*     IF A BOUND IS TO BE ADDED, MOVE  X  EXACTLY ONTO IT, EXCEPT WHEN */
 
@@ -4139,20 +4135,9 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             problem
             ---------------------------------------------------------------------
             */
-            fixed (int* pKFREE = KFREE)
-            fixed (int* pKACTV = KACTV)
-            fixed (double* pW = W)
-            fixed (double* pA = A)
-            fixed (double* pc = c)
-            fixed (double* pL = L)
-            fixed (double* pU = U)
-            fixed (int* pIstate = istate)
-            fixed (double* plambda = lambda)
-            fixed (double* pfeatol = featol)
-            fixed (double* pLWRK = LWRK)
-                dlpcore((lp & 1) != 0, minsum, orthog != 0, &unitq, vertex, &inform, &iter_,
-                itmx, lcrash, n, &nclin, &nctotl, &nrowa, &nactiv, &nfree, &numinf,
-                     obj, xnorm);
+            dlpcore((lp & 1) != 0, minsum, orthog != 0, &unitq, vertex, &inform, &iter_,
+            itmx, lcrash, n, &nclin, &nctotl, &nrowa, &nactiv, &nfree, &numinf,
+                 obj, xnorm);
             iter[0] = (short)iter_;
             if (lp != 0)
             {
@@ -4186,9 +4171,9 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 fixed (double* pfeatol = featol)
                 fixed (double* pLWRK = LWRK)
                 fixed (double* pobj = obj)
-                    dqpcore(orthog, &unitq, &inform, &iter_, &itmx, n, &nclin, &nctotl,
+                    dqpcore(orthog, unitq, &inform, &iter_, &itmx, n, &nclin, &nctotl,
                             &nrowa, &nrowh, &ncolh, &nactiv, &nfree,
-                            pKACTV, pKFREE, pobj, xnorm, pA, pL, pU, plambda, pc, pfeatol, pQ,
+                            pKACTV, pKFREE, obj, xnorm, pA, pL, pU, plambda, pc, pfeatol, pQ,
                             pLWRK, pW);
                 nrowrt = nrowrt_c;
                 iter[0] = (short)iter_;
@@ -4442,7 +4427,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
         {
             Solver.Factorise.dsmxmulv(n, hess, wrk, hx);
         }
-        public unsafe static void dqpcore(int orthog, int* unitq, int* inform, int* iter, int* itmax, int n, int* nclin, int* nctotl, int* nrowa, int* nrowh, int* ncolh, int* nactiv, int* nfree, int* kactiv, int* kfree, double* objqp, double[] xnorm, double* a, double* bl, double* bu, double* clamda, double* cvec, double* featol, double* hess, double* scale, double* x)
+        public unsafe static void dqpcore(int orthog, int unitq, int* inform, int* iter, int* itmax, int n, int* nclin, int* nctotl, int* nrowa, int* nrowh, int* ncolh, int* nactiv, int* nfree, int* kactiv, int* kfree, double[] objqp, double[] xnorm, double* a, double* bl, double* bu, double* clamda, double* cvec, double* featol, double* hess, double* scale, double* x)
         {
 
             /*
@@ -4579,7 +4564,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
             fixed (double* pWRK = WRK)
-                ncolr = dqpcrsh(*unitq, n, ncolz, *nfree, &nhess_conv,
+                ncolr = dqpcrsh(unitq, n, ncolz, *nfree, &nhess_conv,
                     nq, *nrowh, *ncolh, nrowrt, &kfree[1], &hsize, hess,
                     pRT, &scale[1], pZY, pRLAM, pWRK);
             fixed (double* pANORM = ANORM)
@@ -4590,8 +4575,9 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
             fixed (double* pWRK = WRK)
-                dqpgrad(1, *unitq, n, *nactiv, *nfree, &nhess_conv, nq,
-                    *nrowh, *ncolh, jadd, &kactiv[1], &kfree[1], alfa, objqp, &gfixed,
+            fixed(double*pobj=objqp)
+                dqpgrad(1, unitq, n, *nactiv, *nfree, &nhess_conv, nq,
+                    *nrowh, *ncolh, jadd, &kactiv[1], &kfree[1], alfa, pobj, &gfixed,
                     gtp, &cvec[1], hess, pPX, pQTG, &scale[1], &x[1], pZY, pWRK, pRLAM);
             nhess = nhess_conv;
 
@@ -4624,7 +4610,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 define small quantities that reflect the magnitude of  c,  x,  h
                 and the matrix of constraints in the working set
                 */
-                objsiz = (BlasLike.lm_eps + Math.Abs(*objqp)) / (BlasLike.lm_eps + xnorm[0]);
+                objsiz = (BlasLike.lm_eps + Math.Abs(objqp[0])) / (BlasLike.lm_eps + xnorm[0]);
                 anorm = 0;
                 if (*nactiv > 0) anorm = Math.Abs(dtmax);
                 /*Computing MAX */
@@ -4666,9 +4652,10 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 fixed (double* pAP = AP)
                 fixed (double* pWRK = WRK)
                 fixed (int* pistate = istate)
+                fixed(double*pobj=objqp)
                     dqpprt(orthog, isdel, *iter, jadd, jdel, *nactiv, ncolz, *nfree,
                         n, *nclin, *nrowa, nhess,
-                        pistate, &kfree[1], alfa, condh, condt, *objqp, gfnorm,
+                        pistate, &kfree[1], alfa, condh, condt, objqp[0], gfnorm,
                         ztgnrm, emax, a, pRT, &x[1], pWRK, pAP);
                 nrowrt = nrowrt_c;
                 jadd = 0;
@@ -4717,9 +4704,9 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                             jdel = jsmlst;
                             jdsave = jsmlst;
                             kdel = ksmlst;
-                            isdel = istate[jdel];
+                            isdel = istate[jdel - 1];
                             issave = isdel;
-                            istate[jdel] = 0;
+                            istate[jdel - 1] = 0;
 
                             /*update the TQ factorization of the matrix of constraints in the working set*/
 
@@ -4730,7 +4717,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                             fixed (double* pPX = PX)
                             fixed (double* pRLAM = RLAM)
                             fixed (double* pAP = AP)
-                                ddelcon(modfyg != 0, orthog != 0, *unitq, jdel, kdel,
+                                ddelcon(modfyg != 0, orthog != 0, unitq, jdel, kdel,
                                     *nactiv, ncolz, *nfree, n,
                                     *nrowa, nrowrt, &kactiv[1], &kfree[1], a,
                                     pQTG, pRT);
@@ -4747,7 +4734,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                         renewr = true;
                         ++ncolr;
                         fixed (double* pPX = PX)
-                            dqpcolr(&nocurv, &posdef, &renewr, unitq, n, &ncolr,
+                            dqpcolr(&nocurv, &posdef, &renewr, &unitq, n, &ncolr,
                                 nfree, nrowh, ncolh, &nhess, &kfree[1], &
                                 cslast, &snlast, &drmax, &emax, &hsize, &rdlast, hess, &scale[1], pPX);
                         /*REPEAT THE MAIN LOOP*/
@@ -4791,7 +4778,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 fixed (double* pAP = AP)
                 fixed (double* pWRK = WRK)
                 fixed (int* pistate = istate)
-                    dfindp(nullr, &unitpg, unitq, n, nclin, nrowa,
+                    dfindp(nullr, &unitpg, &unitq, n, nclin, nrowa,
                         nrowrt, &ncolr, &ncolz, nfree, pistate, &kfree[1],
                         negligible != 0, &gtp, &pnorm, &rdlast);
 
@@ -4896,8 +4883,9 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                     fixed (double* pRLAM = RLAM)
                     fixed (double* pAP = AP)
                     fixed (double* pWRK = WRK)
-                        if (dqpgrad(2, *unitq, n, *nactiv, *nfree, &nhess_conv, nq,
-                            *nrowh, *ncolh, jadd, &kactiv[1], &kfree[1], alfa, objqp, &
+                    fixed(double*pobj=objqp)   
+                        if (dqpgrad(2, unitq, n, *nactiv, *nfree, &nhess_conv, nq,
+                            *nrowh, *ncolh, jadd, &kactiv[1], &kfree[1], alfa, pobj, &
                             gfixed, gtp, &cvec[1], hess, pPX, pQTG, &
                             scale[1], &x[1], pZY, pWRK, pRLAM) < -BlasLike.lm_eps)
                         {
@@ -4924,9 +4912,9 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 if (uncon) continue;
 
                 /*add a constraint to the working set. update  istate*/
-                if (hitlow != 0) istate[jadd] = 1;
-                else istate[jadd] = 2;
-                if (bl[jadd] == bu[jadd]) istate[jadd] = 3;
+                if (hitlow != 0) istate[jadd - 1] = 1;
+                else istate[jadd - 1] = 2;
+                if (bl[jadd] == bu[jadd]) istate[jadd - 1] = 3;
 
                 /*
                 if a bound is to be added, move x exactly onto it, except when
@@ -4955,7 +4943,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 fixed (double* pRLAM = RLAM)
                 fixed (double* pAP = AP)
                 fixed (double* pWRK = WRK)
-                    daddcon(modfyg != 0, modfyr != 0, orthog != 0, unitq, &ifix, &iadd, &jadd,
+                    daddcon(modfyg != 0, modfyr != 0, orthog != 0, &unitq, &ifix, &iadd, &jadd,
                         nactiv, &ncolr, &ncolz, nfree, n, nrowrt,
                         &kfree[1], &condmx, &cslast, &snlast, a, pQTG,
                         pRT, pWRK, pPX);
@@ -4994,8 +4982,9 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                         fixed (double* pRLAM = RLAM)
                         fixed (double* pAP = AP)
                         fixed (double* pWRK = WRK)
-                            dqpgrad(3, *unitq, n, *nactiv, *nfree, &nhess_conv, nq,
-                                *nrowh, *ncolh, jadd, &kactiv[1], &kfree[1], alfa, objqp,
+                    fixed(double*pobj=objqp)   
+                            dqpgrad(3, unitq, n, *nactiv, *nfree, &nhess_conv, nq,
+                                *nrowh, *ncolh, jadd, &kactiv[1], &kfree[1], alfa, pobj,
                                 &pQTG[*nfree], gtp, &cvec[1], hess, pPX, pQTG, &
                                 scale[1], &x[1], pZY, pWRK, pPX);
                         nhess = nhess_conv_c;
@@ -5024,7 +5013,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                     column. use the array  rlam  as temporary work space
                     */
                     fixed (double* pRLAM = RLAM)
-                        dqpcolr(&nocurv, &posdef, &renewr, unitq, n, &ncolr,
+                        dqpcolr(&nocurv, &posdef, &renewr, &unitq, n, &ncolr,
                             nfree, nrowh, ncolh, &nhess, &
                             kfree[1], &cslast, &snlast, &drmax, &emax, &hsize, &rdlast,
                             hess, &scale[1], pRLAM);

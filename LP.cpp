@@ -83,12 +83,15 @@ int main()
     back = Optimise_internalCVP(n, -1, 0, x, m, A, L, U, c, 0, hess, gamma, 0, -1, 0, 0, -1, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     for (int i = 0; i < n; ++i)
     {
-        printf("%d %f\n", i + 1, x[i]);
+        printf("Variable %3d\t%20.16e\n", i + 1, x[i]);
     }
     std::valarray<double> implied(n);
     dsmxmulv(n, hess, x, &implied[0]);
+    std::valarray<double> constV(m);
+    dmxmulv(m, n, A, x, &constV[0]);
+    for(int i=0;i<m;++i)printf("Constraint %i\t%20.16e\n",i+1,constV[i]);
     if (gamma == 1)
-        printf("back=%d U=%f\n", back, -ddotvec(n, c, x));
+        printf("back=%d U=\t%20.16e\n", back, -ddotvec(n, c, x));
     else
-        printf("back=%d U=%f\n", back, -ddotvec(n, c, x) * gamma / (1 - gamma) + 0.5 * ddotvec(n, x, &implied[0]));
+        printf("back=%d U=\t%20.16e\n", back, -ddotvec(n, c, x) * gamma / (1 - gamma) + 0.5 * ddotvec(n, x, &implied[0]));
 }

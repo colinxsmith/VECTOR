@@ -689,7 +689,7 @@ namespace BlasLikeTest
                     hess[i * (i + 1) / 2 + j] = hess[i * (i + 1) / 2 + j] / tdata - ti / tdata * tj / tdata;
                 }
             }
-            BlasLike.dscalvec(hess.Length, 1e5, hess);
+            BlasLike.dscalvec(hess.Length, 1e3, hess);
             var obj = new double[1];
             var iter = new int[1];
             short back;
