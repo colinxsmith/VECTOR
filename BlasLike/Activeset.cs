@@ -30,6 +30,7 @@ namespace ActiveSet
         public static double dtmin;
         public static double[] ANORM;
         public static double[] WRK;
+        public static double[] LWRK;
         public static double[] RT;
         public static double[] ZY;
         public static double[] PX;
@@ -198,12 +199,13 @@ namespace ActiveSet
             fixed (double* pRLAM = RLAM)
             fixed (double* pWRK = WRK)
             fixed (double* plambda = lambda)
+            fixed (double* pLWRK = LWRK)
             {
                 double* ww = plambda + (n + *nclin) * 2;
                 dlpcrsh(orthog, unitq, vertex, lcrash, n, nclin, nctotl,
                     nrowa, &nrowrt_c, &ncolrt_c, nactiv, &ncolz, nfree, &istate[1], &
                     kactiv[1], &kfree[1], &bigbnd, &tolact, xnorm, &a[a_offset],
-                    pANORM, ww, &bl[1], &bu[1], &x[1], pQTG, pRT, pZY,
+                    pANORM, pLWRK, &bl[1], &bu[1], &x[1], pQTG, pRT, pZY,
                     pPX, pWRK, pRLAM);
             }
             nrowrt = nrowrt_c;
@@ -444,11 +446,12 @@ namespace ActiveSet
             fixed (double* pAP = AP)
             fixed (double* pWRK = WRK)
             fixed (double* plambda = lambda)
+            fixed (double* pLWRK = LWRK)
             {
                 double* ww = plambda + (n + *nclin) * 2;
                 *inform = dbndalf(firstv, &hitlow, &istate[1], &jadd, n,
                     *nctotl, *numinf, &alfa, &palfa, &atphit, &bigalf, &bigbnd,
-                    &pnorm, pANORM, pAP, ww, &bl[1], &bu[1], &featol[1], pPX, &x[1]);
+                    &pnorm, pANORM, pAP, pLWRK, &bl[1], &bu[1], &featol[1], pPX, &x[1]);
             }
             printV(n, &x[1]);
             if (*inform != 0 || jadd == 0)
@@ -491,10 +494,11 @@ namespace ActiveSet
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
             fixed (double* plambda = lambda)
+            fixed (double* pLWRK = LWRK)
             {
                 double* ww = plambda + (n + *nclin) * 2;
                 if (*nclin > 0)
-                    BlasLike.daxpy(*nclin, alfa, pAP, 1, ww, 1);
+                    BlasLike.daxpy(*nclin, alfa, pAP, 1, pLWRK, 1);
             }
 
             *xnorm = dnrm2vec(n, &x[1]);
@@ -4062,10 +4066,10 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             fixed (double* pL = L)
             fixed (double* pU = U)
             fixed (int* pIstate = istate)
-            fixed (double* plambda = lambda)
+            fixed (double* pLWRK = LWRK)
                 if (msglvl == 99)
                     dlpdump(n, nclin, nctotl, nrowa, lcrash, lp, minsum,
-                    vertex, pIstate, pA, plambda + n + nclin + n + nclin, pL, pU,
+                    vertex, pIstate, pA, pLWRK, pL, pU,
                     pc, pW);
             /*            fixed (double* pANORM = ANORM)
                         fixed (double* pQTG = QTG)
@@ -4118,10 +4122,11 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             fixed (int* pIstate = istate)
             fixed (double* plambda = lambda)
             fixed (double* pfeatol = featol)
+            fixed (double* pLWRK = LWRK)
                 dlpcore((lp & 1) != 0, minsum, orthog != 0, &unitq, vertex, &inform, &iter_,
                 itmx, lcrash, n, &nclin, &nctotl, &nrowa, &nactiv, &nfree, &numinf,
                     pIstate, pKACTV, pKFREE, obj, &xnorm, pA, pL, pU, plambda, pc, pfeatol, pW,
-                    pIstate + maxact + n, plambda + n + nclin + n + nclin);
+                    pIstate + maxact + n, pLWRK);
             iter[0] = (short)iter_;
             if (lp != 0)
             {
@@ -4154,10 +4159,11 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 fixed (double* pQ = Q)
                 fixed (double* plambda = lambda)
                 fixed (double* pfeatol = featol)
+                fixed (double* pLWRK = LWRK)
                     dqpcore(orthog, &unitq, &inform, &iter_, &itmx, n, &nclin, &nctotl,
                             &nrowrt_c, &nrowh, &ncolh, &nactiv, &nfree, pIstate,
                             pKACTV, pKFREE, obj, &xnorm, pA, pL, pU, plambda, pc, pfeatol, pQ,
-                            plambda + n + nclin + n + nclin, pW, pIstate + maxact + n);
+                            pLWRK, pW, pIstate + maxact + n);
                 nrowrt = nrowrt_c;
                 iter[0] = (short)iter_;
             }
@@ -4811,11 +4817,12 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 fixed (double* pAP = AP)
                 fixed (double* pWRK = WRK)
                 fixed (double* plambda = lambda)
+                fixed (double* pLWRK = LWRK)
                 {
                     double* ww = plambda + (n + *nclin) * 2;
                     dbndalf(firstv != 0, &hitlow, &istate[1], &jadd, n,
                         *nctotl, numinf, &alfhit, &palfa, &atphit, &bigalf, &
-                        bigbnd, &pnorm, pANORM, pAP, ww, &bl[1], &bu[1], &
+                        bigbnd, &pnorm, pANORM, pAP, pLWRK, &bl[1], &bu[1], &
                         featol[1], pPX, &x[1]);
                 }
 
@@ -4915,9 +4922,10 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                     fixed (double* pAP = AP)
                     fixed (double* pWRK = WRK)
                     fixed (double* plambda = lambda)
+                    fixed (double* pLWRK = LWRK)
                     {
                         double* ww = plambda + (n + *nclin) * 2;
-                        if (*nclin > 0) BlasLike.daxpy(*nclin, alfa, pAP, 1, ww, 1);
+                        if (*nclin > 0) BlasLike.daxpy(*nclin, alfa, pAP, 1, pLWRK, 1);
                     }
                     *xnorm = dnrm2vec(n, &x[1]);
                 }
@@ -5635,8 +5643,9 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             short msglvl = -1000;
             istate = new int[n + m + n + n];
             var lwrk = 2 * (n * (n + 2) + m) + m;
-            lambda = new double[lwrk + n + m + n + m];
+            lambda = new double[n + m];
             featol = new double[n + m];
+            LWRK = new double[lwrk];
             A = AA;
             L = LL;
             U = UU;
@@ -5666,8 +5675,9 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             short msglvl = -1000;
             istate = new int[n + m + n + n];
             var lwrk = 2 * (n * (n + 2) + m) + m;
-            lambda = new double[lwrk + n + m + n + m];
+            lambda = new double[n + m];
             featol = new double[n + m];
+            LWRK = new double[lwrk];
             BlasLike.dsetvec(n + m, 0, lambda);
             BlasLike.dsetvec(n + m, featolv, featol);
             short ifail = 89;

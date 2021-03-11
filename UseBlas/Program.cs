@@ -763,7 +763,7 @@ namespace UseBlas
                 double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,
                                    0, 0, 1, 1, 1, 0, 0, 0, 0, 0};
                 double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0.1 };
-                double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.2 };
+                double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5 };
                 Factorise.dmx_transpose(n, m, A, A);
                 double[] hess = new double[n * (n + 1) / 2];
                 var tdata = 2 * n;
