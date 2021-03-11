@@ -1,4 +1,6 @@
 
+//Make 64 bit version on Windows in safeqp64 with
+//cl -D__SYSNT__ -EHsc -I . safeqp.lib ..\VECTOR\LP.cpp
 #include <valarray>
 #include <ldefns.h>
 extern "C" short Optimise_internalCVP(dimen n, long nfac, char **names, vector w_opt, dimen m,
@@ -18,7 +20,7 @@ int main()
     double A[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
                   0, 0, 1, 1, 1, 0, 0, 0, 0, 0};
     double L[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0.1};
-    double U[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.2};
+    double U[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5};
     dmx_transpose(n, m, A, A);
     double hess[] = {0.07622384475840693,
                      -0.0016365991417207626,
@@ -77,7 +79,7 @@ int main()
                      0.12585651441173307};
     dscalvec(n * (n + 1) / 2, 1e3, hess);
     short back = 2000;
-    double gamma = 1;
+    double gamma = 0.5;
     back = Optimise_internalCVP(n, -1, 0, x, m, A, L, U, c, 0, hess, gamma, 0, -1, 0, 0, -1, -1, -1, 0, 0, -1, -1, 0, 0, -1, -1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     for (int i = 0; i < n; ++i)
     {

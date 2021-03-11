@@ -655,11 +655,11 @@ namespace BlasLikeTest
             var n = 10;
             var m = 2;
             var x = new double[n];
-            double[] c = { 1, 2, 3, 4, 5, 6, 17, 8, 9, 10 };
-            double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,
-                                   0, 0, 1, 1, 1, 0, 0, 0, 0, 0};
-            double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0.1 };
-            double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5 };
+                double[] c = { 1, 2, 3, 4, 5, 6, 17, 8, 9, 10 };
+                double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,
+                               0, 0, 1, 1, 1, 0, 0, 0, 0, 0};
+                double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0.1 };
+                double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5 };
             Factorise.dmx_transpose(n, m, A, A);
             double[] hess = new double[n * (n + 1) / 2];
             var tdata = 2 * n;
@@ -689,21 +689,21 @@ namespace BlasLikeTest
                     hess[i * (i + 1) / 2 + j] = hess[i * (i + 1) / 2 + j] / tdata - ti / tdata * tj / tdata;
                 }
             }
-            BlasLike.dscalvec(hess.Length, 1e3, hess);
+            BlasLike.dscalvec(hess.Length, 1e5, hess);
             var obj = new double[1];
             var iter = new int[1];
             short back;
             var implied = new double[n];
             for (int i = 0; i < 2; ++i)
             {
-                if (i == 1)
+                if (i == 0)
                 {
                     BlasLike.dsetvec(x.Length, 1.0 / n, x);
                     var budget = 1.0;
                     var constraintVal = new double[m];
                     back = ActiveSet.Optimise.LPopt(n, m, x, L, U, A, c, obj, iter);
                     Factorise.dmxmulv(m, n, A, x, constraintVal);
-                    Assert.IsTrue(back == 0 && Math.Abs(constraintVal[0] - budget) < BlasLike.lm_eps * 16, $"back is {back} {BlasLike.ddotvec(n, x, c)} {obj[0]} {constraintVal[1]}");
+                    Assert.IsTrue(back == 0 && Math.Abs(constraintVal[0] - budget) < BlasLike.lm_eps * 16, $"LP back is {back} {BlasLike.ddotvec(n, x, c)} {obj[0]} {iter[0]} {constraintVal[1]}");
                 }
                 else
                 {
@@ -713,7 +713,7 @@ namespace BlasLikeTest
                     Factorise.dsmxmulv(n, hess, x, implied);
                     var constraintVal = new double[m];
                     Factorise.dmxmulv(m, n, A, x, constraintVal);
-                    Assert.IsTrue(back == 0 && Math.Abs(constraintVal[0] - budget) < BlasLike.lm_eps * 16, $"back is {back} {BlasLike.ddotvec(n, x, c) + 0.5 * BlasLike.ddotvec(n, implied, x)} {obj[0]} {constraintVal[1]}");
+                    Assert.IsTrue(back == 0 && Math.Abs(constraintVal[0] - budget) < BlasLike.lm_eps * 16, $"QP back is {back} {BlasLike.ddotvec(n, x, c) + 0.5 * BlasLike.ddotvec(n, implied, x)} {obj[0]} {iter[0]} {constraintVal[1]}");
                 }
             }
         }

@@ -59,8 +59,7 @@ namespace ActiveSet
         }
         public unsafe static void dlpcore(bool lp, int minsum, bool orthog, int* unitq, int vertex, int* inform, int* iter,
                 int itmax, byte lcrash, int n, int* nclin, int* nctotl, int* nrowa, int* nactiv,
-                int* nfree, int* numinf, int* istate, int* kactiv, int* kfree, double* obj, double* xnorm,
-                double* a, double* bl, double* bu, double* clamda, double* cvec, double* featol, double* x, int* iw, double* w)
+                int* nfree, int* numinf, double[] obj, double[] xnorm)
         {
             /*
             lpcore finds a feasible point for the general linear constraints
@@ -110,7 +109,7 @@ namespace ActiveSet
             int nclin0, kb;
             double bigalf, bigbnd, epspt9;
             int was_is;
-            double feamax, feamin;
+            double[] feamax = new double[1], feamin = new double[1];
             bool delete_;
             int nfixed;
             int jbigst, kbigst;
@@ -130,21 +129,21 @@ namespace ActiveSet
             double bnd;
             double gtp;
 
-            --w;
-            --iw;
-            --x;
-            --featol;
-            --cvec;
-            --clamda;
-            --bu;
-            --bl;
+            //  --w;
+            // --iw;
+            // --x;
+            //   --featol;
+            // --cvec;
+            // --clamda;
+            //          --bu;
+            // --bl;
             //         --ax;
             a_dim1 = *nrowa;
             a_offset = a_dim1 + 1;
-            a -= a_offset;
-            --kfree;
-            --kactiv;
-            --istate;
+            //       a -= a_offset;
+            //  --kfree;
+            // --kactiv;
+            //  --istate;
             /*     SPECIFY MACHINE-DEPENDENT PARAMETERS. */
             /*INITIALIZE */
             ncnln = 0;
@@ -175,7 +174,7 @@ namespace ActiveSet
             modfyg = true;
             nullr = true;
             unitpg = false;
-            BlasLike.dxminmax(*nctotl, &featol[1], 1, &feamax, &feamin);
+            BlasLike.dxminmax(*nctotl, featol, 1, feamax, feamin);
             /*
             ---------------------------------------------------------------------
             given an initial point	x, compute the following....
@@ -200,14 +199,19 @@ namespace ActiveSet
             fixed (double* pWRK = WRK)
             fixed (double* plambda = lambda)
             fixed (double* pLWRK = LWRK)
-            {
-                double* ww = plambda + (n + *nclin) * 2;
+            fixed (double* px = W)
+            fixed (double* pa = A)
+            fixed (double* pL = L)
+            fixed (double* pU = U)
+            fixed (double* pxnorm = xnorm)
+            fixed (int* pkfree = KFREE)
+            fixed (int* pkactiv = KACTV)
+            fixed (int* pistate = istate)
                 dlpcrsh(orthog, unitq, vertex, lcrash, n, nclin, nctotl,
-                    nrowa, &nrowrt_c, &ncolrt_c, nactiv, &ncolz, nfree, &istate[1], &
-                    kactiv[1], &kfree[1], &bigbnd, &tolact, xnorm, &a[a_offset],
-                    pANORM, pLWRK, &bl[1], &bu[1], &x[1], pQTG, pRT, pZY,
-                    pPX, pWRK, pRLAM);
-            }
+        nrowa, &nrowrt_c, &ncolrt_c, nactiv, &ncolz, nfree, pistate,
+        pkactiv, pkfree, &bigbnd, &tolact, pxnorm, pa,
+        pANORM, pLWRK, pL, pU, px, pQTG, pRT, pZY,
+        pPX, pWRK, pRLAM);
             nrowrt = nrowrt_c;
             ncolrt = ncolrt_c;
             fixed (double* pANORM = ANORM)
@@ -216,20 +220,28 @@ namespace ActiveSet
             fixed (double* pZY = ZY)
             fixed (double* pPX = PX)
             fixed (double* pRLAM = RLAM)
-                dlpgrad(lp, n, *nctotl, *nrowa, bigbnd, feamin, numinf, &suminf, &istate[
-                    1], &a[a_offset], &bl[1], &bu[1], &cvec[1], &featol[1], pQTG,
-                    &x[1]);
+            fixed (double* px = W)
+            fixed (double* pc = c)
+            fixed (double* pa = A)
+            fixed (double* pL = L)
+            fixed (double* pU = U)
+            fixed (double* pFeatol = featol)
+            fixed (int* pistate = istate)
+                dlpgrad(lp, n, *nctotl, *nrowa, bigbnd, feamin[0], numinf, &suminf, pistate, pa, pL, pU, pc, pFeatol, pQTG,
+                    px);
             fixed (double* pANORM = ANORM)
             fixed (double* pQTG = QTG)
             fixed (double* pRT = RT)
             fixed (double* pPX = PX)
             fixed (double* pRLAM = RLAM)
             fixed (double* pWRK = WRK)
-                dzyprod(6, n, *nactiv, ncolz, *nfree, nq, *unitq, &kactiv[1], &kfree[1]
+            fixed (int* pkfree = KFREE)
+            fixed (int* pkactiv = KACTV)
+                dzyprod(6, n, *nactiv, ncolz, *nfree, nq, *unitq, pkactiv, pkfree
                     , pQTG, pWRK);
-            *obj = suminf;
-            if (lp) objlp = BlasLike.ddotvec(n, &cvec[1], &x[1]);
-            if (lp && *numinf == 0) *obj = objlp;
+            obj[0] = suminf;
+            if (lp) objlp = BlasLike.ddotvec(n, c, W);
+            if (lp && *numinf == 0) obj[0] = objlp;
             if (*numinf == 0 && !(lp)) goto L320;
             /* .......................START OF THE MAIN LOOP........................ 
             */
@@ -237,10 +249,10 @@ namespace ActiveSet
             /*     AND THE NORM OF THE CONSTRAINTS IN THE WORKING SET. */
             L20:
             clocker();
-            objsiz = (1 + Math.Abs(*obj)) / (1 + *xnorm);
+            objsiz = (1 + Math.Abs(obj[0])) / (1 + xnorm[0]);
             if (*numinf == 0)
             {
-                objsiz = (BlasLike.lm_eps + Math.Abs(*obj)) / (BlasLike.lm_eps + *xnorm);
+                objsiz = (BlasLike.lm_eps + Math.Abs(obj[0])) / (BlasLike.lm_eps + xnorm[0]);
             }
             anorm = 0;
             if (*nactiv > 0)
@@ -252,13 +264,7 @@ namespace ActiveSet
             */
             /*     RESPECT TO THE FREE VARIABLES. */
             ztgnrm = 0;
-            fixed (double* pANORM = ANORM)
-            fixed (double* pQTG = QTG)
-            fixed (double* pRT = RT)
-            fixed (double* pZY = ZY)
-            fixed (double* pPX = PX)
-            fixed (double* pRLAM = RLAM)
-                if (ncolz > 0) ztgnrm = dnrm2vec(ncolz, pQTG);
+            if (ncolz > 0) ztgnrm = dnrm2vec(ncolz, QTG);
 
             if (msg >= 80) wdinky("LPCORE", ztgnrm, dinky);
             delete_ = ztgnrm <= dinky;
@@ -280,9 +286,13 @@ namespace ActiveSet
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
             fixed (double* pWRK = WRK)
+            fixed (double* px = W)
+            fixed (double* pa = A)
+            fixed (int* pkfree = KFREE)
+            fixed (int* pistate = istate)
                 dlpprt(lp, *nrowa, nrowrt, n, *nclin, *nfree, isdel, *nactiv,
                     ncolz, *iter, jadd, jdel, alfa, condt, *numinf,
-                    suminf, objlp, &istate[1], &kfree[1], &a[a_offset], pRT, &x[1], pWRK, pAP);
+                    suminf, objlp, pistate, pkfree, pa, pRT, px, pWRK, pAP);
             added = false;
             jadd = 0;
             jdel = 0;
@@ -301,9 +311,10 @@ namespace ActiveSet
             /*     WE HAVE TO DELETE A CONSTRAINT BEFORE A MOVE CAN BE MADE. */
             /* --------------------------------------------------------------------- 
             */
-            dgetlamd(lprob, n, *nactiv, ncolz, *nfree, *nrowa, nrowrt,
-                &jsmlst, &ksmlst, &smllst, &istate[1], &a[
-                a_offset]);
+            fixed (double* pa = A)
+            fixed (int* pistate = istate)
+                dgetlamd(lprob, n, *nactiv, ncolz, *nfree, *nrowa, nrowrt,
+                    &jsmlst, &ksmlst, &smllst, pistate, pa);
             /* --------------------------------------------------------------------- 
             */
             /*     TEST FOR CONVERGENCE.  IF THE LEAST (ADJUSTED) MULTIPLIER IS */
@@ -357,8 +368,11 @@ namespace ActiveSet
             fixed (double* pPX = PX)
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
-                dlpbgst(n, *nactiv, *nfree, &jbigst, &kbigst, &istate[1], &kactiv[1], dinky, feamin,
-                    &trulam, &featol[1], pRLAM);
+            fixed (double* pFeatol = featol)
+            fixed (int* pkactiv = KACTV)
+            fixed (int* pistate = istate)
+                dlpbgst(n, *nactiv, *nfree, &jbigst, &kbigst, pistate, pkactiv, dinky, feamin[0],
+                    &trulam, pFeatol, pRLAM);
             if (jbigst == 0)
             {
                 goto L280;
@@ -385,8 +399,11 @@ namespace ActiveSet
             fixed (double* pPX = PX)
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
+            fixed (double* pa = A)
+            fixed (int* pkfree = KFREE)
+            fixed (int* pkactiv = KACTV)
                 ddelcon(modfyg, orthog, *unitq, jdel, kdel, *nactiv, ncolz, *nfree, n,
-                    *nrowa, nrowrt, &kactiv[1], &kfree[1], &a[a_offset],
+                    *nrowa, nrowrt, pkactiv, pkfree, pa,
                     pQTG, pRT);
             ++ncolz;
             if (jdel <= (int)n)
@@ -413,19 +430,11 @@ namespace ActiveSet
             {
                 msg = msglvl;
             }
-            fixed (double* pANORM = ANORM)
-            fixed (double* pQTG = QTG)
-            fixed (double* pRT = RT)
-            fixed (double* pZY = ZY)
-            fixed (double* pPX = PX)
-            fixed (double* pRLAM = RLAM)
-            fixed (double* pAP = AP)
-            fixed (double* pWRK = WRK)
-                dfindp(&nullr, &unitpg, unitq, n, nclin, nrowa, &
-                    nrowrt_c, &ncolz, &ncolz, nfree, &istate[1], &kfree[1],
-                    delete_, &gtp, &pnorm, &rdlast, &a[a_offset], pAP,
-                    pPX, pQTG, pRT, pWRK, pZY, pWRK);
-            nrowrt = nrowrt_c;
+            fixed (int* pkfree = KFREE)
+            fixed (int* pistate = istate)
+                dfindp(nullr, &unitpg, unitq, n, nclin, nrowa,
+                    nrowrt, &ncolz, &ncolz, nfree, pistate, pkfree,
+                    delete_, &gtp, &pnorm, &rdlast);
             /* --------------------------------------------------------------------- 
             */
             /*     FIND THE CONSTRAINT WE BUMP INTO ALONG  P. */
@@ -434,7 +443,9 @@ namespace ActiveSet
             */
             /*     ALFA  IS INITIALIZED TO  BIGALF.  IF IT REMAINS THAT WAY AFTER */
             /*     THE CALL TO BNDALF, IT WILL BE REGARDED AS INFINITE. */
-            printV(n, &x[1]);
+
+            fixed (double* px = W)
+                printV(n, px);
             bigalf = dprotdiv(&bigdx, &pnorm, &ifail);
             if (ifail != 0 && bigdx == 0) bigalf = BlasLike.lm_max;
             fixed (double* pANORM = ANORM)
@@ -447,19 +458,22 @@ namespace ActiveSet
             fixed (double* pWRK = WRK)
             fixed (double* plambda = lambda)
             fixed (double* pLWRK = LWRK)
-            {
-                double* ww = plambda + (n + *nclin) * 2;
-                *inform = dbndalf(firstv, &hitlow, &istate[1], &jadd, n,
-                    *nctotl, *numinf, &alfa, &palfa, &atphit, &bigalf, &bigbnd,
-                    &pnorm, pANORM, pAP, pLWRK, &bl[1], &bu[1], &featol[1], pPX, &x[1]);
-            }
-            printV(n, &x[1]);
+            fixed (double* px = W)
+            fixed (double* pL = L)
+            fixed (double* pU = U)
+            fixed (double* pFeatol = featol)
+            fixed (int* pistate = istate)
+                *inform = dbndalf(firstv, &hitlow, pistate, &jadd, n,
+        *nctotl, *numinf, &alfa, &palfa, &atphit, &bigalf, &bigbnd,
+        &pnorm, pANORM, pAP, pLWRK, pL, pU, pFeatol, pPX, px);
+            fixed (double* px = W)
+                printV(n, px);
             if (*inform != 0 || jadd == 0)
             {
                 goto L300;
             }
             /*     TEST IF  ALFA*PNORM  IS NEGLIGIBLE. */
-            stall = (Math.Abs(alfa * pnorm)) <= epspt9 * *xnorm;
+            stall = (Math.Abs(alfa * pnorm)) <= epspt9 * xnorm[0];
             if (!stall)
             {
                 goto L120;
@@ -495,14 +509,10 @@ namespace ActiveSet
             fixed (double* pAP = AP)
             fixed (double* plambda = lambda)
             fixed (double* pLWRK = LWRK)
-            {
-                double* ww = plambda + (n + *nclin) * 2;
                 if (*nclin > 0)
                     BlasLike.daxpy(*nclin, alfa, pAP, 1, pLWRK, 1);
-            }
-
-            *xnorm = dnrm2vec(n, &x[1]);
-            if (lp) objlp = BlasLike.ddotvec(n, &cvec[1], &x[1]);
+            xnorm[0] = dnrm2vec(n, W);
+            if (lp) objlp = BlasLike.ddotvec(n, c, W);
             /*     IF  X  IS NOT YET FEASIBLE,  COMPUTE  OBJ  AND  GRAD  AS THE VALUE 
             */
             /*     AND GRADIENT OF THE SUM OF INFEASIBILITIES (IF  X  IS FEASIBLE, */
@@ -516,9 +526,16 @@ namespace ActiveSet
             fixed (double* pPX = PX)
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
-                dlpgrad(lp, n, *nctotl, *nrowa, bigbnd, feamin, numinf, &suminf, &istate[
-                    1], &a[a_offset], &bl[1], &bu[1], &cvec[1], &featol[1], pQTG,
-                    &x[1]);
+            fixed (double* px = W)
+            fixed (double* pc = c)
+            fixed (double* pa = A)
+            fixed (double* pL = L)
+            fixed (double* pU = U)
+            fixed (double* pFeatol = featol)
+            fixed (int* pistate = istate)
+                dlpgrad(lp, n, *nctotl, *nrowa, bigbnd, feamin[0], numinf, &suminf, pistate
+                    , pa, pL, pU, pc, pFeatol, pQTG,
+                    px);
             if (!orthog && jadd <= (int)n)
             {
                 fixed (double* pANORM = ANORM)
@@ -537,9 +554,11 @@ namespace ActiveSet
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
             fixed (double* pWRK = WRK)
-                dzyprod(6, n, *nactiv, ncolz, *nfree, nq, *unitq, &kactiv[1], &kfree[1]
+            fixed (int* pkfree = KFREE)
+            fixed (int* pkactiv = KACTV)
+                dzyprod(6, n, *nactiv, ncolz, *nfree, nq, *unitq, pkactiv, pkfree
                     , pQTG, pWRK);
-            *obj = suminf;
+            obj[0] = suminf;
         /* --------------------------------------------------------------------- 
         */
         /*     ADD A CONSTRAINT TO THE WORKING SET. */
@@ -549,7 +568,7 @@ namespace ActiveSet
         L160:
             if (lp && *numinf == 0)
             {
-                *obj = objlp;
+                obj[0] = objlp;
             }
             if (hitlow != 0)
             {
@@ -559,7 +578,7 @@ namespace ActiveSet
             {
                 istate[jadd] = 2;
             }
-            if (bl[jadd] == bu[jadd])
+            if (L[jadd - 1] == U[jadd - 1])
             {
                 istate[jadd] = 3;
             }
@@ -570,11 +589,11 @@ namespace ActiveSet
             /*     OTHER CLOSER CONSTRAINT.) */
             iadd = jadd - n;
             if (jadd > (int)n) goto L200;
-            bnd = (hitlow != 0 ? bl : bu)[jadd];
-            if (alfa >= 0) x[jadd] = bnd;
+            bnd = (hitlow != 0 ? L : U)[jadd - 1];
+            if (alfa >= 0) W[jadd - 1] = bnd;
             for (ifix = 1; ifix <= *nfree; ++ifix)
             {
-                if (kfree[ifix] == jadd)
+                if (KFREE[ifix - 1] == jadd)
                 {
                     goto L200;
                 }
@@ -594,9 +613,10 @@ namespace ActiveSet
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
             fixed (double* pWRK = WRK)
+            fixed (double* pa = A)
+            fixed (int* pkfree = KFREE)
                 *inform = daddcon(modfyg, false, orthog, unitq, &ifix, &iadd, &jadd,
-                    nactiv, &ncolz, &ncolz, nfree, n, *nrowa, &
-                    kfree[1], &condmx, &cslast, &snlast, &a[a_offset], pQTG,
+                    nactiv, &ncolz, &ncolz, nfree, n, *nrowa, pkfree, &condmx, &cslast, &snlast, pa, pQTG,
                     pRT, pWRK, pPX);
             nrowrt = nrowrt_c;
             --ncolz;
@@ -608,7 +628,7 @@ namespace ActiveSet
             kb = *nactiv + nfixed;
             for (idummy = 1; idummy <= nfixed; ++idummy)
             {
-                kactiv[kb + 1] = kactiv[kb];
+                KACTV[kb] = KACTV[kb - 1];
                 --kb;
                 /* L220: */
             }
@@ -621,25 +641,18 @@ namespace ActiveSet
                 CORRESPONDING TO THE NEWLY FIXED VARIABLE
                 */
                 --(*nfree);
-                kactiv[*nactiv + 1] = jadd;
+                KACTV[*nactiv] = jadd;
                 if (!orthog)
                 {
-                    fixed (double* pANORM = ANORM)
-                    fixed (double* pQTG = QTG)
-                    fixed (double* pRT = RT)
-                    fixed (double* pZY = ZY)
-                    fixed (double* pPX = PX)
-                    fixed (double* pRLAM = RLAM)
-                    fixed (double* pAP = AP)
-                        if (*numinf > 0) pQTG[*nfree] = wgfix;
-                        else if (lp) pQTG[*nfree] = cvec[jadd];
+                    if (*numinf > 0) QTG[*nfree - 1] = wgfix;
+                    else if (lp) QTG[*nfree - 1] = c[jadd - 1];
                 }
             }
             else
             {
                 /*ADD A GENERAL LINEAR CONSTRAINT*/
                 ++(*nactiv);
-                kactiv[*nactiv] = iadd;
+                KACTV[*nactiv - 1] = iadd;
             }
             goto L20;
         /* .........................END OF MAIN LOOP............................ 
@@ -688,8 +701,10 @@ namespace ActiveSet
             {
                 wrexit("LP", *inform, *iter);
             }
-            if (*inform > 0) dgetlamd(lprob, n, *nactiv, ncolz, *nfree, *nrowa,
-                nrowrt, &jsmlst, &ksmlst, &smllst, &istate[1], &a[a_offset]);
+            fixed (double* pa = A)
+            fixed (int* pistate = istate)
+                if (*inform > 0) dgetlamd(lprob, n, *nactiv, ncolz, *nfree, *nrowa,
+                    nrowrt, &jsmlst, &ksmlst, &smllst, pistate, pa);
             fixed (double* pANORM = ANORM)
             fixed (double* pQTG = QTG)
             fixed (double* pRT = RT)
@@ -705,9 +720,16 @@ namespace ActiveSet
             fixed (double* pPX = PX)
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
+            fixed (double* px = W)
+            fixed (double* pc = c)
+            fixed (double* pa = A)
+            fixed (double* pL = L)
+            fixed (double* pU = U)
+            fixed (double* pLanbda = lambda)
+            fixed (int* pistate = istate)
                 dprtsol(*nfree, *nrowa, n, *nclin, ncnln, *nctotl, bigbnd,
-                    *nactiv, &istate[1], &a[a_offset],
-                    &bl[1], &bu[1], &x[1], &clamda[1], pRLAM, &x[1]);
+                    *nactiv, pistate, pa,
+                    pL, pU, pc, pLanbda, pRLAM, px);
         }
         public unsafe static double dnrm2vec(int n, double* x)
         {
@@ -717,6 +739,16 @@ namespace ActiveSet
                 double scale = 0.0, ssq = 1.0;
                 dsssqvec(n, x, &scale, &ssq);
                 return sc_norm(scale, ssq);
+            }
+        }
+        public static double dnrm2vec(int n, double[] x, int xstart = 0)
+        {
+            if (n == 1) return (x[xstart] < 0.0 ? -x[xstart] : x[xstart]);
+            else
+            {
+                double[] scale = { 0.0 }, ssq = { 1.0 };
+                dsssqvec(n, x, scale, ssq, xstart);
+                return sc_norm(scale[0], ssq[0]);
             }
         }
         public static double sc_norm(double scale, double ssq)
@@ -1455,12 +1487,12 @@ namespace ActiveSet
         /* --------------------------------------------------------------------- 
         */
         L600:
-            *xnorm = dnrm2vec(n, &x[1]);
+            *xnorm = dnrm2vec(n, W);
             if (*nclin == 0)
             {
                 goto L640;
             }
-            BlasLike.dzerovec(*nclin, &ax[1]);
+            BlasLike.dzerovec(*nclin, LWRK);
             i__1 = n;
             for (j = 1; j <= i__1; ++j)
             {
@@ -2054,7 +2086,7 @@ namespace ActiveSet
                 dtmin = dtmin_c;
             }
         }
-        public unsafe static void dfindp(bool* nullr, bool* unitpg, int* unitq, int n, int* nclin, int* nrowa, int* Nrowrt, int* ncolr, int* ncolz, int* nfree, int* istate, int* kfree, bool negligible, double* gtp, double* pnorm, double* rdlast, double* a, double* ap, double* p, double* qtg, double* rt, double* v, double* zy, double* work)
+        public unsafe static void dfindp(bool nullr, bool* unitpg, int* unitq, int n, int* nclin, int* nrowa, int Nrowrt, int* ncolr, int* ncolz, int* nfree, int* istate, int* kfree, bool negligible, double* gtp, double* pnorm, double* rdlast)
         {
             /*
                 findp computes the following quantities for  lpcore,  qpcore  and
@@ -2071,32 +2103,31 @@ namespace ActiveSet
             int j;
             short idiag;
 
-            --work;
+            // --work;
             zy_dim1 = nq;
             zy_offset = zy_dim1 + 1;
-            zy -= zy_offset;
-            --v;
-            rt_dim1 = *Nrowrt;
+            //    zy -= zy_offset;
+            //  --v;
+            rt_dim1 = Nrowrt;
             rt_offset = rt_dim1 + 1;
-            rt -= rt_offset;
-            --qtg;
-            --p;
-            --ap;
+            //    rt -= rt_offset;
+            // --qtg;
+            //  --p;
+            //  --ap;
             a_dim1 = *nrowa;
             a_offset = a_dim1 + 1;
-            a -= a_offset;
+            //   a -= a_offset;
             --kfree;
             --istate;
-
-            BlasLike.dcopyvec(*ncolr, &qtg[1], &p[1]);
-            BlasLike.dscalvec(*ncolr, -1, &p[1]);
-            if (*nullr) goto L60;
-            *rdlast = rt[*ncolr + *ncolr * rt_dim1];
+            BlasLike.dcopyvec(*ncolr, QTG, PX);
+            BlasLike.dscalvec(*ncolr, -1, PX);
+            if (nullr) goto L60;
+            *rdlast = RT[*ncolr + *ncolr * rt_dim1 - rt_offset];
             /*     *** */
             /*     CORRECTION INSERTED BY MHW, 22 OCT 1985. */
             /*     THIS ENSURES A NON-ZERO SEARCH DIRECTION. */
             /*     *** */
-            if (*ncolr < *ncolz && negligible) p[*ncolr] = *rdlast;
+            if (*ncolr < *ncolz && negligible) PX[*ncolr - 1] = *rdlast;
             /* --------------------------------------------------------------------- 
             */
             /*     SOLVE THE SYSTEM   R(T)R (PZ) = - Z(T)G(FREE). */
@@ -2107,25 +2138,32 @@ namespace ActiveSet
                 goto L20;
             }
             /*     PERFORM THE FORWARD SUBSTITUTION  R(T)V = - Z(T)G(FREE). */
-            idiag = dtmxsolve((short)-1, *ncolr, &rt[rt_offset], *Nrowrt, &p[1], (short)1);
+            fixed (double* pRT = RT)
+            fixed (double* pPX = PX)
+                idiag = dtmxsolve((short)-1, *ncolr, pRT, Nrowrt, pPX, (short)1);
             goto L40;
         /*     THE PROJECTED GRADIENT IS A MULTIPLE OF THE UNIT VECTOR, THE */
         /*     FORWARD SUBSTITUTION MAY BE AVOIDED. */
         L20:
-            if (negligible) p[*ncolr] = -1;
-            else p[*ncolr] /= *rdlast;
+            if (negligible) PX[*ncolr - 1] = -1;
+            else PX[*ncolr - 1] /= *rdlast;
             /*     PERFORM THE BACKWARD SUBSTITUTION   R(PZ) = P. */
             L40:
-            BlasLike.dcopyvec(*ncolr, &p[1], &v[1]);
-            idiag = dtmxsolve((short)1, *ncolr, &rt[rt_offset], *Nrowrt, &p[1], (short)1);
-        /* --------------------------------------------------------------------- 
-        */
-        /*     THE VECTOR  (PZ)  HAS BEEN COMPUTED. */
-        /* --------------------------------------------------------------------- 
-        */
-        /*     COMPUTE THE DIRECTIONAL DERIVATIVE  G(T)P = (GZ)(T)(PZ). */
-        L60:
-            *gtp = BlasLike.ddotvec(*ncolr, &qtg[1], &p[1]);
+            fixed (double* pWRK = WRK)
+                BlasLike.dcopyvec(*ncolr, PX, WRK);
+            fixed (double* pRT = RT)
+            fixed (double* pQTG = QTG)
+            fixed (double* pPX = PX)
+                idiag = dtmxsolve((short)1, *ncolr, pRT, Nrowrt, pPX, (short)1);
+            /* --------------------------------------------------------------------- 
+            */
+            /*     THE VECTOR  (PZ)  HAS BEEN COMPUTED. */
+            /* --------------------------------------------------------------------- 
+            */
+            /*     COMPUTE THE DIRECTIONAL DERIVATIVE  G(T)P = (GZ)(T)(PZ). */
+            L60:
+            fixed (double* pQTG = QTG)
+                *gtp = BlasLike.ddotvec(*ncolr, QTG, PX);
             /* --------------------------------------------------------------------- 
             */
             /*     COMPUTE  P = Z * PZ. */
@@ -2133,10 +2171,12 @@ namespace ActiveSet
             */
             /*     NACTIV  AND  KACTIV  ARE NOT USED IN  ZYPROD.  N  AND  KFREE */
             /*     SERVE AS ARGUMENTS FOR  NACTIV  AND  KACTIV. */
-            dzyprod(1, n, n, *ncolr, *nfree, nq, *unitq, &kfree[1], &kfree[1], &p[1],
-                  &work[1]);
-            *pnorm = dnrm2vec(*nfree, &work[1]);
-            if (msg >= 80) lm_mdvwri("\n//FINDP//   P ... ", n, &p[1]);
+            fixed (double* pWRK = WRK)
+            fixed (double* pPX = PX)
+                dzyprod(1, n, n, *ncolr, *nfree, nq, *unitq, &kfree[1], &kfree[1], pPX,
+                      pWRK);
+            *pnorm = dnrm2vec(*nfree, WRK);
+            if (msg >= 80) lm_mdvwri("\n//FINDP//   P ... ", n, PX);
             /* --------------------------------------------------------------------- 
             */
             /*     COMPUTE  AP. */
@@ -2144,14 +2184,18 @@ namespace ActiveSet
             */
             if (*nclin > 0)
             {
-                BlasLike.dzerovec(*nclin, &ap[1]);
+                BlasLike.dzerovec(*nclin, AP);
                 for (j = 1; j <= (int)n; ++j)
                 {
-                    if (istate[j] <= 0)
-                        BlasLike.daxpy(*nclin, p[j], &a[j * a_dim1 + 1], 1, &ap[1], 1);
+                    fixed (double* pAP = AP)
+                    fixed (double* pA = A)
+                        if (istate[j] <= 0)
+                            //     BlasLike.daxpyvec(*nclin, PX[j - 1], pA + j * a_dim1 + 1 - a_offset, pAP);
+                            BlasLike.daxpyvec(*nclin, PX[j - 1], A, AP, j * a_dim1 + 1 - a_offset);
                     /* L100: */
                 }
-                if (msg >= 80) lm_mdvwri("\n//FINDP//  AP ... ", *nclin, &ap[1]);
+                fixed (double* pAP = AP)
+                    if (msg >= 80) lm_mdvwri("\n//FINDP//  AP ... ", *nclin, pAP);
             }
             return;
         }
@@ -2559,7 +2603,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* unitq, int* ifix, int*
              already in the working set
         */
         L100:
-            dtnew = dnrm2vec(*ncolz, &wrk1[1]);
+            dtnew = dnrm2vec(*ncolz, WRK);
             if (nact1 > 1)
             {
                 goto L140;
@@ -3916,7 +3960,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 }
             }
         }
-        public unsafe static short dqpsol(short itmax, short msglvl, int n, int nclin, int nctotl, int nrowa, int nrowh, int ncolh, int cold, int lp, int orthog, int[] iter, double* obj, int leniw, int lenw, short ifail)
+        public unsafe static short dqpsol(short itmax, short msglvl, int n, int nclin, int nctotl, int nrowa, int nrowh, int ncolh, int cold, int lp, int orthog, int[] iter, double[] obj, int leniw, int lenw, short ifail)
         {
             parm[0] = 1e10;
             parm[1] = 1e20;
@@ -3954,7 +3998,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             //double bigdx;
             int nfree, ncnln;
             int unitq;
-            double xnorm;// epspt9;
+            var xnorm = new double[1];// epspt9;
             int maxact, minact;
             byte lcrash;
             //double tolact;
@@ -4071,15 +4115,6 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                     dlpdump(n, nclin, nctotl, nrowa, lcrash, lp, minsum,
                     vertex, pIstate, pA, pLWRK, pL, pU,
                     pc, pW);
-            /*            fixed (double* pANORM = ANORM)
-                        fixed (double* pQTG = QTG)
-                        fixed (double* pRT = RT)
-                        fixed (double* pZY = ZY)
-                        fixed (double* pPX = PX)
-                        fixed (double* pRLAM = RLAM)
-                        fixed (double* pAP = AP)
-                        fixed (double* pWRK = WRK)
-                        fixed (int* pKACTV = KACTV)*/
             if (msglvl == 99)
                 dqpdump(n, nrowh, ncolh, c, Q, WRK, PX);
             var badConstraint = 0;
@@ -4088,15 +4123,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 if (U[ic] < L[ic]) badConstraint += 1;
             }
             if (badConstraint > 0) return 10;
-            fixed (int* pKACTV = KACTV)
-            fixed (double* pW = W)
-            fixed (double* pA = A)
-            fixed (double* pc = c)
-            fixed (double* pL = L)
-            fixed (double* pU = U)
-            fixed (int* pIstate = istate)
-            fixed (double* pfeatol = featol)
-                iter[0] = 0;
+            iter[0] = 0;
 
 
             /*
@@ -4125,8 +4152,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             fixed (double* pLWRK = LWRK)
                 dlpcore((lp & 1) != 0, minsum, orthog != 0, &unitq, vertex, &inform, &iter_,
                 itmx, lcrash, n, &nclin, &nctotl, &nrowa, &nactiv, &nfree, &numinf,
-                    pIstate, pKACTV, pKFREE, obj, &xnorm, pA, pL, pU, plambda, pc, pfeatol, pW,
-                    pIstate + maxact + n, pLWRK);
+                     obj, xnorm);
             iter[0] = (short)iter_;
             if (lp != 0)
             {
@@ -4155,15 +4181,15 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 fixed (double* pc = c)
                 fixed (double* pL = L)
                 fixed (double* pU = U)
-                fixed (int* pIstate = istate)
                 fixed (double* pQ = Q)
                 fixed (double* plambda = lambda)
                 fixed (double* pfeatol = featol)
                 fixed (double* pLWRK = LWRK)
+                fixed (double* pobj = obj)
                     dqpcore(orthog, &unitq, &inform, &iter_, &itmx, n, &nclin, &nctotl,
-                            &nrowrt_c, &nrowh, &ncolh, &nactiv, &nfree, pIstate,
-                            pKACTV, pKFREE, obj, &xnorm, pA, pL, pU, plambda, pc, pfeatol, pQ,
-                            pLWRK, pW, pIstate + maxact + n);
+                            &nrowa, &nrowh, &ncolh, &nactiv, &nfree,
+                            pKACTV, pKFREE, pobj, xnorm, pA, pL, pU, plambda, pc, pfeatol, pQ,
+                            pLWRK, pW);
                 nrowrt = nrowrt_c;
                 iter[0] = (short)iter_;
             }
@@ -4211,8 +4237,8 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                         Console.WriteLine("TOO MANY ITERATIONS DURING THE LP PHASE.");
                         break;
                 }
-                if (numinf == 0) lm_wmsg("\n FINAL %.2s OBJECTIVE VALUE =%20.9lg", l, *obj);
-                else lm_wmsg("\n FINAL SUM OF INFEASIBILITIES =%20.9lg", *obj);
+                if (numinf == 0) lm_wmsg("\n FINAL %.2s OBJECTIVE VALUE =%20.9lg", l, obj[0]);
+                else lm_wmsg("\n FINAL SUM OF INFEASIBILITIES =%20.9lg", obj[0]);
             }
 
             return (short)(inform == 0 ? 0 : lm_check_fail((short)ifail, (short)inform, "QPSOL"));
@@ -4416,7 +4442,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
         {
             Solver.Factorise.dsmxmulv(n, hess, wrk, hx);
         }
-        public unsafe static void dqpcore(int orthog, int* unitq, int* inform, int* iter, int* itmax, int n, int* nclin, int* nctotl, int* nrowa, int* nrowh, int* ncolh, int* nactiv, int* nfree, int* istate, int* kactiv, int* kfree, double* objqp, double* xnorm, double* a, double* bl, double* bu, double* clamda, double* cvec, double* featol, double* hess, double* scale, double* x, int* iw)
+        public unsafe static void dqpcore(int orthog, int* unitq, int* inform, int* iter, int* itmax, int n, int* nclin, int* nctotl, int* nrowa, int* nrowh, int* ncolh, int* nactiv, int* nfree, int* kactiv, int* kfree, double* objqp, double[] xnorm, double* a, double* bl, double* bu, double* clamda, double* cvec, double* featol, double* hess, double* scale, double* x)
         {
 
             /*
@@ -4484,7 +4510,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             double bnd;
             double gtp = 0;
             //         --w;
-            --iw;
+            //  --iw;
             --x;
             --scale;
             --featol;
@@ -4495,7 +4521,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             //        --ax;
             --kfree;
             --kactiv;
-            --istate;
+            //    --istate;
 
             /*INITIALIZE */
             *iter = 0;
@@ -4590,30 +4616,15 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 */
                 ztgnrm = 0;
 
-                fixed (double* pANORM = ANORM)
-                fixed (double* pQTG = QTG)
-                fixed (double* pRT = RT)
-                fixed (double* pZY = ZY)
-                fixed (double* pPX = PX)
-                fixed (double* pRLAM = RLAM)
-                fixed (double* pAP = AP)
-                    if (ncolr > 0) ztgnrm = dnrm2vec(ncolr, pQTG);
+                if (ncolr > 0) ztgnrm = dnrm2vec(ncolr, QTG);
                 gfnorm = ztgnrm;
-
-                fixed (double* pANORM = ANORM)
-                fixed (double* pQTG = QTG)
-                fixed (double* pRT = RT)
-                fixed (double* pZY = ZY)
-                fixed (double* pPX = PX)
-                fixed (double* pRLAM = RLAM)
-                fixed (double* pAP = AP)
-                    if (*nfree > 0 && *nactiv > 0) gfnorm = dnrm2vec(*nfree, pQTG);
+                if (*nfree > 0 && *nactiv > 0) gfnorm = dnrm2vec(*nfree, QTG);
 
                 /*
                 define small quantities that reflect the magnitude of  c,  x,  h
                 and the matrix of constraints in the working set
                 */
-                objsiz = (BlasLike.lm_eps + Math.Abs(*objqp)) / (BlasLike.lm_eps + *xnorm);
+                objsiz = (BlasLike.lm_eps + Math.Abs(*objqp)) / (BlasLike.lm_eps + xnorm[0]);
                 anorm = 0;
                 if (*nactiv > 0) anorm = Math.Abs(dtmax);
                 /*Computing MAX */
@@ -4654,9 +4665,10 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 fixed (double* pRLAM = RLAM)
                 fixed (double* pAP = AP)
                 fixed (double* pWRK = WRK)
+                fixed (int* pistate = istate)
                     dqpprt(orthog, isdel, *iter, jadd, jdel, *nactiv, ncolz, *nfree,
-                        n, *nclin, *nrowa, nhess, &
-                        istate[1], &kfree[1], alfa, condh, condt, *objqp, gfnorm,
+                        n, *nclin, *nrowa, nhess,
+                        pistate, &kfree[1], alfa, condh, condt, *objqp, gfnorm,
                         ztgnrm, emax, a, pRT, &x[1], pWRK, pAP);
                 nrowrt = nrowrt_c;
                 jadd = 0;
@@ -4679,8 +4691,9 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                         jdel = -(ncolr + 1);
                         if (ncolr >= ncolz)
                         {
-                            dgetlamd(lprob, n, *nactiv, ncolz, *nfree, *nrowa, nrowrt,
-                                &jsmlst, &ksmlst, &smllst, &istate[1], a);
+                            fixed (int* pistate = istate)
+                                dgetlamd(lprob, n, *nactiv, ncolz, *nfree, *nrowa, nrowrt,
+                                    &jsmlst, &ksmlst, &smllst, pistate, a);
 
                             /*
                             test for convergence.  if the least (adjusted) multiplier is
@@ -4768,7 +4781,6 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
 
                 ++(*iter);
                 if (*iter >= istart) msg = msglvl;
-                nrowrt_c = nrowrt;
 
                 fixed (double* pANORM = ANORM)
                 fixed (double* pQTG = QTG)
@@ -4778,11 +4790,10 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 fixed (double* pRLAM = RLAM)
                 fixed (double* pAP = AP)
                 fixed (double* pWRK = WRK)
-                    dfindp(&nullr, &unitpg, unitq, n, nclin, nrowa, &
-                        nrowrt_c, &ncolr, &ncolz, nfree, &istate[1], &kfree[1],
-                        negligible != 0, &gtp, &pnorm, &rdlast, a, pAP,
-                        pPX, pQTG, pRT, pWRK, pZY, pWRK);
-                nrowrt = nrowrt_c;
+                fixed (int* pistate = istate)
+                    dfindp(nullr, &unitpg, unitq, n, nclin, nrowa,
+                        nrowrt, &ncolr, &ncolz, nfree, pistate, &kfree[1],
+                        negligible != 0, &gtp, &pnorm, &rdlast);
 
                 /*
                 if a constraint has just been deleted and the projected gradient
@@ -4818,13 +4829,12 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 fixed (double* pWRK = WRK)
                 fixed (double* plambda = lambda)
                 fixed (double* pLWRK = LWRK)
-                {
-                    double* ww = plambda + (n + *nclin) * 2;
-                    dbndalf(firstv != 0, &hitlow, &istate[1], &jadd, n,
-                        *nctotl, numinf, &alfhit, &palfa, &atphit, &bigalf, &
-                        bigbnd, &pnorm, pANORM, pAP, pLWRK, &bl[1], &bu[1], &
-                        featol[1], pPX, &x[1]);
-                }
+                fixed (int* pistate = istate)
+                    dbndalf(firstv != 0, &hitlow, pistate, &jadd, n,
+        *nctotl, numinf, &alfhit, &palfa, &atphit, &bigalf, &
+        bigbnd, &pnorm, pANORM, pAP, pLWRK, &bl[1], &bu[1], &
+        featol[1], pPX, &x[1]);
+
 
                 /*
                 if the projected hessian is positive definite, the step
@@ -4849,7 +4859,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                     break;
                 }
                 /*test if the change in	 x  is negligible*/
-                stall = Math.Abs(alfa * pnorm) <= epspt9 * *xnorm;
+                stall = Math.Abs(alfa * pnorm) <= epspt9 * xnorm[0];
                 if (stall)
                 {
                     /*
@@ -4905,29 +4915,9 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                     nstall = 0;
                     jdsave = 0;
                     zerolm = false;
-                    fixed (double* pANORM = ANORM)
-                    fixed (double* pQTG = QTG)
-                    fixed (double* pRT = RT)
-                    fixed (double* pZY = ZY)
-                    fixed (double* pPX = PX)
-                    fixed (double* pRLAM = RLAM)
-                    fixed (double* pAP = AP)
-                        BlasLike.daxpy(n, alfa, pPX, 1, &x[1], 1);
-                    fixed (double* pANORM = ANORM)
-                    fixed (double* pQTG = QTG)
-                    fixed (double* pRT = RT)
-                    fixed (double* pZY = ZY)
-                    fixed (double* pPX = PX)
-                    fixed (double* pRLAM = RLAM)
-                    fixed (double* pAP = AP)
-                    fixed (double* pWRK = WRK)
-                    fixed (double* plambda = lambda)
-                    fixed (double* pLWRK = LWRK)
-                    {
-                        double* ww = plambda + (n + *nclin) * 2;
-                        if (*nclin > 0) BlasLike.daxpy(*nclin, alfa, pAP, 1, pLWRK, 1);
-                    }
-                    *xnorm = dnrm2vec(n, &x[1]);
+                    BlasLike.daxpy(n, alfa, PX, 1, W, 1);
+                    if (*nclin > 0) BlasLike.daxpy(*nclin, alfa, AP, 1, LWRK, 1);
+                    xnorm[0] = dnrm2vec(n, W);
                 }
 
                 /*if an unconstrained step was taken, repeat the main loop*/
@@ -5047,11 +5037,13 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             /*PRINT FULL SOLUTION*/
             msg = msglvl;
             if (msg >= 1) wrexit(lprob, i, *iter);
-            if (i > 0) dgetlamd(lprob, n, *nactiv, ncolz, *nfree, *nrowa,
-                     nrowrt, &jsmlst, &ksmlst, &smllst, &istate[1], a);
+            fixed (int* pistate = istate)
+                if (i > 0) dgetlamd(lprob, n, *nactiv, ncolz, *nfree, *nrowa,
+                         nrowrt, &jsmlst, &ksmlst, &smllst, pistate, a);
             fixed (double* pRLAM = RLAM)
+            fixed (int* pistate = istate)
                 dprtsol(*nfree, *nrowa, n, *nclin, ncnln, *nctotl, bigbnd,
-                    *nactiv, &istate[1], a,
+                    *nactiv, pistate, a,
                     &bl[1], &bu[1], &x[1], &clamda[1], pRLAM, &x[1]);
         }
         public unsafe static int dqpcrsh(int unitq, int n, int ncolz, int nfree, int* nhess, int Nq, int nrowh, int ncolh, int Nrowrt, int* kfree, double* hsize, double* hess, double* rt, double* scale, double* zzy, double* hz1, double* wrk)
@@ -5501,7 +5493,8 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             fixed (double* pRT = RT)
             {
                 idiag = dtmxsolve((short)-1, ncolr1, pRT, nrowrt, &pRT[*ncolr * rt_dim1 + 1 - rt_offset], (short)1);
-                rnorm = dnrm2vec(ncolr1, &pRT[*ncolr * rt_dim1 + 1 - rt_offset]);
+                //  rnorm = dnrm2vec(ncolr1, &pRT[*ncolr * rt_dim1 + 1 - rt_offset]);
+                rnorm = dnrm2vec(ncolr1, RT, *ncolr * rt_dim1 + 1 - rt_offset);
             }
             /*
             compute the square of the last diagonal element of  r
@@ -5632,12 +5625,12 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
         public unsafe static short LPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] objective, int[] iter)
         {
             var lp = 1;
-            var itmax = (short)2000;
+            var itmax = (short)20000;
             var orthog = 1;
             var nclin = m;
             var nctotl = n + m;
             var nrowa = m;
-            var obj = 1e10;
+            double[] obj = { 1e10 };
             var featolv = 1e-8;
             int cold = 1;
             short msglvl = -1000;
@@ -5657,19 +5650,19 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             short back;
             back = dqpsol(itmax, msglvl, n, m, n + m, m,
       n + n, 1, cold, lp, orthog,
-       iter, &obj, n + n, lwrk, ifail);
-            objective[0] = obj;
+       iter, obj, n + n, lwrk, ifail);
+            objective[0] = obj[0];
             return back;
         }
         public unsafe static short QPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] QQ, double[] objective, int[] iter)
         {
             var lp = 0;
-            var itmax = (short)2000;
+            var itmax = (short)20000;
             var orthog = 1;
             var nclin = m;
             var nctotl = n + m;
             var nrowa = m;
-            var obj = 1e10;
+            double[] obj = { 1e10 };
             var featolv = 1e-8;
             int cold = 1;
             short msglvl = -1000;
@@ -5690,8 +5683,8 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             Q = QQ;
             back = dqpsol(itmax, msglvl, n, m, n + m, m,
       n + n, 1, cold, lp, orthog,
-       iter, &obj, n + n, lwrk, ifail);
-            objective[0] = obj;
+       iter, obj, n + n, lwrk, ifail);
+            objective[0] = obj[0];
             return back;
         }
     }

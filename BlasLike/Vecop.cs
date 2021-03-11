@@ -165,11 +165,10 @@ namespace Blas
             }
         }
 
-
         public static void daxpy(int n, double da, double[] dx,
-            int incx, double[] dy, int incy, int xstart = 0, int ystart = 0)
+            int incx, double[] dy, int incy,int xstart=0,int ystart=0)
         {
-            int i__, m, ix, iy;
+            int i__, m, ix, iy, mp1;
             /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
             /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
             /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
@@ -187,6 +186,8 @@ namespace Blas
             /*     .. Intrinsic Functions .. */
             /*     .. */
             /* Parameter adjustments */
+            ystart-=1;
+            xstart-=1;
 
             /* Function Body */
             if (n <= 0)
@@ -210,23 +211,23 @@ namespace Blas
                 {
                     if (da == 1)
                     {
-                        for (i__ = 0; i__ < m; ++i__)
+                        for (i__ = 1; i__ <= m; ++i__)
                         {
-                            dy[i__ + ystart] += dx[i__ + xstart];
+                            dy[i__+ystart] += dx[i__+xstart];
                         }
                     }
                     else if (da == -1)
                     {
-                        for (i__ = 0; i__ < m; ++i__)
+                        for (i__ = 1; i__ <= m; ++i__)
                         {
-                            dy[i__ + ystart] -= dx[i__ + xstart];
+                            dy[i__+ystart] -= dx[i__+xstart];
                         }
                     }
                     else
                     {
-                        for (i__ = 0; i__ < m; ++i__)
+                        for (i__ = 1; i__ <= m; ++i__)
                         {
-                            dy[i__ + ystart] += da * dx[i__ + xstart];
+                            dy[i__+ystart] += da * dx[i__+xstart];
                         }
                     }
                 }
@@ -234,34 +235,35 @@ namespace Blas
                 {
                     return;
                 }
+                mp1 = m + 1;
                 if (da == 1)
                 {
-                    for (i__ = m; i__ < n; i__ += 4)
+                    for (i__ = mp1; i__ <= n; i__ += 4)
                     {
-                        dy[i__ + ystart] += dx[i__ + xstart];
-                        dy[i__ + 1 + ystart] += dx[i__ + 1 + xstart];
-                        dy[i__ + 2 + ystart] += dx[i__ + 2 + xstart];
-                        dy[i__ + 3 + ystart] += dx[i__ + 3 + xstart];
+                        dy[i__+ystart] += dx[i__+xstart];
+                        dy[i__ + 1+ystart] += dx[i__ + 1+xstart];
+                        dy[i__ + 2+ystart] += dx[i__ + 2+xstart];
+                        dy[i__ + 3+ystart] += dx[i__ + 3+xstart];
                     }
                 }
                 else if (da == -1)
                 {
-                    for (i__ = m; i__ < n; i__ += 4)
+                    for (i__ = mp1; i__ <= n; i__ += 4)
                     {
-                        dy[i__ + ystart] -= dx[i__ + xstart];
-                        dy[i__ + 1 + ystart] -= dx[i__ + 1 + xstart];
-                        dy[i__ + 2 + ystart] -= dx[i__ + 2 + xstart];
-                        dy[i__ + 3 + ystart] -= dx[i__ + 3 + xstart];
+                        dy[i__+ystart] -= dx[i__+xstart];
+                        dy[i__ + 1+ystart] -= dx[i__ + 1+xstart];
+                        dy[i__ + 2+ystart] -= dx[i__ + 2+xstart];
+                        dy[i__ + 3+ystart] -= dx[i__ + 3+xstart];
                     }
                 }
                 else
                 {
-                    for (i__ = m; i__ < n; i__ += 4)
+                    for (i__ = mp1; i__ <= n; i__ += 4)
                     {
-                        dy[i__ + ystart] += da * dx[i__ + xstart];
-                        dy[i__ + 1 + ystart] += da * dx[i__ + 1 + xstart];
-                        dy[i__ + 2 + ystart] += da * dx[i__ + 2 + xstart];
-                        dy[i__ + 3 + ystart] += da * dx[i__ + 3 + xstart];
+                        dy[i__+ystart] += da * dx[i__+xstart];
+                        dy[i__ + 1+ystart] += da * dx[i__ + 1+xstart];
+                        dy[i__ + 2+ystart] += da * dx[i__ + 2+xstart];
+                        dy[i__ + 3+ystart] += da * dx[i__ + 3+xstart];
                     }
                 }
             }
@@ -271,45 +273,46 @@ namespace Blas
                 /*        code for unequal increments or equal increments */
                 /*          not equal to 1 */
 
-                ix = 0;
-                iy = 0;
+                ix = 1;
+                iy = 1;
                 if (incx < 0)
                 {
-                    ix = (-(n) + 1) * incx + 0;
+                    ix = (-(n) + 1) * incx + 1;
                 }
                 if (incy < 0)
                 {
-                    iy = (-(n) + 1) * incy + 0;
+                    iy = (-(n) + 1) * incy + 1;
                 }
                 if (da == 1)
                 {
-                    for (i__ = 0; i__ < n; ++i__)
+                    for (i__ = 1; i__ <= n; ++i__)
                     {
-                        dy[iy + ystart] += dx[ix + xstart];
+                        dy[iy+ystart] += dx[ix+xstart];
                         ix += incx;
                         iy += incy;
                     }
                 }
                 else if (da == -1)
                 {
-                    for (i__ = 0; i__ < n; ++i__)
+                    for (i__ = 1; i__ <= n; ++i__)
                     {
-                        dy[iy + ystart] -= dx[ix + xstart];
+                        dy[iy+ystart] -= dx[ix+xstart];
                         ix += incx;
                         iy += incy;
                     }
                 }
                 else
                 {
-                    for (i__ = 0; i__ < n; ++i__)
+                    for (i__ = 1; i__ <= n; ++i__)
                     {
-                        dy[iy + ystart] += da * dx[ix + xstart];
+                        dy[iy+ystart] += da * dx[ix+xstart];
                         ix += incx;
                         iy += incy;
                     }
                 }
             }
         }
+
 
         public static void daxpyvec(int n, double a, double[] x, double[] y, int xstart = 0, int ystart = 0)
         {
