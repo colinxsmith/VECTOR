@@ -1,6 +1,14 @@
 
-//Make 64 bit version on Windows in safeqp64 with
-//cl -D__SYSNT__ -EHsc -I . safeqp.lib ..\VECTOR\LP.cpp
+/*
+Make 64 bit version on Windows in safeqp64 with
+cl -D__SYSNT__ -EHsc -I . safeqp.lib ..\VECTOR\LP.cpp
+
+Make on linux with
+g++ -O -I ~/safeqp LP.cpp -L ~/safeqp -lsafeqp -o LP
+
+Make on cygwin in safeqp with
+g++ -O -I. ../VECTOR/LP.cpp -DMSDOSS -L. -lsafeqp -o LP 
+*/
 #include <valarray>
 #include <ldefns.h>
 extern "C" short Optimise_internalCVP(dimen n, long nfac, char **names, vector w_opt, dimen m,
