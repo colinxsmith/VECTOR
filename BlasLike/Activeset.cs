@@ -624,7 +624,7 @@ namespace ActiveSet
                 CORRESPONDING TO THE NEWLY FIXED VARIABLE
                 */
                 --(*nfree);
-                KACTV[*nactiv] = jadd;
+                KACTV[*nactiv-1] = jadd;
                 if (!orthog)
                 {
                     if (*numinf > 0) QTG[*nfree - 1] = wgfix;
