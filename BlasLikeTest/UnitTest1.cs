@@ -202,10 +202,10 @@ namespace BlasLikeTest
         {
             double[] a = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
             double s1 = 1;
-            double[] scale = { s1 };
-            double[] sumsq = { 0 };
-            BlasLike.dsssq(a.Length / 2, a, 2, scale, sumsq);
-            Assert.IsTrue(scale[0] == 9 && sumsq[0] == 2.037037037037037, $"scale is {scale[0]}, sumsq is {sumsq[0]}");
+            double scale =  s1 ;
+            double sumsq =  0 ;
+            BlasLike.dsssq(a.Length / 2, a, 2,ref scale,ref sumsq);
+            Assert.IsTrue(scale == 9 && sumsq == 2.037037037037037, $"scale is {scale}, sumsq is {sumsq}");
         }
         [TestMethod]
         public unsafe void Test_dsssq2()
@@ -238,11 +238,10 @@ namespace BlasLikeTest
         public void Test_dsssq3()
         {
             double[] a = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-            double s1 = 1;
-            double[] scale = { s1 };
-            double[] sumsq = { 0 };
-            BlasLike.dsssq(a.Length / 2, a, -2, scale, sumsq, 1);
-            Assert.IsTrue(scale[0] == 10 && sumsq[0] == 2.2, $"scale is {scale[0]}, sumsq is {sumsq[0]}");
+            double scale =1 ;
+            double sumsq =  0 ;
+            BlasLike.dsssq(a.Length / 2, a, -2,ref scale,ref  sumsq, 1);
+            Assert.IsTrue(scale == 10 && sumsq == 2.2, $"scale is {scale}, sumsq is {sumsq}");
         }
         [TestMethod]
         public void Test_dsssqvec()
@@ -257,10 +256,10 @@ namespace BlasLikeTest
                 Assert.IsTrue(scale == 10 && sumsq == 3.85, $"scale is {scale}, sumsq is {sumsq}");
             }
             {
-                double[] scale = { 1 };
-                double[] sumsq = { 0 };
-                ActiveSet.Optimise.dsssqvec(a.Length, a, scale, sumsq);
-                Assert.IsTrue(scale[0] == 10 && sumsq[0] == 3.85, $"scale is {scale[0]}, sumsq is {sumsq[0]}");
+                double scale =  1 ;
+                double sumsq =  0 ;
+                ActiveSet.Optimise.dsssqvec(a.Length, a, ref scale,ref sumsq);
+                Assert.IsTrue(scale == 10 && sumsq == 3.85, $"scale is {scale}, sumsq is {sumsq}");
             }
         }
         [TestMethod]

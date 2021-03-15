@@ -27,8 +27,8 @@ namespace ActiveSet
         public static double[] parm = new double[4];
         public static int nq;
         public static double asize;
-        public static int nrowrt;
-        public static int ncolrt;
+        public static int NROWRT;
+        public static int NCOLRT;
         public static double dtmax;
         public static double dtmin;
         public static double[] ANORM;
@@ -93,11 +93,11 @@ namespace ActiveSet
             int iadd, jadd;
             double alfa;
             int jdel, kdel, ndel;
-            int ifix;
+            int ifix = 123;
             bool prnt;
             bool added;
             double palfa;
-            int ifail;
+            int ifail = 19;
             double bigdx;
             int isdel = 0;
             double objlp, condt;
@@ -118,7 +118,7 @@ namespace ActiveSet
             int jbigst, kbigst;
             double tolact;
             bool modfyg;
-            double condmx, atphit, cslast, rdlast, objsiz, snlast, suminf,
+            double condmx, atphit, cslast = 46, rdlast, objsiz, snlast = 76, suminf,
                  trulam;
             int idummy, msglvl;
             int jsmlst, ksmlst;
@@ -191,8 +191,6 @@ namespace ActiveSet
                 the array rlamda is used as temporary work space
             ---------------------------------------------------------------------
             */
-            var nrowrt_c = nrowrt;
-            var ncolrt_c = ncolrt;
             fixed (double* pANORM = ANORM)
             fixed (double* pQTG = QTG)
             fixed (double* pRT = RT)
@@ -210,10 +208,8 @@ namespace ActiveSet
             fixed (int* pkactiv = KACTV)
             fixed (int* pistate = istate)
                 dlpcrsh(orthog, vertex, lcrash, n, nclin, nctotl,
-         &nrowrt_c, &ncolrt_c, nactiv, &ncolz, nfree, pistate,
+         NROWRT, NCOLRT, nactiv, &ncolz, nfree, pistate,
         pkactiv, pkfree);
-            nrowrt = nrowrt_c;
-            ncolrt = ncolrt_c;
             fixed (double* pANORM = ANORM)
             fixed (double* pQTG = QTG)
             fixed (double* pRT = RT)
@@ -274,7 +270,7 @@ namespace ActiveSet
             var dtmax_c = dtmax;
             var dtmin_c = dtmin;
 
-            condt = dprotdiv(&dtmax_c, &dtmin_c, &ifail);
+            condt = dprotdiv(ref dtmax_c, ref dtmin_c, ref ifail);
             dtmax = dtmax_c;
             dtmin = dtmin_c;
             if (ifail != 0 && dtmax == 0) condt = BlasLike.lm_max;
@@ -290,7 +286,7 @@ namespace ActiveSet
             fixed (double* pa = A)
             fixed (int* pkfree = KFREE)
             fixed (int* pistate = istate)
-                dlpprt(lp, nrowrt, n, *nclin, *nfree, isdel, *nactiv,
+                dlpprt(lp, NROWRT, n, *nclin, *nfree, isdel, *nactiv,
                     ncolz, *iter, jadd, jdel, alfa, condt, *numinf,
                     suminf, objlp, pistate, pkfree, pa, pRT, px, pWRK, pAP);
             added = false;
@@ -313,7 +309,7 @@ namespace ActiveSet
             */
             fixed (double* pa = A)
             fixed (int* pistate = istate)
-                dgetlamd(lprob, n, *nactiv, ncolz, *nfree, nrowrt,
+                dgetlamd(lprob, n, *nactiv, ncolz, *nfree, NROWRT,
                     &jsmlst, &ksmlst, &smllst, pistate, pa);
             /* --------------------------------------------------------------------- 
             */
@@ -403,7 +399,7 @@ namespace ActiveSet
             fixed (int* pkfree = KFREE)
             fixed (int* pkactiv = KACTV)
                 ddelcon(modfyg, orthog, jdel, kdel, *nactiv, ncolz, *nfree, n,
-                     nrowrt, pkactiv, pkfree, pa,
+                     NROWRT, pkactiv, pkfree, pa,
                     pQTG, pRT);
             ++ncolz;
             if (jdel <= (int)n)
@@ -433,7 +429,7 @@ namespace ActiveSet
             fixed (int* pkfree = KFREE)
             fixed (int* pistate = istate)
                 dfindp(nullr, &unitpg, n, nclin,
-                    nrowrt, &ncolz, &ncolz, nfree, pistate, pkfree,
+                    NROWRT, &ncolz, &ncolz, nfree, pistate, pkfree,
                     delete_, &gtp, &pnorm, &rdlast);
             /* --------------------------------------------------------------------- 
             */
@@ -444,7 +440,7 @@ namespace ActiveSet
             /*     ALFA  IS INITIALIZED TO  BIGALF.  IF IT REMAINS THAT WAY AFTER */
             /*     THE CALL TO BNDALF, IT WILL BE REGARDED AS INFINITE. */
 
-            bigalf = dprotdiv(&bigdx, &pnorm, &ifail);
+            bigalf = dprotdiv(ref bigdx, ref pnorm, ref ifail);
             if (ifail != 0 && bigdx == 0) bigalf = BlasLike.lm_max;
             fixed (double* pANORM = ANORM)
             fixed (double* pQTG = QTG)
@@ -600,14 +596,12 @@ namespace ActiveSet
         L200:
             added = true;
             ndel = 0;
-            nrowrt_c = nrowrt;
             fixed (double* pPX = PX)
             fixed (double* pWRK = WRK)
             fixed (int* pkfree = KFREE)
-                *inform = daddcon(modfyg, false, orthog, &ifix, &iadd, &jadd,
-                    nactiv, &ncolz, &ncolz, nfree, n, NROWA, pkfree, &condmx, &cslast, &snlast,
-                     pWRK, pPX);
-            nrowrt = nrowrt_c;
+                *inform = daddcon(modfyg, false, orthog, ifix, iadd, jadd,
+                    *nactiv, ncolz, ncolz, *nfree, n, NROWA, KFREE, condmx, cslast, snlast,
+                     WRK, PX);
             --ncolz;
             nfixed = n - *nfree;
             if (nfixed == 0)
@@ -693,7 +687,7 @@ namespace ActiveSet
             fixed (double* pa = A)
             fixed (int* pistate = istate)
                 if (*inform > 0) dgetlamd(lprob, n, *nactiv, ncolz, *nfree,
-                    nrowrt, &jsmlst, &ksmlst, &smllst, pistate, pa);
+                    NROWRT, &jsmlst, &ksmlst, &smllst, pistate, pa);
             fixed (double* pANORM = ANORM)
             fixed (double* pQTG = QTG)
             fixed (double* pRT = RT)
@@ -735,9 +729,9 @@ namespace ActiveSet
             if (n == 1) return (x[xstart] < 0.0 ? -x[xstart] : x[xstart]);
             else
             {
-                double[] scale = { 0.0 }, ssq = { 1.0 };
-                dsssqvec(n, x, scale, ssq, xstart);
-                return sc_norm(scale[0], ssq[0]);
+                double scale = 0.0, ssq = 1.0;
+                dsssqvec(n, x, ref scale, ref ssq, xstart);
+                return sc_norm(scale, ssq);
             }
         }
         public static double sc_norm(double scale, double ssq)
@@ -745,11 +739,11 @@ namespace ActiveSet
             ssq = Math.Sqrt(ssq);
             return (scale < BlasLike.lm_max / ssq ? scale * ssq : BlasLike.lm_max);
         }
-        public static void dsssqvec(int n, double[] x, double[] pscale, double[] psumsq, int px = 0)
+        public static void dsssqvec(int n, double[] x, ref double pscale, ref double psumsq, int px = 0)
         {
             if (n > 0)
             {
-                double absxi, d, sumsq = psumsq[0], scale = pscale[0];
+                double absxi, d, sumsq = psumsq, scale = pscale;
                 Debug.Assert(scale >= 0);
                 for (int i = 0; i < n; ++i)
                 {
@@ -768,8 +762,8 @@ namespace ActiveSet
                         sumsq += d * d;
                     }
                 }
-                pscale[0] = scale;
-                psumsq[0] = sumsq;
+                pscale = scale;
+                psumsq = sumsq;
             }
         }
 
@@ -852,6 +846,63 @@ namespace ActiveSet
                     *fail = 1;
                     div = BlasLike.lm_rsafe_range;
                     if ((*a < 0.0 && *b > 0.0) || (*a > 0.0 && *b < 0.0)) div = -div;
+                }
+            }
+            return div;
+        }
+
+        public static double dprotdiv(ref double a, ref double b, ref int fail)
+        {
+            /*
+                dprotdiv returns the value div given by
+                    div =	( a/b                 if a/b does not overflow,
+                            (
+                        ( 0.0                 if a == 0.0,
+                        (
+                        ( sign( a/b )*flmax   if a != 0.0  and a/b would overflow,
+
+                where  flmax  is a large value. in addition if
+                a/b would overflow then  fail is returned as 1, otherwise  fail is
+                returned as 0
+                note that when  a and b  are both zero, fail is returned as 1, but
+                div  is returned as  0.0. in all other cases of overflow  div is such
+                that  abs( div ) = flmax
+
+                when  b = 0  then  sign( a/b )  is taken as  sign( a )
+            */
+            double absb, div;
+            int dfail = -90;
+
+            if (fail == 0) fail = dfail;
+
+            if (a == 0.0)
+            {
+                div = 0.0;
+                fail = b == 0 ? 1 : 0;
+            }
+            else if (b == 0.0)
+            {
+                div = BlasLike.dsign(BlasLike.lm_rsafe_range, a);
+                fail = 1;
+            }
+            else
+            {
+                absb = Math.Abs(b);
+                if (absb >= 1.0)
+                {
+                    fail = 0;
+                    div = (Math.Abs(a) >= absb * BlasLike.lm_safe_range ? a / b : 0.0);
+                }
+                else if (Math.Abs(a) <= absb * BlasLike.lm_rsafe_range)
+                {
+                    fail = 0;
+                    div = a / b;
+                }
+                else
+                {
+                    fail = 1;
+                    div = BlasLike.lm_rsafe_range;
+                    if ((a < 0.0 && b > 0.0) || (a > 0.0 && b < 0.0)) div = -div;
                 }
             }
             return div;
@@ -986,7 +1037,7 @@ namespace ActiveSet
             Console.WriteLine($"{name} iteration {n}");
         }
         public unsafe static void dlpcrsh(bool orthog, int vertex, byte lcrash, int n, int* nclin, int* nctotl,
-          int* Nrowrt, int* Ncolrt, int* nactiv, int* ncolz,
+          int Nrowrt, int Ncolrt, int* nactiv, int* ncolz,
         int* nfree, int* istate, int* kactiv, int* kfree)
         {
 
@@ -997,7 +1048,7 @@ namespace ActiveSet
             var bigbnd = parm[0];
 
 
-            int iadd, jadd;
+            int iadd = 34, jadd;
             double amin;
             int imin = 1000000000, jmin = 1000000000, ifix = -111111111;
             double resl, resu;
@@ -1011,9 +1062,9 @@ namespace ActiveSet
             int was_is, nfixed;
             double colmin, toobig;
             int nartif;
-            double condmx, cslast;
+            double condmx, cslast = 78;
             int inform;
-            double resmin, colsiz, snlast;
+            double resmin, colsiz, snlast = 0;
             int idummy;
             double rowmax;
             double bnd, res;
@@ -1026,9 +1077,9 @@ namespace ActiveSet
             zy_dim1 = nq;
             zy_offset = zy_dim1 + 1;
             //        zy -= zy_offset;
-            i__1 = *Nrowrt * *Ncolrt;
+            i__1 = Nrowrt * Ncolrt;
             BlasLike.dzerovec(i__1, RT);
-            rt_dim1 = *Nrowrt;
+            rt_dim1 = Nrowrt;
             rt_offset = rt_dim1 + 1;
             //         rt -= rt_offset;
             // --qtg;
@@ -1387,7 +1438,7 @@ namespace ActiveSet
             fixed (double* pRLAM = RLAM)
             fixed (double* pA = A)
                 dtqadd(orthog, &inform, &c__1, &nact1, nactiv, ncolz, nfree, &n__,
-                      Nrowrt, Ncolrt, &istate[1], &kactiv[1], &kfree[
+                       &istate[1], &kactiv[1], &kfree[
                     1], &condmx, pA, pRT);
             /*     IF A VERTEX IS REQUIRED BUT  TQADD  WAS UNABLE TO ADD ALL OF THE */
 
@@ -1419,10 +1470,10 @@ namespace ActiveSet
                 fixed (double* pWRK = WRK)
                 fixed (double* pRLAM = RLAM)
                 fixed (int* pkfree = KFREE)
-                    inform = daddcon(false, false, orthog, &ifix, &iadd, &jadd,
-                        nactiv, ncolz, ncolz, nfree, n, NROWA,
-                        pkfree, &condmx, &cslast, &snlast,
-                         pWRK, pRLAM);
+                    inform = daddcon(false, false, orthog, ifix, iadd, jadd,
+                        *nactiv, *ncolz, *ncolz, *nfree, n, NROWA,
+                        KFREE, condmx, cslast, snlast,
+                         WRK, RLAM);
                 --(*nfree);
                 --(*ncolz);
                 ++nartif;
@@ -1473,7 +1524,7 @@ namespace ActiveSet
             fixed (double* pWRK = WRK)
             fixed (double* pRT = RT)
             {
-                drtmxsolve(2, *nactiv, &pRT[(*ncolz + 1) * rt_dim1 + 1 - rt_offset], *Nrowrt, pWRK,
+                drtmxsolve(2, *nactiv, &pRT[(*ncolz + 1) * rt_dim1 + 1 - rt_offset], Nrowrt, pWRK,
                    &idiag);
                 BlasLike.dzerovec(n, PX);
                 BlasLike.dcopyvec(*nactiv, WRK, PX, 0, *ncolz);
@@ -1734,6 +1785,128 @@ namespace ActiveSet
                     BlasLike.dcopyvec(nfixed, &wrk[nfree + 1], &v[nfree + 1]);
             }
         }
+
+        public static void dzyprod(short mode, int n, int nactiv, int ncolz, int nfree, int nq, int[] kactiv, int[] kfree, double[] v, double[] wrk, int kc = 0, int kfr = 0, int vst = 0, int wst = 0)
+        {
+            /*
+                dzyprod transforms the vector  v  in various ways using the 
+                matrix  Q = ( Z  Y )  defined by the input parameters
+                MODE	RESULT 
+                ----	------ 
+                1	V = Z*V 
+                2	V = Y*V 
+                3	V = Q*V       (NOT YET USED) 
+                            ON INPUT,  V  IS ASSUMED TO BE ORDERED AS  ( V(FREE)  V(FIXED) ). 
+                            ON OUTPUT, V  IS A FULL N-VECTOR. 
+
+                4	V = Z(T)*V 
+                5	V = Y(T)*V 
+                6	V = Q(T)*V 
+                            ON INPUT,  V  IS A FULL N-VECTOR. 
+                            ON OUTPUT, V  IS ORDERED AS  ( V(FREE)  V(FIXED) ). 
+
+                7	V = Y(T)*V 
+                8	V = Q(T)*V 
+                            ON INPUT,  V  IS A FULL N-VECTOR. 
+                            ON OUTPUT, V  IS AS IN MODES 5 AND 6 EXCEPT THAT V(FIXED) IS NOT SET. 
+
+                BEWARE THAT  NCOLZ  WILL SOMETIMES BE  NCOLR. 
+                ALSO, MODES  1, 4, 7 AND 8  DO NOT INVOLVE  V(FIXED).
+                NACTIV  AND  THE ARRAY  KACTIV  ARE NOT USED FOR THOSE CASES. 
+            */
+            int lenv;
+            int j, k, l;
+            int j1, j2, ka, kw, nfixed;
+            //           --wrk;
+            wst--;
+            //   zy -= nq + 1;
+            int zy_offset = nq + 1;
+
+            //          --v;
+            vst--;
+            //       --kfree;
+            kfr--;
+            //     --kactiv;
+            kc--;
+
+            nfixed = n - nfree;
+            j1 = 1;
+            j2 = nfree;
+            if (mode == 1 || mode == 4) j2 = ncolz;
+            else if (mode == 2 || mode == 5 || mode == 7) j1 = ncolz + 1;
+            lenv = j2 - j1 + 1;
+            if (mode < 4)
+            {
+                /*MODE = 1, 2  OR  3*/
+                if (nfree > 0) BlasLike.dzerovec(nfree, wrk, 1 + wst);
+                /*COPY  V(FIXED)  INTO THE END OF  WRK. */
+                if (mode != 1 && nfixed != 0)
+                    //   BlasLike.dcopyvec(nfixed, &v[nfree + 1], &wrk[nfree + 1]);
+                    BlasLike.dcopyvec(nfixed, v, wrk, nfree + 1 + vst, nfree + 1 + wst);
+                /*SET  WRK  =  RELEVANT PART OF  ZY * V. */
+                if (lenv > 0)
+                {
+                    //  if (UNITQ) BlasLike.dcopyvec(lenv, &v[j1], &wrk[j1]);
+                    if (UNITQ) BlasLike.dcopyvec(lenv, v, wrk, j1 + vst, j1 + wst);
+                    else for (j = j1; j <= j2; ++j)
+                            if (v[j+vst] != 0)
+                                //fixed (double* pZY = ZY)
+                                // BlasLike.daxpy(nfree, v[j], &pZY[j * nq + 1 - zy_offset], 1, &wrk[1], 1);
+                                BlasLike.daxpyvec(nfree, v[j], ZY, wrk, j * nq + 1 - zy_offset, 1 + wst);
+                }
+                /*EXPAND  WRK  INTO  V  AS A FULL N-VECTOR. */
+                BlasLike.dzerovec(n, v, 1 + vst);
+                if (nfree > 0)
+                    for (k = 1; k <= (int)nfree; ++k)
+                    {
+                        j = kfree[k+kfr];
+                        v[j-vst] = wrk[k+wst];
+                    }
+                /*COPY  WRK(FIXED)  INTO THE APPROPRIATE PARTS OF  V*/
+                if (mode == 1 || nfixed == 0) return;
+                for (l = 1; l <= nfixed; ++l)
+                {
+                    kw = nfree + l;
+                    ka = nactiv + l;
+                    j = kactiv[ka+kc];
+                    v[j+vst] = wrk[kw+wst];
+                }
+            }
+            else
+            {
+                /*
+                MODE = 4, 5, 6, 7  OR  8
+                PUT THE FIXED COMPONENTS OF  V  INTO THE END OF  WRK
+                */
+                if (mode != 4 && mode <= 6 && nfixed != 0)
+                    for (l = 1; l <= nfixed; ++l)
+                    {
+                        kw = nfree + l;
+                        ka = nactiv + l;
+                        j = kactiv[ka+kc];
+                        wrk[kw+wst] = v[j+vst];
+                    }
+                /*PUT THE FREE  COMPONENTS OF  V  INTO THE BEGINNING OF  WRK. */
+                if (nfree != 0)
+                {
+                    for (k = 1; k <= (int)nfree; ++k)
+                    {
+                        j = kfree[k+kfr];
+                        wrk[k+wst] = v[j+vst];
+                    }
+                    /*SET  V  =  RELEVANT PART OF  ZY(T) * WRK*/
+                    if (lenv > 0)
+                    {
+                        if (UNITQ) BlasLike.dcopyvec(lenv, wrk, v, j1 + wst, j1 + vst);
+                        else for (j = j1; j <= j2; ++j)
+                                v[j+vst] = BlasLike.ddotvec(nfree, ZY, wrk, j * nq + 1 - zy_offset, 1 + vst);
+                    }
+                }
+                /*COPY THE FIXED COMPONENTS OF WRK INTO THE END OF  V*/
+                if (mode != 4 && mode <= 6 && nfixed != 0)
+                    BlasLike.dcopyvec(nfixed, wrk, v, nfree + 1 + wst, nfree + 1 + vst);
+            }
+        }
         public unsafe static void dgetlamd(string lprob, int n, int nactiv, int ncolz, int nfree, int Nrowrt, int* jsmlst, int* ksmlst, double* smllst, int* istate, double* a)
         {/*
 	dgetlamd first computes the lagrange multiplier estimates for the
@@ -1759,7 +1932,7 @@ namespace ActiveSet
             int idiag;
 
             //       rt -= Nrowrt + 1;
-            var rt_offset = nrowrt + 1;
+            var rt_offset = NROWRT + 1;
             // --rlamda;
             // --qtg;
             // --anorm;
@@ -2452,7 +2625,7 @@ namespace ActiveSet
             return inform;
         }
         public unsafe static
-short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* jadd, int* nactiv, int* ncolr, int* ncolz, int* nfree, int n, int nrowart, int* kfree, double* condmx, double* cslast, double* snlast, double* wrk1, double* wrk2)
+short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jadd, int nactiv, int ncolr, int ncolz, int nfree, int n, int nrowart, int[] kfree, double condmx, double cslast, double snlast, double[] wrrk1, double[] wrk2, int kfr = 0, int wk1 = 0, int wk2 = 0)
         {
 
             /*
@@ -2484,41 +2657,44 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
 
             int a_dim1, a_offset, rt_dim1, rt_offset, zy_dim1, zy_offset, i__1;
 
-            double beta, cond;
+            double beta = 41, cond;
             int nelm, inct, nact1;
             double d;
             int i, j, k;
             int ldiag;
-            int ifail;
+            int ifail = -27;
             double delta;
             double dtnew = -9999999999;
-            int iswap;
+            int iswap = 10;
             int lrowr, nfree1 = 0, ncolz1;
-            double cs, condbd, sn;
+            double cs = 5, condbd, sn = 6;
             double tdtmin, tdtmax;
-            int itrans, kp1;
+            int itrans = 12, kp1;
 
-            --wrk2;
-            --wrk1;
+            //       --wrk2;
+            wk2--;
+            //        --wrk1;
+            wk1--;
             zy_dim1 = nq;
             zy_offset = zy_dim1 + 1;
             //    zy -= zy_offset;
-            rt_dim1 = nrowrt;
+            rt_dim1 = NROWRT;
             rt_offset = rt_dim1 + 1;
             //    rt -= rt_offset;
             // --qtg;
-            a_dim1 = nrowart; //Either called as NROWA or nrowrt
+            a_dim1 = nrowart; //Either called as NROWA or NROWRT
             a_offset = a_dim1 + 1;
             // a -= a_offset;
-            --kfree;
+            //      --kfree;
+            kfr--;
 
             /*
             if the condition estimator of the updated factors is greater than
             condbd,  a warning message is printed
             */
             condbd = Math.Pow(BlasLike.lm_eps, -0.9);
-            ncolz1 = *ncolz - 1;
-            if (*jadd > (int)n)
+            ncolz1 = ncolz - 1;
+            if (jadd > (int)n)
             {
                 goto L60;
             }
@@ -2528,15 +2704,15 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
             if (msg >= 80)
                 lm_wmsg(
             "\n//ADDCON//  SIMPLE BOUND ADDED.\n//ADDCON// NACTIV NCOLZ NFREE  IFIX  JADD UNITQ\n//ADDCON//%7ld%6ld%6ld%6ld%6ld%6ld",
-                    *nactiv, *ncolz, *nfree, *ifix,
-                    *jadd, UNITQ);
+                    nactiv, ncolz, nfree, ifix,
+                    jadd, UNITQ);
             /*
                  set  wrk1 = appropriate row of  q
                  reorder the elements of  kfree (this requires reordering the
                  corresponding rows of  q)
             */
-            nfree1 = *nfree - 1;
-            nact1 = *nactiv;
+            nfree1 = nfree - 1;
+            nact1 = nactiv;
             if (UNITQ)
             {
                 goto L20;
@@ -2547,12 +2723,12 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
             */
             fixed (double* pZY = ZY)
                 // BlasLike.dcopy(*nfree, &pZY[*ifix + zy_dim1 - zy_offset], nq, &wrk1[1], 1);
-                BlasLike.dcopy(*nfree, ZY, nq, WRK, 1, *ifix + zy_dim1 - zy_offset);
-            if (*ifix == *nfree) goto L180;
-            kfree[*ifix] = kfree[*nfree];
+                BlasLike.dcopy(nfree, ZY, nq, WRK, 1, ifix + zy_dim1 - zy_offset);
+            if (ifix == nfree) goto L180;
+            kfree[ifix+kfr] = kfree[nfree+kfr];
             fixed (double* pZY = ZY)
                 // BlasLike.dcopy(*nfree, &pZY[*nfree + zy_dim1 - zy_offset], nq, &pZY[*ifix + zy_dim1 - zy_offset], nq);
-                BlasLike.dcopy(*nfree, ZY, nq, ZY, nq, *nfree + zy_dim1 - zy_offset, *ifix + zy_dim1 - zy_offset);
+                BlasLike.dcopy(nfree, ZY, nq, ZY, nq, nfree + zy_dim1 - zy_offset, ifix + zy_dim1 - zy_offset);
             goto L180;
         /*
              q  is not stored, but  kfree  defines an ordering of the columns
@@ -2561,16 +2737,16 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
              position to the left
         */
         L20:
-            BlasLike.dzerovec(*nfree, &wrk1[1]);
-            wrk1[*ifix] = 1.0;
-            if (*ifix == *nfree)
+            BlasLike.dzerovec(nfree, WRK);
+            WRK[ifix-1] = 1.0;
+            if (ifix == nfree)
             {
                 goto L180;
             }
             i__1 = nfree1;
-            for (i = *ifix; i <= i__1; ++i)
+            for (i = ifix; i <= i__1; ++i)
             {
-                kfree[i] = kfree[i + 1];
+                kfree[i+kfr] = kfree[i + 1+kfr];
                 /* L40: */
             }
             goto L180;
@@ -2581,15 +2757,15 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
         L60:
             if (msg >= 80)
                 lm_wmsg("\n//ADDCON//  GENERAL CONSTRAINT ADDED.\n//ADDCON// NACTIV NCOLZ NFREE  IADD  JADD UNITQ\n//ADDCON//%7ld%6ld%6ld%6ld%6ld%6ld",
-                    *nactiv, *ncolz, *nfree, *iadd, *jadd, UNITQ);
-            nact1 = *nactiv + 1;
+                    nactiv, ncolz, nfree, iadd, jadd, UNITQ);
+            nact1 = nactiv + 1;
             /*
                  transform the incoming row of  a  by  q(t)
             */
             //     BlasLike.dcopy(n, &a[*iadd + a_dim1], NROWA, &wrk1[1], 1);
-            BlasLike.dcopy(n, A, NROWA, WRK, 1, *iadd + a_dim1 - a_offset);
-            dzyprod(8, n, *nactiv, *ncolz, *nfree, nq, &kfree[1], &kfree[1], &
-                wrk1[1], &wrk2[1]);
+            BlasLike.dcopy(n, A, NROWA, WRK, 1, iadd + a_dim1 - a_offset);
+            dzyprod(8, n, nactiv, ncolz, nfree, nq, kfree, kfree,
+                WRK, wrk2, 1 + kfr, 1 + kfr, 0, 1 + wk2);
             if (!UNITQ)
             {
                 goto L100;
@@ -2597,11 +2773,12 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
             /*
                  this is the first general constraint to be added  --  set  q = i.
             */
-            i__1 = *nfree;
+            i__1 = nfree;
             for (j = 1; j <= i__1; ++j)
             {
-                fixed (double* pZY = ZY)
-                    BlasLike.dzerovec(*nfree, &pZY[j * zy_dim1 + 1 - zy_offset]);
+                //fixed (double* pZY = ZY)
+                // BlasLike.dzerovec(*nfree, &pZY[j * zy_dim1 + 1 - zy_offset]);
+                BlasLike.dzerovec(nfree, ZY, j * zy_dim1 + 1 - zy_offset);
                 ZY[j + j * zy_dim1 - zy_offset] = 1.0;
             }
             //      *unitq = 0;
@@ -2611,7 +2788,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
              already in the working set
         */
         L100:
-            dtnew = dnrm2vec(*ncolz, WRK);
+            dtnew = dnrm2vec(ncolz, WRK);
             if (nact1 > 1)
             {
                 goto L140;
@@ -2620,18 +2797,18 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
                  this is the only general constraint in the working set
             */
             var asize_c = asize;
-            cond = dprotdiv(&asize_c, &dtnew, &ifail);
+            cond = dprotdiv(ref asize_c, ref dtnew, ref ifail);
             asize = asize_c;
             if (ifail != 0 && asize == 0)
             {
                 cond = BlasLike.lm_max;
             }
-            if (cond >= *condmx)
+            if (cond >= condmx)
             {
                 goto L480;
             }
             if (cond >= condbd && msg >= 0)
-                lm_wmsg("\n*** WARNING\n *** SERIOUS ILL-CONDITIONING IN THE WORKING SET AFTER ADDING CONSTRAINT %5ld\n *** OVERFLOW MAY OCCUR IN SUBSEQUENT ITERATIONS\n\n", *jadd);
+                lm_wmsg("\n*** WARNING\n *** SERIOUS ILL-CONDITIONING IN THE WORKING SET AFTER ADDING CONSTRAINT %5ld\n *** OVERFLOW MAY OCCUR IN SUBSEQUENT ITERATIONS\n\n", jadd);
             dtmax = dtnew;
             dtmin = dtnew;
             goto L180;
@@ -2642,17 +2819,17 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
         L140:
             tdtmax = Math.Max(dtnew, dtmax);
             tdtmin = Math.Min(dtnew, dtmin);
-            cond = dprotdiv(&tdtmax, &tdtmin, &ifail);
+            cond = dprotdiv(ref tdtmax, ref tdtmin, ref ifail);
             if (ifail != 0 && tdtmax == 0)
             {
                 cond = BlasLike.lm_max;
             }
-            if (cond >= *condmx)
+            if (cond >= condmx)
             {
                 goto L480;
             }
             if (cond >= condbd && msg >= 0)
-                lm_wmsg("\n*** WARNING\n *** SERIOUS ILL-CONDITIONING IN THE WORKING SET AFTER ADDING CONSTRAINT %5ld\n *** OVERFLOW MAY OCCUR IN SUBSEQUENT ITERATIONS\n\n", *jadd);
+                lm_wmsg("\n*** WARNING\n *** SERIOUS ILL-CONDITIONING IN THE WORKING SET AFTER ADDING CONSTRAINT %5ld\n *** OVERFLOW MAY OCCUR IN SUBSEQUENT ITERATIONS\n\n", jadd);
             dtmax = tdtmax;
             dtmin = tdtmin;
         /*
@@ -2679,11 +2856,12 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
             /*
                  elimination we use  elm( ..., zero, zero )   to perform an interchange
             */
-            detagen(ncolz1, &wrk1[*ncolz], &wrk1[1], 1, &iswap, &itrans)
-                ;
+            fixed (double* pWRK = WRK)
+                detagen(ncolz1, ref WRK[ncolz-1], pWRK, 1, ref iswap, ref itrans)
+                    ;
             if (iswap > 0)
                 fixed (double* pZY = ZY)
-                    delm(orthog, *nfree, &pZY[*ncolz * zy_dim1 + 1 - zy_offset], 1, &pZY[
+                    delm(orthog, nfree, &pZY[ncolz * zy_dim1 + 1 - zy_offset], 1, &pZY[
                         iswap * zy_dim1 + 1 - zy_offset], 1, zero, zero);
             if (itrans == 0)
             {
@@ -2692,13 +2870,13 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
             i__1 = ncolz1;
             for (j = 1; j <= i__1; ++j)
             {
-                d = wrk1[j];
+                d = WRK[j-1];
                 if (d == 0)
                 {
                     goto L200;
                 }
                 //   BlasLike.daxpy(*nfree), d, &zy[*ncolz * zy_dim1 + 1], 1, &zy[j * zy_dim1 + 1], 1);
-                BlasLike.daxpy(*nfree, d, ZY, 1, ZY, 1, *ncolz * zy_dim1 + 1 - zy_offset, j * zy_dim1 + 1 - zy_offset);
+                BlasLike.daxpy(nfree, d, ZY, 1, ZY, 1, ncolz * zy_dim1 + 1 - zy_offset, j * zy_dim1 + 1 - zy_offset);
             L200:
                 ;
             }
@@ -2709,11 +2887,11 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
             }
             if (iswap > 0)
                 // delm(orthog, 1, &qtg[*ncolz], 1, &qtg[iswap], 1, zero, zero);
-                delm(orthog, 1, QTG, 1, QTG, 1, zero, zero, *ncolz - 1, iswap - 1);
+                delm(orthog, 1, QTG, 1, QTG, 1, zero, zero, ncolz - 1, iswap - 1);
             if (itrans > 0)
             {
                 // BlasLike.daxpy(ncolz1, qtg[*ncolz], &wrk1[1], 1, &qtg[1], 1);
-                BlasLike.daxpy(ncolz1, QTG[*ncolz - 1], WRK, 1, QTG, 1);
+                BlasLike.daxpy(ncolz1, QTG[ncolz - 1], WRK, 1, QTG, 1);
             }
             goto L360;
 
@@ -2729,61 +2907,63 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
         */
 
         L240:
-            delta = wrk1[*ncolz];
+            delta = WRK[ncolz-1];
             var c__1 = 1;
             var lm_eps = BlasLike.lm_eps;
-            dhhrflctgen(&ncolz1, &delta, &wrk1[1], &c__1, &lm_eps, &beta);
+            dhhrflctgen(ncolz1, ref delta, WRK, c__1, lm_eps, ref beta);
             if (beta != 0)
             {
-                wrk1[*ncolz] = beta;
+                WRK[ncolz-1] = beta;
             }
             if (beta <= 0)
             {
                 goto L360;
             }
-            BlasLike.dzerovec(*nfree, &wrk2[1]);
-            i__1 = *ncolz;
+            BlasLike.dzerovec(nfree, wrk2, 1 + wk2);
+            i__1 = ncolz;
             for (j = 1; j <= i__1; ++j)
             {
-                d = wrk1[j];
+                d = WRK[j-1];
                 if (d == 0)
                 {
                     goto L260;
                 }
                 fixed (double* pZY = ZY)
                     //     BlasLike.daxpy(*nfree, d, &zy[j * zy_dim1 + 1], 1, &wrk2[1], 1);
-                    BlasLike.daxpy(*nfree, d, pZY + j * zy_dim1 + 1 - zy_offset, 1, &wrk2[1], 1);
+                    //    BlasLike.daxpy(nfree, d, pZY + j * zy_dim1 + 1 - zy_offset, 1, &wrk2[1], 1);
+                    BlasLike.daxpy(nfree, d, ZY, 1, wrk2, 1, j * zy_dim1 + 1 - zy_offset, 1 + wk2);
                 L260:
                 ;
             }
-            i__1 = *ncolz;
+            i__1 = ncolz;
             for (j = 1; j <= i__1; ++j)
             {
-                d = wrk1[j];
+                d = WRK[j-1];
                 if (d == 0)
                 {
                     goto L280;
                 }
                 d = -d / beta;
-                fixed (double* pZY = ZY)
-                    BlasLike.daxpy(*nfree, d, &wrk2[1], 1, &pZY[j * zy_dim1 + 1 - zy_offset], 1);
-                L280:
+                //fixed (double* pZY = ZY)
+                //  BlasLike.daxpy(nfree, d, wrk2[1], 1, &pZY[j * zy_dim1 + 1 - zy_offset], 1);
+                BlasLike.daxpy(nfree, d, wrk2, 1, ZY, 1, 1+wk2, j * zy_dim1 + 1 - zy_offset);
+            L280:
                 ;
             }
             if (!modfyg)
             {
                 goto L300;
             }
-            d = BlasLike.ddotvec(*ncolz, WRK, QTG);
+            d = BlasLike.ddotvec(ncolz, WRK, QTG);
             d = -d / beta;
-            BlasLike.daxpyvec(*ncolz, d, WRK, QTG);
+            BlasLike.daxpyvec(ncolz, d, WRK, QTG);
         L300:
-            wrk1[*ncolz] = delta;
+            WRK[ncolz-1] = delta;
             goto L360;
 
         /*r  has to be modified.  use a sequence of 2*2 transformations*/
         L320:
-            lrowr = *ncolr;
+            lrowr = ncolr;
             i__1 = ncolz1;
             for (k = 1; k <= i__1; ++k)
             {
@@ -2792,11 +2972,12 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
                 then apply it to the relevant columns of  z  and  grad(t)q.
                 */
                 kp1 = k + 1;
-                delmgen(orthog, &wrk1[kp1], &wrk1[k], &cs, &sn);
+                //     delmgen(orthog, WRK[kp1], WRK[k], cs, sn);
+                delmgen(orthog, ref WRK[kp1], ref WRK[k], ref cs, ref sn);
                 if (!UNITQ)
                 {
                     fixed (double* pZY = ZY)
-                        delm(orthog, *nfree, &pZY[kp1 * zy_dim1 + 1 - zy_offset], 1, &pZY[k *
+                        delm(orthog, nfree, &pZY[kp1 * zy_dim1 + 1 - zy_offset], 1, &pZY[k *
                             zy_dim1 + 1 - zy_offset], 1, cs, sn);
                 }
                 if (modfyg)
@@ -2808,7 +2989,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
                 eliminated by a row rotation.  the last such row rotation
                 is needed by  qpcore
                 */
-                if (!(modfyr && k < *ncolr))
+                if (!(modfyr && k < ncolr))
                 {
                     goto L340;
                 }
@@ -2817,23 +2998,24 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
                 {
                     delm(orthog, kp1, &pRT[kp1 * rt_dim1 + 1 - rt_offset], 1, &pRT[k *
                        rt_dim1 + 1 - rt_offset], 1, cs, sn);
-                    BlasLike.drotg(&pRT[k + k * rt_dim1 - rt_offset], &pRT[kp1 + k * rt_dim1 - rt_offset], cslast, snlast);
+                    BlasLike.drotg(&pRT[k + k * rt_dim1 - rt_offset], &pRT[kp1 + k * rt_dim1 - rt_offset], &cslast, &snlast);
                 }
                 RT[kp1 + k * rt_dim1 - rt_offset] = 0;
                 --lrowr;
                 fixed (double* pRT = RT)
                     dsymplanerotate(lrowr, &pRT[k + kp1 * rt_dim1 - rt_offset],
-                            nrowrt, &pRT[kp1 + kp1 * rt_dim1 - rt_offset],
-                            nrowrt, *cslast, *snlast);
+                            NROWRT, &pRT[kp1 + kp1 * rt_dim1 - rt_offset],
+                            NROWRT, cslast, snlast);
                 L340:
                 ;
             }
         /* if adding a general constraint, insert the new row of  t  and exit */
         L360:
-            if (*jadd > (int)n)
+            if (jadd > (int)n)
             {
-                fixed (double* pRT = RT)
-                    BlasLike.dcopy(nact1, &wrk1[*ncolz], 1, &pRT[nact1 + *ncolz * rt_dim1 - rt_offset], nrowrt);
+                // fixed (double* pRT = RT)
+                //     BlasLike.dcopy(nact1, &wrk1[ncolz], 1, &pRT[nact1 + ncolz * rt_dim1 - rt_offset], NROWRT);
+                BlasLike.dcopy(nact1, WRK, 1, RT, NROWRT, ncolz + wk1, nact1 + ncolz * rt_dim1 - rt_offset);
                 return 0;
             }
             /*
@@ -2841,20 +3023,21 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
                  to zero.  this affects  y,  t  and  qtg
                  first, set the super-diagonal elements of t to zero
             */
-            if (*nactiv == 0)
+            if (nactiv == 0)
             {
                 goto L440;
             }
             //BlasLike.dzero(*nactiv, &rt[*nactiv + *ncolz * rt_dim1], nrowrt - 1);
-            BlasLike.dzero(*nactiv, RT, nrowrt - 1, *nactiv + *ncolz * rt_dim1 - rt_offset);
+            BlasLike.dzero(nactiv, RT, NROWRT - 1, nactiv + ncolz * rt_dim1 - rt_offset);
             nelm = 1;
-            ldiag = *nactiv;
+            ldiag = nactiv;
             i__1 = nfree1;
-            for (k = *ncolz; k <= i__1; ++k)
+            for (k = ncolz; k <= i__1; ++k)
             {
-                delmgen(orthog, &wrk1[k + 1], &wrk1[k], &cs, &sn);
+                // delmgen(orthog, &wrk1[k + 1], &wrk1[k], &cs, &sn);
+                delmgen(orthog, ref WRK[k + 1-1], ref WRK[k-1], ref cs, ref sn);
                 fixed (double* pZY = ZY)
-                    delm(orthog, *nfree, &pZY[(k + 1) * zy_dim1 + 1 - zy_offset], 1, &pZY[k *
+                    delm(orthog, nfree, &pZY[(k + 1) * zy_dim1 + 1 - zy_offset], 1, &pZY[k *
                         zy_dim1 + 1 - zy_offset], 1, cs, sn);
                 fixed (double* pRT = RT)
                     delm(orthog, nelm, &pRT[ldiag + (k + 1) * rt_dim1 - rt_offset], 1,
@@ -2869,18 +3052,18 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
             the diagonals of  t  have been altered.  recompute the largest and
             smallest values
             */
-            inct = nrowrt - 1;
+            inct = NROWRT - 1;
             double[] dtmax_c = { dtmax };
             double[] dtmin_c = { dtmin };
             // BlasLike.dxminmax(*nactiv, &rt[*nactiv + (ncolz1 + 1) * rt_dim1], inct, &dtmax_c, &
             //             dtmin_c);
-            BlasLike.dxminmax(*nactiv, RT, inct, dtmax_c, dtmin_c, *nactiv + (ncolz1 + 1) * rt_dim1 - rt_offset);
+            BlasLike.dxminmax(nactiv, RT, inct, dtmax_c, dtmin_c, nactiv + (ncolz1 + 1) * rt_dim1 - rt_offset);
             dtmax = dtmax_c[0];
             dtmin = dtmin_c[0];
-            if (dtmin / dtmax * *condmx < 1.0) goto L480;
+            if (dtmin / dtmax * condmx < 1.0) goto L480;
             if (dtmin / dtmax * condbd < 1.0 && msg >= 0)
                 lm_wmsg("\n*** WARNING\n *** SERIOUS ILL-CONDITIONING IN THE WORKING SET AFTER ADDING CONSTRAINT %5ld\n *** OVERFLOW MAY OCCUR IN SUBSEQUENT ITERATIONS\n\n",
-                *jadd);
+                jadd);
             /*
             the last row of  zy  has been transformed to a multiple of the
             unit vector  e(nfree).  if orthogonal transformations have been
@@ -2891,7 +3074,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
             L440:
             if (orthog && modfyg)
             {
-                QTG[*nfree - 1] /= WRK[*nfree - 1];
+                QTG[nfree - 1] /= WRK[nfree - 1];
             }
             /*the factorization has been successfully updated*/
             return 0;
@@ -2901,7 +3084,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
             if (msg >= 80)
             {
                 Console.WriteLine("\n//ADDCON//  DEPENDENT CONSTRAINT REJECTED");
-                if (*jadd <= (int)n)
+                if (jadd <= (int)n)
                     lm_wmsg(
                     "\n//ADDCON//     ASIZE     DTMAX     DTMIN\n//ADDCON//%10.2le%10.2le%10.2le",
                         asize, dtmax, dtmin);
@@ -3035,19 +3218,19 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
             if (n == 1) return (x[xstart] < 0.0 ? -x[xstart] : x[xstart]);
             else
             {
-                double[] scale = { 0.0 };
-                double[] ssq = { 1.0 };
-                if (incx == 1) dsssqvec(n, x, scale, ssq, xstart);
-                else BlasLike.dsssq(n, x, incx, scale, ssq, xstart);
-                return sc_norm(scale[0], ssq[0]);
+                double scale = 0.0;
+                double ssq = 1.0;
+                if (incx == 1) dsssqvec(n, x, ref scale, ref ssq, xstart);
+                else BlasLike.dsssq(n, x, incx, ref scale, ref ssq, xstart);
+                return sc_norm(scale, ssq);
             }
         }
-        public unsafe static void dtqadd(bool orthog, int* inform, int* k1, int* k2, int* nactiv, int* ncolz, int* nfree, int* n, int* nrowrt, int* ncolrt, int* istate, int* kactiv, int* kfree, double* condmx, double* a, double* rt)
+        public unsafe static void dtqadd(bool orthog, int* inform, int* k1, int* k2, int* nactiv, int* ncolz, int* nfree, int* n, int* istate, int* kactiv, int* kfree, double* condmx, double* a, double* rt)
         {
             int a_dim1, a_offset, rt_dim1, rt_offset, zy_dim1, zy_offset, i__1;
 
-            int iadd, jadd, ifix, i, k, l, iswap;
-            double cslast, snlast;
+            int iadd, jadd, ifix = 27, i, k, l, iswap;
+            double cslast = 12, snlast = 8;
 
             /*     TQADD INCLUDES GENERAL LINEAR CONSTRAINTS  K1  THRU  K2  AS NEW */
             /*     COLUMNS OF THE TQ FACTORIZATION STORED IN  RT, ZY. */
@@ -3056,7 +3239,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
             zy_dim1 = nq;
             zy_offset = zy_dim1 + 1;
             //   zy -= zy_offset;
-            rt_dim1 = *nrowrt;
+            rt_dim1 = NROWRT;
             rt_offset = rt_dim1 + 1;
             rt -= rt_offset;
             // --qtg;
@@ -3076,12 +3259,9 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
                 {
                     goto L20;
                 }
-                fixed (int* pkfree = KFREE)
-                fixed (double* pWRK = WRK)
-                fixed (double* pRLAM = RLAM)
-                    *inform = daddcon(false, false, orthog, &ifix, &iadd, &jadd,
-                        nactiv, ncolz, ncolz, nfree, *n, NROWA, pkfree, condmx, &cslast, &snlast,
-                         pWRK, pRLAM);
+                *inform = daddcon(false, false, orthog, ifix, iadd, jadd,
+                    *nactiv, *ncolz, *ncolz, *nfree, *n, NROWA, KFREE, *condmx, cslast, snlast,
+                     WRK, RLAM);
                 if (*inform > 0)
                 {
                     goto L20;
@@ -3216,7 +3396,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
             */
             int t_dim1, t_offset, i__1;
 
-            int fail;
+            int fail = -900;
             double temp;
             int j, k;
             int jlast;
@@ -3241,7 +3421,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
             i__1 = n;
             for (j = 1; j <= i__1; ++j)
             {
-                b[j] = dprotdiv(&b[j], &t[j + k * t_dim1], &fail);
+                b[j] = dprotdiv(ref b[j], ref t[j + k * t_dim1], ref fail);
                 if (fail != 0)
                 {
                     goto L280;
@@ -3259,7 +3439,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
             i__1 = n;
             for (k = 1; k <= i__1; ++k)
             {
-                b[j] = dprotdiv(&b[j], &t[j + k * t_dim1], &fail);
+                b[j] = dprotdiv(ref b[j], ref t[j + k * t_dim1], ref fail);
                 if (fail != 0)
                 {
                     goto L280;
@@ -3281,7 +3461,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
             i__1 = n;
             for (j = 1; j <= i__1; ++j)
             {
-                b[j] = dprotdiv(&b[j], &t[j + k * t_dim1], &fail);
+                b[j] = dprotdiv(ref b[j], ref t[j + k * t_dim1], ref fail);
                 if (fail != 0)
                 {
                     goto L280;
@@ -3319,7 +3499,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
             for (j = 1; j <= i__1; ++j)
             {
                 if (j > 1) b[j] -= BlasLike.ddotvec((int)(j - 1), &t[k * t_dim1 + 1], &b[1]);
-                b[j] = dprotdiv(&b[j], &t[j + k * t_dim1], &fail);
+                b[j] = dprotdiv(ref b[j], ref t[j + k * t_dim1], ref fail);
                 if (fail != 0) goto L280;
                 --k;
                 /* L200: */
@@ -3332,7 +3512,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
             for (k = 1; k <= i__1; ++k)
             {
                 if (j < (int)n) b[j] -= BlasLike.ddotvec((int)(n - j), &t[j + 1 + k * t_dim1], &b[j + 1]);
-                b[j] = dprotdiv(&b[j], &t[j + k * t_dim1], &fail);
+                b[j] = dprotdiv(ref b[j], ref t[j + k * t_dim1], ref fail);
                 if (fail != 0)
                 {
                     goto L280;
@@ -3365,9 +3545,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int* ifix, int* iadd, int* 
             }
             return ierror;
         }
-        public unsafe static
-
-void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
+        public unsafe static void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
         {/*
 	If orthog delmgen generates a plane rotation.  Otherwise,
 	delmgen  generates an elimination transformation  E  such that
@@ -3391,6 +3569,32 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 }
             }
             *y = 0;
+        }
+
+        public static void delmgen(bool orthog, ref double x, ref double y, ref double cs, ref double sn)
+        {/*
+	If orthog delmgen generates a plane rotation.  Otherwise,
+	delmgen  generates an elimination transformation  E  such that
+	(X Y)*E  =  (X  0)   OR   (Y  0),  depending on the relative
+	sizes of  X  &  Y.
+*/
+            if (orthog) BlasLike.drotg(ref x, ref y, ref cs, ref sn);
+            else
+            {
+                cs = 1;
+                sn = 0;
+                if (y != 0)
+                {
+                    if (Math.Abs(x) < Math.Abs(y))
+                    {
+                        cs = 0;
+                        sn = -x / y;
+                        x = y;
+                    }
+                    else sn = -y / x;
+                }
+            }
+            y = 0;
         }
         public unsafe static void delm(bool orthog, int n, double* x, int incx, double* y, int incy, double cs, double sn)
         {/*
@@ -3864,14 +4068,14 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                     case 0:
                         for (; k <= n; ++k)
                         {
-                            b[k] = dprotdiv(&b[k], &t[k + k * nrt], &fail);
+                            b[k] = dprotdiv(ref b[k], ref t[k + k * nrt], ref fail);
                             if (fail != 0) break;
                         }
                         break;
                     case 1:
                         for (; k >= 1; --k)
                         {
-                            b[k] = dprotdiv(&b[k], &t[k + k * nrt], &fail);
+                            b[k] = dprotdiv(ref b[k], ref t[k + k * nrt], ref fail);
                             if (fail != 0) break;
                             if (k > 1) BlasLike.daxpy(k - 1, -b[k], &t[k * nrt + 1], 1, &b[1], 1);
                         }
@@ -3879,7 +4083,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                     case 2:
                         for (; k <= n; ++k)
                         {
-                            b[k] = dprotdiv(&b[k], &t[k + k * nrt], &fail);
+                            b[k] = dprotdiv(ref b[k], ref t[k + k * nrt], ref fail);
                             if (fail != 0) break;
                             if (k < n) BlasLike.daxpy(n - k, -b[k], &t[k + 1 + k * nrt], 1, &b[k + 1], 1);
                         }
@@ -3888,7 +4092,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                         for (; k <= n; ++k)
                         {
                             if (k > 1) b[k] -= BlasLike.ddotvec((int)(k - 1), &t[k * nrt + 1], &b[1]);
-                            b[k] = dprotdiv(&b[k], &t[k + k * nrt], &fail);
+                            b[k] = dprotdiv(ref b[k], ref t[k + k * nrt], ref fail);
                             if (fail != 0) break;
                         }
                         break;
@@ -3896,7 +4100,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                         for (; k >= 1; --k)
                         {
                             if (k < n) b[k] -= BlasLike.ddotvec((int)(n - k), &t[k + 1 + k * nrt], &b[k + 1]);
-                            b[k] = dprotdiv(&b[k], &t[k + k * nrt], &fail);
+                            b[k] = dprotdiv(ref b[k], ref t[k + k * nrt], ref fail);
                             if (fail != 0) break;
                         }
                         break;
@@ -4106,6 +4310,80 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             /*z is zero only if nzero=n*/
             if (nzero < n) *itrans = 1;
         }
+
+        public unsafe static void detagen(int n, ref double alpha, double* x, int incx, ref int iswap, ref int itrans, int xstart = 0)
+        {
+            /*
+                detagen  generates an elimination transformation  e  such that
+                    e ( alpha )  =  ( delta ) ,
+                      (   x   )     (   0   )
+
+                where  e  has the form
+                    e  =	( 1    ) p
+                        ( z  i )
+
+                for some n-vector  z  and permutation matrix  p  of order  n + 1.
+                in certain circumstances ( x  very small in absolute terms or
+                x very small compared to  alpha),  e  will be the identity matrix.
+                detagen  will then leave  alpha  and  x  unaltered, and will return
+                iswap = 0,  itrans = 0
+
+                more generally,  iswap  and  itrans  indicate the various possible
+                forms of  p  and  z  as follows
+                    if  iswap  =  0,  p = i
+                    if  iswap  gt 0,  p  interchanges  alpha  and  x(iswap)
+                    if  itrans =  0,  z = 0  and the transformation is just  e = p
+                    if  itrans gt 0,  z  is nonzero.  its elements are returned in  x.
+
+                detagen  guards against overflow and underflow
+                it is assumed that  flmin < epsmch**2 (i.e. rtmin < epsmch).
+            */
+            int imax = 1000000000;
+            int nzero;
+            double xmax, absalf, tol, axi;
+            double* v, vlim;
+
+            iswap = 0;
+            itrans = 0;
+            if (n < 1) return;
+            absalf = Math.Abs(alpha);
+            xmax = 0;
+
+            for (v = x, vlim = x + n * incx; v != vlim; v += incx)
+                if (xmax < (axi = Math.Abs(*v - xstart)))
+                {
+                    xmax = axi;
+                    imax = (int)(v - x);
+                }
+
+            /* exit if  x  is very small */
+            if (xmax <= BlasLike.lm_rootmin) return;
+
+            /* see if an interchange is needed for stability */
+            if (absalf < xmax)
+            {
+                iswap = imax + 1;
+                xmax = x[imax - xstart];
+                x[imax - xstart] = alpha;
+                alpha = xmax;
+            }
+
+            /*
+                 form the multipliers in  x.  they will be no greater than one
+                 in magnitude.  change negligible multipliers to zero
+            */
+            tol = Math.Abs(alpha) * BlasLike.lm_eps;
+            nzero = 0;
+            for (v = x; v != vlim; v += incx)
+                if (Math.Abs(*v - xstart) > tol) *v = xstart - (*v - xstart) / alpha;
+                else
+                {
+                    *v = xstart;
+                    ++nzero;
+                }
+            /*z is zero only if nzero=n*/
+            if (nzero < n) itrans = 1;
+        }
         public unsafe static void dhhrflctgen(int* n, double* alpha, double* x, int* incx, double* tol, double* z1)
         {
 
@@ -4169,6 +4447,75 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                     }
                     BlasLike.dscal(*n, -1 / beta, &x[1], *incx);
                     *alpha = beta;
+                }
+            }
+        }
+
+        public static void dhhrflctgen(int n, ref double alpha, double[] x, int incx, double tol, ref double z1, int xstart = 0)
+        {
+
+            /*
+                dhhrflctgen generates details of a householder reflection, p, such that
+                    p*( alpha ) = ( beta ),   p'*p = i
+                      (   x   )   (   0  )
+
+                p is given in the form
+                    p = i - ( 1/z( 1 ) )*z*z',
+
+                where z is an ( n + 1 ) element vector
+                z( 1 ) is returned in z1. if the elements of x are all zero, or if
+                the elements of x are all less than tol*abs( alpha ) in absolute
+                value, then z1 is returned as zero and p can be taken to be the
+                unit matrix. otherwise z1 always lies in the range ( 1.0, 2.0 )
+                if tol is not in the range ( 0.0, 1.0 ) then the value 0.0 is used in
+                place of tol
+                the remaining elements of z are overwritten on x and beta is
+                overwritten on alpha
+            */
+            double beta;
+            var work = new double[1];
+            double scale, tl, ssq;
+
+            //      --x;
+            xstart--;
+
+            if (n < 1)
+            {
+                z1 = 0;
+            }
+            else
+            {
+                if (tol <= 0 || tol > 1)
+                {
+                    tl = 0;
+                }
+                else
+                {
+                    tl = Math.Abs(alpha) * tol;
+                }
+                ssq = 1;
+                scale = 0;
+                BlasLike.dsssq(n, x, incx, ref scale, ref ssq,1+ xstart);
+                if (scale == 0 || scale < tl)
+                {
+                    z1 = 0;
+                }
+                else
+                {
+                    if (alpha != 0)
+                    {
+                        work[0] = alpha;
+                        BlasLike.dsssqvec(1, work, ref scale, ref ssq);
+                        beta = -BlasLike.dsign(sc_norm(scale, ssq), alpha);
+                        z1 = (beta - alpha) / beta;
+                    }
+                    else
+                    {
+                        beta = -sc_norm(scale, ssq);
+                        z1 = 1;
+                    }
+                    BlasLike.dscal(n, -1.0 / beta, x, incx, 1 + xstart);
+                    alpha = beta;
                 }
             }
         }
@@ -4294,8 +4641,8 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             maxact = Math.Max(1, maxact);
             mxcolz = n - (minfxd + minact);
             nq = Math.Max(1, mxfree);
-            nrowrt = Math.Max(mxcolz, maxact);
-            ncolrt = Math.Max(1, mxfree);
+            NROWRT = Math.Max(mxcolz, maxact);
+            NCOLRT = Math.Max(1, mxfree);
             ncnln = 0;
 
             /*allocate certain arrays that are not done in  alloc*/
@@ -4374,7 +4721,6 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 *** is not set in the calling routine.                    ***
                 */
                 istart = 0;
-                var nrowrt_c = nrowrt;
                 fixed (int* pKACTV = KACTV)
                 fixed (int* pKFREE = KFREE)
                 fixed (double* pW = W)
@@ -4391,7 +4737,6 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                              &nrowh, &ncolh, &nactiv, &nfree,
                             pKACTV, pKFREE, obj, xnorm, pA, pL, pU, plambda, pc, pfeatol, pQ,
                             pLWRK, pW);
-                nrowrt = nrowrt_c;
                 iter[0] = (short)iter_;
             }
             else
@@ -4518,7 +4863,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             lkactv = *litotl + 1;
             KACTV = new int[n];
             lkfree = lkactv + n;
-            KFREE = new int[n - 1];
+            KFREE = new int[n];
             *litotl = lkfree + n - 1;
             lanorm = *lwtotl + 1;
             ANORM = new double[nclin];
@@ -4531,8 +4876,8 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             lrlam = lqtg + n;
             RLAM = new double[n];
             lrt = lrlam + n;
-            RT = new double[nrowrt * ncolrt];
-            lzy = lrt + nrowrt * ncolrt;
+            RT = new double[NROWRT * NCOLRT];
+            lzy = lrt + NROWRT * NCOLRT;
             ZY = new double[nq * nq];
             lwrk = lzy + nq * nq;
             WRK = new double[n - 1];
@@ -4545,7 +4890,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             lkactv = litotl[0] + 1;
             KACTV = new int[n];
             lkfree = lkactv + n;
-            KFREE = new int[n - 1];
+            KFREE = new int[n];
             litotl[0] = lkfree + n - 1;
             lanorm = lwtotl[0] + 1;
             ANORM = new double[nclin];
@@ -4558,8 +4903,8 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             lrlam = lqtg + n;
             RLAM = new double[n];
             lrt = lrlam + n;
-            RT = new double[nrowrt * ncolrt];
-            lzy = lrt + nrowrt * ncolrt;
+            RT = new double[NROWRT * NCOLRT];
+            lzy = lrt + NROWRT * NCOLRT;
             ZY = new double[nq * nq];
             lwrk = lzy + nq * nq;
             WRK = new double[n];
@@ -4681,9 +5026,9 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             double alfa;
             int jdel, kdel;
             double emax;
-            int ifix;
+            int ifix = 9;
             double palfa;
-            int ifail;
+            int ifail = 12;
             double condh, bigdx;
             int isdel = 0;
             double condt, drmin, anorm, dinky, drmax, hsize;
@@ -4699,7 +5044,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             int jdsave, nfixed;
             bool posdef;
             int modfyg, negligible;
-            double condmx, atphit, cslast, gfnorm, rdlast, objsiz, snlast;
+            double condmx, atphit, cslast = 5, gfnorm, rdlast, objsiz, snlast = 6;
             int idummy, issave = 0, msglvl;
             int jsmlst, ksmlst;
             double smllst;
@@ -4781,7 +5126,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             fixed (double* pAP = AP)
             fixed (double* pWRK = WRK)
                 ncolr = dqpcrsh(n, ncolz, *nfree, &nhess_conv,
-                    nq, *nrowh, *ncolh, nrowrt, &kfree[1], &hsize, hess,
+                    nq, *nrowh, *ncolh, NROWRT, &kfree[1], &hsize, hess,
                     pRT, &scale[1], pZY, pRLAM, pWRK);
             fixed (double* pANORM = ANORM)
             fixed (double* pQTG = QTG)
@@ -4842,7 +5187,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 */
                 var dtmax_c = dtmax;
                 var dtmin_c = dtmin;
-                condt = dprotdiv(&dtmax_c, &dtmin_c, &ifail);
+                condt = dprotdiv(ref dtmax_c, ref dtmin_c, ref ifail);
                 dtmax = dtmax_c;
                 dtmin = dtmin_c;
                 if (ifail != 0 && dtmax == 0) condt = BlasLike.lm_max;
@@ -4853,12 +5198,11 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 fixed (double* pPX = PX)
                 fixed (double* pRLAM = RLAM)
                 fixed (double* pAP = AP)
-                    if (ncolr > 0) BlasLike.dxminmax(ncolr, pRT, nrowrt + 1, &drmax, &drmin);
-                condh = dprotdiv(&drmax, &drmin, &ifail);
+                    if (ncolr > 0) BlasLike.dxminmax(ncolr, pRT, NROWRT + 1, &drmax, &drmin);
+                condh = dprotdiv(ref drmax, ref drmin, ref ifail);
                 if (ifail != 0 && drmax == 0) condh = BlasLike.lm_max;
                 if (condh >= BlasLike.lm_rootmax) condh = BlasLike.lm_max;
                 if (condh < BlasLike.lm_rootmax) condh *= condh;
-                var nrowrt_c = nrowrt;
                 fixed (double* pANORM = ANORM)
                 fixed (double* pQTG = QTG)
                 fixed (double* pRT = RT)
@@ -4873,7 +5217,6 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                         n, *nclin, nhess,
                         pistate, &kfree[1], alfa, condh, condt, objqp[0], gfnorm,
                         ztgnrm, emax, a, pRT, &x[1], pWRK, pAP);
-                nrowrt = nrowrt_c;
                 jadd = 0;
                 jdel = 0;
                 negligible = (ztgnrm <= dinky) ? 1 : 0;
@@ -4895,7 +5238,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                         if (ncolr >= ncolz)
                         {
                             fixed (int* pistate = istate)
-                                dgetlamd(lprob, n, *nactiv, ncolz, *nfree, nrowrt,
+                                dgetlamd(lprob, n, *nactiv, ncolz, *nfree, NROWRT,
                                     &jsmlst, &ksmlst, &smllst, pistate, a);
 
                             /*
@@ -4935,7 +5278,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                             fixed (double* pAP = AP)
                                 ddelcon(modfyg != 0, orthog != 0, jdel, kdel,
                                     *nactiv, ncolz, *nfree, n,
-                                     nrowrt, &kactiv[1], &kfree[1], a,
+                                     NROWRT, &kactiv[1], &kfree[1], a,
                                     pQTG, pRT);
                             ++ncolz;
                             if (jdel <= (int)n) ++(*nfree);
@@ -4995,7 +5338,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 fixed (double* pWRK = WRK)
                 fixed (int* pistate = istate)
                     dfindp(nullr, &unitpg, n, nclin,
-                        nrowrt, &ncolr, &ncolz, nfree, pistate, &kfree[1],
+                        NROWRT, &ncolr, &ncolz, nfree, pistate, &kfree[1],
                         negligible != 0, &gtp, &pnorm, &rdlast);
 
                 /*
@@ -5020,7 +5363,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 alfhit	is initialized to  bigalf.  if it remains that way after
                 the call to bndalf, it will be regarded as infinite
                 */
-                bigalf = dprotdiv(&bigdx, &pnorm, &ifail);
+                bigalf = dprotdiv(ref bigdx, ref pnorm, ref ifail);
                 if (ifail != 0 && bigdx == 0) bigalf = BlasLike.lm_max;
                 fixed (double* pANORM = ANORM)
                 fixed (double* pQTG = QTG)
@@ -5151,13 +5494,10 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
                 working set.  use the array  p	as temporary work space
                 */
 
-                fixed (double* pPX = PX)
-                fixed (double* pWRK = WRK)
-                fixed (int* pkfree = KFREE)
-                    daddcon(modfyg != 0, modfyr != 0, orthog != 0, &ifix, &iadd, &jadd,
-                        nactiv, &ncolr, &ncolz, nfree, n, nrowrt,
-                        pkfree, &condmx, &cslast, &snlast,
-                         pWRK, pPX);
+                daddcon(modfyg != 0, modfyr != 0, orthog != 0, ifix, iadd, jadd,
+                    *nactiv, ncolr, ncolz, *nfree, n, NROWRT,
+                    KFREE, condmx, cslast, snlast,
+                     WRK, PX);
                 --ncolr;
                 --ncolz;
                 nfixed = n - *nfree;
@@ -5239,7 +5579,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             if (msg >= 1) wrexit(lprob, i, *iter);
             fixed (int* pistate = istate)
                 if (i > 0) dgetlamd(lprob, n, *nactiv, ncolz, *nfree,
-                         nrowrt, &jsmlst, &ksmlst, &smllst, pistate, a);
+                         NROWRT, &jsmlst, &ksmlst, &smllst, pistate, a);
             fixed (double* pRLAM = RLAM)
             fixed (int* pistate = istate)
                 dprtsol(*nfree, n, *nclin, ncnln, *nctotl,
@@ -5561,13 +5901,13 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             if (msg < 30) return;
             if (nactiv > 0)
             {
-                BlasLike.dcopy(nactiv, rt + nactiv + ncolz * nrowrt - 1, nrowrt - 1, wrk1, 1);
+                BlasLike.dcopy(nactiv, rt + nactiv + ncolz * NROWRT - 1, NROWRT - 1, wrk1, 1);
                 lm_mdvwri("\nDIAGONALS OF QP WORKING SET FACTOR  T", nactiv, wrk1);
             }
             if (ncolz > 0)
             {
                 Console.WriteLine("\nDIAGONALS OF QP PRJ. HESSIAN FACTOR  R");
-                lm_gdvwri(ncolz, rt, nrowrt + 1);
+                lm_gdvwri(ncolz, rt, NROWRT + 1);
             }
         }
         public unsafe static void dqpcolr(bool* nocurv, bool* posdef, bool* renewr, int n, int* ncolr, int* nfree, int* nrowh, int* ncolh, int* nhess, int* kfree, double* cslast, double* snlast, double* drmax, double* emax, double* hsize, double* rdlast, double* hess, double* scale, double* hz1)
@@ -5605,7 +5945,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             zy_offset = zy_dim1 + 1;
             //    zy -= zy_offset;
             --scale;
-            rt_dim1 = nrowrt;
+            rt_dim1 = NROWRT;
             rt_offset = rt_dim1 + 1;
             //    rt -= rt_offset;
             hess_dim1 = *nrowh;
@@ -5692,7 +6032,7 @@ void delmgen(bool orthog, double* x, double* y, double* cs, double* sn)
             }
             fixed (double* pRT = RT)
             {
-                idiag = dtmxsolve((short)-1, ncolr1, pRT, nrowrt, &pRT[*ncolr * rt_dim1 + 1 - rt_offset], (short)1);
+                idiag = dtmxsolve((short)-1, ncolr1, pRT, NROWRT, &pRT[*ncolr * rt_dim1 + 1 - rt_offset], (short)1);
                 //  rnorm = dnrm2vec(ncolr1, &pRT[*ncolr * rt_dim1 + 1 - rt_offset]);
                 rnorm = dnrm2vec(ncolr1, RT, *ncolr * rt_dim1 + 1 - rt_offset);
             }

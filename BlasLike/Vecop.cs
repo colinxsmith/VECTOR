@@ -5,7 +5,7 @@ namespace Blas
     public static class BlasLike
     {
         public static double lm_reps = 4503599627370496;
-        public static double lm_rootmax=        1.3407807929942596e+154;
+        public static double lm_rootmax = 1.3407807929942596e+154;
         public static double lm_rrooteps = 67108864;
         public static int baseref = 0;//Set to an array address for debug output
         public static double lm_eps = Math.Abs((((double)4) / 3 - 1) * 3 - 1);
@@ -166,7 +166,7 @@ namespace Blas
         }
 
         public static void daxpy(int n, double da, double[] dx,
-            int incx, double[] dy, int incy,int xstart=0,int ystart=0)
+            int incx, double[] dy, int incy, int xstart = 0, int ystart = 0)
         {
             int i__, m, ix, iy, mp1;
             /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
@@ -186,8 +186,8 @@ namespace Blas
             /*     .. Intrinsic Functions .. */
             /*     .. */
             /* Parameter adjustments */
-            ystart-=1;
-            xstart-=1;
+            ystart -= 1;
+            xstart -= 1;
 
             /* Function Body */
             if (n <= 0)
@@ -213,21 +213,21 @@ namespace Blas
                     {
                         for (i__ = 1; i__ <= m; ++i__)
                         {
-                            dy[i__+ystart] += dx[i__+xstart];
+                            dy[i__ + ystart] += dx[i__ + xstart];
                         }
                     }
                     else if (da == -1)
                     {
                         for (i__ = 1; i__ <= m; ++i__)
                         {
-                            dy[i__+ystart] -= dx[i__+xstart];
+                            dy[i__ + ystart] -= dx[i__ + xstart];
                         }
                     }
                     else
                     {
                         for (i__ = 1; i__ <= m; ++i__)
                         {
-                            dy[i__+ystart] += da * dx[i__+xstart];
+                            dy[i__ + ystart] += da * dx[i__ + xstart];
                         }
                     }
                 }
@@ -240,30 +240,30 @@ namespace Blas
                 {
                     for (i__ = mp1; i__ <= n; i__ += 4)
                     {
-                        dy[i__+ystart] += dx[i__+xstart];
-                        dy[i__ + 1+ystart] += dx[i__ + 1+xstart];
-                        dy[i__ + 2+ystart] += dx[i__ + 2+xstart];
-                        dy[i__ + 3+ystart] += dx[i__ + 3+xstart];
+                        dy[i__ + ystart] += dx[i__ + xstart];
+                        dy[i__ + 1 + ystart] += dx[i__ + 1 + xstart];
+                        dy[i__ + 2 + ystart] += dx[i__ + 2 + xstart];
+                        dy[i__ + 3 + ystart] += dx[i__ + 3 + xstart];
                     }
                 }
                 else if (da == -1)
                 {
                     for (i__ = mp1; i__ <= n; i__ += 4)
                     {
-                        dy[i__+ystart] -= dx[i__+xstart];
-                        dy[i__ + 1+ystart] -= dx[i__ + 1+xstart];
-                        dy[i__ + 2+ystart] -= dx[i__ + 2+xstart];
-                        dy[i__ + 3+ystart] -= dx[i__ + 3+xstart];
+                        dy[i__ + ystart] -= dx[i__ + xstart];
+                        dy[i__ + 1 + ystart] -= dx[i__ + 1 + xstart];
+                        dy[i__ + 2 + ystart] -= dx[i__ + 2 + xstart];
+                        dy[i__ + 3 + ystart] -= dx[i__ + 3 + xstart];
                     }
                 }
                 else
                 {
                     for (i__ = mp1; i__ <= n; i__ += 4)
                     {
-                        dy[i__+ystart] += da * dx[i__+xstart];
-                        dy[i__ + 1+ystart] += da * dx[i__ + 1+xstart];
-                        dy[i__ + 2+ystart] += da * dx[i__ + 2+xstart];
-                        dy[i__ + 3+ystart] += da * dx[i__ + 3+xstart];
+                        dy[i__ + ystart] += da * dx[i__ + xstart];
+                        dy[i__ + 1 + ystart] += da * dx[i__ + 1 + xstart];
+                        dy[i__ + 2 + ystart] += da * dx[i__ + 2 + xstart];
+                        dy[i__ + 3 + ystart] += da * dx[i__ + 3 + xstart];
                     }
                 }
             }
@@ -287,7 +287,7 @@ namespace Blas
                 {
                     for (i__ = 1; i__ <= n; ++i__)
                     {
-                        dy[iy+ystart] += dx[ix+xstart];
+                        dy[iy + ystart] += dx[ix + xstart];
                         ix += incx;
                         iy += incy;
                     }
@@ -296,7 +296,7 @@ namespace Blas
                 {
                     for (i__ = 1; i__ <= n; ++i__)
                     {
-                        dy[iy+ystart] -= dx[ix+xstart];
+                        dy[iy + ystart] -= dx[ix + xstart];
                         ix += incx;
                         iy += incy;
                     }
@@ -305,7 +305,7 @@ namespace Blas
                 {
                     for (i__ = 1; i__ <= n; ++i__)
                     {
-                        dy[iy+ystart] += da * dx[ix+xstart];
+                        dy[iy + ystart] += da * dx[ix + xstart];
                         ix += incx;
                         iy += incy;
                     }
@@ -355,7 +355,7 @@ namespace Blas
                 *a++ = 0;
             }
         }
-        public static void dcopy(int n, double[] dx, int incx, double[] dy, int incy,int xstart=0,int ystart=0)
+        public static void dcopy(int n, double[] dx, int incx, double[] dy, int incy, int xstart = 0, int ystart = 0)
         {
             int i__, m, ix, iy;
             /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
@@ -394,7 +394,7 @@ namespace Blas
                 {
                     for (i__ = 0; i__ < m; ++i__)
                     {
-                        dy[i__+ystart] = dx[i__+xstart];
+                        dy[i__ + ystart] = dx[i__ + xstart];
                     }
                     if (n < 7)
                     {
@@ -403,13 +403,13 @@ namespace Blas
                 }
                 for (i__ = m; i__ < n; i__ += 7)
                 {
-                    dy[i__+ystart] = dx[i__+xstart];
-                    dy[i__ + 1+ystart] = dx[i__ + 1+xstart];
-                    dy[i__ + 2+ystart] = dx[i__ + 2+xstart];
-                    dy[i__ + 3+ystart] = dx[i__ + 3+xstart];
-                    dy[i__ + 4+ystart] = dx[i__ + 4+xstart];
-                    dy[i__ + 5+ystart] = dx[i__ + 5+xstart];
-                    dy[i__ + 6+ystart] = dx[i__ + 6+xstart];
+                    dy[i__ + ystart] = dx[i__ + xstart];
+                    dy[i__ + 1 + ystart] = dx[i__ + 1 + xstart];
+                    dy[i__ + 2 + ystart] = dx[i__ + 2 + xstart];
+                    dy[i__ + 3 + ystart] = dx[i__ + 3 + xstart];
+                    dy[i__ + 4 + ystart] = dx[i__ + 4 + xstart];
+                    dy[i__ + 5 + ystart] = dx[i__ + 5 + xstart];
+                    dy[i__ + 6 + ystart] = dx[i__ + 6 + xstart];
                 }
             }
             else
@@ -430,7 +430,7 @@ namespace Blas
                 }
                 for (i__ = 0; i__ < n; ++i__)
                 {
-                    dy[iy - 1+ystart] = dx[ix - 1+xstart];
+                    dy[iy - 1 + ystart] = dx[ix - 1 + xstart];
                     ix += incx;
                     iy += incy;
                 }
@@ -525,9 +525,9 @@ namespace Blas
         {
             dcopy(n, a, 1, b, 1);
         }
-        public static void dcopyvec(int n, double[] a, double[] b,int astart=0,int bstart=0)
+        public static void dcopyvec(int n, double[] a, double[] b, int astart = 0, int bstart = 0)
         {
-            Buffer.BlockCopy(a, astart* sizeof(double), b, bstart* sizeof(double), n * sizeof(double));
+            Buffer.BlockCopy(a, astart * sizeof(double), b, bstart * sizeof(double), n * sizeof(double));
         }
         public static void dsub(int n, double[] x, int ix, double[] y, int iy, double[] z, int iz)
         {
@@ -740,16 +740,16 @@ namespace Blas
         {
             return ddot(n, a, 1, b, 1);
         }
-        public static void dset(int n, double a, double[] x, int ix,int xstart=0)
+        public static void dset(int n, double a, double[] x, int ix, int xstart = 0)
         {
             for (int i = 0, iix = ix < 0 ? -(n - 1) * ix : 0; i < n; i++, iix += ix)
             {
-                x[iix+xstart] = a;
+                x[iix + xstart] = a;
             }
         }
-        public static void dsetvec(int n, double a, double[] x,int xstart=0)
+        public static void dsetvec(int n, double a, double[] x, int xstart = 0)
         {
-            dset(n, a, x, 1,xstart);
+            dset(n, a, x, 1, xstart);
         }
         public static void dneg(int n, double[] x, int ix, int xstart = 0)
         {
@@ -3128,31 +3128,64 @@ double* x, int incx, double* ap)
                 *psumsq = sumsq;
             }
         }
-public unsafe static void dsssqvec(int n, double* x, double *pscale, double *psumsq)
-{
-	if(n>0){
-		double absxi, d, sumsq= *psumsq, scale = *pscale;
-		while(n-->0){
-			absxi = *x++;
-			if(absxi==0) continue;
-			if(absxi<0) absxi = -absxi;
-			if(scale < absxi){
-				/* Computing 2nd power */
-		    		d = scale / absxi;
-		    		sumsq = sumsq * (d * d) + 1;
-		    		scale = absxi;
-				}
-			else	{
-				/* Computing 2nd power */
-				d = absxi / scale;
-				sumsq += d * d;
-				}
-			}
-		*pscale = scale;
-		*psumsq = sumsq;
-		}
-}
-        public static void dsssq(int n, double[] x, int ix, double[] pscale, double[] psumsq, int px = 0)
+        public unsafe static void dsssqvec(int n, double* x, double* pscale, double* psumsq)
+        {
+            if (n > 0)
+            {
+                double absxi, d, sumsq = *psumsq, scale = *pscale;
+                while (n-- > 0)
+                {
+                    absxi = *x++;
+                    if (absxi == 0) continue;
+                    if (absxi < 0) absxi = -absxi;
+                    if (scale < absxi)
+                    {
+                        /* Computing 2nd power */
+                        d = scale / absxi;
+                        sumsq = sumsq * (d * d) + 1;
+                        scale = absxi;
+                    }
+                    else
+                    {
+                        /* Computing 2nd power */
+                        d = absxi / scale;
+                        sumsq += d * d;
+                    }
+                }
+                *pscale = scale;
+                *psumsq = sumsq;
+            }
+        }
+
+        public static void dsssqvec(int n, double[] x, ref double pscale,ref  double psumsq,int xstart=0)
+        {
+            if (n > 0)
+            {var i=0;
+                double absxi, d, sumsq = psumsq, scale = pscale;
+                while (n-- > 0)
+                {
+                    absxi = x[i++ +xstart];
+                    if (absxi == 0) continue;
+                    if (absxi < 0) absxi = -absxi;
+                    if (scale < absxi)
+                    {
+                        /* Computing 2nd power */
+                        d = scale / absxi;
+                        sumsq = sumsq * (d * d) + 1;
+                        scale = absxi;
+                    }
+                    else
+                    {
+                        /* Computing 2nd power */
+                        d = absxi / scale;
+                        sumsq += d * d;
+                    }
+                }
+                pscale = scale;
+                psumsq = sumsq;
+            }
+        }
+        public static void dsssq(int n, double[] x, int ix, ref double pscale, ref double psumsq, int px = 0)
         {
             /*
                   dsssqvec returns the values scl and smsq such that
@@ -3167,7 +3200,7 @@ public unsafe static void dsssqvec(int n, double* x, double *pscale, double *psu
           */
             if (n > 0)
             {
-                double absxi, d, sumsq = psumsq[0], scale = pscale[0];
+                double absxi, d, sumsq = psumsq, scale = pscale;
                 Debug.Assert(scale >= 0);
                 for (int i = 0, iix = ix < 0 ? -(n - 1) * ix : 0; i < n; ++i, iix += ix)
                 {
@@ -3186,8 +3219,8 @@ public unsafe static void dsssqvec(int n, double* x, double *pscale, double *psu
                         sumsq += d * d;
                     }
                 }
-                pscale[0] = scale;
-                psumsq[0] = sumsq;
+                pscale = scale;
+                psumsq = sumsq;
             }
         }
         public static double dsum(int n, double[] x, int ix = 1, int px = 0)
@@ -3872,6 +3905,64 @@ public unsafe static void dsssqvec(int n, double* x, double *pscale, double *psu
             return div;
         }
 
+        public static double dprotdiv(ref double a, ref double b, ref int fail)
+        {
+
+            /*
+                dprotdiv returns the value div given by
+                    div =	( a/b                 if a/b does not overflow,
+                            (
+                        ( 0.0                 if a == 0.0,
+                        (
+                        ( sign( a/b )*flmax   if a != 0.0  and a/b would overflow,
+
+                where  flmax  is a large value. in addition if
+                a/b would overflow then  fail is returned as 1, otherwise  fail is
+                returned as 0
+                note that when  a and b  are both zero, fail is returned as 1, but
+                div  is returned as  0.0. in all other cases of overflow  div is such
+                that  abs( div ) = flmax
+
+                when  b = 0  then  sign( a/b )  is taken as  sign( a )
+            */
+            double absb, div;
+            int dfail = -2;
+
+            if (fail == -2) fail = dfail;
+
+            if (a == 0.0)
+            {
+                div = 0.0;
+                fail = b == 0 ? 1 : 0;
+            }
+            else if (b == 0.0)
+            {
+                div = dsign(lm_rsafe_range, a);
+                fail = 1;
+            }
+            else
+            {
+                absb = Math.Abs(b);
+                if (absb >= 1.0)
+                {
+                    fail = 0;
+                    div = (Math.Abs(a) >= absb * lm_safe_range ? a / b : 0.0);
+                }
+                else if (Math.Abs(a) <= absb * lm_rsafe_range)
+                {
+                    fail = 0;
+                    div = a / b;
+                }
+                else
+                {
+                    fail = 1;
+                    div = lm_rsafe_range;
+                    if ((a < 0.0 && b > 0.0) || (a > 0.0 && b < 0.0)) div = -div;
+                }
+            }
+            return div;
+        }
+
         public unsafe static void drotg(double* a, double* b, double* c, double* s)
         {
             int fail;
@@ -3900,6 +3991,37 @@ public unsafe static void dsssqvec(int n, double* x, double *pscale, double *psu
                 *c = dcossint(t, s);
                 *a = *c * *a + *s * *b;
                 *b = t;
+            }
+        }
+
+        public static void drotg(ref double a, ref double b, ref double c, ref double s)
+        {
+            int fail = 23;
+            double t;
+
+            /*
+            DROTG BLAS,  except that c is always returned as non-negative and  b
+            is overwritten by the tangent of the angle that defines the plane rotation.
+            c and s are given as c = 1.0/sqrt( 1.0 + t**2 ),   s = c*t   where   t = b/a.
+            When  abs( b ) <= eps*abs( a ),  where  eps is the relative machine 
+            precision,  then  c and s  are always returned as c = 1.0  and  s = 0.0
+            and when  abs( a ) <  eps*abs( b ) then c and s are always returned 
+            as c = 0.0  and  s = sign( t ).
+
+            Note that t is always returned as  b/a, unless this would overflow in 
+            which  case the value  sign( t )/lm_min is returned.
+            */
+            if (b == 0)
+            {
+                c = 1;
+                s = 0;
+            }
+            else
+            {
+                t = dprotdiv(ref b, ref a, ref fail);
+                c = dcossint(t, ref s);
+                a = c * a + s * b;
+                b = t;
             }
         }
         public unsafe static int drotg1(double* da, double* db, double* c__,
@@ -4010,6 +4132,56 @@ public unsafe static void dsssqvec(int n, double* x, double *pscale, double *psu
                 /* Computing 2nd power */
                 c = 1 / Math.Sqrt(abst * abst + 1);
                 *s = c * t;
+            }
+            return c;
+        }
+
+        public static double dcossint(double t, ref double s)
+        {/*
+	dcossint(t,&s) returns c and sets s where
+		c = cos( theta ),   s = sin( theta )
+		for a given value of t = tan( theta ).
+
+	c is always non-negative and s has the same sign as t, so that
+		c = 1.0/sqrt( 1.0 + t**2 ),   s = t/sqrt( 1.0 + t**2 ).
+
+	If  abs( t ) <= eps, where eps is the relative machine precision
+		c = 1.0   and   s = 0.0.
+
+	If  abs( t ) .ge. 1/eps  then c and s are returned as
+		c = 0.0   and   s = sign( t ).
+
+	R. G. Becker	October 1992
+*/
+            double abst, c;
+
+            abst = Math.Abs(t);
+
+            if (abst <= lm_eps)
+            {
+                c = 1;
+                s = 0;
+            }
+            else if (abst >= lm_reps)
+            {
+                c = 0;
+                s = dsign(1.0, t);
+            }
+            else if (abst < lm_rooteps)
+            {
+                c = 1;
+                s = t;
+            }
+            else if (abst > lm_rrooteps)
+            {
+                c = 1 / abst;
+                s = dsign(1.0, t);
+            }
+            else
+            {
+                /* Computing 2nd power */
+                c = 1 / Math.Sqrt(abst * abst + 1);
+                s = c * t;
             }
             return c;
         }
