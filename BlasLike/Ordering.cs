@@ -6,7 +6,8 @@ namespace Ordering
     {
         public double x;
         public byte bad;
-        public compareitem(){
+        public compareitem()
+        {
 
         }
         public compareitem(double x, byte bad)
@@ -37,6 +38,12 @@ namespace Ordering
     }
     public class Order
     {
+        public static void swap<Q>(ref Q a, ref Q b)
+        {
+            var k2 = a;
+            a = b;
+            b = k2;
+        }
         public static void getorder(int n, double[] x, int[] order = null, byte[] dropbad = null, double init = 0, byte sign = 1)
         {
             var cmp = new compare();
@@ -57,7 +64,7 @@ namespace Ordering
         {
             var cmp = new compareAbs();
             var xx = new compareitem[n];
-            
+
             for (int i = 0; i < n; ++i)
             {
                 xx[i] = new compareitem(x[i], dropbad == null ? (byte)0 : dropbad[i]);
@@ -83,9 +90,7 @@ namespace Ordering
                 {
                     for (j = i, k = order[j]; k != i; k = order[j = k])
                     {
-                        var aa = array[k];
-                        array[k] = array[j];
-                        array[j] = aa;
+                        swap(ref array[k], ref array[j]);
                         marked[k] = true;
                     }
                     marked[i] = true;
@@ -113,35 +118,23 @@ namespace Ordering
                                 var ll = l * (l + 1) / 2;
                                 if (l == j)
                                 {
-                                    var jjj = jj + j;
-                                    var kkk = kk + k;
-                                    var aa = array[jjj];
-                                    array[jjj] = array[kkk];
-                                    array[kkk] = aa;
+                                    swap(ref array[jj + j], ref array[kk + k]);
                                 }
                                 else if (l < j && l < k)
                                 {
-                                    var aa = array[jj + l];
-                                    array[jj + l] = array[kk + l];
-                                    array[kk + l] = aa;
+                                    swap(ref array[jj + l], ref array[kk + l]);
                                 }
                                 else if (l > j && l > k)
                                 {
-                                    var aa = array[ll + j];
-                                    array[ll + j] = array[ll + k];
-                                    array[ll + k] = aa;
+                                    swap(ref array[ll + j], ref array[ll + k]);
                                 }
                                 else if (l > j && l < k)
                                 {
-                                    var aa = array[ll + j];
-                                    array[ll + j] = array[kk + l];
-                                    array[kk + l] = aa;
+                                    swap(ref array[ll + j], ref array[kk + l]);
                                 }
                                 else if (l < j && l > k)
                                 {
-                                    var aa = array[jj + l];
-                                    array[jj + l] = array[ll + k];
-                                    array[ll + k] = aa;
+                                    swap(ref array[jj + l], ref array[ll + k]);
                                 }
                             }
                             marked[k] = true;
@@ -165,33 +158,23 @@ namespace Ordering
                                 var ll = l * n - l * (l - 1) / 2;
                                 if (l == j)
                                 {
-                                    var aa = array[jj];
-                                    array[jj] = array[kk];
-                                    array[kk] = aa;
+                                    swap(ref array[jj], ref array[kk]);
                                 }
                                 else if (l > j && l > k)
                                 {
-                                    var aa = array[jj + l - j];
-                                    array[jj + l - j] = array[kk + l - k];
-                                    array[kk + l - k] = aa;
+                                    swap(ref array[jj + l - j], ref array[kk + l - k]);
                                 }
                                 else if (l < j && l < k)
                                 {
-                                    var aa = array[ll + j - l];
-                                    array[ll + j - l] = array[ll + k - l];
-                                    array[ll + k - l] = aa;
+                                    swap(ref array[ll + j - l], ref array[ll + k - l]);
                                 }
                                 else if (l > j && l < k)
                                 {
-                                    var aa = array[jj + l - j];
-                                    array[jj + l - j] = array[ll + k - l];
-                                    array[ll + k - l] = aa;
+                                    swap(ref array[jj + l - j], ref array[ll + k - l]);
                                 }
                                 else if (l < j && l > k)
                                 {
-                                    var aa = array[jj + l - j];
-                                    array[jj + l - j] = array[kk + l - k];
-                                    array[kk + l - k] = aa;
+                                    swap(ref array[jj + l - j], ref array[kk + l - k]);
                                 }
                             }
                             marked[k] = true;
@@ -217,18 +200,14 @@ namespace Ordering
                         {
                             for (int l = 0; l < m; l++)
                             {
-                                var aa = array[k * m + l];
-                                array[k * m + l] = array[j * m + l];
-                                array[j * m + l] = aa;
+                                swap(ref array[k * m + l], ref array[j * m + l]);
                             }
                         }
                         else
                         {
                             for (int l = 0, ll = 0; l < m; l++, ll += im)
                             {
-                                var aa = array[k + ll];
-                                array[k + ll] = array[j + ll];
-                                array[j + ll] = aa;
+                                swap(ref array[k + ll], ref array[j + ll]);
                             }
                         }
                         marked[k] = true;
@@ -303,9 +282,7 @@ namespace Ordering
             n >>= 1;
             while (n-- > 0)
             {
-                var t = *--e;
-                *e = *B;
-                *B++ = t;
+                swap(ref *--e, ref *B++);
             }
         }
         static void byte_reverseA<T>(int n, T[] b, int bstart = 0)
@@ -322,12 +299,7 @@ namespace Ordering
             int ib = 0, ie = 0;
             while (n-- > 0)
             {
-                /*t = *--e;*/
-                var t = b[bstart + N + --ie];
-                /**e = *B;*/
-                b[bstart + N + ie] = b[bstart + ib];
-                /**B++ = t;*/
-                b[bstart + ib++] = t;
+                swap(ref b[bstart + N + --ie], ref b[bstart + ib++]);
             }
         }
 
