@@ -1280,5 +1280,16 @@ void ddmxmulv(int n, double* d, int incd, double* x, int incx)
                     }
             }
         }
+        public static void ddmxmulv(int n, double[] d, int incd, double[] x, int incx, int dstart = 0, int xstart = 0)
+        {
+            if (n != 0)
+            {
+                if (incd == 0 && incx != 0) BlasLike.dscal(n, d[dstart], x, incx, xstart);
+                else for (int i = 0, ix = xstart, id = dstart; i < n; ++i, ix += incx, id += incd)
+                    {
+                        x[ix] *= d[id];
+                    }
+            }
+        }
     }
 }
