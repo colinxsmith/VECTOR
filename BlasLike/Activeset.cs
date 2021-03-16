@@ -62,7 +62,7 @@ namespace ActiveSet
         }
         public unsafe static void dlpcore(bool lp, int minsum, bool orthog, int vertex, int* inform, int* iter,
                 int itmax, byte lcrash, int n, int* nclin, int* nctotl, int* nactiv,
-                int* nfree, int* numinf, double[] obj, double[] xnorm)
+                int* nfree, int* numinf, ref double obj, double[] xnorm)
         {
             /*
             lpcore finds a feasible point for the general linear constraints
@@ -235,9 +235,9 @@ namespace ActiveSet
             fixed (int* pkactiv = KACTV)
                 dzyprod(6, n, *nactiv, ncolz, *nfree, nq, pkactiv, pkfree
                     , pQTG, pWRK);
-            obj[0] = suminf;
+            obj = suminf;
             if (lp) objlp = BlasLike.ddotvec(n, c, W);
-            if (lp && *numinf == 0) obj[0] = objlp;
+            if (lp && *numinf == 0) obj = objlp;
             if (*numinf == 0 && !(lp)) goto L320;
             /* .......................START OF THE MAIN LOOP........................ 
             */
@@ -245,10 +245,10 @@ namespace ActiveSet
             /*     AND THE NORM OF THE CONSTRAINTS IN THE WORKING SET. */
             L20:
             clocker();
-            objsiz = (1 + Math.Abs(obj[0])) / (1 + xnorm[0]);
+            objsiz = (1 + Math.Abs(obj)) / (1 + xnorm[0]);
             if (*numinf == 0)
             {
-                objsiz = (BlasLike.lm_eps + Math.Abs(obj[0])) / (BlasLike.lm_eps + xnorm[0]);
+                objsiz = (BlasLike.lm_eps + Math.Abs(obj)) / (BlasLike.lm_eps + xnorm[0]);
             }
             anorm = 0;
             if (*nactiv > 0)
@@ -550,7 +550,7 @@ namespace ActiveSet
             fixed (int* pkactiv = KACTV)
                 dzyprod(6, n, *nactiv, ncolz, *nfree, nq, pkactiv, pkfree
                     , pQTG, pWRK);
-            obj[0] = suminf;
+            obj = suminf;
         /* --------------------------------------------------------------------- 
         */
         /*     ADD A CONSTRAINT TO THE WORKING SET. */
@@ -560,7 +560,7 @@ namespace ActiveSet
         L160:
             if (lp && *numinf == 0)
             {
-                obj[0] = objlp;
+                obj = objlp;
             }
             if (hitlow != 0)
             {
@@ -4597,7 +4597,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 }
             }
         }
-        public unsafe static short dqpsol(short itmax, short msglvl, int n, int nclin, int nctotl, int nrowa, int nrowh, int ncolh, int cold, int lp, int orthog, int[] iter, double[] obj, int leniw, int lenw, short ifail)
+        public unsafe static short dqpsol(short itmax, short msglvl, int n, int nclin, int nctotl, int nrowa, int nrowh, int ncolh, int cold, int lp, int orthog,ref int iter,ref double obj, int leniw, int lenw, short ifail)
         {
             parm[0] = 1e10;
             parm[1] = 1e20;
@@ -4760,7 +4760,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 if (U[ic] < L[ic]) badConstraint += 1;
             }
             if (badConstraint > 0) return 10;
-            iter[0] = 0;
+            iter = 0;
 
 
             /*
@@ -4778,8 +4778,8 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             */
             dlpcore((lp & 1) != 0, minsum, orthog != 0, vertex, &inform, &iter_,
             itmx, lcrash, n, &nclin, &nctotl, &nactiv, &nfree, &numinf,
-                 obj, xnorm);
-            iter[0] = (short)iter_;
+                 ref obj, xnorm);
+            iter = (short)iter_;
             if (lp != 0)
             {
                 /*THE PROBLEM WAS AN LP, NOT A QP*/
@@ -4810,12 +4810,12 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 fixed (double* plambda = LAMBDA)
                 fixed (double* pfeatol = FEATOL)
                 fixed (double* pLWRK = LWRK)
-                fixed (double* pobj = obj)
-                    dqpcore(orthog, &inform, &iter_, &itmx, n, &nclin, &nctotl,
-                             &nrowh, &ncolh, &nactiv, &nfree,
-                            pKACTV, pKFREE, obj, xnorm, pA, pL, pU, plambda, pc, pfeatol, pQ,
+                
+                    dqpcore(orthog, ref inform, ref iter_, itmx, n, nclin, nctotl,
+                             nrowh, ncolh, nactiv, nfree,
+                             pKFREE, ref obj, xnorm, pA, pL, pU, plambda, pc, pfeatol, pQ,
                             pLWRK, pW);
-                iter[0] = (short)iter_;
+                iter = (short)iter_;
             }
             else
             {
@@ -4861,8 +4861,8 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                         Console.WriteLine("TOO MANY ITERATIONS DURING THE LP PHASE.");
                         break;
                 }
-                if (numinf == 0) lm_wmsg("\n FINAL %.2s OBJECTIVE VALUE =%20.9lg", l, obj[0]);
-                else lm_wmsg("\n FINAL SUM OF INFEASIBILITIES =%20.9lg", obj[0]);
+                if (numinf == 0) lm_wmsg("\n FINAL %.2s OBJECTIVE VALUE =%20.9lg", l, obj);
+                else lm_wmsg("\n FINAL SUM OF INFEASIBILITIES =%20.9lg", obj);
             }
 
             return (short)(inform == 0 ? 0 : lm_check_fail((short)ifail, (short)inform, "QPSOL"));
@@ -5066,7 +5066,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
         {
             Solver.Factorise.dsmxmulv(n, hess, wrk, hx);
         }
-        public unsafe static void dqpcore(int orthog, int* inform, int* iter, int* itmax, int n, int* nclin, int* nctotl, int* nrowh, int* ncolh, int* nactiv, int* nfree, int* kactiv, int* kfree, double[] objqp, double[] xnorm, double* a, double* bl, double* bu, double* clamda, double* cvec, double* featol, double* hess, double* scale, double* x)
+        public unsafe static void dqpcore(int orthog,ref int inform,ref  int iter, int itmax, int n, int nclin, int nctotl, int nrowh, int ncolh, int nactiv, int nfree, int* kfree, ref double objqp, double[] xnorm, double* a, double* bl, double* bu, double* clamda, double* cvec, double* featol, double* hess, double* scale, double* x)
         {
 
             /*
@@ -5144,17 +5144,17 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             --bl;
             //        --ax;
             --kfree;
-            --kactiv;
+  //  --kactiv;
             //    --istate;
 
             /*INITIALIZE */
-            *iter = 0;
+            iter = 0;
             jadd = 0;
             jdel = 0;
             jdsave = 0;
-            nclin0 = Math.Max(*nclin, 1);
+            nclin0 = Math.Max(nclin, 1);
             ncnln = 0;
-            ncolz = *nfree - *nactiv;
+            ncolz = nfree - nactiv;
             //	nrowj = 1;
             nstall = 0;
             nhess = 0;
@@ -5203,8 +5203,8 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
             fixed (double* pWRK = WRK)
-                ncolr = dqpcrsh(n, ncolz, *nfree, &nhess_conv,
-                    nq, *nrowh, *ncolh, NROWRT, &kfree[1], &hsize, hess,
+                ncolr = dqpcrsh(n, ncolz, nfree, &nhess_conv,
+                    nq, nrowh, ncolh, NROWRT, &kfree[1], &hsize, hess,
                     pRT, &scale[1], pZY, pRLAM, pWRK);
             fixed (double* pANORM = ANORM)
             fixed (double* pQTG = QTG)
@@ -5214,9 +5214,10 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
             fixed (double* pWRK = WRK)
-            fixed (double* pobj = objqp)
-                dqpgrad(1, n, *nactiv, *nfree, &nhess_conv, nq,
-                    *nrowh, *ncolh, jadd, &kactiv[1], &kfree[1], alfa, pobj, &gfixed,
+            
+            fixed(int*pkact=KACTV)
+                dqpgrad(1, n, nactiv, nfree, &nhess_conv, nq,
+                    nrowh, ncolh, jadd, pkact, &kfree[1], alfa,ref objqp, &gfixed,
                     gtp, &cvec[1], hess, pPX, pQTG, &scale[1], &x[1], pZY, pWRK, pRLAM);
             nhess = nhess_conv;
 
@@ -5243,15 +5244,15 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
 
                 if (ncolr > 0) ztgnrm = dnrm2vec(ncolr, QTG);
                 gfnorm = ztgnrm;
-                if (*nfree > 0 && *nactiv > 0) gfnorm = dnrm2vec(*nfree, QTG);
+                if (nfree > 0 && nactiv > 0) gfnorm = dnrm2vec(nfree, QTG);
 
                 /*
                 define small quantities that reflect the magnitude of  c,  x,  h
                 and the matrix of constraints in the working set
                 */
-                objsiz = (BlasLike.lm_eps + Math.Abs(objqp[0])) / (BlasLike.lm_eps + xnorm[0]);
+                objsiz = (BlasLike.lm_eps + Math.Abs(objqp)) / (BlasLike.lm_eps + xnorm[0]);
                 anorm = 0;
-                if (*nactiv > 0) anorm = Math.Abs(dtmax);
+                if (nactiv > 0) anorm = Math.Abs(dtmax);
                 /*Computing MAX */
                 dinky = Math.Max(anorm, objsiz);
                 dinky = Math.Max(epspt9, AccuracyModify) * Math.Max(dinky, gfnorm);
@@ -5290,10 +5291,10 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 fixed (double* pAP = AP)
                 fixed (double* pWRK = WRK)
                 fixed (int* pistate = ISTATE)
-                fixed (double* pobj = objqp)
-                    dqpprt(orthog, isdel, *iter, jadd, jdel, *nactiv, ncolz, *nfree,
-                        n, *nclin, nhess,
-                        pistate, &kfree[1], alfa, condh, condt, objqp[0], gfnorm,
+                
+                    dqpprt(orthog, isdel, iter, jadd, jdel, nactiv, ncolz, nfree,
+                        n, nclin, nhess,
+                        pistate, &kfree[1], alfa, condh, condt, objqp, gfnorm,
                         ztgnrm, emax, a, pRT, &x[1], pWRK, pAP);
                 jadd = 0;
                 jdel = 0;
@@ -5316,7 +5317,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                         if (ncolr >= ncolz)
                         {
                             fixed (int* pistate = ISTATE)
-                                dgetlamd(lprob, n, *nactiv, ncolz, *nfree, NROWRT,
+                                dgetlamd(lprob, n, nactiv, ncolz, nfree, NROWRT,
                                     &jsmlst, &ksmlst, &smllst, pistate, a);
 
                             /*
@@ -5354,13 +5355,14 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                             fixed (double* pPX = PX)
                             fixed (double* pRLAM = RLAM)
                             fixed (double* pAP = AP)
+            fixed(int*pkact=KACTV)
                                 ddelcon(modfyg != 0, orthog != 0, jdel, kdel,
-                                    *nactiv, ncolz, *nfree, n,
-                                     NROWRT, &kactiv[1], &kfree[1], a,
+                                    nactiv, ncolz, nfree, n,
+                                     NROWRT, pkact, &kfree[1], a,
                                     pQTG, pRT);
                             ++ncolz;
-                            if (jdel <= (int)n) ++(*nfree);
-                            else --(*nactiv);
+                            if (jdel <= (int)n) ++(nfree);
+                            else --(nactiv);
                         }
 
                         /*
@@ -5372,7 +5374,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                         ++ncolr;
                         fixed (double* pPX = PX)
                             dqpcolr(&nocurv, &posdef, &renewr, n, &ncolr,
-                                nfree, nrowh, ncolh, &nhess, &kfree[1], &
+                                &nfree, &nrowh, &ncolh, &nhess, &kfree[1], &
                                 cslast, &snlast, &drmax, &emax, &hsize, &rdlast, hess, &scale[1], pPX);
                         /*REPEAT THE MAIN LOOP*/
                         continue;
@@ -5396,15 +5398,15 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                     i = 1;
                     break;
                 }
-                if (*iter >= *itmax)
+                if (iter >= itmax)
                 {
                     /*too many iterations*/
                     i = 5;
                     break;
                 }
 
-                ++(*iter);
-                if (*iter >= istart) msg = msglvl;
+                ++(iter);
+                if (iter >= istart) msg = msglvl;
 
                 fixed (double* pANORM = ANORM)
                 fixed (double* pQTG = QTG)
@@ -5415,8 +5417,8 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 fixed (double* pAP = AP)
                 fixed (double* pWRK = WRK)
                 fixed (int* pistate = ISTATE)
-                    dfindp(nullr, &unitpg, n, nclin,
-                        NROWRT, &ncolr, &ncolz, nfree, pistate, &kfree[1],
+                    dfindp(nullr, &unitpg, n, &nclin,
+                        NROWRT, &ncolr, &ncolz, &nfree, pistate, &kfree[1],
                         negligible != 0, &gtp, &pnorm, &rdlast);
 
                 /*
@@ -5433,7 +5435,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 fixed (double* pPX = PX)
                 fixed (double* pRLAM = RLAM)
                 fixed (double* pAP = AP)
-                    if ((jdsave > 0 && negligible != 0) || zerolm) dqpchkp(n, *nclin, issave, jdsave, pAP, pPX);
+                    if ((jdsave > 0 && negligible != 0) || zerolm) dqpchkp(n, nclin, issave, jdsave, pAP, pPX);
 
                 /*
                 find the constraint we bump into along p
@@ -5455,7 +5457,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 fixed (double* pLWRK = LWRK)
                 fixed (int* pistate = ISTATE)
                     dbndalf(firstv != 0, &hitlow, pistate, &jadd, n,
-        *nctotl, numinf, &alfhit, &palfa, &atphit, &bigalf,
+        nctotl, numinf, &alfhit, &palfa, &atphit, &bigalf,
          &pnorm, pANORM, pAP, pLWRK, &bl[1], &bu[1], &
         featol[1], pPX, &x[1]);
 
@@ -5520,9 +5522,10 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                     fixed (double* pRLAM = RLAM)
                     fixed (double* pAP = AP)
                     fixed (double* pWRK = WRK)
-                    fixed (double* pobj = objqp)
-                        if (dqpgrad(2, n, *nactiv, *nfree, &nhess_conv, nq,
-                            *nrowh, *ncolh, jadd, &kactiv[1], &kfree[1], alfa, pobj, &
+                    
+            fixed(int*pkact=KACTV)
+                        if (dqpgrad(2, n, nactiv, nfree, &nhess_conv, nq,
+                            nrowh, ncolh, jadd, pkact, &kfree[1], alfa,ref objqp, &
                             gfixed, gtp, &cvec[1], hess, pPX, pQTG, &
                             scale[1], &x[1], pZY, pWRK, pRLAM) < -BlasLike.lm_eps)
                         {
@@ -5541,7 +5544,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                     jdsave = 0;
                     zerolm = false;
                     BlasLike.daxpy(n, alfa, PX, 1, W, 1);
-                    if (*nclin > 0) BlasLike.daxpy(*nclin, alfa, AP, 1, LWRK, 1);
+                    if (nclin > 0) BlasLike.daxpy(nclin, alfa, AP, 1, LWRK, 1);
                     xnorm[0] = dnrm2vec(n, W);
                 }
 
@@ -5564,7 +5567,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                     if (hitlow != 0) bnd = bl[jadd];
                     else bnd = bu[jadd];
                     if (alfa >= 0) x[jadd] = bnd;
-                    i = *nfree;
+                    i = nfree;
                     for (ifix = 1; ifix <= (int)i; ++ifix) if (kfree[ifix] == jadd) break;
                 }
                 /*
@@ -5573,19 +5576,19 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 */
 
                 daddcon(modfyg != 0, modfyr != 0, orthog != 0, ifix, iadd, jadd,
-                    *nactiv, ncolr, ncolz, *nfree, n, NROWRT,
+                    nactiv, ncolr, ncolz, nfree, n, NROWRT,
                     KFREE, condmx, cslast, snlast,
                      WRK, PX);
                 --ncolr;
                 --ncolz;
-                nfixed = n - *nfree;
+                nfixed = n - nfree;
                 if (nfixed != 0)
                 {
-                    kb = *nactiv + nfixed;
+                    kb = nactiv + nfixed;
                     i = nfixed;
                     for (idummy = 1; idummy <= nfixed; ++idummy)
                     {
-                        kactiv[kb + 1] = kactiv[kb];
+                        KACTV[kb ] = KACTV[kb-1];
                         --kb;
                     }
                 }
@@ -5597,8 +5600,8 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                     corresponding to the newly fixed variable
                     use the array  p  as temporary work space
                     */
-                    --(*nfree);
-                    kactiv[*nactiv + 1] = jadd;
+                    --(nfree);
+                    KACTV[nactiv ] = jadd;
                     int nhess_conv_c = nhess;
                     if (orthog == 0)
                     {
@@ -5611,10 +5614,11 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                         fixed (double* pRLAM = RLAM)
                         fixed (double* pAP = AP)
                         fixed (double* pWRK = WRK)
-                        fixed (double* pobj = objqp)
-                            dqpgrad(3, n, *nactiv, *nfree, &nhess_conv, nq,
-                                *nrowh, *ncolh, jadd, &kactiv[1], &kfree[1], alfa, pobj,
-                                &pQTG[*nfree], gtp, &cvec[1], hess, pPX, pQTG, &
+                        
+            fixed(int*pkact=KACTV)
+                            dqpgrad(3, n, nactiv, nfree, &nhess_conv, nq,
+                                nrowh, ncolh, jadd, pkact, &kfree[1], alfa,ref objqp,
+                                &pQTG[nfree], gtp, &cvec[1], hess, pPX, pQTG, &
                                 scale[1], &x[1], pZY, pWRK, pPX);
                         nhess = nhess_conv_c;
                     }
@@ -5622,8 +5626,8 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 else
                 {
                     /*add a general linear constraint*/
-                    ++(*nactiv);
-                    kactiv[*nactiv] = iadd;
+                    ++(nactiv);
+                    KACTV[nactiv-1] = iadd;
                 }
 
                 /*
@@ -5643,7 +5647,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                     */
                     fixed (double* pRLAM = RLAM)
                         dqpcolr(&nocurv, &posdef, &renewr, n, &ncolr,
-                            nfree, nrowh, ncolh, &nhess, &
+                            &nfree, &nrowh, &ncolh, &nhess, &
                             kfree[1], &cslast, &snlast, &drmax, &emax, &hsize, &rdlast,
                             hess, &scale[1], pRLAM);
                 }
@@ -5651,17 +5655,17 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             }
 
 
-            *inform = i;
+            inform = i;
             /*PRINT FULL SOLUTION*/
             msg = msglvl;
-            if (msg >= 1) wrexit(lprob, i, *iter);
+            if (msg >= 1) wrexit(lprob, i, iter);
             fixed (int* pistate = ISTATE)
-                if (i > 0) dgetlamd(lprob, n, *nactiv, ncolz, *nfree,
+                if (i > 0) dgetlamd(lprob, n, nactiv, ncolz, nfree,
                          NROWRT, &jsmlst, &ksmlst, &smllst, pistate, a);
             fixed (double* pRLAM = RLAM)
             fixed (int* pistate = ISTATE)
-                dprtsol(*nfree, n, *nclin, ncnln, *nctotl,
-                    *nactiv, pistate, a,
+                dprtsol(nfree, n, nclin, ncnln, nctotl,
+                    nactiv, pistate, a,
                     &bl[1], &bu[1], &x[1], &clamda[1], pRLAM, &x[1]);
         }
         public unsafe static int dqpcrsh(int n, int ncolz, int nfree, int* nhess, int Nq, int nrowh, int ncolh, int Nrowrt, int* kfree, double* hsize, double* hess, double* rt, double* scale, double* zzy, double* hz1, double* wrk)
@@ -5823,7 +5827,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
         }
         public unsafe static short dqpgrad(short mode, int n, int nactiv, int nfree,
                 int* nhess, int Nq, int nrowh, int ncolh, int jadd,
-                int* kactiv, int* kfree, double alfa, double* objqp, double* gfixed, double gtp,
+                int* kactiv, int* kfree, double alfa, ref double objqp, double* gfixed, double gtp,
                 double* cvec, double* hess, double* p, double* qtg, double* scale, double* x, double* zy,
                 double* wrk1, double* wrk2)
         {
@@ -5863,7 +5867,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                     BlasLike.dcopyvec(n, &x[1], &wrk1[1]);
                     if (scldqp) Factorise.ddmxmulv(n, &scale[1], 1, &wrk1[1], 1);
                     qphess(n, nrowh, ncolh, jthcol, hess, &wrk1[1], &qtg[1]);
-                    *objqp = 0.5 * BlasLike.ddotvec(n, &qtg[1], &wrk1[1]) + BlasLike.ddotvec(n, &cvec[1], &wrk1[1]);
+                    objqp = 0.5 * BlasLike.ddotvec(n, &qtg[1], &wrk1[1]) + BlasLike.ddotvec(n, &cvec[1], &wrk1[1]);
                     BlasLike.daxpy(n, 1, &cvec[1], 1, &qtg[1], 1);
                     if (scldqp) Factorise.ddmxmulv(n, &scale[1], 1, &qtg[1], 1);
                     /*COMPUTE Q(FREE)(T)(G(FREE) & G(FIXED).  discard ELEMENTS OF G(FREE)*/
@@ -5884,7 +5888,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                         /*THE STEP  ALFA  DOES NOT DECREASE THE OBJECTIVE FUNCTION. */
                         //			AddLog((char*)"Gone up by %-.10e baby\n",deltaf);
                         return -1;
-                    *objqp += deltaf;
+                    objqp += deltaf;
                     /*UPDATE QTG.  USE P  AS TEMPORARY WORK SPACE*/
                     dzyprod(6, n, nactiv, 0, nfree, Nq, kactiv + 1, kfree + 1,
                     wrk1 + 1, wrk2 + 1);
@@ -6240,7 +6244,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             }
             Console.Write("\n");
         }
-        public unsafe static short LPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] objective, int[] iter)
+        public unsafe static short LPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc,ref double objective,ref int iter)
         {
             var lp = 1;
             var itmax = (short)20000;
@@ -6248,7 +6252,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             var nclin = m;
             var nctotl = n + m;
             var nrowa = m;
-            double[] obj = { 1e10 };
+            double obj =  1e10 ;
             var featolv = 1e-8;
             int cold = 1;
             short msglvl = -1000;
@@ -6267,12 +6271,12 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             short ifail = 89;
             short back;
             back = dqpsol(itmax, msglvl, n, m, n + m, m,
-      n + n, 1, cold, lp, orthog,
-       iter, obj, n + n, lwrk, ifail);
-            objective[0] = obj[0];
+      n + n, 1, cold, lp, orthog,ref
+       iter,ref obj, n + n, lwrk, ifail);
+            objective = obj;
             return back;
         }
-        public unsafe static short QPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] QQ, double[] objective, int[] iter)
+        public unsafe static short QPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] QQ,ref double objective,ref int iter)
         {
             var lp = 0;
             var itmax = (short)20000;
@@ -6280,7 +6284,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             var nclin = m;
             var nctotl = n + m;
             var nrowa = m;
-            double[] obj = { 1e10 };
+            double obj =  1e10 ;
             var featolv = 1e-8;
             int cold = 1;
             short msglvl = -1000;
@@ -6300,9 +6304,9 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             W = ww;
             Q = QQ;
             back = dqpsol(itmax, msglvl, n, m, n + m, m,
-      n + n, 1, cold, lp, orthog,
-       iter, obj, n + n, lwrk, ifail);
-            objective[0] = obj[0];
+      n + n, 1, cold, lp, orthog,ref
+       iter, ref obj, n + n, lwrk, ifail);
+            objective = obj;
             return back;
         }
     }

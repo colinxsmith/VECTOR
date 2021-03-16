@@ -697,8 +697,8 @@ namespace BlasLikeTest
                 }
             }
             BlasLike.dscalvec(hess.Length, 1e3, hess);
-            var obj = new double[1];
-            var iter = new int[1];
+            var obj = -0.9;
+            var iter = 0;
             short back;
             var implied = new double[n];
             for (int i = 0; i < 2; ++i)
@@ -708,19 +708,19 @@ namespace BlasLikeTest
                     BlasLike.dsetvec(x.Length, 1.0 / n, x);
                     var budget = 1.0;
                     var constraintVal = new double[m];
-                    back = ActiveSet.Optimise.LPopt(n, m, x, L, U, A, c, obj, iter);
+                    back = ActiveSet.Optimise.LPopt(n, m, x, L, U, A, c,ref obj,ref iter );
                     Factorise.dmxmulv(m, n, A, x, constraintVal);
-                    Assert.IsTrue(back == 0 && Math.Abs(constraintVal[0] - budget) < BlasLike.lm_eps * 16, $"LP back is {back} {BlasLike.ddotvec(n, x, c)} {obj[0]} {iter[0]} {constraintVal[1]}");
+                    Assert.IsTrue(back == 0 && Math.Abs(constraintVal[0] - budget) < BlasLike.lm_eps * 16, $"LP back is {back} {BlasLike.ddotvec(n, x, c)} {obj} {iter} {constraintVal[1]}");
                 }
                 else
                 {
                     BlasLike.dsetvec(x.Length, 1.0 / n, x);
                     var budget = 1.0;
-                    back = ActiveSet.Optimise.QPopt(n, m, x, L, U, A, c, hess, obj, iter);
+                    back = ActiveSet.Optimise.QPopt(n, m, x, L, U, A, c, hess,ref obj,ref iter);
                     Factorise.dsmxmulv(n, hess, x, implied);
                     var constraintVal = new double[m];
                     Factorise.dmxmulv(m, n, A, x, constraintVal);
-                    Assert.IsTrue(back == 0 && Math.Abs(constraintVal[0] - budget) < BlasLike.lm_eps * 16, $"QP back is {back} {BlasLike.ddotvec(n, x, c) + 0.5 * BlasLike.ddotvec(n, implied, x)} {obj[0]} {iter[0]} {constraintVal[1]}");
+                    Assert.IsTrue(back == 0 && Math.Abs(constraintVal[0] - budget) < BlasLike.lm_eps * 16, $"QP back is {back} {BlasLike.ddotvec(n, x, c) + 0.5 * BlasLike.ddotvec(n, implied, x)} {obj} {iter} {constraintVal[1]}");
                 }
             }
         }
