@@ -18,9 +18,9 @@ namespace ActiveSet
         public static double AccuracyModify = -1.0;
         public static int msg;
         public static bool scldqp;
-        public static int[] istate;
-        public static double[] lambda;
-        public static double[] featol;
+        public static int[] ISTATE;
+        public static double[] LAMBDA;
+        public static double[] FEATOL;
         public static int[] KACTV;
         public static int[] KFREE;
         public static int istart;
@@ -177,7 +177,7 @@ namespace ActiveSet
             modfyg = true;
             nullr = true;
             unitpg = false;
-            BlasLike.dxminmax(*nctotl, featol, 1, feamax, feamin);
+            BlasLike.dxminmax(*nctotl, FEATOL, 1, feamax, feamin);
             /*
             ---------------------------------------------------------------------
             given an initial point	x, compute the following....
@@ -198,7 +198,7 @@ namespace ActiveSet
             fixed (double* pPX = PX)
             fixed (double* pRLAM = RLAM)
             fixed (double* pWRK = WRK)
-            fixed (double* plambda = lambda)
+            fixed (double* plambda = LAMBDA)
             fixed (double* pLWRK = LWRK)
             fixed (double* px = W)
             fixed (double* pa = A)
@@ -206,7 +206,7 @@ namespace ActiveSet
             fixed (double* pU = U)
             fixed (int* pkfree = KFREE)
             fixed (int* pkactiv = KACTV)
-            fixed (int* pistate = istate)
+            fixed (int* pistate = ISTATE)
                 dlpcrsh(orthog, vertex, lcrash, n, nclin, nctotl,
          NROWRT, NCOLRT, nactiv, &ncolz, nfree, pistate,
         pkactiv, pkfree);
@@ -221,8 +221,8 @@ namespace ActiveSet
             fixed (double* pa = A)
             fixed (double* pL = L)
             fixed (double* pU = U)
-            fixed (double* pFeatol = featol)
-            fixed (int* pistate = istate)
+            fixed (double* pFeatol = FEATOL)
+            fixed (int* pistate = ISTATE)
                 dlpgrad(lp, n, *nctotl, feamin[0], numinf, &suminf, pistate, pa, pL, pU, pc, pFeatol, pQTG,
                     px);
             fixed (double* pANORM = ANORM)
@@ -285,7 +285,7 @@ namespace ActiveSet
             fixed (double* px = W)
             fixed (double* pa = A)
             fixed (int* pkfree = KFREE)
-            fixed (int* pistate = istate)
+            fixed (int* pistate = ISTATE)
                 dlpprt(lp, NROWRT, n, *nclin, *nfree, isdel, *nactiv,
                     ncolz, *iter, jadd, jdel, alfa, condt, *numinf,
                     suminf, objlp, pistate, pkfree, pa, pRT, px, pWRK, pAP);
@@ -308,7 +308,7 @@ namespace ActiveSet
             /* --------------------------------------------------------------------- 
             */
             fixed (double* pa = A)
-            fixed (int* pistate = istate)
+            fixed (int* pistate = ISTATE)
                 dgetlamd(lprob, n, *nactiv, ncolz, *nfree, NROWRT,
                     &jsmlst, &ksmlst, &smllst, pistate, pa);
             /* --------------------------------------------------------------------- 
@@ -334,8 +334,8 @@ namespace ActiveSet
             /*     PREPARE TO DELETE THE CONSTRAINT WITH INDEX  JSMLST. */
             jdel = jsmlst;
             kdel = ksmlst;
-            isdel = istate[jdel - 1];
-            istate[jdel - 1] = 0;
+            isdel = ISTATE[jdel - 1];
+            ISTATE[jdel - 1] = 0;
             goto L80;
         /* --------------------------------------------------------------------- 
         */
@@ -364,9 +364,9 @@ namespace ActiveSet
             fixed (double* pPX = PX)
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
-            fixed (double* pFeatol = featol)
+            fixed (double* pFeatol = FEATOL)
             fixed (int* pkactiv = KACTV)
-            fixed (int* pistate = istate)
+            fixed (int* pistate = ISTATE)
                 dlpbgst(n, *nactiv, *nfree, &jbigst, &kbigst, pistate, pkactiv, dinky, feamin[0],
                     &trulam, pFeatol, pRLAM);
             if (jbigst == 0)
@@ -375,10 +375,10 @@ namespace ActiveSet
             }
             jdel = jbigst;
             kdel = kbigst;
-            isdel = istate[jbigst - 1];
+            isdel = ISTATE[jbigst - 1];
 
             was_is = trulam > 0 ? -2 : -1;
-            istate[jbigst - 1] = was_is;
+            ISTATE[jbigst - 1] = was_is;
             firstv = true;
         /* --------------------------------------------------------------------- 
         */
@@ -427,7 +427,7 @@ namespace ActiveSet
                 msg = msglvl;
             }
             fixed (int* pkfree = KFREE)
-            fixed (int* pistate = istate)
+            fixed (int* pistate = ISTATE)
                 dfindp(nullr, &unitpg, n, nclin,
                     NROWRT, &ncolz, &ncolz, nfree, pistate, pkfree,
                     delete_, &gtp, &pnorm, &rdlast);
@@ -450,13 +450,13 @@ namespace ActiveSet
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
             fixed (double* pWRK = WRK)
-            fixed (double* plambda = lambda)
+            fixed (double* plambda = LAMBDA)
             fixed (double* pLWRK = LWRK)
             fixed (double* px = W)
             fixed (double* pL = L)
             fixed (double* pU = U)
-            fixed (double* pFeatol = featol)
-            fixed (int* pistate = istate)
+            fixed (double* pFeatol = FEATOL)
+            fixed (int* pistate = ISTATE)
                 *inform = dbndalf(firstv, &hitlow, pistate, &jadd, n,
         *nctotl, *numinf, &alfa, &palfa, &atphit, &bigalf,
         &pnorm, pANORM, pAP, pLWRK, pL, pU, pFeatol, pPX, px);
@@ -499,7 +499,7 @@ namespace ActiveSet
             fixed (double* pPX = PX)
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
-            fixed (double* plambda = lambda)
+            fixed (double* plambda = LAMBDA)
             fixed (double* pLWRK = LWRK)
                 if (*nclin > 0)
                     BlasLike.daxpy(*nclin, alfa, pAP, 1, pLWRK, 1);
@@ -523,8 +523,8 @@ namespace ActiveSet
             fixed (double* pa = A)
             fixed (double* pL = L)
             fixed (double* pU = U)
-            fixed (double* pFeatol = featol)
-            fixed (int* pistate = istate)
+            fixed (double* pFeatol = FEATOL)
+            fixed (int* pistate = ISTATE)
                 dlpgrad(lp, n, *nctotl, feamin[0], numinf, &suminf, pistate
                     , pa, pL, pU, pc, pFeatol, pQTG,
                     px);
@@ -564,15 +564,15 @@ namespace ActiveSet
             }
             if (hitlow != 0)
             {
-                istate[jadd - 1] = 1;
+                ISTATE[jadd - 1] = 1;
             }
             if (hitlow == 0)
             {
-                istate[jadd - 1] = 2;
+                ISTATE[jadd - 1] = 2;
             }
             if (L[jadd - 1] == U[jadd - 1])
             {
-                istate[jadd - 1] = 3;
+                ISTATE[jadd - 1] = 3;
             }
             /*     IF A BOUND IS TO BE ADDED, MOVE  X  EXACTLY ONTO IT, EXCEPT WHEN */
 
@@ -685,7 +685,7 @@ namespace ActiveSet
                 wrexit("LP", *inform, *iter);
             }
             fixed (double* pa = A)
-            fixed (int* pistate = istate)
+            fixed (int* pistate = ISTATE)
                 if (*inform > 0) dgetlamd(lprob, n, *nactiv, ncolz, *nfree,
                     NROWRT, &jsmlst, &ksmlst, &smllst, pistate, pa);
             fixed (double* pANORM = ANORM)
@@ -708,8 +708,8 @@ namespace ActiveSet
             fixed (double* pa = A)
             fixed (double* pL = L)
             fixed (double* pU = U)
-            fixed (double* pLanbda = lambda)
-            fixed (int* pistate = istate)
+            fixed (double* pLanbda = LAMBDA)
+            fixed (int* pistate = ISTATE)
                 dprtsol(*nfree, n, *nclin, ncnln, *nctotl,
                     *nactiv, pistate, pa,
                     pL, pU, pc, pLanbda, pRLAM, px);
@@ -2857,8 +2857,9 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                  elimination we use  elm( ..., zero, zero )   to perform an interchange
             */
             fixed (double* pWRK = WRK)
-                detagen(ncolz1, ref WRK[ncolz - 1], pWRK, 1, ref iswap, ref itrans)
-                    ;
+                detagen(ncolz1, ref WRK[ncolz - 1], pWRK, 1, ref iswap, ref itrans);
+             //   detagen(ncolz1, ref WRK[ncolz - 1], WRK, 1, ref iswap, ref itrans);
+                    
             if (iswap > 0)
                 fixed (double* pZY = ZY)
                     delm(orthog, nfree, &pZY[ncolz * zy_dim1 + 1 - zy_offset], 1, &pZY[
@@ -4311,7 +4312,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             if (nzero < n) *itrans = 1;
         }
 
-        public unsafe static void detagen(int n, ref double alpha, double* x, int incx, ref int iswap, ref int itrans, int xstart = 0)
+        public unsafe static void detagen(int n, ref double alpha, double* x, int incx, ref int iswap, ref int itrans)
         {
             /*
                 detagen  generates an elimination transformation  e  such that
@@ -4350,7 +4351,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             xmax = 0;
 
             for (v = x, vlim = x + n * incx; v != vlim; v += incx)
-                if (xmax < (axi = Math.Abs(*v - xstart)))
+                if (xmax < (axi = Math.Abs(*v)))
                 {
                     xmax = axi;
                     imax = (int)(v - x);
@@ -4363,8 +4364,8 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             if (absalf < xmax)
             {
                 iswap = imax + 1;
-                xmax = x[imax - xstart];
-                x[imax - xstart] = alpha;
+                xmax = x[imax];
+                x[imax] = alpha;
                 alpha = xmax;
             }
 
@@ -4375,12 +4376,89 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             tol = Math.Abs(alpha) * BlasLike.lm_eps;
             nzero = 0;
             for (v = x; v != vlim; v += incx)
-                if (Math.Abs(*v - xstart) > tol) *v = xstart - (*v - xstart) / alpha;
+                if (Math.Abs(*v) > tol) *v = -*v / alpha;
                 else
                 {
-                    *v = xstart;
+                    *v = 0;
                     ++nzero;
                 }
+            /*z is zero only if nzero=n*/
+            if (nzero < n) itrans = 1;
+        }
+
+        public static void detagen(int n, ref double alpha, double[] x, int incx, ref int iswap, ref int itrans, int xstart = 0)
+        {
+            /*
+                detagen  generates an elimination transformation  e  such that
+                    e ( alpha )  =  ( delta ) ,
+                      (   x   )     (   0   )
+
+                where  e  has the form
+                    e  =	( 1    ) p
+                        ( z  i )
+
+                for some n-vector  z  and permutation matrix  p  of order  n + 1.
+                in certain circumstances ( x  very small in absolute terms or
+                x very small compared to  alpha),  e  will be the identity matrix.
+                detagen  will then leave  alpha  and  x  unaltered, and will return
+                iswap = 0,  itrans = 0
+
+                more generally,  iswap  and  itrans  indicate the various possible
+                forms of  p  and  z  as follows
+                    if  iswap  =  0,  p = i
+                    if  iswap  gt 0,  p  interchanges  alpha  and  x(iswap)
+                    if  itrans =  0,  z = 0  and the transformation is just  e = p
+                    if  itrans gt 0,  z  is nonzero.  its elements are returned in  x.
+
+                detagen  guards against overflow and underflow
+                it is assumed that  flmin < epsmch**2 (i.e. rtmin < epsmch).
+            */
+            int imax = 1000000000;
+            int nzero;
+            double xmax, absalf, tol, axi;
+            // double* v, vlim;
+
+            iswap = 0;
+            itrans = 0;
+            if (n < 1) return;
+            absalf = Math.Abs(alpha);
+            xmax = 0;
+
+            for (int iv = xstart, ivlim = iv + n * incx/*v = x, vlim = x + n * incx*/; iv != ivlim/*v != vlim*/; iv += incx/*v += incx*/)
+            {
+                if (xmax < (axi = Math.Abs(x[iv])))
+                {
+                    xmax = axi;
+                    imax = (iv - xstart);
+                }
+            }
+            /* exit if  x  is very small */
+            if (xmax <= BlasLike.lm_rootmin) return;
+
+            /* see if an interchange is needed for stability */
+            if (absalf < xmax)
+            {
+                iswap = imax + 1;
+                xmax = x[imax + xstart];
+                x[imax + xstart] = alpha;
+                alpha = xmax;
+            }
+
+            /*
+                 form the multipliers in  x.  they will be no greater than one
+                 in magnitude.  change negligible multipliers to zero
+            */
+            tol = Math.Abs(alpha) * BlasLike.lm_eps;
+            nzero = 0;
+            for (int iv = xstart, ivlim = iv + n * incx/*v = x, vlim = x + n * incx*/; iv != ivlim/*v != vlim*/; iv += incx/*v += incx*/)
+            {
+                if (Math.Abs(x[iv]) > tol) x[iv] =  - (x[iv]) / alpha;
+                else
+                {
+                    x[iv] = 0;
+                    ++nzero;
+                }
+            }
             /*z is zero only if nzero=n*/
             if (nzero < n) itrans = 1;
         }
@@ -4668,7 +4746,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             fixed (double* pc = c)
             fixed (double* pL = L)
             fixed (double* pU = U)
-            fixed (int* pIstate = istate)
+            fixed (int* pIstate = ISTATE)
             fixed (double* pLWRK = LWRK)
                 if (msglvl == 99)
                     dlpdump(n, nclin, nctotl, nrowa, lcrash, lp, minsum,
@@ -4729,8 +4807,8 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 fixed (double* pL = L)
                 fixed (double* pU = U)
                 fixed (double* pQ = Q)
-                fixed (double* plambda = lambda)
-                fixed (double* pfeatol = featol)
+                fixed (double* plambda = LAMBDA)
+                fixed (double* pfeatol = FEATOL)
                 fixed (double* pLWRK = LWRK)
                 fixed (double* pobj = obj)
                     dqpcore(orthog, &inform, &iter_, &itmx, n, &nclin, &nctotl,
@@ -5211,7 +5289,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 fixed (double* pRLAM = RLAM)
                 fixed (double* pAP = AP)
                 fixed (double* pWRK = WRK)
-                fixed (int* pistate = istate)
+                fixed (int* pistate = ISTATE)
                 fixed (double* pobj = objqp)
                     dqpprt(orthog, isdel, *iter, jadd, jdel, *nactiv, ncolz, *nfree,
                         n, *nclin, nhess,
@@ -5237,7 +5315,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                         jdel = -(ncolr + 1);
                         if (ncolr >= ncolz)
                         {
-                            fixed (int* pistate = istate)
+                            fixed (int* pistate = ISTATE)
                                 dgetlamd(lprob, n, *nactiv, ncolz, *nfree, NROWRT,
                                     &jsmlst, &ksmlst, &smllst, pistate, a);
 
@@ -5263,9 +5341,9 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                             jdel = jsmlst;
                             jdsave = jsmlst;
                             kdel = ksmlst;
-                            isdel = istate[jdel - 1];
+                            isdel = ISTATE[jdel - 1];
                             issave = isdel;
-                            istate[jdel - 1] = 0;
+                            ISTATE[jdel - 1] = 0;
 
                             /*update the TQ factorization of the matrix of constraints in the working set*/
 
@@ -5336,7 +5414,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 fixed (double* pRLAM = RLAM)
                 fixed (double* pAP = AP)
                 fixed (double* pWRK = WRK)
-                fixed (int* pistate = istate)
+                fixed (int* pistate = ISTATE)
                     dfindp(nullr, &unitpg, n, nclin,
                         NROWRT, &ncolr, &ncolz, nfree, pistate, &kfree[1],
                         negligible != 0, &gtp, &pnorm, &rdlast);
@@ -5373,9 +5451,9 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 fixed (double* pRLAM = RLAM)
                 fixed (double* pAP = AP)
                 fixed (double* pWRK = WRK)
-                fixed (double* plambda = lambda)
+                fixed (double* plambda = LAMBDA)
                 fixed (double* pLWRK = LWRK)
-                fixed (int* pistate = istate)
+                fixed (int* pistate = ISTATE)
                     dbndalf(firstv != 0, &hitlow, pistate, &jadd, n,
         *nctotl, numinf, &alfhit, &palfa, &atphit, &bigalf,
          &pnorm, pANORM, pAP, pLWRK, &bl[1], &bu[1], &
@@ -5471,9 +5549,9 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 if (uncon) continue;
 
                 /*add a constraint to the working set. update  istate*/
-                if (hitlow != 0) istate[jadd - 1] = 1;
-                else istate[jadd - 1] = 2;
-                if (bl[jadd] == bu[jadd]) istate[jadd - 1] = 3;
+                if (hitlow != 0) ISTATE[jadd - 1] = 1;
+                else ISTATE[jadd - 1] = 2;
+                if (bl[jadd] == bu[jadd]) ISTATE[jadd - 1] = 3;
 
                 /*
                 if a bound is to be added, move x exactly onto it, except when
@@ -5577,11 +5655,11 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             /*PRINT FULL SOLUTION*/
             msg = msglvl;
             if (msg >= 1) wrexit(lprob, i, *iter);
-            fixed (int* pistate = istate)
+            fixed (int* pistate = ISTATE)
                 if (i > 0) dgetlamd(lprob, n, *nactiv, ncolz, *nfree,
                          NROWRT, &jsmlst, &ksmlst, &smllst, pistate, a);
             fixed (double* pRLAM = RLAM)
-            fixed (int* pistate = istate)
+            fixed (int* pistate = ISTATE)
                 dprtsol(*nfree, n, *nclin, ncnln, *nctotl,
                     *nactiv, pistate, a,
                     &bl[1], &bu[1], &x[1], &clamda[1], pRLAM, &x[1]);
@@ -6174,18 +6252,18 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             var featolv = 1e-8;
             int cold = 1;
             short msglvl = -1000;
-            istate = new int[n + m + n + n];
+            ISTATE = new int[n + m + n + n];
             var lwrk = 2 * (n * (n + 2) + m) + m;
-            lambda = new double[n + m];
-            featol = new double[n + m];
+            LAMBDA = new double[n + m];
+            FEATOL = new double[n + m];
             LWRK = new double[lwrk];
             A = AA;
             L = LL;
             U = UU;
             c = cc;
             W = ww;
-            BlasLike.dsetvec(n + m, 0, lambda);
-            BlasLike.dsetvec(n + m, featolv, featol);
+            BlasLike.dsetvec(n + m, 0, LAMBDA);
+            BlasLike.dsetvec(n + m, featolv, FEATOL);
             short ifail = 89;
             short back;
             back = dqpsol(itmax, msglvl, n, m, n + m, m,
@@ -6206,13 +6284,13 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             var featolv = 1e-8;
             int cold = 1;
             short msglvl = -1000;
-            istate = new int[n + m + n + n];
+            ISTATE = new int[n + m + n + n];
             var lwrk = 2 * (n * (n + 2) + m) + m;
-            lambda = new double[n + m];
-            featol = new double[n + m];
+            LAMBDA = new double[n + m];
+            FEATOL = new double[n + m];
             LWRK = new double[lwrk];
-            BlasLike.dsetvec(n + m, 0, lambda);
-            BlasLike.dsetvec(n + m, featolv, featol);
+            BlasLike.dsetvec(n + m, 0, LAMBDA);
+            BlasLike.dsetvec(n + m, featolv, FEATOL);
             short ifail = 89;
             short back;
             A = AA;

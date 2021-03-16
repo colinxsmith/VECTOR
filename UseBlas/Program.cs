@@ -756,6 +756,22 @@ namespace UseBlas
             }
 
             {
+                var n = 5;
+                var alpha = 2.3;
+                double[] x = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+                var iswap = 0;
+                var itrans = 0;
+                fixed (double* xx = x)
+                    ActiveSet.Optimise.detagen(n - 1, ref alpha, xx + 1, 2, ref iswap, ref itrans);
+                foreach (var p in x) Console.WriteLine(p);
+                alpha = 2.3;
+                iswap = 0;
+                itrans = 0;
+                double[] y = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+                ActiveSet.Optimise.detagen(n - 1, ref alpha, y, 2, ref iswap, ref itrans, 1);
+                foreach (var p in x) Console.WriteLine(p);
+            }
+            {
                 var n = 10;
                 var m = 2;
                 var x = new double[n];

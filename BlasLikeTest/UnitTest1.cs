@@ -202,9 +202,9 @@ namespace BlasLikeTest
         {
             double[] a = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
             double s1 = 1;
-            double scale =  s1 ;
-            double sumsq =  0 ;
-            BlasLike.dsssq(a.Length / 2, a, 2,ref scale,ref sumsq);
+            double scale = s1;
+            double sumsq = 0;
+            BlasLike.dsssq(a.Length / 2, a, 2, ref scale, ref sumsq);
             Assert.IsTrue(scale == 9 && sumsq == 2.037037037037037, $"scale is {scale}, sumsq is {sumsq}");
         }
         [TestMethod]
@@ -238,9 +238,9 @@ namespace BlasLikeTest
         public void Test_dsssq3()
         {
             double[] a = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-            double scale =1 ;
-            double sumsq =  0 ;
-            BlasLike.dsssq(a.Length / 2, a, -2,ref scale,ref  sumsq, 1);
+            double scale = 1;
+            double sumsq = 0;
+            BlasLike.dsssq(a.Length / 2, a, -2, ref scale, ref sumsq, 1);
             Assert.IsTrue(scale == 10 && sumsq == 2.2, $"scale is {scale}, sumsq is {sumsq}");
         }
         [TestMethod]
@@ -256,9 +256,9 @@ namespace BlasLikeTest
                 Assert.IsTrue(scale == 10 && sumsq == 3.85, $"scale is {scale}, sumsq is {sumsq}");
             }
             {
-                double scale =  1 ;
-                double sumsq =  0 ;
-                ActiveSet.Optimise.dsssqvec(a.Length, a, ref scale,ref sumsq);
+                double scale = 1;
+                double sumsq = 0;
+                ActiveSet.Optimise.dsssqvec(a.Length, a, ref scale, ref sumsq);
                 Assert.IsTrue(scale == 10 && sumsq == 3.85, $"scale is {scale}, sumsq is {sumsq}");
             }
         }
@@ -310,6 +310,14 @@ namespace BlasLikeTest
             fixed (double* xx = x)
                 BlasLike.detagen(x.Length / 2, &alpha, xx + 1, 2, &iswap, &itrans);
             Assert.IsTrue(alpha == 10 && iswap == 9 && itrans == 1, $"alpha={alpha}, iswap={iswap}, itrans={itrans}, lm_rooteps={BlasLike.lm_rooteps}");
+            double[] y = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+            alpha = 0;
+            int iswap1 = 0;
+            itrans = 0;
+            ActiveSet.Optimise.detagen(x.Length / 2, ref alpha, y, 2, ref iswap1, ref itrans, 1);
+            Assert.IsTrue(alpha == 10 && iswap == 9 && itrans == 1, $"alpha={alpha}, iswap1={iswap1}, itrans={itrans}, lm_rooteps={BlasLike.lm_rooteps}");
+            Assert.IsTrue(x[0] == y[0] && x[1] == y[1] && x[2] == y[2] && x[3] == y[3] && x[4] == y[4] && x[5] == y[5] && x[6] == y[6] && x[7] == y[7] && x[8] == y[8] && x[9] == y[9],
+            $"{x[0]} {x[1]} {x[2]} {x[3]} {x[4]} {x[5]} {x[6]} {x[7]} {x[8]}\n{x[0]} {x[1]} {x[2]} {x[3]} {x[4]} {x[5]} {x[6]} {x[7]} {x[8]} "            );
         }
         [TestMethod]
         public unsafe void Test_dswap()
@@ -654,11 +662,11 @@ namespace BlasLikeTest
             var n = 10;
             var m = 2;
             var x = new double[n];
-                double[] c = { 1, 2, 3, 4, 5, 6, 17, 8, 9, 10 };
-                double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,
+            double[] c = { 1, 2, 3, 4, 5, 6, 17, 8, 9, 10 };
+            double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,
                                0, 0, 1, 1, 1, 0, 0, 0, 0, 0};
-                double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0.1 };
-                double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5 };
+            double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0.1 };
+            double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5 };
             Factorise.dmx_transpose(n, m, A, A);
             double[] hess = new double[n * (n + 1) / 2];
             var tdata = 2 * n;
