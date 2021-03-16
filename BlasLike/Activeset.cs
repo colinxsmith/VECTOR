@@ -1849,7 +1849,7 @@ namespace ActiveSet
                     //  if (UNITQ) BlasLike.dcopyvec(lenv, &v[j1], &wrk[j1]);
                     if (UNITQ) BlasLike.dcopyvec(lenv, v, wrk, j1 + vst, j1 + wst);
                     else for (j = j1; j <= j2; ++j)
-                            if (v[j+vst] != 0)
+                            if (v[j + vst] != 0)
                                 //fixed (double* pZY = ZY)
                                 // BlasLike.daxpy(nfree, v[j], &pZY[j * nq + 1 - zy_offset], 1, &wrk[1], 1);
                                 BlasLike.daxpyvec(nfree, v[j], ZY, wrk, j * nq + 1 - zy_offset, 1 + wst);
@@ -1859,8 +1859,8 @@ namespace ActiveSet
                 if (nfree > 0)
                     for (k = 1; k <= (int)nfree; ++k)
                     {
-                        j = kfree[k+kfr];
-                        v[j-vst] = wrk[k+wst];
+                        j = kfree[k + kfr];
+                        v[j - vst] = wrk[k + wst];
                     }
                 /*COPY  WRK(FIXED)  INTO THE APPROPRIATE PARTS OF  V*/
                 if (mode == 1 || nfixed == 0) return;
@@ -1868,8 +1868,8 @@ namespace ActiveSet
                 {
                     kw = nfree + l;
                     ka = nactiv + l;
-                    j = kactiv[ka+kc];
-                    v[j+vst] = wrk[kw+wst];
+                    j = kactiv[ka + kc];
+                    v[j + vst] = wrk[kw + wst];
                 }
             }
             else
@@ -1883,23 +1883,23 @@ namespace ActiveSet
                     {
                         kw = nfree + l;
                         ka = nactiv + l;
-                        j = kactiv[ka+kc];
-                        wrk[kw+wst] = v[j+vst];
+                        j = kactiv[ka + kc];
+                        wrk[kw + wst] = v[j + vst];
                     }
                 /*PUT THE FREE  COMPONENTS OF  V  INTO THE BEGINNING OF  WRK. */
                 if (nfree != 0)
                 {
                     for (k = 1; k <= (int)nfree; ++k)
                     {
-                        j = kfree[k+kfr];
-                        wrk[k+wst] = v[j+vst];
+                        j = kfree[k + kfr];
+                        wrk[k + wst] = v[j + vst];
                     }
                     /*SET  V  =  RELEVANT PART OF  ZY(T) * WRK*/
                     if (lenv > 0)
                     {
                         if (UNITQ) BlasLike.dcopyvec(lenv, wrk, v, j1 + wst, j1 + vst);
                         else for (j = j1; j <= j2; ++j)
-                                v[j+vst] = BlasLike.ddotvec(nfree, ZY, wrk, j * nq + 1 - zy_offset, 1 + vst);
+                                v[j + vst] = BlasLike.ddotvec(nfree, ZY, wrk, j * nq + 1 - zy_offset, 1 + vst);
                     }
                 }
                 /*COPY THE FIXED COMPONENTS OF WRK INTO THE END OF  V*/
@@ -2725,7 +2725,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 // BlasLike.dcopy(*nfree, &pZY[*ifix + zy_dim1 - zy_offset], nq, &wrk1[1], 1);
                 BlasLike.dcopy(nfree, ZY, nq, WRK, 1, ifix + zy_dim1 - zy_offset);
             if (ifix == nfree) goto L180;
-            kfree[ifix+kfr] = kfree[nfree+kfr];
+            kfree[ifix + kfr] = kfree[nfree + kfr];
             fixed (double* pZY = ZY)
                 // BlasLike.dcopy(*nfree, &pZY[*nfree + zy_dim1 - zy_offset], nq, &pZY[*ifix + zy_dim1 - zy_offset], nq);
                 BlasLike.dcopy(nfree, ZY, nq, ZY, nq, nfree + zy_dim1 - zy_offset, ifix + zy_dim1 - zy_offset);
@@ -2738,7 +2738,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
         */
         L20:
             BlasLike.dzerovec(nfree, WRK);
-            WRK[ifix-1] = 1.0;
+            WRK[ifix - 1] = 1.0;
             if (ifix == nfree)
             {
                 goto L180;
@@ -2746,7 +2746,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             i__1 = nfree1;
             for (i = ifix; i <= i__1; ++i)
             {
-                kfree[i+kfr] = kfree[i + 1+kfr];
+                kfree[i + kfr] = kfree[i + 1 + kfr];
                 /* L40: */
             }
             goto L180;
@@ -2857,7 +2857,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                  elimination we use  elm( ..., zero, zero )   to perform an interchange
             */
             fixed (double* pWRK = WRK)
-                detagen(ncolz1, ref WRK[ncolz-1], pWRK, 1, ref iswap, ref itrans)
+                detagen(ncolz1, ref WRK[ncolz - 1], pWRK, 1, ref iswap, ref itrans)
                     ;
             if (iswap > 0)
                 fixed (double* pZY = ZY)
@@ -2870,7 +2870,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             i__1 = ncolz1;
             for (j = 1; j <= i__1; ++j)
             {
-                d = WRK[j-1];
+                d = WRK[j - 1];
                 if (d == 0)
                 {
                     goto L200;
@@ -2907,13 +2907,13 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
         */
 
         L240:
-            delta = WRK[ncolz-1];
+            delta = WRK[ncolz - 1];
             var c__1 = 1;
             var lm_eps = BlasLike.lm_eps;
             dhhrflctgen(ncolz1, ref delta, WRK, c__1, lm_eps, ref beta);
             if (beta != 0)
             {
-                WRK[ncolz-1] = beta;
+                WRK[ncolz - 1] = beta;
             }
             if (beta <= 0)
             {
@@ -2923,7 +2923,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             i__1 = ncolz;
             for (j = 1; j <= i__1; ++j)
             {
-                d = WRK[j-1];
+                d = WRK[j - 1];
                 if (d == 0)
                 {
                     goto L260;
@@ -2938,7 +2938,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             i__1 = ncolz;
             for (j = 1; j <= i__1; ++j)
             {
-                d = WRK[j-1];
+                d = WRK[j - 1];
                 if (d == 0)
                 {
                     goto L280;
@@ -2946,7 +2946,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 d = -d / beta;
                 //fixed (double* pZY = ZY)
                 //  BlasLike.daxpy(nfree, d, wrk2[1], 1, &pZY[j * zy_dim1 + 1 - zy_offset], 1);
-                BlasLike.daxpy(nfree, d, wrk2, 1, ZY, 1, 1+wk2, j * zy_dim1 + 1 - zy_offset);
+                BlasLike.daxpy(nfree, d, wrk2, 1, ZY, 1, 1 + wk2, j * zy_dim1 + 1 - zy_offset);
             L280:
                 ;
             }
@@ -2958,7 +2958,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             d = -d / beta;
             BlasLike.daxpyvec(ncolz, d, WRK, QTG);
         L300:
-            WRK[ncolz-1] = delta;
+            WRK[ncolz - 1] = delta;
             goto L360;
 
         /*r  has to be modified.  use a sequence of 2*2 transformations*/
@@ -2972,8 +2972,8 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 then apply it to the relevant columns of  z  and  grad(t)q.
                 */
                 kp1 = k + 1;
-                //     delmgen(orthog, WRK[kp1], WRK[k], cs, sn);
-                delmgen(orthog, ref WRK[kp1], ref WRK[k], ref cs, ref sn);
+                //     delmgen(orthog, WRK[kp1-1], WRK[k-1], cs, sn);
+                delmgen(orthog, ref WRK[kp1 - 1], ref WRK[k - 1], ref cs, ref sn);
                 if (!UNITQ)
                 {
                     fixed (double* pZY = ZY)
@@ -3035,7 +3035,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             for (k = ncolz; k <= i__1; ++k)
             {
                 // delmgen(orthog, &wrk1[k + 1], &wrk1[k], &cs, &sn);
-                delmgen(orthog, ref WRK[k + 1-1], ref WRK[k-1], ref cs, ref sn);
+                delmgen(orthog, ref WRK[k + 1 - 1], ref WRK[k - 1], ref cs, ref sn);
                 fixed (double* pZY = ZY)
                     delm(orthog, nfree, &pZY[(k + 1) * zy_dim1 + 1 - zy_offset], 1, &pZY[k *
                         zy_dim1 + 1 - zy_offset], 1, cs, sn);
@@ -4495,7 +4495,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 }
                 ssq = 1;
                 scale = 0;
-                BlasLike.dsssq(n, x, incx, ref scale, ref ssq,1+ xstart);
+                BlasLike.dsssq(n, x, incx, ref scale, ref ssq, 1 + xstart);
                 if (scale == 0 || scale < tl)
                 {
                     z1 = 0;
