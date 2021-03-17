@@ -60,7 +60,7 @@ namespace ActiveSet
             timebase = t;
             return timeaquired;
         }
-        public unsafe static void dlpcore(bool lp, int minsum, bool orthog, int vertex, int* inform, int* iter,
+        public unsafe static void dlpcore(bool lp, int minsum, bool orthog, int vertex, ref int inform, ref int iter,
                 int itmax, byte lcrash, int n, int nclin, int* nctotl, int* nactiv,
                 ref int nfree, ref int numinf, ref double obj, double[] xnorm)
         {
@@ -106,7 +106,7 @@ namespace ActiveSet
             bool stall;
             double wgfix = 1e9;
             int ncolz = 89;
-            double pnorm;
+            double pnorm = 1e23;
             bool nullr;
             //    int nrowj;
             int nclin0, kb;
@@ -118,7 +118,7 @@ namespace ActiveSet
             int jbigst, kbigst;
             double tolact;
             bool modfyg;
-            double condmx, atphit, cslast = 46, rdlast, objsiz, snlast = 76, suminf = 12,
+            double condmx, atphit, cslast = 46, rdlast = 1e12, objsiz, snlast = 76, suminf = 12,
                  trulam;
             int idummy, msglvl;
             int jsmlst, ksmlst;
@@ -130,7 +130,7 @@ namespace ActiveSet
             int hitlow;
             bool unitpg;
             double bnd;
-            double gtp;
+            double gtp = 1e45;
 
             //  --w;
             // --iw;
@@ -152,8 +152,8 @@ namespace ActiveSet
             ncnln = 0;
             nclin0 = Math.Max(nclin, 1);
             //    nrowj = 1;
-            *inform = 0;
-            *iter = 0;
+            inform = 0;
+            iter = 0;
             jadd = 0;
             jdel = 0;
             ndel = 0;
@@ -161,7 +161,7 @@ namespace ActiveSet
             numinf = 1;
             msglvl = msg;
             msg = 0;
-            if (*iter >= istart)
+            if (iter >= istart)
             {
                 msg = msglvl;
             }
@@ -233,8 +233,8 @@ namespace ActiveSet
             fixed (double* pWRK = WRK)
             fixed (int* pkfree = KFREE)
             fixed (int* pkactiv = KACTV)
-                dzyprod(6, n, *nactiv, ncolz, nfree, nq, pkactiv, pkfree
-                    , pQTG, pWRK);
+                dzyprod(6, n, *nactiv, ncolz, nfree, nq, KACTV, KFREE
+                    , QTG, WRK);
             obj = suminf;
             if (lp) objlp = BlasLike.ddotvec(n, c, W);
             if (lp && numinf == 0) obj = objlp;
@@ -287,7 +287,7 @@ namespace ActiveSet
             fixed (int* pkfree = KFREE)
             fixed (int* pistate = ISTATE)
                 dlpprt(lp, NROWRT, n, nclin, nfree, isdel, *nactiv,
-                    ncolz, *iter, jadd, jdel, alfa, condt, numinf,
+                    ncolz, iter, jadd, jdel, alfa, condt, numinf,
                     suminf, objlp, pistate, pkfree, pa, pRT, px, pWRK, pAP);
             added = false;
             jadd = 0;
@@ -417,20 +417,20 @@ namespace ActiveSet
         /* --------------------------------------------------------------------- 
         */
         L100:
-            if (*iter >= itmax)
+            if (iter >= itmax)
             {
                 goto L400;
             }
-            ++(*iter);
-            if (*iter >= istart)
+            ++(iter);
+            if (iter >= istart)
             {
                 msg = msglvl;
             }
             fixed (int* pkfree = KFREE)
             fixed (int* pistate = ISTATE)
-                dfindp(nullr, &unitpg, n, nclin,
-                    NROWRT, &ncolz, &ncolz, ref nfree, pistate, pkfree,
-                    delete_, &gtp, &pnorm, &rdlast);
+                dfindp(nullr, unitpg, n, nclin,
+                    NROWRT, ncolz, ncolz, ref nfree,
+                    delete_, ref gtp, ref pnorm, ref rdlast);
             /* --------------------------------------------------------------------- 
             */
             /*     FIND THE CONSTRAINT WE BUMP INTO ALONG  P. */
@@ -457,10 +457,10 @@ namespace ActiveSet
             fixed (double* pU = U)
             fixed (double* pFeatol = FEATOL)
             fixed (int* pistate = ISTATE)
-                *inform = dbndalf(firstv, &hitlow, pistate, &jadd, n,
+                inform = dbndalf(firstv, &hitlow, pistate, &jadd, n,
         *nctotl, numinf, &alfa, &palfa, &atphit, &bigalf,
         &pnorm, pANORM, pAP, pLWRK, pL, pU, pFeatol, pPX, px);
-            if (*inform != 0 || jadd == 0)
+            if (inform != 0 || jadd == 0)
             {
                 goto L300;
             }
@@ -548,8 +548,8 @@ namespace ActiveSet
             fixed (double* pWRK = WRK)
             fixed (int* pkfree = KFREE)
             fixed (int* pkactiv = KACTV)
-                dzyprod(6, n, *nactiv, ncolz, nfree, nq, pkactiv, pkfree
-                    , pQTG, pWRK);
+                dzyprod(6, n, *nactiv, ncolz, nfree, nq, KACTV, KFREE
+                    , QTG, WRK);
             obj = suminf;
         /* --------------------------------------------------------------------- 
         */
@@ -599,7 +599,7 @@ namespace ActiveSet
             fixed (double* pPX = PX)
             fixed (double* pWRK = WRK)
             fixed (int* pkfree = KFREE)
-                *inform = daddcon(modfyg, false, orthog, ifix, iadd, jadd,
+                inform = daddcon(modfyg, false, orthog, ifix, iadd, jadd,
                     *nactiv, ncolz, ncolz, nfree, n, NROWA, KFREE, condmx, cslast, snlast,
                      WRK, PX);
             --ncolz;
@@ -656,23 +656,23 @@ namespace ActiveSet
             goto L340;
         /*     FEASIBLE SOLUTION FOUND, OR OPTIMAL LP SOLUTION. */
         L320:
-            *inform = 0;
+            inform = 0;
             goto L420;
         /*     THE LINEAR CONSTRAINTS AND BOUNDS APPEAR TO BE INFEASIBLE. */
         L340:
-            *inform = 1;
+            inform = 1;
             goto L420;
         /*     UNBOUNDED LP. */
         L360:
-            *inform = 2;
+            inform = 2;
             goto L420;
         /*     TOO MANY ITERATIONS WITHOUT CHANGING  X. */
         L380:
-            *inform = 3;
+            inform = 3;
             goto L420;
         /*     TOO MANY ITERATIONS. */
         L400:
-            *inform = 4;
+            inform = 4;
         /* --------------------------------------------------------------------- 
         */
         /*     PRINT FULL SOLUTION.  IF NECESSARY, RECOMPUTE THE MULTIPLIERS. */
@@ -682,11 +682,11 @@ namespace ActiveSet
             msg = msglvl;
             if (msg >= 1)
             {
-                wrexit("LP", *inform, *iter);
+                wrexit("LP", inform, iter);
             }
             fixed (double* pa = A)
             fixed (int* pistate = ISTATE)
-                if (*inform > 0) dgetlamd(lprob, n, *nactiv, ncolz, nfree,
+                if (inform > 0) dgetlamd(lprob, n, *nactiv, ncolz, nfree,
                     NROWRT, &jsmlst, &ksmlst, &smllst, pistate, pa);
             fixed (double* pANORM = ANORM)
             fixed (double* pQTG = QTG)
@@ -695,7 +695,7 @@ namespace ActiveSet
             fixed (double* pPX = PX)
             fixed (double* pRLAM = RLAM)
             fixed (double* pAP = AP)
-                if (!lp && *inform == 0) BlasLike.dzerovec(n, pRLAM);
+                if (!lp && inform == 0) BlasLike.dzerovec(n, pRLAM);
             fixed (double* pANORM = ANORM)
             fixed (double* pQTG = QTG)
             fixed (double* pRT = RT)
@@ -1530,8 +1530,8 @@ namespace ActiveSet
                 BlasLike.dzerovec(n, PX);
                 BlasLike.dcopyvec(*nactiv, WRK, PX, 0, ncolz);
                 fixed (double* pPX = PX)
-                    dzyprod(2, n, *nactiv, ncolz, nfree, nq, &kactiv[1], &kfree[1],
-                        pPX, pWRK);
+                    dzyprod(2, n, *nactiv, ncolz, nfree, nq, KACTV, KFREE,
+                        PX, WRK);
                 BlasLike.daxpyvec(n, 1, PX, W);
             }
         /* --------------------------------------------------------------------- 
@@ -1671,7 +1671,7 @@ namespace ActiveSet
             /* if feasible, install true objective */
             if (lp && numinf == 0) BlasLike.dcopyvec(n, &cvec[1], &grad[1]);
         }
-        public unsafe static void dzyprod(short mode, int n, int nactiv, int ncolz, int nfree, int nq, int* kactiv, int* kfree, double* v, double* wrk)
+        public static void dzyprod(short mode, int n, int nactiv, int ncolz, int nfree, int nq, int[] kactiv, int[] kfree, double[] v, double[] wrk)
         {
             /*
                 dzyprod transforms the vector  v  in various ways using the 
@@ -1702,13 +1702,13 @@ namespace ActiveSet
             int lenv;
             int j, k, l;
             int j1, j2, ka, kw, nfixed;
-            --wrk;
+            // --wrk;
             //   zy -= nq + 1;
             int zy_offset = nq + 1;
 
-            --v;
-            --kfree;
-            --kactiv;
+            //        --v;
+            //   --kfree;
+            //        --kactiv;
 
             nfixed = n - nfree;
             j1 = 1;
@@ -1719,26 +1719,26 @@ namespace ActiveSet
             if (mode < 4)
             {
                 /*MODE = 1, 2  OR  3*/
-                if (nfree > 0) BlasLike.dzerovec(nfree, &wrk[1]);
+                if (nfree > 0) BlasLike.dzerovec(nfree, wrk);
                 /*COPY  V(FIXED)  INTO THE END OF  WRK. */
                 if (mode != 1 && nfixed != 0)
-                    BlasLike.dcopyvec(nfixed, &v[nfree + 1], &wrk[nfree + 1]);
+                    BlasLike.dcopyvec(nfixed, v, wrk, nfree, nfree);
                 /*SET  WRK  =  RELEVANT PART OF  ZY * V. */
                 if (lenv > 0)
                 {
-                    if (UNITQ) BlasLike.dcopyvec(lenv, &v[j1], &wrk[j1]);
+                    if (UNITQ) BlasLike.dcopyvec(lenv, v, wrk, j1 - 1, j1 - 1);
                     else for (j = j1; j <= j2; ++j)
-                            if (v[j] != 0)
-                                fixed (double* pZY = ZY)
-                                    BlasLike.daxpy(nfree, v[j], &pZY[j * nq + 1 - zy_offset], 1, &wrk[1], 1);
+                            if (v[j - 1] != 0)
+                                // fixed (double* pZY = ZY)
+                                BlasLike.daxpy(nfree, v[j - 1], ZY, 1, wrk, 1, j * nq + 1 - zy_offset);
                 }
                 /*EXPAND  WRK  INTO  V  AS A FULL N-VECTOR. */
-                BlasLike.dzerovec(n, &v[1]);
+                BlasLike.dzerovec(n, v);
                 if (nfree > 0)
                     for (k = 1; k <= (int)nfree; ++k)
                     {
-                        j = kfree[k];
-                        v[j] = wrk[k];
+                        j = kfree[k - 1];
+                        v[j - 1] = wrk[k - 1];
                     }
                 /*COPY  WRK(FIXED)  INTO THE APPROPRIATE PARTS OF  V*/
                 if (mode == 1 || nfixed == 0) return;
@@ -1746,8 +1746,8 @@ namespace ActiveSet
                 {
                     kw = nfree + l;
                     ka = nactiv + l;
-                    j = kactiv[ka];
-                    v[j] = wrk[kw];
+                    j = kactiv[ka - 1];
+                    v[j - 1] = wrk[kw - 1];
                 }
             }
             else
@@ -1761,29 +1761,28 @@ namespace ActiveSet
                     {
                         kw = nfree + l;
                         ka = nactiv + l;
-                        j = kactiv[ka];
-                        wrk[kw] = v[j];
+                        j = kactiv[ka - 1];
+                        wrk[kw - 1] = v[j - 1];
                     }
                 /*PUT THE FREE  COMPONENTS OF  V  INTO THE BEGINNING OF  WRK. */
                 if (nfree != 0)
                 {
                     for (k = 1; k <= (int)nfree; ++k)
                     {
-                        j = kfree[k];
-                        wrk[k] = v[j];
+                        j = kfree[k - 1];
+                        wrk[k - 1] = v[j - 1];
                     }
                     /*SET  V  =  RELEVANT PART OF  ZY(T) * WRK*/
                     if (lenv > 0)
                     {
-                        if (UNITQ) BlasLike.dcopyvec(lenv, &wrk[j1], &v[j1]);
+                        if (UNITQ) BlasLike.dcopyvec(lenv, wrk, v, j1 - 1, j1 - 1);
                         else for (j = j1; j <= j2; ++j)
-                                fixed (double* pZY = ZY)
-                                    v[j] = BlasLike.ddotvec(nfree, pZY + j * nq + 1 - zy_offset, wrk + 1);
+                                v[j - 1] = BlasLike.ddotvec(nfree, ZY, wrk, j * nq + 1 - zy_offset);
                     }
                 }
                 /*COPY THE FIXED COMPONENTS OF WRK INTO THE END OF  V*/
                 if (mode != 4 && mode <= 6 && nfixed != 0)
-                    BlasLike.dcopyvec(nfixed, &wrk[nfree + 1], &v[nfree + 1]);
+                    BlasLike.dcopyvec(nfixed, wrk, v, nfree, nfree);
             }
         }
 
@@ -1851,9 +1850,8 @@ namespace ActiveSet
                     if (UNITQ) BlasLike.dcopyvec(lenv, v, wrk, j1 + vst, j1 + wst);
                     else for (j = j1; j <= j2; ++j)
                             if (v[j + vst] != 0)
-                                //fixed (double* pZY = ZY)
                                 // BlasLike.daxpy(nfree, v[j], &pZY[j * nq + 1 - zy_offset], 1, &wrk[1], 1);
-                                BlasLike.daxpyvec(nfree, v[j], ZY, wrk, j * nq + 1 - zy_offset, 1 + wst);
+                                BlasLike.daxpyvec(nfree, v[j + vst], ZY, wrk, j * nq + 1 - zy_offset, 1 + wst);
                 }
                 /*EXPAND  WRK  INTO  V  AS A FULL N-VECTOR. */
                 BlasLike.dzerovec(n, v, 1 + vst);
@@ -1861,7 +1859,7 @@ namespace ActiveSet
                     for (k = 1; k <= (int)nfree; ++k)
                     {
                         j = kfree[k + kfr];
-                        v[j - vst] = wrk[k + wst];
+                        v[j + vst] = wrk[k + wst];
                     }
                 /*COPY  WRK(FIXED)  INTO THE APPROPRIATE PARTS OF  V*/
                 if (mode == 1 || nfixed == 0) return;
@@ -2264,7 +2262,7 @@ namespace ActiveSet
                 dtmin = dtmin_c;
             }
         }
-        public unsafe static void dfindp(bool nullr, bool* unitpg, int n, int nclin, int Nrowrt, int* ncolr, int* ncolz, ref int nfree, int* istate, int* kfree, bool negligible, double* gtp, double* pnorm, double* rdlast)
+        public static void dfindp(bool nullr, bool unitpg, int n, int nclin, int Nrowrt, int ncolr, int ncolz, ref int nfree, bool negligible, ref double gtp, ref double pnorm, ref double rdlast)
         {
             /*
                 findp computes the following quantities for  lpcore,  qpcore  and
@@ -2295,53 +2293,46 @@ namespace ActiveSet
             a_dim1 = NROWA;
             a_offset = a_dim1 + 1;
             //   a -= a_offset;
-            --kfree;
-            --istate;
-            BlasLike.dcopyvec(*ncolr, QTG, PX);
-            BlasLike.dscalvec(*ncolr, -1, PX);
+            // --kfree;
+            // --istate;
+            BlasLike.dcopyvec(ncolr, QTG, PX);
+            BlasLike.dscalvec(ncolr, -1, PX);
             if (nullr) goto L60;
-            *rdlast = RT[*ncolr + *ncolr * rt_dim1 - rt_offset];
+            rdlast = RT[ncolr + ncolr * rt_dim1 - rt_offset];
             /*     *** */
             /*     CORRECTION INSERTED BY MHW, 22 OCT 1985. */
             /*     THIS ENSURES A NON-ZERO SEARCH DIRECTION. */
             /*     *** */
-            if (*ncolr < *ncolz && negligible) PX[*ncolr - 1] = *rdlast;
+            if (ncolr < ncolz && negligible) PX[ncolr - 1] = rdlast;
             /* --------------------------------------------------------------------- 
             */
             /*     SOLVE THE SYSTEM   R(T)R (PZ) = - Z(T)G(FREE). */
             /* --------------------------------------------------------------------- 
             */
-            if (*unitpg)
+            if (unitpg)
             {
                 goto L20;
             }
             /*     PERFORM THE FORWARD SUBSTITUTION  R(T)V = - Z(T)G(FREE). */
-            fixed (double* pRT = RT)
-            fixed (double* pPX = PX)
-                idiag = dtmxsolve((short)-1, *ncolr, pRT, Nrowrt, pPX, (short)1);
+            idiag = dtmxsolve((short)-1, ncolr, RT, Nrowrt, PX, (short)1);
             goto L40;
         /*     THE PROJECTED GRADIENT IS A MULTIPLE OF THE UNIT VECTOR, THE */
         /*     FORWARD SUBSTITUTION MAY BE AVOIDED. */
         L20:
-            if (negligible) PX[*ncolr - 1] = -1;
-            else PX[*ncolr - 1] /= *rdlast;
+            if (negligible) PX[ncolr - 1] = -1;
+            else PX[ncolr - 1] /= rdlast;
             /*     PERFORM THE BACKWARD SUBSTITUTION   R(PZ) = P. */
             L40:
-            fixed (double* pWRK = WRK)
-                BlasLike.dcopyvec(*ncolr, PX, WRK);
-            fixed (double* pRT = RT)
-            fixed (double* pQTG = QTG)
-            fixed (double* pPX = PX)
-                idiag = dtmxsolve((short)1, *ncolr, pRT, Nrowrt, pPX, (short)1);
-            /* --------------------------------------------------------------------- 
-            */
-            /*     THE VECTOR  (PZ)  HAS BEEN COMPUTED. */
-            /* --------------------------------------------------------------------- 
-            */
-            /*     COMPUTE THE DIRECTIONAL DERIVATIVE  G(T)P = (GZ)(T)(PZ). */
-            L60:
-            fixed (double* pQTG = QTG)
-                *gtp = BlasLike.ddotvec(*ncolr, QTG, PX);
+            BlasLike.dcopyvec(ncolr, PX, WRK);
+            idiag = dtmxsolve((short)1, ncolr, RT, Nrowrt, PX, (short)1);
+        /* --------------------------------------------------------------------- 
+        */
+        /*     THE VECTOR  (PZ)  HAS BEEN COMPUTED. */
+        /* --------------------------------------------------------------------- 
+        */
+        /*     COMPUTE THE DIRECTIONAL DERIVATIVE  G(T)P = (GZ)(T)(PZ). */
+        L60:
+            gtp = BlasLike.ddotvec(ncolr, QTG, PX);
             /* --------------------------------------------------------------------- 
             */
             /*     COMPUTE  P = Z * PZ. */
@@ -2349,11 +2340,9 @@ namespace ActiveSet
             */
             /*     NACTIV  AND  KACTIV  ARE NOT USED IN  ZYPROD.  N  AND  KFREE */
             /*     SERVE AS ARGUMENTS FOR  NACTIV  AND  KACTIV. */
-            fixed (double* pWRK = WRK)
-            fixed (double* pPX = PX)
-                dzyprod(1, n, n, *ncolr, nfree, nq, &kfree[1], &kfree[1], pPX,
-                      pWRK);
-            *pnorm = dnrm2vec(nfree, WRK);
+            dzyprod(1, n, n, ncolr, nfree, nq, KFREE, KFREE, PX,
+                  WRK);
+            pnorm = dnrm2vec(nfree, WRK);
             if (msg >= 80) lm_mdvwri("\n//FINDP//   P ... ", n, PX);
             /* --------------------------------------------------------------------- 
             */
@@ -2365,15 +2354,12 @@ namespace ActiveSet
                 BlasLike.dzerovec(nclin, AP);
                 for (j = 1; j <= (int)n; ++j)
                 {
-                    fixed (double* pAP = AP)
-                    fixed (double* pA = A)
-                        if (istate[j] <= 0)
-                            //     BlasLike.daxpyvec(*nclin, PX[j - 1], pA + j * a_dim1 + 1 - a_offset, pAP);
-                            BlasLike.daxpyvec(nclin, PX[j - 1], A, AP, j * a_dim1 + 1 - a_offset);
+                    if (ISTATE[j - 1] <= 0)
+                        //     BlasLike.daxpyvec(*nclin, PX[j - 1], pA + j * a_dim1 + 1 - a_offset, pAP);
+                        BlasLike.daxpyvec(nclin, PX[j - 1], A, AP, j * a_dim1 + 1 - a_offset);
                     /* L100: */
                 }
-                fixed (double* pAP = AP)
-                    if (msg >= 80) lm_mdvwri("\n//FINDP//  AP ... ", nclin, pAP);
+                if (msg >= 80) lm_mdvwri("\n//FINDP//  AP ... ", nclin, AP);
             }
             return;
         }
@@ -2625,8 +2611,7 @@ namespace ActiveSet
                 *jadd, *alfa);
             return inform;
         }
-        public unsafe static
-short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jadd, int nactiv, int ncolr, int ncolz, int nfree, int n, int nrowart, int[] kfree, double condmx, double cslast, double snlast, double[] wrrk1, double[] wrk2, int kfr = 0, int wk1 = 0, int wk2 = 0)
+        public static short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jadd, int nactiv, int ncolr, int ncolz, int nfree, int n, int nrowart, int[] kfree, double condmx, double cslast, double snlast, double[] wrrk1, double[] wrk2, int kfr = 0, int wk1 = 0, int wk2 = 0)
         {
 
             /*
@@ -2722,14 +2707,12 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                  q  is stored explicitly.  interchange components  ifix  and  nfree
                  of  kfree  and swap the corresponding rows of  q
             */
-            fixed (double* pZY = ZY)
-                // BlasLike.dcopy(*nfree, &pZY[*ifix + zy_dim1 - zy_offset], nq, &wrk1[1], 1);
-                BlasLike.dcopy(nfree, ZY, nq, WRK, 1, ifix + zy_dim1 - zy_offset);
+            // BlasLike.dcopy(*nfree, &pZY[*ifix + zy_dim1 - zy_offset], nq, &wrk1[1], 1);
+            BlasLike.dcopy(nfree, ZY, nq, WRK, 1, ifix + zy_dim1 - zy_offset);
             if (ifix == nfree) goto L180;
             kfree[ifix + kfr] = kfree[nfree + kfr];
-            fixed (double* pZY = ZY)
-                // BlasLike.dcopy(*nfree, &pZY[*nfree + zy_dim1 - zy_offset], nq, &pZY[*ifix + zy_dim1 - zy_offset], nq);
-                BlasLike.dcopy(nfree, ZY, nq, ZY, nq, nfree + zy_dim1 - zy_offset, ifix + zy_dim1 - zy_offset);
+            // BlasLike.dcopy(*nfree, &pZY[*nfree + zy_dim1 - zy_offset], nq, &pZY[*ifix + zy_dim1 - zy_offset], nq);
+            BlasLike.dcopy(nfree, ZY, nq, ZY, nq, nfree + zy_dim1 - zy_offset, ifix + zy_dim1 - zy_offset);
             goto L180;
         /*
              q  is not stored, but  kfree  defines an ordering of the columns
@@ -2777,7 +2760,6 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             i__1 = nfree;
             for (j = 1; j <= i__1; ++j)
             {
-                //fixed (double* pZY = ZY)
                 // BlasLike.dzerovec(*nfree, &pZY[j * zy_dim1 + 1 - zy_offset]);
                 BlasLike.dzerovec(nfree, ZY, j * zy_dim1 + 1 - zy_offset);
                 ZY[j + j * zy_dim1 - zy_offset] = 1.0;
@@ -2857,14 +2839,11 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             /*
                  elimination we use  elm( ..., zero, zero )   to perform an interchange
             */
-            fixed (double* pWRK = WRK)
-                detagen(ncolz1, ref WRK[ncolz - 1], pWRK, 1, ref iswap, ref itrans);
+            detagen(ncolz1, ref WRK[ncolz - 1], WRK, 1, ref iswap, ref itrans);
             //   detagen(ncolz1, ref WRK[ncolz - 1], WRK, 1, ref iswap, ref itrans);
 
             if (iswap > 0)
-                fixed (double* pZY = ZY)
-                    delm(orthog, nfree, &pZY[ncolz * zy_dim1 + 1 - zy_offset], 1, &pZY[
-                        iswap * zy_dim1 + 1 - zy_offset], 1, zero, zero);
+                delm(orthog, nfree, ZY, 1, ZY, 1, zero, zero, ncolz * zy_dim1 + 1 - zy_offset, iswap * zy_dim1 + 1 - zy_offset);
             if (itrans == 0)
             {
                 goto L220;
@@ -2911,8 +2890,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
         L240:
             delta = WRK[ncolz - 1];
             var c__1 = 1;
-            var lm_eps = BlasLike.lm_eps;
-            dhhrflctgen(ncolz1, ref delta, WRK, c__1, lm_eps, ref beta);
+            dhhrflctgen(ncolz1, ref delta, WRK, c__1, BlasLike.lm_eps, ref beta);
             if (beta != 0)
             {
                 WRK[ncolz - 1] = beta;
@@ -2930,11 +2908,10 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 {
                     goto L260;
                 }
-                fixed (double* pZY = ZY)
-                    //     BlasLike.daxpy(*nfree, d, &zy[j * zy_dim1 + 1], 1, &wrk2[1], 1);
-                    //    BlasLike.daxpy(nfree, d, pZY + j * zy_dim1 + 1 - zy_offset, 1, &wrk2[1], 1);
-                    BlasLike.daxpy(nfree, d, ZY, 1, wrk2, 1, j * zy_dim1 + 1 - zy_offset, 1 + wk2);
-                L260:
+                //     BlasLike.daxpy(*nfree, d, &zy[j * zy_dim1 + 1], 1, &wrk2[1], 1);
+                //    BlasLike.daxpy(nfree, d, pZY + j * zy_dim1 + 1 - zy_offset, 1, &wrk2[1], 1);
+                BlasLike.daxpy(nfree, d, ZY, 1, wrk2, 1, j * zy_dim1 + 1 - zy_offset, 1 + wk2);
+            L260:
                 ;
             }
             i__1 = ncolz;
@@ -2946,7 +2923,6 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                     goto L280;
                 }
                 d = -d / beta;
-                //fixed (double* pZY = ZY)
                 //  BlasLike.daxpy(nfree, d, wrk2[1], 1, &pZY[j * zy_dim1 + 1 - zy_offset], 1);
                 BlasLike.daxpy(nfree, d, wrk2, 1, ZY, 1, 1 + wk2, j * zy_dim1 + 1 - zy_offset);
             L280:
@@ -2978,9 +2954,8 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 delmgen(orthog, ref WRK[kp1 - 1], ref WRK[k - 1], ref cs, ref sn);
                 if (!UNITQ)
                 {
-                    fixed (double* pZY = ZY)
-                        delm(orthog, nfree, &pZY[kp1 * zy_dim1 + 1 - zy_offset], 1, &pZY[k *
-                            zy_dim1 + 1 - zy_offset], 1, cs, sn);
+                    // fixed (double* pZY = ZY)
+                    delm(orthog, nfree, ZY, 1, ZY, 1, cs, sn, kp1 * zy_dim1 + 1 - zy_offset, k * zy_dim1 + 1 - zy_offset);
                 }
                 if (modfyg)
                     //  delm(orthog, 1, &qtg[kp1], 1, &qtg[k], 1, cs, sn);
@@ -2996,19 +2971,16 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                     goto L340;
                 }
                 RT[kp1 + k * rt_dim1 - rt_offset] = 0;
-                fixed (double* pRT = RT)
                 {
-                    delm(orthog, kp1, &pRT[kp1 * rt_dim1 + 1 - rt_offset], 1, &pRT[k *
-                       rt_dim1 + 1 - rt_offset], 1, cs, sn);
-                    BlasLike.drotg(&pRT[k + k * rt_dim1 - rt_offset], &pRT[kp1 + k * rt_dim1 - rt_offset], &cslast, &snlast);
+                    delm(orthog, kp1, RT, 1, RT, 1, cs, sn, kp1 * rt_dim1 + 1 - rt_offset, k * rt_dim1 + 1 - rt_offset);
+                    BlasLike.drotg(ref RT[k + k * rt_dim1 - rt_offset], ref RT[kp1 + k * rt_dim1 - rt_offset], ref cslast, ref snlast);
                 }
                 RT[kp1 + k * rt_dim1 - rt_offset] = 0;
                 --lrowr;
-                fixed (double* pRT = RT)
-                    dsymplanerotate(lrowr, &pRT[k + kp1 * rt_dim1 - rt_offset],
-                            NROWRT, &pRT[kp1 + kp1 * rt_dim1 - rt_offset],
-                            NROWRT, cslast, snlast);
-                L340:
+                dsymplanerotate(lrowr, RT,
+                        NROWRT, RT,
+                        NROWRT, cslast, snlast, k + kp1 * rt_dim1 - rt_offset, kp1 + kp1 * rt_dim1 - rt_offset);
+            L340:
                 ;
             }
         /* if adding a general constraint, insert the new row of  t  and exit */
@@ -3038,12 +3010,9 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             {
                 // delmgen(orthog, &wrk1[k + 1], &wrk1[k], &cs, &sn);
                 delmgen(orthog, ref WRK[k + 1 - 1], ref WRK[k - 1], ref cs, ref sn);
-                fixed (double* pZY = ZY)
-                    delm(orthog, nfree, &pZY[(k + 1) * zy_dim1 + 1 - zy_offset], 1, &pZY[k *
-                        zy_dim1 + 1 - zy_offset], 1, cs, sn);
-                fixed (double* pRT = RT)
-                    delm(orthog, nelm, &pRT[ldiag + (k + 1) * rt_dim1 - rt_offset], 1,
-                        &pRT[ldiag + k * rt_dim1 - rt_offset], 1, cs, sn);
+                delm(orthog, nfree, ZY, 1, ZY, 1, cs, sn, (k + 1) * zy_dim1 + 1 - zy_offset, k * zy_dim1 + 1 - zy_offset);
+                delm(orthog, nelm, RT, 1,
+                    RT, 1, cs, sn, ldiag + (k + 1) * rt_dim1 - rt_offset, ldiag + k * rt_dim1 - rt_offset);
                 if (modfyg)
                     //   delm(orthog, 1, &qtg[k + 1], 1, &qtg[k], 1, cs, sn);
                     delm(orthog, 1, QTG, 1, QTG, 1, cs, sn, k, k - 1);
@@ -3096,8 +3065,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             }
             return 1;
         }
-        public unsafe static
-        void dprtsol(int nfree, int n, int nclin, int ncnln, int nctotl,
+        public unsafe static void dprtsol(int nfree, int n, int nclin, int ncnln, int nctotl,
                      int nactiv, int* istate,
                     double* a, double* bl, double* bu, double* c, double* clamda, double* rlamda, double* x)
         {
@@ -4110,6 +4078,142 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
 
             return (short)(fail != 0 ? lm_check_fail(idiag, (short)(k + 1), "dtmxsolve") : 0);
         }
+
+        public static short dtmxsolve(short job, int n, double[] t, int nrt, double[] b, short idiag, int tstart = 0, int bstart = 0)
+        {
+            /*
+                purpose
+                =======
+                    dtmxsolve solves systems of triangular equations
+                    important.	in double precision implementations the real
+                    ---------	declarations should be interpreted to mean
+                            double precision
+                description
+                ===========
+                    dtmxsolve solves the equations
+                    t*x = b ,   or	 ( t**t )*x = b ,
+                    where t is an n by n upper or lower triangular matrix
+                    the type of triangular system solved is controlled by the
+                    parameter job as described in the parameter section below
+                parameters
+                ==========
+                    job   - short
+                        on entry, job must contain one of the values -2, -1, 0, 1, 2
+                        to specify the type of triangular system to be solved as
+                        follows
+                        job =  0	t is assumed to be diagonal and the
+                                equations t*x = b are solved
+                        job =  1	t is assumed to be upper triangular and the
+                                equations t*x = b are solved
+                        job = -1	t is assumed to be upper triangular and the
+                                equations ( t**t )*x = b are solved
+                        job =  2	t is assumed to be lower triangular and the
+                                equations t*x = b are solved
+                        job = -2	t is assumed to be lower triangular and the
+                                equations ( t**t )*x = b are solved
+                                unchanged on exit
+                    n     - dimen
+                        on entry, n specifies the order of the matrix t. n must be at
+                        least unity
+                        unchanged on exit
+                    t     - real matrix of dimension ( nrt, nct ). nct must be at least n
+                        before entry t must contain the triangular elements. only
+                        those elements contained in the triangular part of t are
+                        referenced by this routine
+                        unchanged on exit
+                    nrt   - dimen
+                        on entry, nrt specifies the first dimension of t as declared
+                        in the calling (sub) program. nrt must be at least n
+                    b     - real vector of dimension ( n )
+                        before entry, b must contain the right hand side of the
+                        equations to be solved
+                        on successful exit, b contains the solution vector x
+                    idiag - short
+                        before entry, idiag must be assigned a value. for users
+                        unfamiliar with this parameter (described in chapter p01)
+                        the recommended value is zero
+
+                    return value
+                        0	success
+                        1	invalid arguments (n, nrt, job)
+                        > 1	(return - 1)th diagonal element of t is
+                            either zero or is too small to avoid overflow
+                            in computing an element of x
+
+                    further comments
+                    ================
+                        if t is part of a matrix a partitioned as
+                        a =	( a1  a2 ) ,
+                            ( a3  t	 )
+                        where a1 is an m by k matrix ( m>=0, k>=0), then this routine
+                        may be called with the parameter t as a( m + 1, k + 1 ) and nrt as
+                        the first dimension of a as declared in the calling (sub) program.
+            */
+
+            int fail = -99;
+            int k;
+
+            //       --b;
+            //       t -= nrt + 1;
+            bstart--;
+            tstart -= nrt + 1;
+            if (n < 1 || nrt < n || Math.Abs(job) > 2) return lm_check_fail(idiag, (short)1, "dtmxsolve");
+
+            if (job == 1 || job == -2)
+            {
+                for (k = n; k >= 1; --k) if ((fail = (b[k + bstart] != 0.0 ? 1 : 0)) != 0) break;
+            }
+            else
+            {
+                for (k = 1; k <= n; ++k) if ((fail = (b[k + bstart] != 0.0 ? 1 : 0)) != 0) break;
+            }
+
+            if (fail != 0)
+                switch (job)
+                {
+                    case 0:
+                        for (; k <= n; ++k)
+                        {
+                            b[k + bstart] = dprotdiv(ref b[k + bstart], ref t[k + k * nrt + tstart], ref fail);
+                            if (fail != 0) break;
+                        }
+                        break;
+                    case 1:
+                        for (; k >= 1; --k)
+                        {
+                            b[k + bstart] = dprotdiv(ref b[k + bstart], ref t[k + k * nrt + tstart], ref fail);
+                            if (fail != 0) break;
+                            if (k > 1) BlasLike.daxpyvec(k - 1, -b[k + bstart], t, b, k * nrt + 1 + tstart, 1 + bstart);
+                        }
+                        break;
+                    case 2:
+                        for (; k <= n; ++k)
+                        {
+                            b[k + bstart] = dprotdiv(ref b[k + bstart], ref t[k + k * nrt + tstart], ref fail);
+                            if (fail != 0) break;
+                            if (k < n) BlasLike.daxpyvec(n - k, -b[k + bstart], t, b, k + 1 + k * nrt + tstart, k + 1 + bstart);
+                        }
+                        break;
+                    case -1:
+                        for (; k <= n; ++k)
+                        {
+                            if (k > 1) b[k + bstart] -= BlasLike.ddotvec((k - 1), t, b, k * nrt + 1 + tstart, 1 + bstart);
+                            b[k + bstart] = dprotdiv(ref b[k + bstart], ref t[k + k * nrt + tstart], ref fail);
+                            if (fail != 0) break;
+                        }
+                        break;
+                    case -2:
+                        for (; k >= 1; --k)
+                        {
+                            if (k < n) b[k + bstart] -= BlasLike.ddotvec((n - k), t, b, k + 1 + k * nrt + tstart, k + 1 + bstart);
+                            b[k + bstart] = dprotdiv(ref b[k + bstart], ref t[k + k * nrt + tstart], ref fail);
+                            if (fail != 0) break;
+                        }
+                        break;
+                }
+
+            return (short)(fail != 0 ? lm_check_fail(idiag, (short)(k + 1), "dtmxsolve") : 0);
+        }
         public unsafe static void dbdpert(bool firstv, bool negstp, double* bigalf, double* pnorm, int* jadd1, int* jadd2, double* palfa1, double* palfa2, int* istate, int n, int nctotl, double* anorm, double* ap, double* ax, double* bl, double* bu, double* featol, double* p, double* x)
         {
 
@@ -4639,7 +4743,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             int maxact, minact;
             byte lcrash;
             //double tolact;
-            int minfxd, inform, mxfree, nactiv, numinf = 23;
+            int minfxd, inform = -2, mxfree, nactiv, numinf = 23;
             var litotl = 0;
             int minsum;
             int mxcolz;
@@ -4653,7 +4757,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             //#define NROWA &nrowa_
             NROWA = nrowa;
             int nrowa_ = nrowa;
-            int iter_;
+            int iter_ = 0;
             //#define NROWH &nrowh_
             int nrowh_ = nrowh;
             //#define NCOLH &ncolh_
@@ -4765,7 +4869,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             problem
             ---------------------------------------------------------------------
             */
-            dlpcore((lp & 1) != 0, minsum, orthog != 0, vertex, &inform, &iter_,
+            dlpcore((lp & 1) != 0, minsum, orthog != 0, vertex, ref inform, ref iter_,
             itmx, lcrash, n, nclin, &nctotl, &nactiv, ref nfree, ref numinf,
                  ref obj, xnorm);
             iter = (short)iter_;
@@ -4802,8 +4906,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
 
                     dqpcore(orthog, ref inform, ref iter_, itmx, n, nclin, nctotl,
                              nrowh, ncolh, nactiv, nfree,
-                             ref obj, xnorm, pA, pL, pU, plambda, pc, pfeatol, pQ,
-                            pLWRK, pW);
+                             ref obj, xnorm, pA, pL, pU, plambda, pc, pfeatol);
                 iter = (short)iter_;
             }
             else
@@ -4977,42 +5080,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             WRK = new double[n];
             lwtotl = lwrk + n - 1;
         }
-        public unsafe static void dqpdump(int n, int nrowh, int ncolh, double* cvec, double* hess, double* wrk, double* hx)
-        {
-            int j, i;
-
-            Console.WriteLine("\n\n\n\n\n\nOUTPUT FROM QPDUMP\n******************");
-            lm_mdvwri("\nCVEC ...", n, cvec);
-
-            /*PRINT  HESS  UNLESS IT APPEARS TO BE IMPLICIT. */
-            lm_wmsg("\nNROWH =%6ld NCOLH =%6ld", nrowh, ncolh);
-            if (nrowh > 1 || ncolh > 1)
-            {
-                if (ncolh == 1) lm_mdvwri("\nHESS ...", nrowh, hess);
-                else
-                {
-                    i = Math.Min(ncolh, n);
-                    for (j = 1; j <= i; ++j)
-                    {
-                        lm_wmsg("\nCOLUMN%6ld OF  HESS ...", j);
-                        lm_gdvwri(i, hess + j - 1, nrowh);
-                    }
-                }
-            }
-            /*CALL  QPHESS  TO COMPUTE EACH COLUMN OF THE HESSIAN. */
-            Console.WriteLine("\n\n THE FOLLOWING IS RETURNED BY  QPHESS.");
-            BlasLike.dzerovec(n, wrk);
-            for (j = 1; j <= n; ++j)
-            {
-                wrk[i = j - 1] = 1.0;
-                qphess(n, nrowh, ncolh, j, hess, wrk, hx);
-                lm_wmsg("\nCOLUMN%6ld FROM  QPHESS ...", j);
-                lm_gdvwri(n, hx, 1);
-                wrk[i] = 0.0;
-            }
-        }
-
-        public static void dqpdump(int n, int nrowh, int ncolh, int cstart = 0, int hstart = 0, int wstart = 0, int hxstart = 0)
+        public static void dqpdump(int n, int nrowh, int ncolh)
         {
             int j, i;
 
@@ -5051,11 +5119,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
         {
             Solver.Factorise.dsmxmulv(n, hess, wrk, hx);
         }
-        public unsafe static void qphess(int n, int nrowh, int ncolh, int j, double* hess, double* wrk, double* hx)
-        {
-            Solver.Factorise.dsmxmulv(n, hess, wrk, hx);
-        }
-        public unsafe static void dqpcore(int orthog, ref int inform, ref int iter, int itmax, int n, int nclin, int nctotl, int nrowh, int ncolh, int nactiv, int nfree,  ref double objqp, double[] xnorm, double* a, double* bl, double* bu, double* clamda, double* cvec, double* featol, double* hess, double* sccale, double* x)
+        public unsafe static void dqpcore(int orthog, ref int inform, ref int iter, int itmax, int n, int nclin, int nctotl, int nrowh, int ncolh, int nactiv, int nfree, ref double objqp, double[] xnorm, double* a, double* bl, double* bu, double* clamda, double* cvec, double* featol)
         {
 
             /*
@@ -5100,32 +5164,32 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             int isdel = 0;
             double condt, drmin, anorm, dinky, drmax, hsize;
             int ncnln, ncolr, ncolz;
-            double pnorm;
+            double pnorm = 1e24;
             //	int nrowj;
             int nhess;
             bool nullr, stall, uncon;
             int nclin0, kb;
             double bigalf, epspt9;
-            double gfixed, alfhit;
+            double gfixed = 89, alfhit;
             bool refine;
             int jdsave, nfixed;
             bool posdef;
             int modfyg, negligible;
-            double condmx, atphit, cslast = 5, gfnorm, rdlast, objsiz, snlast = 6;
+            double condmx, atphit, cslast = 5, gfnorm, rdlast = 12, objsiz, snlast = 6;
             int idummy, issave = 0, msglvl;
             int jsmlst, ksmlst;
             double smllst;
             int nstall, numinf;
             double ztgnrm;
             int firstv, hitlow;
-            bool nocurv, renewr, unitpg, zerolm;
+            bool nocurv, renewr = false, unitpg, zerolm;
             int modfyr;
             double bnd;
             double gtp = 0;
             //         --w;
             //  --iw;
-            --x;
-// --scale;
+            //  --x;
+            // --scale;
             --featol;
             --cvec;
             --clamda;
@@ -5183,7 +5247,6 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             (4)	the vector  g(fixed).
                 use the array  rlam  as temporary work space.
             */
-            int nhess_conv = nhess;
             fixed (double* pANORM = ANORM)
             fixed (double* pQTG = QTG)
             fixed (double* pRT = RT)
@@ -5193,10 +5256,10 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             fixed (double* pAP = AP)
             fixed (double* pWRK = WRK)
             fixed (int* pKFREE = KFREE)
-            fixed(double*lwrk=LWRK)
-                ncolr = dqpcrsh(n, ncolz, nfree, &nhess_conv,
-                    nq, nrowh, ncolh, NROWRT, pKFREE, &hsize, hess,
-                    pRT, lwrk, pZY, pRLAM, pWRK);
+            fixed (double* lwrk = LWRK)
+                ncolr = dqpcrsh(n, ncolz, nfree, ref nhess,
+                    nq, nrowh, ncolh, NROWRT, &hsize,
+                    pRT, LWRK, pZY, RLAM, WRK);
             fixed (double* pANORM = ANORM)
             fixed (double* pQTG = QTG)
             fixed (double* pRT = RT)
@@ -5207,11 +5270,12 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             fixed (double* pWRK = WRK)
             fixed (int* pKFREE = KFREE)
             fixed (int* pkact = KACTV)
-            fixed(double*lwrk=LWRK)
-                dqpgrad(1, n, nactiv, nfree, &nhess_conv, nq,
-                    nrowh, ncolh, jadd, pkact, pKFREE, alfa, ref objqp, &gfixed,
-                    gtp, &cvec[1], hess, pPX, pQTG, lwrk, &x[1], pZY, pWRK, pRLAM);
-            nhess = nhess_conv;
+            fixed (double* lwrk = LWRK)
+            fixed (double* pW = W)
+                dqpgrad(1, n, nactiv, nfree, ref nhess, nq,
+                    nrowh, ncolh, jadd, alfa, ref objqp, ref gfixed,
+                    gtp, RLAM);
+
 
             /*
             during the main loop, one of three things will happen
@@ -5274,20 +5338,10 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 if (ifail != 0 && drmax == 0) condh = BlasLike.lm_max;
                 if (condh >= BlasLike.lm_rootmax) condh = BlasLike.lm_max;
                 if (condh < BlasLike.lm_rootmax) condh *= condh;
-                fixed (double* pANORM = ANORM)
-                fixed (double* pQTG = QTG)
-                fixed (double* pRT = RT)
-                fixed (double* pZY = ZY)
-                fixed (double* pPX = PX)
-                fixed (double* pRLAM = RLAM)
-                fixed (double* pAP = AP)
-                fixed (double* pWRK = WRK)
-                fixed (int* pistate = ISTATE)
-                fixed (int* pKFREE = KFREE)
-                    dqpprt(orthog, isdel, iter, jadd, jdel, nactiv, ncolz, nfree,
-                        n, nclin, nhess,
-                        pistate, pKFREE, alfa, condh, condt, objqp, gfnorm,
-                        ztgnrm, emax, a, pRT, &x[1], pWRK, pAP);
+                dqpprt(orthog, isdel, iter, jadd, jdel, nactiv, ncolz, nfree,
+                    n, nclin, nhess,
+                    alfa, condh, condt, objqp, gfnorm,
+                    ztgnrm, emax, AP);
                 jadd = 0;
                 jdel = 0;
                 negligible = (ztgnrm <= dinky) ? 1 : 0;
@@ -5367,10 +5421,10 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                         ++ncolr;
                         fixed (double* pPX = PX)
                         fixed (int* pKFREE = KFREE)
-            fixed(double*lwrk=LWRK)
-                            dqpcolr(&nocurv, &posdef, &renewr, n, &ncolr,
-                                &nfree, &nrowh, &ncolh, &nhess, pKFREE, &
-                                cslast, &snlast, &drmax, &emax, &hsize, &rdlast, hess, lwrk, pPX);
+                        fixed (double* lwrk = LWRK)
+                            dqpcolr(ref nocurv, ref posdef, ref renewr, n, ref ncolr,
+                                ref nfree, ref nrowh, ref ncolh, ref nhess, KFREE, ref
+                                cslast, ref snlast, ref drmax, ref emax, ref hsize, ref rdlast, PX);
                         /*REPEAT THE MAIN LOOP*/
                         continue;
                     }
@@ -5413,9 +5467,9 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 fixed (double* pWRK = WRK)
                 fixed (int* pistate = ISTATE)
                 fixed (int* pKFREE = KFREE)
-                    dfindp(nullr, &unitpg, n, nclin,
-                        NROWRT, &ncolr, &ncolz, ref nfree, pistate, pKFREE,
-                        negligible != 0, &gtp, &pnorm, &rdlast);
+                    dfindp(nullr, unitpg, n, nclin,
+                        NROWRT, ncolr, ncolz, ref nfree,
+                        negligible != 0, ref gtp, ref pnorm, ref rdlast);
 
                 /*
                 if a constraint has just been deleted and the projected gradient
@@ -5452,10 +5506,11 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 fixed (double* plambda = LAMBDA)
                 fixed (double* pLWRK = LWRK)
                 fixed (int* pistate = ISTATE)
+                fixed (double* pW = W)
                     dbndalf(firstv != 0, &hitlow, pistate, &jadd, n,
         nctotl, numinf, &alfhit, &palfa, &atphit, &bigalf,
          &pnorm, pANORM, pAP, pLWRK, &bl[1], &bu[1], &
-        featol[1], pPX, &x[1]);
+        featol[1], pPX, pW);
 
 
                 /*
@@ -5520,19 +5575,20 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                     fixed (double* pWRK = WRK)
                     fixed (int* pKFREE = KFREE)
                     fixed (int* pkact = KACTV)
-            fixed(double*lwrk=LWRK)
-                        if (dqpgrad(2, n, nactiv, nfree, &nhess_conv, nq,
-                            nrowh, ncolh, jadd, pkact, pKFREE, alfa, ref objqp, &
-                            gfixed, gtp, &cvec[1], hess, pPX, pQTG, 
-                            lwrk, &x[1], pZY, pWRK, pRLAM) < -BlasLike.lm_eps)
+                    fixed (double* lwrk = LWRK)
+                    fixed (double* pW = W)
+                        if (dqpgrad(2, n, nactiv, nfree, ref nhess, nq,
+                            nrowh, ncolh, jadd, alfa, ref objqp, ref
+                            gfixed, gtp,
+                               RLAM) < -BlasLike.lm_eps)
                         {
-                            nhess = nhess_conv;
+
                             /*weak local minimum*/
                             //		AddLog("PLACE 2\n");
                             i = 1;
                             break;
                         }
-                    nhess = nhess_conv;
+
                     /*
                     change	x  to  x + alfa*p.  update  ax	also
                     we no longer need to remember jdsave, the last constraint deleted
@@ -5563,7 +5619,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 {
                     if (hitlow != 0) bnd = bl[jadd];
                     else bnd = bu[jadd];
-                    if (alfa >= 0) x[jadd] = bnd;
+                    if (alfa >= 0) W[jadd - 1] = bnd;
                     i = nfree;
                     for (ifix = 1; ifix <= (int)i; ++ifix) if (KFREE[ifix - 1] == jadd) break;
                 }
@@ -5599,7 +5655,6 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                     */
                     --(nfree);
                     KACTV[nactiv] = jadd;
-                    int nhess_conv_c = nhess;
                     if (orthog == 0)
                     {
 
@@ -5613,12 +5668,11 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                         fixed (double* pWRK = WRK)
                         fixed (int* pKFREE = KFREE)
                         fixed (int* pkact = KACTV)
-            fixed(double*lwrk=LWRK)
-                            dqpgrad(3, n, nactiv, nfree, &nhess_conv, nq,
-                                nrowh, ncolh, jadd, pkact, pKFREE, alfa, ref objqp,
-                                &pQTG[nfree], gtp, &cvec[1], hess, pPX, pQTG, 
-                                lwrk, &x[1], pZY, pWRK, pPX);
-                        nhess = nhess_conv_c;
+                        fixed (double* lwrk = LWRK)
+                        fixed (double* pW = W)
+                            dqpgrad(3, n, nactiv, nfree, ref nhess, nq,
+                                nrowh, ncolh, jadd, alfa, ref objqp,
+                                ref QTG[nfree], gtp, PX);
                     }
                 }
                 else
@@ -5645,10 +5699,10 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                     */
                     fixed (double* pRLAM = RLAM)
                     fixed (int* pKFREE = KFREE)
-            fixed(double*lwrk=LWRK)
-                        dqpcolr(&nocurv, &posdef, &renewr, n, &ncolr,
-                            &nfree, &nrowh, &ncolh, &nhess, pKFREE, &cslast, &snlast, &drmax, &emax, &hsize, &rdlast,
-                            hess, lwrk, pRLAM);
+                    fixed (double* lwrk = LWRK)
+                        dqpcolr(ref nocurv, ref posdef, ref renewr, n, ref ncolr,
+                            ref nfree, ref nrowh, ref ncolh, ref nhess, KFREE, ref cslast, ref snlast, ref drmax, ref emax, ref hsize, ref rdlast,
+                            RLAM);
                 }
                 /*.........................END OF MAIN LOOP............................*/
             }
@@ -5663,11 +5717,12 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                          NROWRT, &jsmlst, &ksmlst, &smllst, pistate, a);
             fixed (double* pRLAM = RLAM)
             fixed (int* pistate = ISTATE)
+            fixed (double* pW = W)
                 dprtsol(nfree, n, nclin, ncnln, nctotl,
                     nactiv, pistate, a,
-                    &bl[1], &bu[1], &x[1], &clamda[1], pRLAM, &x[1]);
+                    &bl[1], &bu[1], pW, &clamda[1], pRLAM, pW);
         }
-        public unsafe static int dqpcrsh(int n, int ncolz, int nfree, int* nhess, int Nq, int nrowh, int ncolh, int Nrowrt, int* kfree, double* hsize, double* hess, double* rt, double* scale, double* zzy, double* hz1, double* wrk)
+        public unsafe static int dqpcrsh(int n, int ncolz, int nfree, ref int nhess, int Nq, int nrowh, int ncolh, int Nrowrt, double* hsize, double* rt, double[] scale, double* zzy, double[] hz1, double[] wrk)
         {
 
             /*
@@ -5684,12 +5739,12 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
 
 
             if (ncolz == 0) return 0;
-            --wrk;
+            //    --wrk;
             zy_offset = Nq + 1;
             //   zy -= zy_offset;
-            --scale;
+            //   --scale;
             rt -= Nrowrt + 1;
-            --kfree;
+//  --kfree;
             ncolr = 0;
             /*
             compute  z(t) h z  and store the upper-triangular symmetric part
@@ -5698,16 +5753,16 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             for (k = 1; k <= ncolz; ++k)
             {
 
-                BlasLike.dzerovec(n, &wrk[1]);
+                BlasLike.dzerovec(n, wrk);
                 if (!UNITQ)
                 {
                     /* expand the column of  z  into an  n-vector */
                     for (i = 1; i <= nfree; ++i)
                     {
-                        j = kfree[i];
-                        wrk[j] = ZY[i + k * nq - zy_offset];
+                        j = KFREE[i-1];
+                        wrk[j - 1] = ZY[i + k * nq - zy_offset];
                     }
-                    if (scldqp) Factorise.ddmxmulv(n, &scale[1], 1, &wrk[1], 1);
+                    if (scldqp) Factorise.ddmxmulv(n, scale, 1, wrk, 1);
                     jthcol = 0;
                 }
                 else
@@ -5716,16 +5771,16 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                         only bounds are in the working set.  the  k-th column of  z is
                         just a column of the identity matrix
                     */
-                    jthcol = kfree[k];
-                    wrk[jthcol] = 1;
+                    jthcol = KFREE[k-1];
+                    wrk[jthcol - 1] = 1;
                 }
                 /*set  rt(*,k)  =  top of   h * (column of  z)*/
                 qphess(n, nrowh, ncolh, jthcol, Q, WRK, RLAM);
-                ++(*nhess);
-                if (UNITQ && scldqp) BlasLike.dscalvec(n, scale[jthcol], hz1);
-                if (scldqp) Factorise.ddmxmulv(n, &scale[1], 1, hz1, 1);
-                dzyprod(4, n, nfree, ncolz, nfree, Nq, &kfree[1], &kfree[1],
-                    hz1, &wrk[1]);
+                ++nhess;
+                if (UNITQ && scldqp) BlasLike.dscalvec(n, scale[jthcol - 1], hz1);
+                if (scldqp) Factorise.ddmxmulv(n, scale, 1, hz1, 1);
+                dzyprod(4, n, nfree, ncolz, nfree, Nq, KFREE, KFREE,
+                    hz1, wrk);
                 //         BlasLike.dcopyvec(ncolz, hz1, &rt[k * Nrowrt + 1]);
                 //              BlasLike.dcopy(ncolz, RLAM, 1, RT, 1, 0, (k-1) * Nrowrt);
                 BlasLike.dcopyvec(ncolz, RLAM, RT, 0, (k - 1) * Nrowrt);
@@ -5764,16 +5819,16 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                     if (!UNITQ)
                         fixed (double* pZY = ZY)
                         {
-                            BlasLike.dcopyvec(nfree, &pZY[kmax * Nq + 1 - zy_offset], &wrk[1]);
-                            BlasLike.dcopyvec(nfree, &pZY[j * Nq + 1 - zy_offset], &pZY[kmax * Nq + 1 - zy_offset]);
-                            BlasLike.dcopyvec(nfree, &wrk[1], &pZY[j * Nq + 1 - zy_offset]);
+                            BlasLike.dcopyvec(nfree, ZY, wrk, kmax * Nq + 1 - zy_offset);
+                            BlasLike.dcopyvec(nfree, ZY, ZY, j * Nq + 1 - zy_offset, kmax * Nq + 1 - zy_offset);
+                            BlasLike.dcopyvec(nfree, wrk, ZY, 0, j * Nq + 1 - zy_offset);
                         }
                     else
                     {
                         /*Z is not stored explicitly*/
-                        ksave = kfree[kmax];
-                        kfree[kmax] = kfree[j];
-                        kfree[j] = ksave;
+                        ksave = KFREE[kmax-1];
+                        KFREE[kmax-1] = KFREE[j-1];
+                        KFREE[j-1] = ksave;
                     }
                     /*interchange rows and columns of the projected hessian*/
                     //#if 1
@@ -5824,11 +5879,9 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                     ncolr, ncolz);
             return ncolr;
         }
-        public unsafe static short dqpgrad(short mode, int n, int nactiv, int nfree,
-                int* nhess, int Nq, int nrowh, int ncolh, int jadd,
-                int* kactiv, int* kfree, double alfa, ref double objqp, double* gfixed, double gtp,
-                double* cveec, double* heess, double* pp, double* qttg, double* sccale, double* xx, double* zy,
-                double* wrk11, double* wrk2)
+        public static short dqpgrad(short mode, int n, int nactiv, int nfree,
+                ref int nhess, int Nq, int nrowh, int ncolh, int jadd,
+                 double alfa, ref double objqp, ref double gfixed, double gtp, double[] wrk2)
         {
 
             /*
@@ -5845,15 +5898,15 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             double deltaf;
             int jthcol;
 
-            --wrk2;
-     // --wrk1;
- // --x;
-      //      --scale;
-     //       --qtg;
-    //        --p;
-  //          --cvec;
-            --kfree;
-            --kactiv;
+            //   --wrk2;
+            // --wrk1;
+            // --x;
+            //      --scale;
+            //       --qtg;
+            //        --p;
+            //          --cvec;
+            //       --kfree;
+            //         --kactiv;
 
             jthcol = 0;
             switch (mode)
@@ -5865,14 +5918,12 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                     */
                     BlasLike.dcopyvec(n, W, WRK);
                     if (scldqp) Factorise.ddmxmulv(n, LWRK, 1, WRK, 1);
-                    qphess(n, nrowh, ncolh, jthcol, Q, WRK,QTG);
+                    qphess(n, nrowh, ncolh, jthcol, Q, WRK, QTG);
                     objqp = 0.5 * BlasLike.ddotvec(n, QTG, WRK) + BlasLike.ddotvec(n, c, WRK);
                     BlasLike.daxpy(n, 1, c, 1, QTG, 1);
                     if (scldqp) Factorise.ddmxmulv(n, LWRK, 1, QTG, 1);
                     /*COMPUTE Q(FREE)(T)(G(FREE) & G(FIXED).  discard ELEMENTS OF G(FREE)*/
-                    fixed(double*pQTG=QTG)
-                    fixed(double*pWRK=WRK)
-                    dzyprod(6, n, nactiv, 0, nfree, Nq, kactiv + 1, kfree + 1, pQTG, pWRK);
+                    dzyprod(6, n, nactiv, 0, nfree, Nq, KACTV, KFREE, QTG, WRK);
                     break;
                 case 2:
                     /*
@@ -5891,32 +5942,28 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                         return -1;
                     objqp += deltaf;
                     /*UPDATE QTG.  USE P  AS TEMPORARY WORK SPACE*/
-                    fixed(double*pQTG=QTG)
-                    fixed(double*pWRK=WRK)
-                    dzyprod(6, n, nactiv, 0, nfree, Nq, kactiv + 1, kfree + 1,
-                    pWRK, wrk2 + 1);
+                    dzyprod(6, n, nactiv, 0, nfree, Nq, KACTV, KFREE,
+                    WRK, wrk2);
                     BlasLike.daxpy(n, alfa, WRK, 1, QTG, 1);
                     break;
                 case 3:
                     /*COMPUTE THE  JADD-TH COMPONENT OF THE GRADIENT VECTOR.*/
                     jthcol = jadd;
-                    BlasLike.dzerovec(n, &wrk2[1]);
+                    BlasLike.dzerovec(n, wrk2);
                     wrk2[jthcol] = 1;
-                    fixed(double*pQ=Q)
-                    fixed(double*pWRK=WRK)
-                    qphess(n, nrowh, ncolh, jthcol, pQ, &wrk2[1], pWRK);
+                    qphess(n, nrowh, ncolh, jthcol, Q, wrk2, WRK);
                     if (scldqp)
                     {
                         Factorise.ddmxmulv(n, LWRK, 1, WRK, 1);
-                        *gfixed = LWRK[jadd-1] * (BlasLike.ddotvec(n, WRK, W) + c[jadd-1]);
+                        gfixed = LWRK[jadd - 1] * (BlasLike.ddotvec(n, WRK, W) + c[jadd - 1]);
                     }
-                    else *gfixed = BlasLike.ddotvec(n, WRK, W) + c[jadd-1];
+                    else gfixed = BlasLike.ddotvec(n, WRK, W) + c[jadd - 1];
                     break;
             }
-            ++(*nhess);
+            ++nhess;
             return 0;
         }
-        public unsafe static void dqpprt(int orthog, int isdel, int iter, int jadd, int jdel, int nactiv, int ncolz, int nfree, int n, int nclin, int nhess, int* istate, int* kfree, double alfa, double condh, double condt, double obj, double gfnorm, double ztgnrm, double emax, double* a, double* rt, double* x, double* wrk1, double* wrk2)
+        public static void dqpprt(int orthog, int isdel, int iter, int jadd, int jdel, int nactiv, int ncolz, int nfree, int n, int nclin, int nhess, double alfa, double condh, double condt, double obj, double gfnorm, double ztgnrm, double emax, double[] wrk2)
         {
 
             /*
@@ -5942,9 +5989,9 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             var ladd = new char[1];
             var ldel = new char[1];
             int k, laddi, ldeli;
-            --x;
-            --kfree;
-            --istate;
+            //    --x;
+            //--kfree;
+            // --istate;
 
             if (msg < 5) return;
             ldeli = 0;
@@ -5955,7 +6002,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
                 ldeli = 5;
                 jdel = -jdel;
             }
-            if (jadd > 0) laddi = istate[jadd];
+            if (jadd > 0) laddi = ISTATE[jadd - 1];
             ldel[0] = lstate[ldeli];
             ladd[0] = lstate[laddi];
             if (msg < 15)
@@ -5973,31 +6020,31 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             lm_wmsg(hdrfmt, (orthog != 0 ? "NORM GFREE" : "  NORM QTG"));
             lm_wmsg(hdrfmt2, iter, jdel, ldel[0], jadd,
                 ladd[0], alfa, nhess, obj, ncolz, gfnorm, ztgnrm, condt, condh, emax);
-            lm_mdvwri("\nQP VARIABLES", n, &x[1]);
-            lm_mdvwri("\nSTATUS OF THE QP BOUND CONSTRAINTS", n, &istate[1]);
-            if (nclin > 0) lm_mdvwri("\nSTATUS OF THE QP GENERAL CONSTRAINTS", nclin, &istate[n + 1]);
-            if (nfree > 0) lm_mdvwri("\nLIST OF FREE QP VARIABLES", nfree, &kfree[1]);
+            lm_mdvwri("\nQP VARIABLES", n, W);
+            lm_mdvwri("\nSTATUS OF THE QP BOUND CONSTRAINTS", n, ISTATE);
+            if (nclin > 0) lm_mdvwri("\nSTATUS OF THE QP GENERAL CONSTRAINTS", nclin, ISTATE, n);
+            if (nfree > 0) lm_mdvwri("\nLIST OF FREE QP VARIABLES", nfree, KFREE);
             /*compute and print  ax.  use  work  to avoid side effects*/
             if (msg < 20) return;
             if (nclin > 0)
             {
-                for (k = 0; k < (int)nclin; ++k) wrk2[k] = BlasLike.ddot(n, a + k, NROWA, &x[1], 1);
+                for (k = 0; k < (int)nclin; ++k) wrk2[k] = BlasLike.ddot(n, A, NROWA, W, 1, k);
                 lm_mdvwri("\nVALUES OF QP GENERAL LINEAR CONSTRAINTS", nclin, wrk2);
             }
             /*print all the diagonals of  t  and  r*/
             if (msg < 30) return;
             if (nactiv > 0)
             {
-                BlasLike.dcopy(nactiv, rt + nactiv + ncolz * NROWRT - 1, NROWRT - 1, wrk1, 1);
-                lm_mdvwri("\nDIAGONALS OF QP WORKING SET FACTOR  T", nactiv, wrk1);
+                BlasLike.dcopy(nactiv, RT, NROWRT - 1, WRK, 1, nactiv + ncolz * NROWRT - 1);
+                lm_mdvwri("\nDIAGONALS OF QP WORKING SET FACTOR  T", nactiv, WRK);
             }
             if (ncolz > 0)
             {
                 Console.WriteLine("\nDIAGONALS OF QP PRJ. HESSIAN FACTOR  R");
-                lm_gdvwri(ncolz, rt, NROWRT + 1);
+                lm_gdvwri(ncolz, RT, NROWRT + 1);
             }
         }
-        public unsafe static void dqpcolr(bool* nocurv, bool* posdef, bool* renewr, int n, int* ncolr, int* nfree, int* nrowh, int* ncolh, int* nhess, int* kfree, double* cslast, double* snlast, double* drmax, double* emax, double* hsize, double* rdlast, double* hess, double* scale, double* hz1)
+        public static void dqpcolr(ref bool nocurv, ref bool posdef, ref bool renewr, int n, ref int ncolr, ref int nfree, ref int nrowh, ref int ncolh, ref int nhess, int[] kfree, ref double cslast, ref double snlast, ref double drmax, ref double emax, ref double hsize, ref double rdlast, double[] hz1)
         {
             /*
                 dqpcolr  is used to compute elements of the  (ncolr)-th  column of
@@ -6027,20 +6074,20 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             int jthcol;
             double rdsmin, rdsmax;
             //          --wrk;
-            --hz1;
+            //  --hz1;
             zy_dim1 = nq;
             zy_offset = zy_dim1 + 1;
             //    zy -= zy_offset;
-            --scale;
+            // --scale;
             rt_dim1 = NROWRT;
             rt_offset = rt_dim1 + 1;
             //    rt -= rt_offset;
-            hess_dim1 = *nrowh;
+            hess_dim1 = nrowh;
             hess_offset = hess_dim1 + 1;
-            hess -= hess_offset;
-            --kfree;
+            //   hess -= hess_offset;
+            //   --kfree;
 
-            if (*renewr)
+            if (renewr)
             {
                 goto L20;
             }
@@ -6055,9 +6102,9 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             the rotations used to update  r  when the constraint was added to
             the working set
             */
-            *rdlast = RT[*ncolr + *ncolr * rt_dim1 - rt_offset];
-            s = Math.Abs(*snlast);
-            rdsq = (*cslast - s) * *rdlast * ((*cslast + s) * *rdlast);
+            rdlast = RT[+ncolr * rt_dim1 - rt_offset];
+            s = Math.Abs(snlast);
+            rdsq = (cslast - s) * rdlast * ((cslast + s) * rdlast);
             goto L120;
         /*
         the projected hessian is expanded by a row and column.  compute
@@ -6071,15 +6118,14 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             /*
                  expand the new column of z in to an n-vector
             */
-            i__1 = *nfree;
+            i__1 = nfree;
             for (k = 1; k <= i__1; ++k)
             {
-                j = kfree[k];
-                WRK[j - 1] = ZY[k + *ncolr * zy_dim1 - zy_offset];
+                j = kfree[k - 1];
+                WRK[j - 1] = ZY[k + ncolr * zy_dim1 - zy_offset];
                 /* L40: */
             }
-            fixed (double* pWRK = WRK)
-                if (scldqp) Factorise.ddmxmulv(n, &scale[1], 1, pWRK, 1);
+            if (scldqp) Factorise.ddmxmulv(n, LWRK, 1, WRK, 1);
             jthcol = 0;
             goto L80;
         /*
@@ -6088,40 +6134,34 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
              matrix
         */
         L60:
-            jthcol = kfree[*ncolr];
+            jthcol = kfree[ncolr - 1];
             WRK[jthcol - 1] = 1;
         /*
              compute the hessian times the last column of z
         */
         L80:
-            fixed (double* pWRK = WRK)
-                qphess(n, *nrowh, *ncolh, jthcol, &hess[hess_offset], pWRK, &hz1[1]);
-            ++(*nhess);
-            if (UNITQ && scldqp) BlasLike.dscalvec(n, scale[jthcol], &hz1[1]);
-            if (scldqp) Factorise.ddmxmulv(n, &scale[1], 1, &hz1[1], 1);
+            qphess(n, nrowh, ncolh, jthcol, Q, WRK, hz1);
+            ++nhess;
+            if (UNITQ && scldqp) BlasLike.dscalvec(n, LWRK[jthcol - 1], hz1);
+            if (scldqp) Factorise.ddmxmulv(n, LWRK, 1, hz1, 1);
             /*
-                 compute the  (ncolr)-th  column of  z(t)h z
-            */
-            fixed (double* pWRK = WRK)
-                dzyprod(4, n, *nfree, *ncolr, *nfree, nq, &kfree[1], &kfree[1], &
-                    hz1[1], pWRK);
-            fixed (double* pRT = RT)
-                BlasLike.dcopyvec(*ncolr, &hz1[1], &pRT[*ncolr * rt_dim1 + 1 - rt_offset]);
+                 compute the  (ncolr)-th  column of  z(t)h z            */
+            dzyprod(4, n, nfree, ncolr, nfree, nq, KFREE, KFREE, hz1, WRK);
+            BlasLike.dcopyvec(ncolr, hz1, RT, 0, ncolr * rt_dim1 + 1 - rt_offset);
             /*
             compute the first  (ncolr - 1)  elements of the last column of  r.
             */
-            ncolr1 = *ncolr - 1;
-            zthz1 = RT[*ncolr + *ncolr * rt_dim1 - rt_offset];
+            ncolr1 = ncolr - 1;
+            zthz1 = RT[ncolr + ncolr * rt_dim1 - rt_offset];
             rdsq = zthz1;
             if (ncolr1 == 0)
             {
                 goto L100;
             }
-            fixed (double* pRT = RT)
             {
-                idiag = dtmxsolve((short)-1, ncolr1, pRT, NROWRT, &pRT[*ncolr * rt_dim1 + 1 - rt_offset], (short)1);
+                idiag = dtmxsolve((short)-1, ncolr1, RT, NROWRT, RT, (short)1, 0, ncolr * rt_dim1 + 1 - rt_offset);
                 //  rnorm = dnrm2vec(ncolr1, &pRT[*ncolr * rt_dim1 + 1 - rt_offset]);
-                rnorm = dnrm2vec(ncolr1, RT, *ncolr * rt_dim1 + 1 - rt_offset);
+                rnorm = dnrm2vec(ncolr1, RT, ncolr * rt_dim1 + 1 - rt_offset);
             }
             /*
             compute the square of the last diagonal element of  r
@@ -6131,7 +6171,7 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
         update the estimate of the norm of the hessian
         */
         L100:
-            *hsize = Math.Max(*hsize, zthz1);
+            hsize = Math.Max(hsize, zthz1);
         /*
         compute  rdlast, the last diagonal of  r.  the variables posdef
         and  nocurv  are set here.  they are used to indicate if the new
@@ -6143,17 +6183,17 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
         to the working set during the next iteration
         */
         L120:
-            *nocurv = false;
-            *renewr = false;
-            *emax = 0;
+            nocurv = false;
+            renewr = false;
+            emax = 0;
             /*
             rdsmin  is the square of the smallest allowable diagonal element
             for a positive-definite cholesky factor.  note that the test for a
             singular matrix is scale dependent
             */
-            rdsmin = (*ncolr > 1 ? *drmax * *drmax : *hsize) * BlasLike.lm_eps;
-            *posdef = rdsq > rdsmin;
-            if (*posdef)
+            rdsmin = (ncolr > 1 ? drmax * drmax : hsize) * BlasLike.lm_eps;
+            posdef = rdsq > rdsmin;
+            if (posdef)
             {
                 goto L180;
             }
@@ -6168,9 +6208,9 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
             perturbation  emax  is chosen to make the new eigenvalue of  zthz1
             small and positive
             */
-            *emax = rdsmin - rdsq;
+            emax = rdsmin - rdsq;
             rdsq = rdsmin;
-            *nocurv = true;
+            nocurv = true;
             goto L180;
         /*
         the projected hessian is indefinite.  there are two cases
@@ -6179,12 +6219,12 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
         large.  the modulus of  rdsq  is used for the square root
         */
         L140:
-            rdsmax = 10 * *hsize;
+            rdsmax = 10 * hsize;
             if (rdsq < -rdsmax)
             {
                 goto L160;
             }
-            *emax = -2 * rdsq;
+            emax = -2 * rdsq;
             goto L180;
         /*
         case 2.  the modulus of the last diagonal of  r  is judged to be
@@ -6192,19 +6232,19 @@ short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jad
         renewr  so that the last column is recomputed later
         */
         L160:
-            *emax = rdsmax - rdsq;
-            *renewr = true;
+            emax = rdsmax - rdsq;
+            renewr = true;
             rdsq = rdsmax;
         /*
         compute the last diagonal element
         */
         L180:
-            *rdlast = Math.Sqrt((Math.Abs(rdsq)));
-            RT[*ncolr + *ncolr * rt_dim1 - rt_offset] = *rdlast;
-            if (msg >= 80 && !(*posdef))
+            rdlast = Math.Sqrt((Math.Abs(rdsq)));
+            RT[ncolr + ncolr * rt_dim1 - rt_offset] = rdlast;
+            if (msg >= 80 && !posdef)
                 lm_wmsg(
             "\n//QPCOLR//  POSDEF NOCURV          EMAX        RDLAST\n//QPCOLR//%8ld%7ld%14.4lg%14.4lg",
-                *posdef, *nocurv, *emax, *rdlast);
+                posdef, nocurv, emax, rdlast);
             return;
         }
         public unsafe static
