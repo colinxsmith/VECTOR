@@ -61,7 +61,7 @@ namespace ActiveSet
             return timeaquired;
         }
         public unsafe static void dlpcore(bool lp, int minsum, bool orthog, int vertex, ref int inform, ref int iter,
-                int itmax, byte lcrash, int n, int nclin, int* nctotl, int* nactiv,
+                int itmax, byte lcrash, int n, int nclin, int* nctotl, ref int nactiv,
                 ref int nfree, ref int numinf, ref double obj, double[] xnorm)
         {
             /*
@@ -96,7 +96,7 @@ namespace ActiveSet
             int ifix = 123;
             bool prnt;
             bool added;
-            double palfa;
+            double palfa = 44;
             int ifail = 19;
             double bigdx;
             int isdel = 0;
@@ -118,16 +118,16 @@ namespace ActiveSet
             int jbigst, kbigst;
             double tolact;
             bool modfyg;
-            double condmx, atphit, cslast = 46, rdlast = 1e12, objsiz, snlast = 76, suminf = 12,
+            double condmx, atphit = 45, cslast = 46, rdlast = 1e12, objsiz, snlast = 76, suminf = 12,
                  trulam;
             int idummy, msglvl;
-            int jsmlst, ksmlst;
-            double smllst;
+            int jsmlst = 1, ksmlst = 7;
+            double smllst = 1e34;
             int mstall;
             double ztgnrm;
             int nstall;
             bool firstv;
-            int hitlow;
+            int hitlow = 6;
             bool unitpg;
             double bnd;
             double gtp = 1e45;
@@ -207,24 +207,10 @@ namespace ActiveSet
             fixed (int* pkfree = KFREE)
             fixed (int* pkactiv = KACTV)
             fixed (int* pistate = ISTATE)
-                dlpcrsh(orthog, vertex, lcrash, n, nclin, nctotl,
-         NROWRT, NCOLRT, nactiv, ref ncolz, ref nfree,
+                dlpcrsh(orthog, vertex, lcrash, n, nclin, *nctotl,
+         NROWRT, NCOLRT, ref nactiv, ref ncolz, ref nfree,
         pkactiv, pkfree);
-            fixed (double* pANORM = ANORM)
-            fixed (double* pQTG = QTG)
-            fixed (double* pRT = RT)
-            fixed (double* pZY = ZY)
-            fixed (double* pPX = PX)
-            fixed (double* pRLAM = RLAM)
-            fixed (double* px = W)
-            fixed (double* pc = c)
-            fixed (double* pa = A)
-            fixed (double* pL = L)
-            fixed (double* pU = U)
-            fixed (double* pFeatol = FEATOL)
-            fixed (int* pistate = ISTATE)
-                dlpgrad(lp, n, *nctotl, feamin[0], ref numinf, ref suminf, pa, pL, pU, pc, pFeatol, pQTG,
-                    px);
+            dlpgrad(lp, n, *nctotl, feamin[0], ref numinf, ref suminf);
             fixed (double* pANORM = ANORM)
             fixed (double* pQTG = QTG)
             fixed (double* pRT = RT)
@@ -233,7 +219,7 @@ namespace ActiveSet
             fixed (double* pWRK = WRK)
             fixed (int* pkfree = KFREE)
             fixed (int* pkactiv = KACTV)
-                dzyprod(6, n, *nactiv, ncolz, nfree, nq, KACTV, KFREE
+                dzyprod(6, n, nactiv, ncolz, nfree, nq, KACTV, KFREE
                     , QTG, WRK);
             obj = suminf;
             if (lp) objlp = BlasLike.ddotvec(n, c, W);
@@ -251,7 +237,7 @@ namespace ActiveSet
                 objsiz = (BlasLike.lm_eps + Math.Abs(obj)) / (BlasLike.lm_eps + xnorm[0]);
             }
             anorm = 0;
-            if (*nactiv > 0)
+            if (nactiv > 0)
             {
                 anorm = Math.Abs(dtmax);
             }
@@ -286,7 +272,7 @@ namespace ActiveSet
             fixed (double* pa = A)
             fixed (int* pkfree = KFREE)
             fixed (int* pistate = ISTATE)
-                dlpprt(lp, NROWRT, n, nclin, nfree, isdel, *nactiv,
+                dlpprt(lp, NROWRT, n, nclin, nfree, isdel, nactiv,
                     ncolz, iter, jadd, jdel, alfa, condt, numinf,
                     suminf, objlp, pistate, pkfree, pa, pRT, px, pWRK, pAP);
             added = false;
@@ -307,10 +293,8 @@ namespace ActiveSet
             /*     WE HAVE TO DELETE A CONSTRAINT BEFORE A MOVE CAN BE MADE. */
             /* --------------------------------------------------------------------- 
             */
-            fixed (double* pa = A)
-            fixed (int* pistate = ISTATE)
-                dgetlamd(lprob, n, *nactiv, ncolz, nfree, NROWRT,
-                    &jsmlst, &ksmlst, &smllst, pistate, pa);
+            dgetlamd(lprob, n, nactiv, ncolz, nfree,
+                ref jsmlst, ref ksmlst, ref smllst);
             /* --------------------------------------------------------------------- 
             */
             /*     TEST FOR CONVERGENCE.  IF THE LEAST (ADJUSTED) MULTIPLIER IS */
@@ -367,7 +351,7 @@ namespace ActiveSet
             fixed (double* pFeatol = FEATOL)
             fixed (int* pkactiv = KACTV)
             fixed (int* pistate = ISTATE)
-                dlpbgst(n, *nactiv, nfree, &jbigst, &kbigst, pistate, pkactiv, dinky, feamin[0],
+                dlpbgst(n, nactiv, nfree, &jbigst, &kbigst, pistate, pkactiv, dinky, feamin[0],
                     &trulam, pFeatol, pRLAM);
             if (jbigst == 0)
             {
@@ -398,7 +382,7 @@ namespace ActiveSet
             fixed (double* pa = A)
             fixed (int* pkfree = KFREE)
             fixed (int* pkactiv = KACTV)
-                ddelcon(modfyg, orthog, jdel, kdel, *nactiv, ncolz, nfree, n,
+                ddelcon(modfyg, orthog, jdel, kdel, nactiv, ncolz, nfree, n,
                      NROWRT, pkactiv, pkfree, pa,
                     pQTG, pRT);
             ++ncolz;
@@ -408,7 +392,7 @@ namespace ActiveSet
             }
             if (jdel > (int)n)
             {
-                --(*nactiv);
+                --nactiv;
             }
             goto L20;
         /* --------------------------------------------------------------------- 
@@ -457,9 +441,9 @@ namespace ActiveSet
             fixed (double* pU = U)
             fixed (double* pFeatol = FEATOL)
             fixed (int* pistate = ISTATE)
-                inform = dbndalf(firstv, &hitlow, pistate, &jadd, n,
-        *nctotl, numinf, &alfa, &palfa, &atphit, &bigalf,
-        &pnorm, pANORM, pAP, pLWRK, pL, pU, pFeatol, pPX, px);
+                inform = dbndalf(firstv, ref hitlow, ref jadd, n,
+        *nctotl, numinf, ref alfa, ref palfa, ref atphit, ref bigalf,
+        pnorm);
             if (inform != 0 || jadd == 0)
             {
                 goto L300;
@@ -492,17 +476,8 @@ namespace ActiveSet
             nstall = 0;
             BlasLike.daxpyvec(n, alfa, PX, W);
 
-            fixed (double* pANORM = ANORM)
-            fixed (double* pQTG = QTG)
-            fixed (double* pRT = RT)
-            fixed (double* pZY = ZY)
-            fixed (double* pPX = PX)
-            fixed (double* pRLAM = RLAM)
-            fixed (double* pAP = AP)
-            fixed (double* plambda = LAMBDA)
-            fixed (double* pLWRK = LWRK)
-                if (nclin > 0)
-                    BlasLike.daxpy(nclin, alfa, pAP, 1, pLWRK, 1);
+            if (nclin > 0)
+                BlasLike.daxpyvec(nclin, alfa, AP, LWRK);
             xnorm[0] = dnrm2vec(n, W);
             if (lp) objlp = BlasLike.ddotvec(n, c, W);
             /*     IF  X  IS NOT YET FEASIBLE,  COMPUTE  OBJ  AND  GRAD  AS THE VALUE 
@@ -511,45 +486,13 @@ namespace ActiveSet
             /*     THE VECTOR  QTG  IS UPDATED AND  GRAD  NEED NOT BE COMPUTED). */
             L140:
             if (numinf == 0) goto L160;
-            fixed (double* pANORM = ANORM)
-            fixed (double* pQTG = QTG)
-            fixed (double* pRT = RT)
-            fixed (double* pZY = ZY)
-            fixed (double* pPX = PX)
-            fixed (double* pRLAM = RLAM)
-            fixed (double* pAP = AP)
-            fixed (double* px = W)
-            fixed (double* pc = c)
-            fixed (double* pa = A)
-            fixed (double* pL = L)
-            fixed (double* pU = U)
-            fixed (double* pFeatol = FEATOL)
-            fixed (int* pistate = ISTATE)
-                dlpgrad(lp, n, *nctotl, feamin[0], ref numinf, ref suminf
-                    , pa, pL, pU, pc, pFeatol, pQTG,
-                    px);
+            dlpgrad(lp, n, *nctotl, feamin[0], ref numinf, ref suminf);
             if (!orthog && jadd <= (int)n)
             {
-                fixed (double* pANORM = ANORM)
-                fixed (double* pQTG = QTG)
-                fixed (double* pRT = RT)
-                fixed (double* pZY = ZY)
-                fixed (double* pPX = PX)
-                fixed (double* pRLAM = RLAM)
-                fixed (double* pAP = AP)
-                    wgfix = pQTG[jadd - 1];
+                wgfix = QTG[jadd - 1];
             }
-            fixed (double* pANORM = ANORM)
-            fixed (double* pQTG = QTG)
-            fixed (double* pRT = RT)
-            fixed (double* pPX = PX)
-            fixed (double* pRLAM = RLAM)
-            fixed (double* pAP = AP)
-            fixed (double* pWRK = WRK)
-            fixed (int* pkfree = KFREE)
-            fixed (int* pkactiv = KACTV)
-                dzyprod(6, n, *nactiv, ncolz, nfree, nq, KACTV, KFREE
-                    , QTG, WRK);
+            dzyprod(6, n, nactiv, ncolz, nfree, nq, KACTV, KFREE
+                , QTG, WRK);
             obj = suminf;
         /* --------------------------------------------------------------------- 
         */
@@ -596,19 +539,16 @@ namespace ActiveSet
         L200:
             added = true;
             ndel = 0;
-            fixed (double* pPX = PX)
-            fixed (double* pWRK = WRK)
-            fixed (int* pkfree = KFREE)
-                inform = daddcon(modfyg, false, orthog, ifix, iadd, jadd,
-                    *nactiv, ncolz, ncolz, nfree, n, NROWA, KFREE, condmx, cslast, snlast,
-                     WRK, PX);
+            inform = daddcon(modfyg, false, orthog, ifix, iadd, jadd,
+                nactiv, ncolz, ncolz, nfree, n, NROWA, KFREE, condmx, cslast, snlast,
+                 WRK, PX);
             --ncolz;
             nfixed = n - nfree;
             if (nfixed == 0)
             {
                 goto L240;
             }
-            kb = *nactiv + nfixed;
+            kb = nactiv + nfixed;
             for (idummy = 1; idummy <= nfixed; ++idummy)
             {
                 KACTV[kb] = KACTV[kb - 1];
@@ -624,7 +564,7 @@ namespace ActiveSet
                 CORRESPONDING TO THE NEWLY FIXED VARIABLE
                 */
                 --(nfree);
-                KACTV[*nactiv] = jadd;
+                KACTV[nactiv] = jadd;
                 if (!orthog)
                 {
                     if (numinf > 0) QTG[nfree - 1] = wgfix;
@@ -634,8 +574,8 @@ namespace ActiveSet
             else
             {
                 /*ADD A GENERAL LINEAR CONSTRAINT*/
-                ++(*nactiv);
-                KACTV[*nactiv - 1] = iadd;
+                ++nactiv;
+                KACTV[nactiv - 1] = iadd;
             }
             goto L20;
         /* .........................END OF MAIN LOOP............................ 
@@ -684,10 +624,8 @@ namespace ActiveSet
             {
                 wrexit("LP", inform, iter);
             }
-            fixed (double* pa = A)
-            fixed (int* pistate = ISTATE)
-                if (inform > 0) dgetlamd(lprob, n, *nactiv, ncolz, nfree,
-                    NROWRT, &jsmlst, &ksmlst, &smllst, pistate, pa);
+            if (inform > 0) dgetlamd(lprob, n, nactiv, ncolz, nfree,
+                ref jsmlst, ref ksmlst, ref smllst);
             fixed (double* pANORM = ANORM)
             fixed (double* pQTG = QTG)
             fixed (double* pRT = RT)
@@ -711,7 +649,7 @@ namespace ActiveSet
             fixed (double* pLanbda = LAMBDA)
             fixed (int* pistate = ISTATE)
                 dprtsol(nfree, n, nclin, ncnln, *nctotl,
-                    *nactiv, pistate, pa,
+                    nactiv, pistate, pa,
                     pL, pU, pc, pLanbda, pRLAM, px);
         }
         public unsafe static double dnrm2vec(int n, double* x)
@@ -1036,8 +974,8 @@ namespace ActiveSet
         {
             Console.WriteLine($"{name} iteration {n}");
         }
-        public unsafe static void dlpcrsh(bool orthog, int vertex, byte lcrash, int n, int nclin, int* nctotl,
-          int Nrowrt, int Ncolrt, int* nactiv, ref int ncolz,
+        public unsafe static void dlpcrsh(bool orthog, int vertex, byte lcrash, int n, int nclin, int nctotl,
+          int Nrowrt, int Ncolrt, ref int nactiv, ref int ncolz,
         ref int nfree, int* kactiv, int* kfree)
         {
 
@@ -1063,7 +1001,7 @@ namespace ActiveSet
             double colmin, toobig;
             int nartif;
             double condmx, cslast = 78;
-            int inform;
+            int inform = 10;
             double resmin, colsiz, snlast = 0;
             int idummy;
             double rowmax;
@@ -1106,19 +1044,19 @@ namespace ActiveSet
             {
                 //lm_wmsg("\n//LPCRSH//  LCRASH NCLIN NCTOTL\n//LPCRSH//%7d%7ld%7ld",
                 //    lcrash, CL(*nclin), CL(*nctotl));
-                Console.WriteLine($"{lcrash},{nclin}, {*nctotl}");
+                Console.WriteLine($"{lcrash},{nclin}, {nctotl}");
                 lm_mdvwri("\nLP VARIABLES BEFORE CRASH...", n, W);
-                lm_mdvwri("\nSTATUS OF THE LP BOUND   CONSTRAINTS", *nctotl, ISTATE);
+                lm_mdvwri("\nSTATUS OF THE LP BOUND   CONSTRAINTS", nctotl, ISTATE);
             }
             nfixed = 0;
-            *nactiv = 0;
+            nactiv = 0;
             nartif = 0;
             /*     IF A COLD START IS BEING MADE, INITIALIZE  ISTATE. */
             /*     IF  BL(J) = BU(J),  SET  ISTATE(J)=3  FOR ALL VARIABLES AND LINEAR 
             */
             /*     CONSTRAINTS. */
             if (lcrash > 0) goto L60;
-            i__1 = *nctotl;
+            i__1 = nctotl;
             for (j = 1; j <= i__1; ++j)
                 ISTATE[j - 1] = L[j - 1] == U[j - 1] ? 3 : 0;
             /* L40: */
@@ -1126,10 +1064,10 @@ namespace ActiveSet
             /*     ENSURE THAT THE NUMBER OF BOUNDS AND GENERAL CONSTRAINTS IN THE */
             /*     WORKING SET DOES NOT EXCEED  N. */
             L60:
-            i__1 = *nctotl;
+            i__1 = nctotl;
             for (j = 1; j <= i__1; ++j)
             {
-                if (nfixed + *nactiv == (int)n || ISTATE[j - 1] == 4) ISTATE[j - 1] = 0;
+                if (nfixed + nactiv == (int)n || ISTATE[j - 1] == 4) ISTATE[j - 1] = 0;
                 if (ISTATE[j - 1] > 0)
                 {
                     if (j <= (int)n)
@@ -1140,17 +1078,17 @@ namespace ActiveSet
                     }
                     else
                     {
-                        ++(*nactiv);
-                        if (lcrash < 2) kactiv[*nactiv] = j - n;
+                        ++nactiv;
+                        if (lcrash < 2) kactiv[nactiv] = j - n;
                     }
                 }
             }
             nfree = n - nfixed;
-            ncolz = nfree - *nactiv;
+            ncolz = nfree - nactiv;
             if (msg >= 80)
             {
                 lm_mdvwri("\nLP VARIABLES AFTER CRASH INIT...", n, W);
-                lm_mdvwri("\nSTATUS OF THE LP BOUND   CONSTRAINTS", *nctotl, ISTATE);
+                lm_mdvwri("\nSTATUS OF THE LP BOUND   CONSTRAINTS", nctotl, ISTATE);
             }
             /*if a hot start is required, the tq factorization is already known*/
             if (lcrash > 1)
@@ -1188,7 +1126,7 @@ namespace ActiveSet
             constraints as possible to the working set
             ---------------------------------------------------------------------
             */
-            if (nfixed + *nactiv == (int)n)
+            if (nfixed + nactiv == (int)n)
             {
                 goto L460;
             }
@@ -1230,7 +1168,7 @@ namespace ActiveSet
                 if (was_is == 1) W[j - 1] = b1;
                 if (was_is == 2) W[j - 1] = b2;
                 ++nfixed;
-                if (nfixed + *nactiv == (int)n) goto L460;
+                if (nfixed + nactiv == (int)n) goto L460;
                 L200:
                 ;
             }
@@ -1311,11 +1249,11 @@ namespace ActiveSet
                 {
                     goto L320;
                 }
-                ++(*nactiv);
-                kactiv[*nactiv] = imin;
+                ++nactiv;
+                kactiv[nactiv] = imin;
                 j = n + imin;
                 ISTATE[j - 1] = was_is;
-                if (nfixed + *nactiv == (int)n)
+                if (nfixed + nactiv == (int)n)
                 {
                     goto L460;
                 }
@@ -1327,7 +1265,7 @@ namespace ActiveSet
         /* --------------------------------------------------------------------- 
         */
         L320:
-            ncolz = n - nfixed - *nactiv;
+            ncolz = n - nfixed - nactiv;
             if (vertex == 0 || ncolz == 0)
             {
                 goto L460;
@@ -1427,18 +1365,18 @@ namespace ActiveSet
             /*     THE  NACTIV BY NACTIV  TRIANGULAR MATRIX  T  AND THE NFREE BY */
             /*     NFREE MATRIX  Q  ARE STORED IN THE ARRAYS  RT  AND  ZY. */
             ncolz = nfree;
-            if (*nactiv == 0)
+            if (nactiv == 0)
             {
                 goto L540;
             }
-            nact1 = *nactiv;
-            *nactiv = 0;
+            nact1 = nactiv;
+            nactiv = 0;
             fixed (double* pWRK = WRK)
             fixed (double* pRT = RT)
             fixed (double* pRLAM = RLAM)
             fixed (double* pA = A)
             fixed (int* pist = ISTATE)
-                dtqadd(orthog, &inform, &c__1, &nact1, nactiv, ref ncolz, ref nfree, &n__,
+                dtqadd(orthog, ref inform, &c__1, &nact1, ref nactiv, ref ncolz, ref nfree, &n__,
                        pist, &kactiv[1], &kfree[
                     1], &condmx, pA, pRT);
             /*     IF A VERTEX IS REQUIRED BUT  TQADD  WAS UNABLE TO ADD ALL OF THE */
@@ -1472,7 +1410,7 @@ namespace ActiveSet
                 fixed (double* pRLAM = RLAM)
                 fixed (int* pkfree = KFREE)
                     inform = daddcon(false, false, orthog, ifix, iadd, jadd,
-                        *nactiv, ncolz, ncolz, nfree, n, NROWA,
+                        nactiv, ncolz, ncolz, nfree, n, NROWA,
                         KFREE, condmx, cslast, snlast,
                          WRK, RLAM);
                 --(nfree);
@@ -1485,7 +1423,7 @@ namespace ActiveSet
 
         /*     POINT TO THE FIXED VARIABLES. */
         L540:
-            kb = *nactiv;
+            kb = nactiv;
             i__1 = n;
             for (j = 1; j <= i__1; ++j)
             {
@@ -1501,11 +1439,11 @@ namespace ActiveSet
             /* --------------------------------------------------------------------- 
             */
             /*     SET WRK1 = RESIDUALS FOR CONSTRAINTS IN THE WORKING SET. */
-            if (*nactiv == 0)
+            if (nactiv == 0)
             {
                 goto L600;
             }
-            i__1 = *nactiv;
+            i__1 = nactiv;
             for (i = 1; i <= i__1; ++i)
             {
                 k = kactiv[i];
@@ -1522,15 +1460,14 @@ namespace ActiveSet
             /*     ON THE CONSTRAINTS IN THE WORKING SET. */
             /*     FIRST SOLVE  T*WRK1 = RESIDUALS, THEN GET  P = Y*WRK1. */
             idiag = 1;
-            fixed (double* pWRK = WRK)
-            fixed (double* pRT = RT)
+            //           fixed (double* pRT = RT)
             {
-                drtmxsolve(2, *nactiv, &pRT[(ncolz + 1) * rt_dim1 + 1 - rt_offset], Nrowrt, pWRK,
-                   &idiag);
+                drtmxsolve(2, nactiv, RT, Nrowrt, WRK,
+                   ref idiag, (ncolz + 1) * rt_dim1 + 1 - rt_offset);
                 BlasLike.dzerovec(n, PX);
-                BlasLike.dcopyvec(*nactiv, WRK, PX, 0, ncolz);
+                BlasLike.dcopyvec(nactiv, WRK, PX, 0, ncolz);
                 fixed (double* pPX = PX)
-                    dzyprod(2, n, *nactiv, ncolz, nfree, nq, KACTV, KFREE,
+                    dzyprod(2, n, nactiv, ncolz, nfree, nq, KACTV, KFREE,
                         PX, WRK);
                 BlasLike.daxpyvec(n, 1, PX, W);
             }
@@ -1559,20 +1496,19 @@ namespace ActiveSet
             }
         /*     A POINT THAT SATISFIES THE INITIAL WORKING SET HAS BEEN FOUND. */
         L640:
-            ncolz = nfree - *nactiv;
+            ncolz = nfree - nactiv;
             nfixed = n - nfree;
             if (msg >= 80)
             {
                 //  lm_wmsg(
                 //"\nLPCRSH. WORKING SET SELECTED ...\nBOUNDS = %ld TEMPORARY BOUNDS = %ld GENERAL LINEAR = %ld",
                 //  CL(nfixed), CL(nartif), CL(*nactiv));
-                Console.WriteLine($"{nfixed},{nartif}, {*nactiv}");
+                Console.WriteLine($"{nfixed},{nartif}, {nactiv}");
                 lm_mdvwri("\nLP VARIABLES AFTER  CRASH...", n, W);
             }
         }
-        public unsafe static void dlpgrad(bool lp, int n, int nctotl, double feamin,
-        ref int numinf, ref double suminf, double* a, double* bl,
-        double* bu, double* cvec, double* featol, double* grad, double* x)
+        public static void dlpgrad(bool lp, int n, int nctotl, double feamin,
+        ref int numinf, ref double suminf)
         {
 
             /*
@@ -1598,35 +1534,36 @@ namespace ActiveSet
             double weight, atx = 1e9;
             var bigbnd = parm[0];
 
-            --x;
-            --grad;
-            --featol;
-            --cvec;
-            --bu;
-            --bl;
-            a -= NROWA + 1;
+            // --x;
+            // --grad;
+            // --featol;
+            //      --cvec;
+            // --bu;
+            //       --bl;
+            //        a -= NROWA + 1;
+            var a_offset = NROWA + 1;
             //      --istate;
 
             if (numinf != 0)
             {
                 numinf = 0;
                 suminf = 0;
-                BlasLike.dzerovec(n, &grad[1]);
+                BlasLike.dzerovec(n, QTG);
                 for (j = 1; j <= (int)nctotl; ++j)
                 {
                     /* do nothing if the variable or constraint is at a bound */
                     if (ISTATE[j - 1] > 0) goto L60;
-                    feasj = featol[j];
-                    nolow = bl[j] <= -bigbnd;
-                    noupp = bu[j] >= bigbnd;
+                    feasj = FEATOL[j - 1];
+                    nolow = L[j - 1] <= -bigbnd;
+                    noupp = U[j - 1] >= bigbnd;
                     k = j - n;
                     if (j <= (int)n)
                     {
-                        atx = x[j];
+                        atx = W[j - 1];
                     }
                     if (j > (int)n)
                     {
-                        atx = BlasLike.ddot(n, &a[k + NROWA], NROWA, &x[1], 1);
+                        atx = BlasLike.ddot(n, A, NROWA, W, 1, k + NROWA - a_offset);
                     }
                     ISTATE[j - 1] = 0;
                     /* see if the lower bound is violated */
@@ -1634,7 +1571,7 @@ namespace ActiveSet
                     {
                         goto L20;
                     }
-                    s = bl[j] - atx;
+                    s = L[j - 1] - atx;
                     if (s <= feasj)
                     {
                         goto L20;
@@ -1648,7 +1585,7 @@ namespace ActiveSet
                     {
                         goto L60;
                     }
-                    s = atx - bu[j];
+                    s = atx - U[j - 1];
                     if (s <= feasj)
                     {
                         goto L60;
@@ -1661,15 +1598,15 @@ namespace ActiveSet
                     suminf += Math.Abs(weight) * s;
                     if (j <= (int)n)
                     {
-                        grad[j] = weight;
+                        QTG[j - 1] = weight;
                     }
-                    if (j > (int)n) BlasLike.daxpy(n, weight, &a[k + NROWA], NROWA, &grad[1], 1);
+                    if (j > (int)n) BlasLike.daxpy(n, weight, A, NROWA, QTG, 1, k + NROWA - a_offset);
                     L60:
                     ;
                 }
             }
             /* if feasible, install true objective */
-            if (lp && numinf == 0) BlasLike.dcopyvec(n, &cvec[1], &grad[1]);
+            if (lp && numinf == 0) BlasLike.dcopyvec(n, c, QTG);
         }
         public static void dzyprod(short mode, int n, int nactiv, int ncolz, int nfree, int nq, int[] kactiv, int[] kfree, double[] v, double[] wrk)
         {
@@ -1906,7 +1843,7 @@ namespace ActiveSet
                     BlasLike.dcopyvec(nfixed, wrk, v, nfree + 1 + wst, nfree + 1 + vst);
             }
         }
-        public unsafe static void dgetlamd(string lprob, int n, int nactiv, int ncolz, int nfree, int Nrowrt, int* jsmlst, int* ksmlst, double* smllst, int* istate, double* a)
+        public static void dgetlamd(string lprob, int n, int nactiv, int ncolz, int nfree, ref int jsmlst, ref int ksmlst, ref double smllst)
         {/*
 	dgetlamd first computes the lagrange multiplier estimates for the
 	given working set.  it then determines the values and indices of
@@ -1935,9 +1872,10 @@ namespace ActiveSet
             // --rlamda;
             // --qtg;
             // --anorm;
-            a -= NROWA + 1;
+            //   a -= NROWA + 1;
+            var a_offset = NROWA + 1;
             // --kactiv;
-            --istate;
+            //         --istate;
 
             /*
             first, compute the lagrange multipliers for the general
@@ -1951,10 +1889,8 @@ namespace ActiveSet
                 //   BlasLike.dcopyvec(nactiv, &qtg[ncolz + 1], pRLAM);
                 BlasLike.dcopyvec(nactiv, QTG, RLAM, ncolz);
                 idiag = 1;
-                fixed (double* pRT = RT)
-                fixed (double* pRLAM = RLAM)
-                    drtmxsolve(-2, nactiv, &pRT[(ncolz + 1) * Nrowrt + 1 - rt_offset], Nrowrt,
-                        pRLAM, &idiag);
+                drtmxsolve(-2, nactiv, RT, NROWRT,
+                    RLAM, ref idiag, (ncolz + 1) * NROWRT + 1 - rt_offset);
             }
             /*
             now set elements nactiv, nactiv+1,... of rlamda equal to the
@@ -1969,15 +1905,15 @@ namespace ActiveSet
                 for (ka = 1; ka <= nactiv; ++ka)
                 {
                     i = KACTV[ka - 1];
-                    blam -= a[i + j * NROWA] * RLAM[ka - 1];
+                    blam -= A[i + j * NROWA - a_offset] * RLAM[ka - 1];
                 }
                 RLAM[kb - 1] = blam;
             }
 
             /*find  allmax and smllst*/
-            *smllst = BlasLike.lm_max;
-            *jsmlst = 0;
-            *ksmlst = 0;
+            smllst = BlasLike.lm_max;
+            jsmlst = 0;
+            ksmlst = 0;
             for (k = 1; k <= nlam; ++k)
             {
                 j = KACTV[k - 1];
@@ -1987,7 +1923,7 @@ namespace ActiveSet
                     anormj = ANORM[j - 1];
                     j += n;
                 }
-                was_is = istate[j];
+                was_is = ISTATE[j - 1];
                 /*
                 change the sign of the estimate if the constraint is in the
                 working set (or violated) at its upper bound
@@ -2000,29 +1936,44 @@ namespace ActiveSet
                     if (was_is == 2) rlam = -rlam;
                     else if (was_is == 4) rlam = -Math.Abs(rlam);
                     /*find the smallest multiplier for the inequalities*/
-                    if (rlam < *smllst)
+                    if (rlam < smllst)
                     {
-                        *smllst = rlam;
-                        *jsmlst = j;
-                        *ksmlst = k;
+                        smllst = rlam;
+                        jsmlst = j;
+                        ksmlst = k;
                     }
                 }
             }
 
             /*if required, print the multipliers*/
             if (msg < 20) return;
-            fixed (double* pRLAM = RLAM)
-            fixed (int* pKACTV = KACTV)
-                if (nactiv > 0) w_lam(lprob, "CONSTRAINTS...", nactiv, pKACTV, pRLAM);
+            if (nactiv > 0) w_lam(lprob, "CONSTRAINTS...", nactiv, KACTV, RLAM);
             l = nactiv + 1;
-            fixed (double* pRLAM = RLAM)
-            fixed (int* pKACTV = KACTV)
-                if (l <= nlam) w_lam(lprob, "BOUND CONSTRAINTS...", nlam - nactiv, pKACTV, pRLAM);
+            if (l <= nlam) w_lam(lprob, "BOUND CONSTRAINTS...", nlam - nactiv, KACTV, RLAM);
             if (msg >= 80)
                 lm_wmsg("\n//dgetlam//  JSMLST     SMLLST     KSMLST\n//dgetlam//%8ld%11.2lg%11ld",
-                    *jsmlst, *smllst, *ksmlst);
+                    jsmlst, smllst, ksmlst);
         }
         public unsafe static void w_lam(string msg1, string msg2, int n, int* a, double* r)
+        {
+            int i, j;
+
+            lm_wmsg("\nMULTIPLIERS FOR THE ", msg1, msg2);
+            for (i = j = 0; i < n; i++)
+            {
+                if (j == 4)
+                {
+                    Console.Write("\n");
+                    j = 1;
+                }
+                else j++;
+                //lm_printf((char*)"%5ld%11.2le",CL(a[i]),r[i]);
+                Console.Write($"{a[i]} {r[i]}");
+            }
+            Console.Write("\n");
+        }
+
+        public static void w_lam(string msg1, string msg2, int n, int[] a, double[] r)
         {
             int i, j;
 
@@ -2363,7 +2314,7 @@ namespace ActiveSet
             }
             return;
         }
-        public unsafe static short dbndalf(bool firstv, int* hitlow, int* istate, int* jadd, int n, int nctotl, int numinf, double* alfa, double* palfa, double* atphit, double* bigalf, double* pnorm, double* anorm, double* ap, double* ax, double* bl, double* bu, double* featol, double* p, double* x)
+        public  static short dbndalf(bool firstv, ref int hitlow, ref int jadd, int n, int nctotl, int numinf, ref double alfa, ref double palfa, ref double atphit, ref double bigalf, double pnorm)
         {
             /*
                 dbndalf finds a step  alfa  such that the point  x + alfa*p
@@ -2404,26 +2355,26 @@ namespace ActiveSet
 
             short inform;
             double d__1;
-            int jadd1;
+            int jadd1 = 9;
             double alfa1, alfa2;
-            int jadd2;
+            int jadd2 = 8;
             bool hlow1, hlow2, lastv;
             int i, j;
-            double palfa1, palfa2, apmax1, apmax2;
+            double palfa1 = 1e34, palfa2 = 1e5, apmax1, apmax2;
             int jsave1, jsave2;
             double epspt9;
             int js;
             double absatp;
             double rownrm, atp, res, atx, atp1, atp2;
-            --x;
-            --p;
-            --featol;
-            --bu;
-            --bl;
-            --ax;
-            --ap;
-            --anorm;
-            --istate;
+            // --x;
+            //          --p;
+            // --featol;
+            //          --bu;
+            //          --bl;
+            // --ax;
+            // --ap;
+            // --anorm;
+            //      --istate;
 
             epspt9 = parm[3];
             inform = 0;
@@ -2436,9 +2387,8 @@ namespace ActiveSet
             THE GENERAL IDEA FOLLOWS THAT DESCRIBED BY P.M.J. HARRIS, P.21 OF 
             MATHEMATICAL PROGRAMMING 5, 1 (1973), 1--28.
             */
-            dbdpert(firstv, false, bigalf, pnorm, &jadd1, &jadd2, &palfa1, &
-                palfa2, &istate[1], n, nctotl, &anorm[1], &ap[1], &
-                ax[1], &bl[1], &bu[1], &featol[1], &p[1], &x[1]);
+            dbdpert(firstv, false, bigalf, pnorm, ref jadd1, ref jadd2, ref palfa1, ref
+                palfa2, n, nctotl);
             jsave1 = jadd1;
             jsave2 = jadd2;
             var bigbnd = parm[0];
@@ -2450,9 +2400,9 @@ namespace ActiveSet
             */
             if (msg == 99) Console.WriteLine(
         "BNDALF ENTERED\n    J  JS         FEATOL         AX             AP     JADD1        ALFA1     JADD2        ALFA2");
-            alfa1 = *bigalf;
+            alfa1 = bigalf;
             alfa2 = 0.0;
-            if (firstv) alfa2 = *bigalf;
+            if (firstv) alfa2 = bigalf;
             apmax1 = 0.0;
             apmax2 = 0.0;
             atp1 = 0.0;
@@ -2462,38 +2412,38 @@ namespace ActiveSet
             lastv = !firstv;
             for (j = 1; j <= nctotl; ++j)
             {
-                js = istate[j];
+                js = ISTATE[j - 1];
                 if (js > 0) continue;
                 if (j > n)
                 {
                     /*GENERAL LINEAR CONSTRAINT. */
                     i = j - n;
-                    atx = ax[i];
-                    atp = ap[i];
+                    atx = LWRK[i - 1];
+                    atp = AP[i - 1];
                     /*			lm_wmsg((char*)"atx %e  atp %e  istate[%d]=%d",atx,atp,j,js); */
-                    rownrm = anorm[i] + 1.0;
+                    rownrm = ANORM[i - 1] + 1.0;
                 }
                 else
                 {
                     /*BOUND CONSTRAINT. */
-                    atx = x[j];
-                    atp = p[j];
+                    atx = W[j - 1];
+                    atp = PX[j - 1];
                     rownrm = 1.0;
                 }
-                if (Math.Abs(atp) <= epspt9 * rownrm * *pnorm) res = -1.0;
+                if (Math.Abs(atp) <= epspt9 * rownrm * pnorm) res = -1.0;
                 else if (atp > BlasLike.lm_eps)
                 {
                     /*ATX IS INCREASING. */
                     /*TEST FOR SMALLER ALFA1 IF UPPER BOUND IS SATISFIED. */
                     if (js != -1)
                     {
-                        if (bu[j] < bigbnd)
+                        if (U[j - 1] < bigbnd)
                         {
-                            res = bu[j] - atx;
+                            res = U[j - 1] - atx;
                             if (((int)j == jsave1 || palfa1 * atp >= res)
-                                && apmax1 * rownrm * *pnorm < atp)
+                                && apmax1 * rownrm * pnorm < atp)
                             {
-                                apmax1 = atp / (rownrm * *pnorm);
+                                apmax1 = atp / (rownrm * pnorm);
                                 alfa1 = res / atp;
                                 jadd1 = j;
                                 atp1 = atp;
@@ -2503,15 +2453,15 @@ namespace ActiveSet
                         /*TEST FOR BIGGER ALFA2 IF LOWER BOUND IS VIOLATED. */
                         if (js == -2)
                         {
-                            res = bl[j] - atx;
+                            res = L[j - 1] - atx;
                             if ((firstv || (int)j == jsave2 || palfa2 * atp <= res)
                                 && (lastv || (int)j == jsave2 || palfa2 * atp >= res)
-                                && (apmax2 * rownrm * *pnorm < atp))
+                                && (apmax2 * rownrm * pnorm < atp))
                             {
-                                apmax2 = atp / (rownrm * *pnorm);
+                                apmax2 = atp / (rownrm * pnorm);
                                 if (atp >= 1.0) alfa2 = res / atp;
-                                else if (res < *bigalf * atp) alfa2 = res / atp;
-                                else alfa2 = *bigalf;
+                                else if (res < bigalf * atp) alfa2 = res / atp;
+                                else alfa2 = bigalf;
                                 jadd2 = j;
                                 atp2 = atp;
                                 hlow2 = true;
@@ -2524,13 +2474,13 @@ namespace ActiveSet
                     /*ATX IS DECREASING. */
                     /*TEST FOR SMALLER ALFA1 IF LOWER BOUND IS SATISFIED*/
                     absatp = -atp;
-                    if (bl[j] > -bigbnd)
+                    if (L[j - 1] > -bigbnd)
                     {
-                        res = atx - bl[j];
+                        res = atx - L[j - 1];
                         if (((int)j == jsave1 || palfa1 * absatp >= res)
-                            && (apmax1 * rownrm * *pnorm < absatp))
+                            && (apmax1 * rownrm * pnorm < absatp))
                         {
-                            apmax1 = absatp / (rownrm * *pnorm);
+                            apmax1 = absatp / (rownrm * pnorm);
                             alfa1 = res / absatp;
                             jadd1 = j;
                             atp1 = atp;
@@ -2540,15 +2490,15 @@ namespace ActiveSet
                     /*TEST FOR BIGGER ALFA2 IF UPPER BOUND IS VIOLATED*/
                     if (js == -1)
                     {
-                        res = atx - bu[j];
+                        res = atx - U[j - 1];
                         if ((firstv || (int)j == jsave2 || palfa2 * absatp <= res)
                             && (lastv || (int)j == jsave2 || palfa2 * absatp >= res)
-                            && (apmax2 * rownrm * *pnorm < absatp))
+                            && (apmax2 * rownrm * pnorm < absatp))
                         {
-                            apmax2 = absatp / (rownrm * *pnorm);
+                            apmax2 = absatp / (rownrm * pnorm);
                             if (absatp >= 1.0) alfa2 = res / absatp;
-                            else if (res < *bigalf * absatp) alfa2 = res / absatp;
-                            else alfa2 = *bigalf;
+                            else if (res < bigalf * absatp) alfa2 = res / absatp;
+                            else alfa2 = bigalf;
                             jadd2 = j;
                             atp2 = atp;
                             hlow2 = false;
@@ -2557,16 +2507,16 @@ namespace ActiveSet
                 }
                 if (msg == 99)
                     lm_wmsg("%5ld%4ld%15.5lg%15.5lg%15.5lg%6ld%17.7lg%6ld%17.7lg",
-                        j, js, featol[j], atx, atp, jadd1, alfa1,
+                        j, js, FEATOL[j - 1], atx, atp, jadd1, alfa1,
                         jadd2, alfa2);
             }
 
             /*IF FEASIBLE, ONLY ALFA1 WILL HAVE BEEN SET. */
-            *alfa = alfa1;
-            *palfa = palfa1;
-            *jadd = jadd1;
-            *atphit = atp1;
-            *hitlow = hlow1 ? 1 : 0;
+            alfa = alfa1;
+            palfa = palfa1;
+            jadd = jadd1;
+            atphit = atp1;
+            hitlow = hlow1 ? 1 : 0;
             if (numinf != 0 && jadd2 != 0 && (alfa2 < alfa1 || (alfa2 <= palfa1 && apmax2 >= apmax1)))
             {
                 /*
@@ -2574,12 +2524,12 @@ namespace ActiveSet
                 BE PREPARED TO STEP IN THE RANGE  (ALFA1, PALFA1)  IF THE VIOLATED 
                 CONSTRAINT HAS A LARGER VALUE OF  AP
                 */
-                *alfa = alfa2;
-                *jadd = jadd2;
-                *atphit = atp2;
-                *hitlow = hlow2 ? 1 : 0;
+                alfa = alfa2;
+                jadd = jadd2;
+                atphit = atp2;
+                hitlow = hlow2 ? 1 : 0;
             }
-            else if (*alfa < -BlasLike.lm_eps)
+            else if (alfa < -BlasLike.lm_eps)
             {
                 /*
                 NEGATIVE STEP
@@ -2587,28 +2537,27 @@ namespace ActiveSet
                 TO BE  - PALFA1,  THE STEP TO THE NEAREST PERTURBED SATISFIED
                 CONSTRAINT ALONG THE DIRECTION -P
                 */
-                dbdpert(firstv, true, bigalf, pnorm, &jadd1, &jadd2, &palfa1, &
-                    palfa2, &istate[1], n, nctotl, &anorm[1], &ap[1], &
-                    ax[1], &bl[1], &bu[1], &featol[1], &p[1], &x[1]);
-                if (msg >= 80) lm_wmsg("NEGATIVE STEP", *alfa, palfa1);
-                d__1 = Math.Abs(*alfa);
-                *alfa = -Math.Min(d__1, palfa1);
+                dbdpert(firstv, true, bigalf, pnorm, ref jadd1, ref jadd2, ref palfa1, ref
+                    palfa2, n, nctotl);
+                if (msg >= 80) lm_wmsg("NEGATIVE STEP", alfa, palfa1);
+                d__1 = Math.Abs(alfa);
+                alfa = -Math.Min(d__1, palfa1);
             }
 
             /*
             TEST FOR UNDEFINED OR INFINITE STEP.  THIS SHOULD MEAN THAT THE
             SOLUTION IS UNBOUNDED
             */
-            if (*jadd == 0)
+            if (jadd == 0)
             {
-                *alfa = *bigalf;
-                *palfa = *bigalf;
+                alfa = bigalf;
+                palfa = bigalf;
                 inform = 2;
             }
-            if (*alfa >= *bigalf) inform = 3;
+            if (alfa >= bigalf) inform = 3;
             if (msg >= 80 && inform > 0) lm_wmsg(
         "\n//BNDALF//  UNBOUNDED STEP.\n//BNDALF//  JADD          ALFA\n//BNDALF//  %4ld%15.5lg",
-                *jadd, *alfa);
+                jadd, alfa);
             return inform;
         }
         public static short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jadd, int nactiv, int ncolr, int ncolz, int nfree, int n, int nrowart, int[] kfree, double condmx, double cslast, double snlast, double[] wrrk1, double[] wrk2, int kfr = 0, int wk1 = 0, int wk2 = 0)
@@ -3195,7 +3144,7 @@ namespace ActiveSet
                 return sc_norm(scale, ssq);
             }
         }
-        public unsafe static void dtqadd(bool orthog, int* inform, int* k1, int* k2, int* nactiv, ref int ncolz, ref int nfree, int* n, int* istate, int* kactiv, int* kfree, double* condmx, double* a, double* rt)
+        public unsafe static void dtqadd(bool orthog, ref int inform, int* k1, int* k2, ref int nactiv, ref int ncolz, ref int nfree, int* n, int* istate, int* kactiv, int* kfree, double* condmx, double* a, double* rt)
         {
             int a_dim1, a_offset, rt_dim1, rt_offset, zy_dim1, zy_offset, i__1;
 
@@ -3225,18 +3174,18 @@ namespace ActiveSet
             {
                 iadd = kactiv[k];
                 jadd = *n + iadd;
-                if (*nactiv == nfree)
+                if (nactiv == nfree)
                 {
                     goto L20;
                 }
-                *inform = daddcon(false, false, orthog, ifix, iadd, jadd,
-                    *nactiv, ncolz, ncolz, nfree, *n, NROWA, KFREE, *condmx, cslast, snlast,
+                inform = daddcon(false, false, orthog, ifix, iadd, jadd,
+                    nactiv, ncolz, ncolz, nfree, *n, NROWA, KFREE, *condmx, cslast, snlast,
                      WRK, RLAM);
-                if (*inform > 0)
+                if (inform > 0)
                 {
                     goto L20;
                 }
-                ++(*nactiv);
+                ++nactiv;
                 --(ncolz);
                 goto L40;
             L20:
@@ -3245,7 +3194,7 @@ namespace ActiveSet
             L40:
                 ;
             }
-            if (*nactiv == *k2)
+            if (nactiv == *k2)
             {
                 return;
             }
@@ -3495,6 +3444,232 @@ namespace ActiveSet
             return;
         L280:
             *idiag = (int)lm_check_fail((short)(*idiag), (short)(j + 1), "drtmxsolve");
+        }
+
+        public static void drtmxsolve(int job, int n, double[] t, int nrt, double[] b, ref int idiag, int tstart = 0, int bstart = 0)
+        {
+
+            /*
+                purpose
+                =======
+                drtmxsolve solves systems of reverse triangular equations
+
+                description
+                ===========
+                drtmxsolve solves the equations
+
+                    T*x = b ,   or   ( T' )*x = b ,
+
+                where T is an n by n upper or lower reverse triangular matrix
+                an upper reverse triangular matrix has the form illustrated by
+
+                T = ( x  x  x  x  x )
+                    ( x  x  x  x  0 )
+                    ( x  x  x  0  0 )
+                    ( x  x  0  0  0 )
+                    ( x  0  0  0  0 )
+
+                 and a lower reverse triangular matrix has the form illustrated by
+
+                 T = ( 0  0  0  0  x )
+                     ( 0  0  0  x  x )
+                     ( 0  0  x  x  x )
+                     ( 0  x  x  x  x )
+                     ( x  x  x  x  x )
+
+                 the type of triangular system solved is controlled by the
+                 parameter job as described in the parameter section below
+
+                 parameters
+                 ==========
+                 job   - integer
+                    on entry, job must contain one of the values -2, -1, 0, 1, 2
+                    to specify the type of reverse triangular system to be solved
+                    as follows
+                    job =  0 	T is assumed to be reverse diagonal and the
+                            equations T*x = b are solved
+                    job =  1	T is assumed to be upper reverse triangular and the
+                            equations T*x = b are solved
+                    job = -1	T is assumed to be upper reverse triangular and the
+                            equations ( T' )*x = b are solved
+                    job =  2	T is assumed to be lower reverse triangular and the
+                            equations T*x = b are solved
+                    job = -2	T is assumed to be lower reverse triangular and the
+                            equations ( T' )*x = b are solved
+                 n     - integer
+                    on entry, n specifies the order of the matrix T. n must be at
+                    least unity
+                 T     - real array of dimension ( nrt, nct ). nct must be at least n
+                    before entry T must contain the triangular elements. only
+                    those elements contained in the reverse triangular part of T
+                    are referenced by this routine
+                    unchanged on exit
+
+                 nrt   - integer
+                    on entry, nrt specifies the first dimension of T as declared
+                    in the calling program. nrt must be at least n
+                 b     - real array of dimension ( n )
+                    before entry, b must contain the right hand side of the
+                    equations to be solved
+                    on successful exit, b contains the solution vector x
+                 idiag - integer
+                    before entry, idiag must be assigned a value. for users
+                    unfamiliar with this parameter the recommended value is zero
+                    on successful exit idiag will be zero. a positive value
+                    of idiag denotes an error as follows
+                    idiag = 1     one of the input parameters n, or nra, or job
+                            has been incorrectly specified
+                    idiag > 1	the element T( j, n - j + 1 ), where
+                            j = idiag - 1, is either zero or is too small
+                            to avoid overflow in computing an element of x.
+                            note that this element is a reverse diagonal element of T
+
+                 further comments
+                 ================
+                 if T is part of a matrix a partitioned as
+
+                    A =	( A1  A2 )
+                            ( A3  T  )
+
+                 where A1 is an m by k matrix ( m>=0, k>=0), then this routine
+                 may be called with the parameter T as a( m + 1, k + 1 ) and nrt as
+                 the first dimension of A as declared in the calling (sub) program.
+            */
+            int t_dim1, t_offset, i__1;
+
+            int fail = -900;
+            double temp;
+            int j, k;
+            int jlast;
+
+            //        --b;
+            bstart--;
+            t_dim1 = nrt;
+            t_offset = t_dim1 + 1;
+            //        t -= t_offset;
+            tstart -= t_offset;
+
+            if (n >= 1 && nrt >= n && Math.Abs(job) <= 2)
+            {
+                goto L20;
+            }
+            idiag = (int)lm_check_fail((short)(idiag), (short)1, "drtmxsolve");
+            return;
+        L20:
+            if (job != 0)
+            {
+                goto L60;
+            }
+            k = n;
+            i__1 = n;
+            for (j = 1; j <= i__1; ++j)
+            {
+                b[j + bstart] = dprotdiv(ref b[j + bstart], ref t[j + k * t_dim1 + tstart], ref fail);
+                if (fail != 0)
+                {
+                    goto L280;
+                }
+                --k;
+                /* L40: */
+            }
+            goto L140;
+        L60:
+            if (job != 1)
+            {
+                goto L100;
+            }
+            j = n;
+            i__1 = n;
+            for (k = 1; k <= i__1; ++k)
+            {
+                b[j + bstart] = dprotdiv(ref b[j + bstart], ref t[j + k * t_dim1 + tstart], ref fail);
+                if (fail != 0)
+                {
+                    goto L280;
+                }
+                if (j > 1)
+                {
+                    // BlasLike.daxpy(j - 1, -b[j+bstart], &t[k * t_dim1 + 1+tstart], 1, &b[1+bstart], 1);
+                    BlasLike.daxpyvec(j - 1, -b[j + bstart], t, b, k * t_dim1 + 1 + tstart, 1 + bstart);
+                }
+                --j;
+                /* L80: */
+            }
+            goto L140;
+        L100:
+            if (job != 2)
+            {
+                goto L140;
+            }
+            k = n;
+            i__1 = n;
+            for (j = 1; j <= i__1; ++j)
+            {
+                b[j + bstart] = dprotdiv(ref b[j + bstart], ref t[j + k * t_dim1 + tstart], ref fail);
+                if (fail != 0)
+                {
+                    goto L280;
+                }
+                if (j < (int)n)
+                {
+                    //   BlasLike.daxpy(n - j, -b[j+bstart], &t[j + 1 + k * t_dim1+tstart], 1, &b[j + 1+bstart], 1);
+                    BlasLike.daxpyvec(n - j, -b[j + bstart], t, b, j + 1 + k * t_dim1 + tstart, j + 1 + bstart);
+                }
+                --k;
+                /* L120: */
+            }
+        L140:
+            if (n == 1)
+            {
+                goto L180;
+            }
+            jlast = n / 2;
+            k = n;
+            i__1 = jlast;
+            for (j = 1; j <= i__1; ++j)
+            {
+                temp = b[j + bstart];
+                b[j + bstart] = b[k + bstart];
+                b[k + bstart] = temp;
+                --k;
+                /* L160: */
+            }
+        L180:
+            if (job != -1)
+            {
+                goto L220;
+            }
+            k = n;
+            i__1 = n;
+            for (j = 1; j <= i__1; ++j)
+            {
+                if (j > 1) b[j + bstart] -= BlasLike.ddotvec((int)(j - 1), t, b, k * t_dim1 + 1 + tstart, 1 + bstart);
+                b[j + bstart] = dprotdiv(ref b[j + bstart], ref t[j + k * t_dim1 + bstart], ref fail);
+                if (fail != 0) goto L280;
+                --k;
+                /* L200: */
+            }
+            goto L260;
+        L220:
+            if (job != -2) goto L260;
+            j = n;
+            i__1 = n;
+            for (k = 1; k <= i__1; ++k)
+            {
+                if (j < (int)n) b[j + bstart] -= BlasLike.ddotvec((int)(n - j), t, b, j + 1 + k * t_dim1 + tstart, j + 1 + bstart);
+                b[j + bstart] = dprotdiv(ref b[j + bstart], ref t[j + k * t_dim1 + tstart], ref fail);
+                if (fail != 0)
+                {
+                    goto L280;
+                }
+                --j;
+                /* L240: */
+            }
+        L260:
+            idiag = 0;
+            return;
+        L280:
+            idiag = (int)lm_check_fail((short)(idiag), (short)(j + 1), "drtmxsolve");
         }
         public static short lm_check_fail(short ifail, short ierror, string srname)
         {
@@ -4214,7 +4389,7 @@ namespace ActiveSet
 
             return (short)(fail != 0 ? lm_check_fail(idiag, (short)(k + 1), "dtmxsolve") : 0);
         }
-        public unsafe static void dbdpert(bool firstv, bool negstp, double* bigalf, double* pnorm, int* jadd1, int* jadd2, double* palfa1, double* palfa2, int* istate, int n, int nctotl, double* anorm, double* ap, double* ax, double* bl, double* bu, double* featol, double* p, double* x)
+        public static void dbdpert(bool firstv, bool negstp, double bigalf, double pnorm, ref int jadd1, ref int jadd2, ref double palfa1, ref double palfa2, int n, int nctotl)
         {
 
             /*
@@ -4242,71 +4417,71 @@ namespace ActiveSet
             double epspt9;
             int js;
             double absatp, rownrm, atp, res, atx;
-            --x;
-            --p;
-            --featol;
-            --bu;
-            --bl;
-            --ax;
-            --ap;
-            --anorm;
-            --istate;
+            //  --x;
+            // --p;
+            // --featol;
+            // --bu;
+            //            --bl;
+            //  --ax;
+            // --ap;
+            //        --anorm;
+            // --istate;
 
             epspt9 = parm[3];
             if (msg == 99) Console.WriteLine(
         "\n   J  JS         FEATOL         AX             AP     JADD1       PALFA1     JADD2       PALFA2\n");
             lastv = !firstv;
-            *jadd1 = 0;
-            *jadd2 = 0;
-            *palfa1 = *bigalf;
-            *palfa2 = 0.0;
-            if (firstv) *palfa2 = *bigalf;
+            jadd1 = 0;
+            jadd2 = 0;
+            palfa1 = bigalf;
+            palfa2 = 0.0;
+            if (firstv) palfa2 = bigalf;
             for (j = 1; j <= nctotl; ++j)
             {
-                js = istate[j];
+                js = ISTATE[j - 1];
                 if (js > 0) continue;
                 if (j > n)
                 {
                     /*GENERAL LINEAR CONSTRAINT. */
                     i = j - n;
-                    atx = ax[i];
-                    atp = ap[i];
-                    rownrm = 1.0 + anorm[i];
+                    atx = LWRK[i - 1];
+                    atp = AP[i - 1];
+                    rownrm = 1.0 + ANORM[i - 1];
                 }
                 else
                 {
                     /*BOUND CONSTRAINT. */
-                    atx = x[j];
-                    atp = p[j];
+                    atx = W[j - 1];
+                    atp = PX[j - 1];
                     rownrm = 1.0;
                 }
                 if (negstp) atp = -atp;
-                if (Math.Abs(atp) <= epspt9 * rownrm * *pnorm) res = -1.0;
+                if (Math.Abs(atp) <= epspt9 * rownrm * pnorm) res = -1.0;
                 else if (atp > BlasLike.lm_eps)
                 {
                     /*AX IS INCREASING*/
                     /*TEST FOR SMALLER PALFA1 IF UPPER BOUND IS SATISFIED. */
                     if (js != -1)
                     {
-                        if (bu[j] < bigbnd)
+                        if (U[j - 1] < bigbnd)
                         {
-                            res = bu[j] - atx + featol[j];
-                            if (*bigalf * atp > Math.Abs(res) && *palfa1 * atp > res)
+                            res = U[j - 1] - atx + FEATOL[j - 1];
+                            if (bigalf * atp > Math.Abs(res) && palfa1 * atp > res)
                             {
-                                *palfa1 = res / atp;
-                                *jadd1 = j;
+                                palfa1 = res / atp;
+                                jadd1 = j;
                             }
                         }
                         /*TEST FOR DIFFERENT PALFA2 IF LOWER BOUND IS VIOLATED. */
                         if (js == -2)
                         {
-                            res = bl[j] - atx - featol[j];
-                            if (*bigalf * atp > Math.Abs(res)
-                                && (firstv || *palfa2 * atp < res)
-                                && (lastv || *palfa2 * atp > res))
+                            res = L[j - 1] - atx - FEATOL[j - 1];
+                            if (bigalf * atp > Math.Abs(res)
+                                && (firstv || palfa2 * atp < res)
+                                && (lastv || palfa2 * atp > res))
                             {
-                                *palfa2 = res / atp;
-                                *jadd2 = j;
+                                palfa2 = res / atp;
+                                jadd2 = j;
                             }
                         }
                     }
@@ -4315,32 +4490,32 @@ namespace ActiveSet
                 {
                     /*AX IS DECREASING TEST FOR SMALLER PALFA1 IF LOWER BOUND IS SATISFIED*/
                     absatp = -atp;
-                    if (bl[j] > -bigbnd)
+                    if (L[j - 1] > -bigbnd)
                     {
-                        res = atx - bl[j] + featol[j];
-                        if (*bigalf * absatp > Math.Abs(res) && *palfa1 * absatp > res)
+                        res = atx - L[j - 1] + FEATOL[j - 1];
+                        if (bigalf * absatp > Math.Abs(res) && palfa1 * absatp > res)
                         {
-                            *palfa1 = res / absatp;
-                            *jadd1 = j;
+                            palfa1 = res / absatp;
+                            jadd1 = j;
                         }
                     }
                     /*TEST FOR DIFFERENT PALFA2 IF UPPER BOUND IS VIOLATED*/
                     if (js == -1)
                     {
-                        res = atx - bu[j] - featol[j];
-                        if (*bigalf * absatp > Math.Abs(res)
-                            && (firstv || *palfa2 * absatp < res)
-                            && (lastv || *palfa2 * absatp > res))
+                        res = atx - U[j - 1] - FEATOL[j - 1];
+                        if (bigalf * absatp > Math.Abs(res)
+                            && (firstv || palfa2 * absatp < res)
+                            && (lastv || palfa2 * absatp > res))
                         {
-                            *palfa2 = res / absatp;
-                            *jadd2 = j;
+                            palfa2 = res / absatp;
+                            jadd2 = j;
                         }
                     }
                 }
                 if (msg == 99)
                     lm_wmsg("%5ld%4ld%15.5lg%15.5lg%15.5lg%6ld%17.7lg%6ld%17.7lg",
-                    j, js, featol[j], atx, atp,
-                    *jadd1, *palfa1, *jadd2, *palfa2);
+                    j, js, FEATOL[j - 1], atx, atp,
+                    jadd1, palfa1, jadd2, palfa2);
             }
         }
         public unsafe static void detagen(int n, double* alpha, double* x, int incx, int* iswap, int* itrans)
@@ -4743,7 +4918,7 @@ namespace ActiveSet
             int maxact, minact;
             byte lcrash;
             //double tolact;
-            int minfxd, inform = -2, mxfree, nactiv, numinf = 23;
+            int minfxd, inform = -2, mxfree, nactiv = -3, numinf = 23;
             var litotl = 0;
             int minsum;
             int mxcolz;
@@ -4870,7 +5045,7 @@ namespace ActiveSet
             ---------------------------------------------------------------------
             */
             dlpcore((lp & 1) != 0, minsum, orthog != 0, vertex, ref inform, ref iter_,
-            itmx, lcrash, n, nclin, &nctotl, &nactiv, ref nfree, ref numinf,
+            itmx, lcrash, n, nclin, &nctotl, ref nactiv, ref nfree, ref numinf,
                  ref obj, xnorm);
             iter = (short)iter_;
             if (lp != 0)
@@ -5158,7 +5333,7 @@ namespace ActiveSet
             int jdel, kdel;
             double emax;
             int ifix = 9;
-            double palfa;
+            double palfa = -12;
             int ifail = 12;
             double condh, bigdx;
             int isdel = 0;
@@ -5170,18 +5345,18 @@ namespace ActiveSet
             bool nullr, stall, uncon;
             int nclin0, kb;
             double bigalf, epspt9;
-            double gfixed = 89, alfhit;
+            double gfixed = 89, alfhit = 4;
             bool refine;
             int jdsave, nfixed;
             bool posdef;
             int modfyg, negligible;
-            double condmx, atphit, cslast = 5, gfnorm, rdlast = 12, objsiz, snlast = 6;
+            double condmx, atphit = 234, cslast = 5, gfnorm, rdlast = 12, objsiz, snlast = 6;
             int idummy, issave = 0, msglvl;
-            int jsmlst, ksmlst;
-            double smllst;
+            int jsmlst = 9, ksmlst = 40;
+            double smllst = 6e23;
             int nstall, numinf;
             double ztgnrm;
-            int firstv, hitlow;
+            int firstv, hitlow = 99;
             bool nocurv, renewr = false, unitpg, zerolm;
             int modfyr;
             double bnd;
@@ -5362,9 +5537,8 @@ namespace ActiveSet
                         jdel = -(ncolr + 1);
                         if (ncolr >= ncolz)
                         {
-                            fixed (int* pistate = ISTATE)
-                                dgetlamd(lprob, n, nactiv, ncolz, nfree, NROWRT,
-                                    &jsmlst, &ksmlst, &smllst, pistate, a);
+                            dgetlamd(lprob, n, nactiv, ncolz, nfree,
+                                ref jsmlst, ref ksmlst, ref smllst);
 
                             /*
                             test for convergence.  if the least (adjusted) multiplier is
@@ -5507,10 +5681,9 @@ namespace ActiveSet
                 fixed (double* pLWRK = LWRK)
                 fixed (int* pistate = ISTATE)
                 fixed (double* pW = W)
-                    dbndalf(firstv != 0, &hitlow, pistate, &jadd, n,
-        nctotl, numinf, &alfhit, &palfa, &atphit, &bigalf,
-         &pnorm, pANORM, pAP, pLWRK, &bl[1], &bu[1], &
-        featol[1], pPX, pW);
+                    dbndalf(firstv != 0, ref hitlow, ref jadd, n,
+        nctotl, numinf, ref alfhit, ref palfa, ref atphit, ref bigalf,
+         pnorm);
 
 
                 /*
@@ -5712,9 +5885,8 @@ namespace ActiveSet
             /*PRINT FULL SOLUTION*/
             msg = msglvl;
             if (msg >= 1) wrexit(lprob, i, iter);
-            fixed (int* pistate = ISTATE)
-                if (i > 0) dgetlamd(lprob, n, nactiv, ncolz, nfree,
-                         NROWRT, &jsmlst, &ksmlst, &smllst, pistate, a);
+            if (i > 0) dgetlamd(lprob, n, nactiv, ncolz, nfree,
+                      ref jsmlst, ref ksmlst, ref smllst);
             fixed (double* pRLAM = RLAM)
             fixed (int* pistate = ISTATE)
             fixed (double* pW = W)
@@ -5744,7 +5916,7 @@ namespace ActiveSet
             //   zy -= zy_offset;
             //   --scale;
             rt -= Nrowrt + 1;
-//  --kfree;
+            //  --kfree;
             ncolr = 0;
             /*
             compute  z(t) h z  and store the upper-triangular symmetric part
@@ -5759,7 +5931,7 @@ namespace ActiveSet
                     /* expand the column of  z  into an  n-vector */
                     for (i = 1; i <= nfree; ++i)
                     {
-                        j = KFREE[i-1];
+                        j = KFREE[i - 1];
                         wrk[j - 1] = ZY[i + k * nq - zy_offset];
                     }
                     if (scldqp) Factorise.ddmxmulv(n, scale, 1, wrk, 1);
@@ -5771,7 +5943,7 @@ namespace ActiveSet
                         only bounds are in the working set.  the  k-th column of  z is
                         just a column of the identity matrix
                     */
-                    jthcol = KFREE[k-1];
+                    jthcol = KFREE[k - 1];
                     wrk[jthcol - 1] = 1;
                 }
                 /*set  rt(*,k)  =  top of   h * (column of  z)*/
@@ -5826,9 +5998,9 @@ namespace ActiveSet
                     else
                     {
                         /*Z is not stored explicitly*/
-                        ksave = KFREE[kmax-1];
-                        KFREE[kmax-1] = KFREE[j-1];
-                        KFREE[j-1] = ksave;
+                        ksave = KFREE[kmax - 1];
+                        KFREE[kmax - 1] = KFREE[j - 1];
+                        KFREE[j - 1] = ksave;
                     }
                     /*interchange rows and columns of the projected hessian*/
                     //#if 1
