@@ -40,8 +40,8 @@ namespace ActiveSet
         public static double[] QTG;
         public static double[] RLAM;
         public static double[] AP;
-        public static long timebase;
-        public static double timeaquired;
+        public static long timebase = -1233456;
+        public static long timeaquired = -12233;
         public static void wrexit(string name, int inform, int iter)
         {
             Console.WriteLine($"{name} Inform={inform} Iter={iter}");
@@ -52,11 +52,13 @@ namespace ActiveSet
             //lm_wmsg("\n//%s//         ZTGNRM         DINKY\n//%s//%14.5lg%14.5lg",
             //name,name,ztgnrm,dinky);
         }
-        public static double clocker(bool start = false)
+        public static long clocker(bool start = false)
         {
-            long t = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            if (start) timeaquired = 0;
-            else timeaquired += (double)(t - timebase);
+            long t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            if (start)
+                timeaquired = 0;
+            else
+                timeaquired += (t - timebase);
             timebase = t;
             return timeaquired;
         }
@@ -205,7 +207,6 @@ namespace ActiveSet
             /*     DEFINE SMALL QUANTITIES THAT REFLECT THE MAGNITUDE OF  C,  X, */
             /*     AND THE NORM OF THE CONSTRAINTS IN THE WORKING SET. */
             L20:
-            clocker();
             objsiz = (1 + Math.Abs(obj)) / (1 + xnorm[0]);
             if (numinf == 0)
             {
@@ -2547,7 +2548,6 @@ namespace ActiveSet
                  elimination we use  elm( ..., zero, zero )   to perform an interchange
             */
             detagen(ncolz1, ref WRK[ncolz - 1], WRK, 1, ref iswap, ref itrans);
-            //   detagen(ncolz1, ref WRK[ncolz - 1], WRK, 1, ref iswap, ref itrans);
 
             if (iswap > 0)
                 delm(orthog, nfree, ZY, 1, ZY, 1, zero, zero, ncolz * zy_dim1 + 1 - zy_offset, iswap * zy_dim1 + 1 - zy_offset);
@@ -3980,9 +3980,7 @@ namespace ActiveSet
                 vertex);
             if (msglvl == 99)
                 dqpdump(n, nrowh, ncolh);
-            var badConstraint = 0;
-            for (int ic = 0; ic < n + nclin; ++ic) if (U[ic] < L[ic]) badConstraint += 1;
-            if (badConstraint > 0) return 10;
+            if (badboundcount() > 0) return 10;
             iter = 0;
 
 
@@ -4340,7 +4338,6 @@ namespace ActiveSet
             */
             while (true)
             {
-                clocker();
                 /*
                 ******* section i.  test for convergence *******
                 compute the norms of the projected gradient and the gradient with
@@ -4442,7 +4439,7 @@ namespace ActiveSet
                                  NROWRT);
                             ++ncolz;
                             if (jdel <= (int)n) ++(nfree);
-                            else --(nactiv);
+                            else --nactiv;
                         }
 
                         /*
@@ -4484,7 +4481,7 @@ namespace ActiveSet
                     break;
                 }
 
-                ++(iter);
+                ++iter;
                 if (iter >= istart) msg = msglvl;
 
                 dfindp(nullr, unitpg, n, nclin,
@@ -4603,7 +4600,7 @@ namespace ActiveSet
                 other closer constraint.)
                 */
                 iadd = jadd - n;
-                if (jadd <= (int)n)
+                if (jadd <= n)
                 {
                     if (hitlow != 0) bnd = L[jadd - 1];
                     else bnd = U[jadd - 1];
@@ -4633,7 +4630,7 @@ namespace ActiveSet
                         --kb;
                     }
                 }
-                if (jadd <= (int)n)
+                if (jadd <= n)
                 {
                     /*
                     add a bound.  if stabilized eliminations are being used to update
@@ -4641,7 +4638,7 @@ namespace ActiveSet
                     corresponding to the newly fixed variable
                     use the array  p  as temporary work space
                     */
-                    --(nfree);
+                    --nfree;
                     KACTV[nactiv] = jadd;
                     if (orthog == 0)
                     {
@@ -4654,7 +4651,7 @@ namespace ActiveSet
                 else
                 {
                     /*add a general linear constraint*/
-                    ++(nactiv);
+                    ++nactiv;
                     KACTV[nactiv - 1] = iadd;
                 }
 
@@ -4703,7 +4700,7 @@ namespace ActiveSet
             */
             int zy_offset;
             double dmin_, dmax_, d, t;
-            int i, j, k, kmax, ksave, jthcol, ncolr;
+            int i, j, k, kmax, jthcol, ncolr;
 
 
             if (ncolz == 0) return 0;
@@ -4793,36 +4790,14 @@ namespace ActiveSet
                     }
                     else
                     {
-                        /*Z is not stored explicitly*/
-                        ksave = KFREE[kmax - 1];
-                        KFREE[kmax - 1] = KFREE[j - 1];
-                        KFREE[j - 1] = ksave;
+                        Ordering.Order.swap(ref KFREE[kmax - 1],ref KFREE[j - 1]);
                     }
                     /*interchange rows and columns of the projected hessian*/
-                    //#if 1
+                   
                     BlasLike.dswapvec(j, RT, RT, 1 + kmax * Nrowrt - rt_offset, 1 + j * Nrowrt - rt_offset);
                     BlasLike.dswap(kmax - j + 1, RT, 1, RT, Nrowrt, j + kmax * Nrowrt - rt_offset, j + j * Nrowrt - rt_offset);
                     BlasLike.dswap(ncolz + 1 - kmax, RT, Nrowrt, RT, Nrowrt, kmax + kmax * Nrowrt - rt_offset, j + kmax * Nrowrt - rt_offset);
-                    /*#else
-                                        for (i = 1; i <= j; ++i)
-                                        {
-                                            t = rt[i + kmax * Nrowrt];
-                                            rt[i + kmax * Nrowrt] = rt[i + j * Nrowrt];
-                                            rt[i + j * Nrowrt] = t;
-                                        }
-                                        for (k = j; k <= kmax; ++k)
-                                        {
-                                            t = rt[k + kmax * Nrowrt];
-                                            rt[k + kmax * Nrowrt] = rt[j + k * Nrowrt];
-                                            rt[j + k * Nrowrt] = t;
-                                        }
-                                        for (k = kmax; k <= ncolz; ++k)
-                                        {
-                                            t = rt[kmax + k * Nrowrt];
-                                            rt[kmax + k * Nrowrt] = rt[j + k * Nrowrt];
-                                            rt[j + k * Nrowrt] = t;
-                                        }
-                    #endif*/
+                    
                     RT[kmax + kmax * Nrowrt - rt_offset] = RT[j + j * Nrowrt - rt_offset];
                 }
                 /*set the diagonal element of R*/
@@ -5082,32 +5057,37 @@ namespace ActiveSet
         */
         L20:
             BlasLike.dzerovec(n, WRK);
-            if (UNITQ) goto L60;
-            /*
-                 expand the new column of z in to an n-vector
-            */
-            i__1 = nfree;
-            for (k = 1; k <= i__1; ++k)
+
+            if (!UNITQ)
             {
-                j = kfree[k - 1];
-                WRK[j - 1] = ZY[k + ncolr * zy_dim1 - zy_offset];
-                /* L40: */
+                /*
+                     expand the new column of z in to an n-vector
+                */
+                i__1 = nfree;
+                for (k = 1; k <= i__1; ++k)
+                {
+                    j = kfree[k - 1];
+                    WRK[j - 1] = ZY[k + ncolr * zy_dim1 - zy_offset];
+                    /* L40: */
+                }
+                if (scldqp) Factorise.ddmxmulv(n, LWRK, 1, WRK, 1);
+                jthcol = 0;
             }
-            if (scldqp) Factorise.ddmxmulv(n, LWRK, 1, WRK, 1);
-            jthcol = 0;
-            goto L80;
-        /*
-             only bounds are in the working set (nfree  is equal to  ncolz)
-             the (ncolr)-th  column of  z  is just a column of the identity
-             matrix
-        */
-        L60:
-            jthcol = kfree[ncolr - 1];
-            WRK[jthcol - 1] = 1;
-        /*
-             compute the hessian times the last column of z
-        */
-        L80:
+            else
+            {
+                /*
+                     only bounds are in the working set (nfree  is equal to  ncolz)
+                     the (ncolr)-th  column of  z  is just a column of the identity
+                     matrix
+                */
+
+                jthcol = kfree[ncolr - 1];
+                WRK[jthcol - 1] = 1;
+            }
+            /*
+                 compute the hessian times the last column of z
+            */
+
             qphess(n, nrowh, ncolh, jthcol, Q, WRK, hz1);
             ++nhess;
             if (UNITQ && scldqp) BlasLike.dscalvec(n, LWRK[jthcol - 1], hz1);
@@ -5122,23 +5102,21 @@ namespace ActiveSet
             ncolr1 = ncolr - 1;
             zthz1 = RT[ncolr + ncolr * rt_dim1 - rt_offset];
             rdsq = zthz1;
-            if (ncolr1 == 0)
-            {
-                goto L100;
-            }
+            if (ncolr1 != 0)
             {
                 idiag = dtmxsolve((short)-1, ncolr1, RT, NROWRT, RT, (short)1, 0, ncolr * rt_dim1 + 1 - rt_offset);
                 //  rnorm = dnrm2vec(ncolr1, &pRT[*ncolr * rt_dim1 + 1 - rt_offset]);
                 rnorm = dnrm2vec(ncolr1, RT, ncolr * rt_dim1 + 1 - rt_offset);
+
+                /*
+                compute the square of the last diagonal element of  r
+                */
+                rdsq = zthz1 - rnorm * rnorm;
             }
             /*
-            compute the square of the last diagonal element of  r
+            update the estimate of the norm of the hessian
             */
-            rdsq = zthz1 - rnorm * rnorm;
-        /*
-        update the estimate of the norm of the hessian
-        */
-        L100:
+
             hsize = Math.Max(hsize, zthz1);
         /*
         compute  rdlast, the last diagonal of  r.  the variables posdef
@@ -5273,9 +5251,12 @@ namespace ActiveSet
             BlasLike.dsetvec(n + m, featolv, FEATOL);
             short ifail = 89;
             short back;
+            clocker(true);
             back = dqpsol(itmax, msglvl, n, m, n + m, m,
       n + n, 1, cold, lp, orthog, ref
        iter, ref obj, n + n, lwrk, ifail);
+            var tt = clocker();
+            Console.WriteLine($"Time elapsed {tt} m secs");
             objective = obj;
             return back;
         }
@@ -5306,10 +5287,19 @@ namespace ActiveSet
             c = cc;
             W = ww;
             Q = QQ;
+            clocker(true);
             back = dqpsol(itmax, msglvl, n, m, n + m, m,
       n + n, 1, cold, lp, orthog, ref
        iter, ref obj, n + n, lwrk, ifail);
             objective = obj;
+            var tt = clocker();
+            Console.WriteLine($"Time elapsed {tt} m secs");
+            return back;
+        }
+        public static int badboundcount()
+        {
+            var back = 0;
+            for (int i = 0; i < L.Length; ++i) back += ((L[i] <= U[i]) ? 0 : 1);
             return back;
         }
     }
