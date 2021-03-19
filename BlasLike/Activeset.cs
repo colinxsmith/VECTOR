@@ -113,7 +113,6 @@ namespace ActiveSet
             //    int nrowj;
             int nclin0, kb;
             double bigalf, epspt9;
-            int was_is;
             double feamax = 1, feamin = 2;
             bool delete_;
             int nfixed;
@@ -229,12 +228,8 @@ namespace ActiveSet
             /*     PRINT THE DETAILS OF THIS ITERATION. */
             prnt = added || ndel > 1;
             if (!prnt) goto L40;
-            var dtmax_c = dtmax;
-            var dtmin_c = dtmin;
 
-            condt = dprotdiv(ref dtmax_c, ref dtmin_c, ref ifail);
-            dtmax = dtmax_c;
-            dtmin = dtmin_c;
+            condt = dprotdiv(ref dtmax, ref dtmin, ref ifail);
             if (ifail != 0 && dtmax == 0) condt = BlasLike.lm_max;
             dlpprt(lp, NROWRT, n, nclin, nfree, isdel, nactiv,
                 ncolz, iter, jadd, jdel, alfa, condt, numinf,
@@ -315,8 +310,7 @@ namespace ActiveSet
             kdel = kbigst;
             isdel = ISTATE[jbigst - 1];
 
-            was_is = trulam > 0 ? -2 : -1;
-            ISTATE[jbigst - 1] = was_is;
+            ISTATE[jbigst - 1] = (trulam > 0) ? -2 : -1;
             firstv = true;
         /* --------------------------------------------------------------------- 
         */
@@ -903,11 +897,7 @@ namespace ActiveSet
                 /* L120: */
             }
             amin = 1e10;
-            double asize_c = asize;
-            double amin_c = amin;
-            BlasLike.dxminmax(nclin, ANORM, 1, ref asize_c, ref amin_c);
-            asize = asize_c;
-            amin = amin_c;
+            BlasLike.dxminmax(nclin, ANORM, 1, ref asize, ref amin);
         L140:
             if (lcrash > 0) goto L320;
             /*
@@ -923,7 +913,7 @@ namespace ActiveSet
             /* see if any variables are outside their bounds */
             for (j = 1; j <= (int)n; ++j)
             {
-                if (ISTATE[j - 1] != 0) goto L200;
+                if (ISTATE[j - 1] != 0) continue;
                 b1 = L[j - 1];
                 b2 = U[j - 1];
                 nolow = b1 <= -bigbnd;
@@ -951,7 +941,7 @@ namespace ActiveSet
             L180:
                 if (was_is == 0)
                 {
-                    goto L200;
+                    continue;
                 }
                 /*        SET VARIABLE EQUAL TO ITS BOUND. */
                 ISTATE[j - 1] = was_is;
@@ -959,8 +949,6 @@ namespace ActiveSet
                 if (was_is == 2) W[j - 1] = b2;
                 ++nfixed;
                 if (nfixed + nactiv == (int)n) goto L460;
-                L200:
-                ;
             }
             /* --------------------------------------------------------------------- 
             */
@@ -1331,7 +1319,7 @@ namespace ActiveSet
                 for (j = 1; j <= (int)nctotl; ++j)
                 {
                     /* do nothing if the variable or constraint is at a bound */
-                    if (ISTATE[j - 1] > 0) goto L60;
+                    if (ISTATE[j - 1] > 0) continue;
                     feasj = FEATOL[j - 1];
                     nolow = L[j - 1] <= -bigbnd;
                     noupp = U[j - 1] >= bigbnd;
@@ -1362,12 +1350,12 @@ namespace ActiveSet
                 L20:
                     if (noupp)
                     {
-                        goto L60;
+                        continue;
                     }
                     s = atx - U[j - 1];
                     if (s <= feasj)
                     {
-                        goto L60;
+                        continue;
                     }
                     ISTATE[j] = -1;
                     weight = feamin / feasj;
@@ -1380,8 +1368,6 @@ namespace ActiveSet
                         QTG[j - 1] = weight;
                     }
                     if (j > (int)n) BlasLike.daxpy(n, weight, A, NROWA, QTG, 1, k + NROWA - a_offset);
-                    L60:
-                    ;
                 }
             }
             /* if feasible, install true objective */
@@ -1965,11 +1951,7 @@ namespace ActiveSet
             /*ESTIMATE THE CONDITION NUMBER OF  T. */
             if (nactv1 > 0)
             {
-                var dtmax_c = dtmax;
-                var dtmin_c = dtmin;
-                BlasLike.dxminmax(nactv1, RT, Nrowrt - 1, ref dtmax_c, ref dtmin_c, nactv1 + (ncolz + 2) * Nrowrt - rt_offset);
-                dtmax = dtmax_c;
-                dtmin = dtmin_c;
+                BlasLike.dxminmax(nactv1, RT, Nrowrt - 1, ref dtmax, ref dtmin, nactv1 + (ncolz + 2) * Nrowrt - rt_offset);
             }
         }
         public static void dfindp(bool nullr, bool unitpg, int n, int nclin, int Nrowrt, int ncolr, int ncolz, ref int nfree, bool negligible, ref double gtp, ref double pnorm, ref double rdlast)
@@ -2487,9 +2469,7 @@ namespace ActiveSet
             /*
                  this is the only general constraint in the working set
             */
-            var asize_c = asize;
-            cond = dprotdiv(ref asize_c, ref dtnew, ref ifail);
-            asize = asize_c;
+            cond = dprotdiv(ref asize, ref dtnew, ref ifail);
             if (ifail != 0 && asize == 0)
             {
                 cond = BlasLike.lm_max;
@@ -2729,13 +2709,7 @@ namespace ActiveSet
             smallest values
             */
             inct = NROWRT - 1;
-            double dtmax_c = dtmax;
-            double dtmin_c = dtmin;
-            // BlasLike.dxminmax(*nactiv, &rt[*nactiv + (ncolz1 + 1) * rt_dim1], inct, &dtmax_c, &
-            //             dtmin_c);
-            BlasLike.dxminmax(nactiv, RT, inct, ref dtmax_c, ref dtmin_c, nactiv + (ncolz1 + 1) * rt_dim1 - rt_offset);
-            dtmax = dtmax_c;
-            dtmin = dtmin_c;
+            BlasLike.dxminmax(nactiv, RT, inct, ref dtmax, ref dtmin, nactiv + (ncolz1 + 1) * rt_dim1 - rt_offset);
             if (dtmin / dtmax * condmx < 1.0) goto L480;
             if (dtmin / dtmax * condbd < 1.0 && msg >= 0)
                 lm_wmsg("\n*** WARNING\n *** SERIOUS ILL-CONDITIONING IN THE WORKING SET AFTER ADDING CONSTRAINT %5ld\n *** OVERFLOW MAY OCCUR IN SUBSEQUENT ITERATIONS\n\n",
@@ -4367,11 +4341,7 @@ namespace ActiveSet
                 use the largest and smallest diagonals of r to estimate the
                 condition number of the projected hessian matrix
                 */
-                var dtmax_c = dtmax;
-                var dtmin_c = dtmin;
-                condt = dprotdiv(ref dtmax_c, ref dtmin_c, ref ifail);
-                dtmax = dtmax_c;
-                dtmin = dtmin_c;
+                condt = dprotdiv(ref dtmax, ref dtmin, ref ifail);
                 if (ifail != 0 && dtmax == 0) condt = BlasLike.lm_max;
                 if (ncolr > 0) BlasLike.dxminmax(ncolr, RT, NROWRT + 1, ref drmax, ref drmin);
                 condh = dprotdiv(ref drmax, ref drmin, ref ifail);
@@ -4790,14 +4760,14 @@ namespace ActiveSet
                     }
                     else
                     {
-                        Ordering.Order.swap(ref KFREE[kmax - 1],ref KFREE[j - 1]);
+                        Ordering.Order.swap(ref KFREE[kmax - 1], ref KFREE[j - 1]);
                     }
                     /*interchange rows and columns of the projected hessian*/
-                   
+
                     BlasLike.dswapvec(j, RT, RT, 1 + kmax * Nrowrt - rt_offset, 1 + j * Nrowrt - rt_offset);
                     BlasLike.dswap(kmax - j + 1, RT, 1, RT, Nrowrt, j + kmax * Nrowrt - rt_offset, j + j * Nrowrt - rt_offset);
                     BlasLike.dswap(ncolz + 1 - kmax, RT, Nrowrt, RT, Nrowrt, kmax + kmax * Nrowrt - rt_offset, j + kmax * Nrowrt - rt_offset);
-                    
+
                     RT[kmax + kmax * Nrowrt - rt_offset] = RT[j + j * Nrowrt - rt_offset];
                 }
                 /*set the diagonal element of R*/
