@@ -247,12 +247,11 @@ namespace BlasLikeTest
         public void Test_dsssqvec()
         {
             double[] a = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-            unsafe
+
             {
                 double scale = 1;
                 double sumsq = 0;
-                fixed (double* pa = a)
-                    ActiveSet.Optimise.dsssqvec(a.Length, pa, &scale, &sumsq);
+                ActiveSet.Optimise.dsssqvec(a.Length, a, ref scale, ref sumsq);
                 Assert.IsTrue(scale == 10 && sumsq == 3.85, $"scale is {scale}, sumsq is {sumsq}");
             }
             {
@@ -296,9 +295,9 @@ namespace BlasLikeTest
         public void Test_dxminmax1a()
         {
             double[] a = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
-            double[] min = { 1 }, max = { 1 };
-            BlasLike.dxminmax(a.Length, a, 1, max, min);
-            Assert.IsTrue(max[0] == 10 && min[0] == 1, $"max is {max}, min is {min}");
+            double min = 1, max = 1;
+            BlasLike.dxminmax(a.Length, a, 1, ref max, ref min);
+            Assert.IsTrue(max == 10 && min == 1, $"max is {max}, min is {min}");
         }
         [TestMethod]
         public unsafe void Test_detagen()
@@ -317,7 +316,7 @@ namespace BlasLikeTest
             ActiveSet.Optimise.detagen(x.Length / 2, ref alpha, y, 2, ref iswap1, ref itrans, 1);
             Assert.IsTrue(alpha == 10 && iswap == 9 && itrans == 1, $"alpha={alpha}, iswap1={iswap1}, itrans={itrans}, lm_rooteps={BlasLike.lm_rooteps}");
             Assert.IsTrue(x[0] == y[0] && x[1] == y[1] && x[2] == y[2] && x[3] == y[3] && x[4] == y[4] && x[5] == y[5] && x[6] == y[6] && x[7] == y[7] && x[8] == y[8] && x[9] == y[9],
-            $"{x[0]} {x[1]} {x[2]} {x[3]} {x[4]} {x[5]} {x[6]} {x[7]} {x[8]}\n{x[0]} {x[1]} {x[2]} {x[3]} {x[4]} {x[5]} {x[6]} {x[7]} {x[8]} "            );
+            $"{x[0]} {x[1]} {x[2]} {x[3]} {x[4]} {x[5]} {x[6]} {x[7]} {x[8]}\n{x[0]} {x[1]} {x[2]} {x[3]} {x[4]} {x[5]} {x[6]} {x[7]} {x[8]} ");
         }
         [TestMethod]
         public unsafe void Test_dswap()
@@ -708,7 +707,7 @@ namespace BlasLikeTest
                     BlasLike.dsetvec(x.Length, 1.0 / n, x);
                     var budget = 1.0;
                     var constraintVal = new double[m];
-                    back = ActiveSet.Optimise.LPopt(n, m, x, L, U, A, c,ref obj,ref iter );
+                    back = ActiveSet.Optimise.LPopt(n, m, x, L, U, A, c, ref obj, ref iter);
                     Factorise.dmxmulv(m, n, A, x, constraintVal);
                     Assert.IsTrue(back == 0 && Math.Abs(constraintVal[0] - budget) < BlasLike.lm_eps * 16, $"LP back is {back} {BlasLike.ddotvec(n, x, c)} {obj} {iter} {constraintVal[1]}");
                 }
@@ -716,7 +715,7 @@ namespace BlasLikeTest
                 {
                     BlasLike.dsetvec(x.Length, 1.0 / n, x);
                     var budget = 1.0;
-                    back = ActiveSet.Optimise.QPopt(n, m, x, L, U, A, c, hess,ref obj,ref iter);
+                    back = ActiveSet.Optimise.QPopt(n, m, x, L, U, A, c, hess, ref obj, ref iter);
                     Factorise.dsmxmulv(n, hess, x, implied);
                     var constraintVal = new double[m];
                     Factorise.dmxmulv(m, n, A, x, constraintVal);

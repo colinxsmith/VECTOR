@@ -761,8 +761,7 @@ namespace UseBlas
                 double[] x = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
                 var iswap = 0;
                 var itrans = 0;
-                fixed (double* xx = x)
-                    ActiveSet.Optimise.detagen(n - 1, ref alpha, xx + 1, 2, ref iswap, ref itrans);
+                    ActiveSet.Optimise.detagen(n - 1, ref alpha, x, 2, ref iswap, ref itrans,1);
                 foreach (var p in x) Console.WriteLine(p);
                 alpha = 2.3;
                 iswap = 0;

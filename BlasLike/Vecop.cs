@@ -3264,9 +3264,9 @@ double* x, int incx, double* ap)
                 *xmax = xm;
             }
         }
-        public static void dxminmax(int n, double[] x, int ix, double[] xmax, double[] xmin, int px = 0)
+        public static void dxminmax(int n, double[] x, int ix,ref double xmax,ref double xmin, int px = 0)
         {
-            if (n < 1) xmin[0] = xmax[0] = 0;
+            if (n < 1) xmin = xmax = 0;
             else
             {
                 double ax = Math.Abs(x[px]);
@@ -3278,8 +3278,8 @@ double* x, int incx, double* ap)
                     if (ax > xm) xm = ax;
                     if (ax < xn) xn = ax;
                 }
-                xmin[0] = xn;
-                xmax[0] = xm;
+                xmin = xn;
+                xmax = xm;
             }
         }
         public unsafe static void detagen(int n, double* alpha, double* x, int ix, long* iswap, int* itrans)
@@ -3614,7 +3614,98 @@ double* x, int incx, double* ap)
             }
             return;
         }
-        public unsafe static void dswap(int n, double[] a, int ia, double[] b, int ib, int astart = 0, int bstart = 0)
+      
+        public  static void dswap(int n, double[] dx, int incx,    double[] dy, int incy,int xstart=0,int ystart=0)
+        { /* System generated locals */
+            int i__1;
+
+            /* Local variables */
+            int i__, m, ix, iy, mp1;
+
+
+            /*  -- Reference BLAS level1 routine (version 3.8.0) -- */
+            /*  -- Reference BLAS is a software package provided by Univ. of Tennessee,    -- */
+            /*  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..-- */
+            /*     November 2017 */
+
+            /*     .. Scalar Arguments .. */
+            /*     .. */
+            /*     .. Array Arguments .. */
+            /*     .. */
+
+            /*  ===================================================================== */
+
+            /*     .. Local Scalars .. */
+            /*     .. */
+            /*     .. Intrinsic Functions .. */
+            /*     .. */
+            /* Parameter adjustments */
+   //       --dy;
+   //         --dx;
+xstart--;
+ystart--;
+            /* Function Body */
+            if (n <= 0)
+            {
+                return;
+            }
+            if (incx == 1 && incy == 1)
+            {
+
+                /*       code for both increments equal to 1 */
+
+
+                /*       clean-up loop */
+
+                m = n % 3;
+                if (m != 0)
+                {
+                    i__1 = m;
+                    for (i__ = 1; i__ <= i__1; ++i__)
+                    {
+                        Ordering.Order.swap(ref dx[i__+xstart],ref dy[i__+ystart]);
+                    }
+                    if (n < 3)
+                    {
+                        return;
+                    }
+                }
+                mp1 = m + 1;
+                i__1 = n;
+                for (i__ = mp1; i__ <= i__1; i__ += 3)
+                {
+                        Ordering.Order.swap(ref dx[i__+xstart],ref dy[i__+ystart]);
+                        Ordering.Order.swap(ref dx[i__+xstart+1],ref dy[i__+ystart+1]);
+                        Ordering.Order.swap(ref dx[i__+xstart+2],ref dy[i__+ystart+2]);
+                }
+            }
+            else
+            {
+
+                /*       code for unequal increments or equal increments not equal */
+                /*         to 1 */
+
+                ix = 1;
+                iy = 1;
+                if (incx < 0)
+                {
+                    ix = (-(n) + 1) * incx + 1;
+                }
+                if (incy < 0)
+                {
+                    iy = (-(n) + 1) * incy + 1;
+                }
+                i__1 = n;
+                for (i__ = 1; i__ <= i__1; ++i__)
+                {
+                    Ordering.Order.swap(ref dx[ix+xstart],ref dy[iy+ystart]);
+                    ix += incx;
+                    iy += incy;
+                }
+            }
+            return;
+        }
+        public unsafe static void dswapdontneed(int n, double[] a, int ia, double[] b, int ib, int astart = 0, int bstart = 0)
         {
             if (baseref != 0)
             {
@@ -3629,14 +3720,21 @@ double* x, int incx, double* ap)
                 b[iib + bstart] = temp;
             }
         }
-        public unsafe static
-        void dswapvec(int n, double* a, double* b)
+        public unsafe static        void dswapvec(int n, double* a, double* b)
         {
             while ((n--) > 0)
             {
                 double temp = *a;
                 *a++ = *b;
                 *b++ = temp;
+            }
+        }
+    
+        public static        void dswapvec(int n, double[] a, double[] b,int astart=0,int bstart=0)
+        {
+            for(int i=0;i<n;++i)
+            {
+                Ordering.Order.swap(ref a[i+astart],ref b[i+bstart]);
             }
         }
         public unsafe static double didot(int n, double* x, int iix, double* y, int iy    /*increment for y*/    )
