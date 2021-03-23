@@ -6,7 +6,7 @@ namespace InteriorPoint
 {
     public class Optimise
     {
-        bool homogenous = true;
+        bool homogenous = false;
         double mu;
         int maxiter = 100;
         int n;
@@ -30,21 +30,35 @@ namespace InteriorPoint
         char[] uplo = { 'U' };
         double[] HCOPY = null;
         double tau = 1;
-        double dtau = 0;
-        double dtau0 = 0;
+        double dtau = 1;
+        double dtau0 = 1;
         double kappa = 1;
-        double dkappa = 0;
-        double dkappa0 = 0;
-        double[] rp;
-        double[] rd;
-        double[] rmu;
+        double dkappa = 1;
+        double dkappa0 = 1;
+        double[] rp = null;
+        double ddx;
+        double ddz;
+        double dd;
+        double[] rd = null;
+        double[] rmu = null;
+        double[] cx = null;
         double hrmu;
         double rkxy;
-        int[] order;
-        int[] horder;
+        int[] order = null;
+        int[] horder = null;
         double[] M = null;
         double[] dx0 = null;
         double[] dz0 = null;
+        static double norm(double[] aa) => Math.Sqrt(BlasLike.ddotvec(aa.Length, aa, aa));
+        double square(double a) => a * a;
+        double gfunc(double a) => Math.Min(0.5, square(1 - a)) * (1 - a);
+        double aob(double a, double b)
+        {
+            int fail = 21;
+            var back = ActiveSet.Optimise.dprotdiv(ref a, ref b, ref fail);
+            if (fail != 0 && b == 0) back = BlasLike.lm_max;
+            return back;
+        }
         Optimise(int n, int m, double[] x, double[] A, double[] b, double[] c, double[] H = null)
         {
             this.n = n;
@@ -60,6 +74,7 @@ namespace InteriorPoint
             dx = new double[n];
             dz0 = new double[n];
             dx0 = new double[n];
+            cx = new double[n];
             y = new double[m];
             dy = new double[m];
             w1 = new double[n];
@@ -75,58 +90,79 @@ namespace InteriorPoint
             db = new double[m];
             dc = new double[n];
         }
+        double Lowest()
+        {
+            var back = ddx;
+            back = Math.Min(back, ddz);
+            return Math.Min(back, dd);
+        }
         void PrimalResidual()
         {
             Factorise.dmxmulv(m, n, A, x, Ax);
             BlasLike.dcopyvec(m, Ax, rp);
             BlasLike.dnegvec(m, rp);
-            BlasLike.daxpyvec(m, tau, b, rp);
+            BlasLike.daxpyvec(m, homogenous ? tau : 1, b, rp);
         }
-        void SolvePrimary(double gamma, bool corrector = false)
+        void MaximumStep()
         {
-            var g1 = 1 - gamma;
-            var fail = 0;
-            for (var k = 0; k < order.Length; ++k) order.SetValue(0, k);
+            ddx = 1.0;
+            ddz = 1.0;
+            dd = 1.0;
+            for (int i = 0; i < n; ++i)
+            {
+                if (dx[i] < 0) ddx = Math.Min(ddx, -aob(x[i], dx[i]));
+                if (dz[i] < 0) ddz = Math.Min(ddz, -aob(z[i], dz[i]));
+            }
+            if (homogenous)
+            {
+                if (dtau < 0) dd = Math.Min(dd, -aob(tau, dtau));
+                if (dkappa < 0) dd = Math.Min(dd, -aob(kappa, dkappa));
+            }
+        }
+        void SolvePrimary(double gamma = 0.0, bool corrector = false)
+        {
+            var g1 = 1.0 - gamma;
+            //            for (var k = 0; k < order.Length; ++k) order.SetValue(0, k);
+            //            for (var k = 0; k < horder.Length; ++k) horder.SetValue(0, k);
             if (!corrector)
             {
                 BlasLike.dzerovec(M.Length, M);
+                /*We'd do this for LP only
+                for (var i = 0; i < m; ++i)
+                {
+                    for (var k = 0; k < n; ++k)
+                    {
+                        var xoz = aob(x[k], z[k]);
+                        xoz *= A[k * m + i];
+                        BlasLike.daxpyvec(i + 1, xoz, A, M, k * m, i * (i + 1) / 2);
+                    }
+                }*/
                 HCOPY = (double[])H.Clone();
                 var lhs = new double[n];
                 var res = new double[m];
-                for (var i = 0; i < n; ++i)
+                for (int i = 0, ij = 0; i < n; ++i, ij += i)
                 {
-                    var ct = ActiveSet.Optimise.dprotdiv(ref z[i], ref x[i], ref fail);
-                    if (fail != 0 && z[i] == 0) ct = BlasLike.lm_max;
-                    HCOPY[i * (i + 3) / 2] += ct;
+                    HCOPY[i + ij] += aob(z[i], x[i]);
                 }
                 Factorise.Factor(uplo, n, HCOPY, horder);
-                for (Int16 con = 0, ij = 0; con < m; ++con)
+                for (int con = 0, ij = 0; con < m; ++con, ij += con)
                 {
                     BlasLike.dcopy(n, A, m, lhs, 1, con);
                     Factorise.Solve(uplo, n, 1, HCOPY, horder, lhs, n);
                     Factorise.dmxmulv(m, n, A, lhs, res);
-                    for (var c1 = 0; c1 <= con; ++c1, ij++)
-                    {
-                        M[ij] = res[c1];
-                    }
+                    BlasLike.dcopyvec(con + 1, res, M, 0, ij);
                 }
                 if (m != 1) Factorise.Factor(uplo, m, M, order);
                 for (var i = 0; i < n; ++i)
                 {
-                    var top = (rmu[i] - g1 * mu);
-                    var ct = ActiveSet.Optimise.dprotdiv(ref top, ref x[i], ref fail);
-                    if (fail != 0 && top == 0) ct = BlasLike.lm_max;
-                    w1[i] = rd[i] * g1 - ct;
+                    w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu, x[i]);
                 }
             }
             else
             {
                 for (var i = 0; i < n; ++i)
                 {
-                    var top = (rmu[i] - g1 * mu - dx0[i] * dz0[i]);
-                    var ct = ActiveSet.Optimise.dprotdiv(ref top, ref x[i], ref fail);
-                    if (fail != 0 && top == 0) ct = BlasLike.lm_max;
-                    w1[i] = rd[i] * g1 - ct;
+                    w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu - dx0[i] * dz0[i], x[i]);
                 }
             }
             Factorise.Solve(uplo, n, 1, HCOPY, horder, w1, n);
@@ -136,13 +172,8 @@ namespace InteriorPoint
             else Factorise.Solve(uplo, m, 1, M, order, dy, m);
             if (homogenous)
             {
-                var cx = new double[n];
-                for (var i = 0; i < n; ++i)
-                {
-                    var top = c[i] * x[i];
-                    cx[i] = ActiveSet.Optimise.dprotdiv(ref top, ref z[i], ref fail);
-                    if (fail != 0 && top == 0) cx[i] = BlasLike.lm_max;
-                }
+                BlasLike.dcopyvec(n, cmod, cx);
+                Factorise.Solve(uplo, n, 1, HCOPY, horder, cx, n);
                 Factorise.dmxmulv(m, n, A, cx, db);
                 BlasLike.daddvec(m, db, b, db);
                 if (m == 1) db[0] /= M[0];
@@ -151,31 +182,23 @@ namespace InteriorPoint
                     Factorise.Solve(uplo, m, 1, M, order, db, m);
                 }
                 Factorise.dmxmulv(n, m, A, dy, dx, 0, 0, 0, true);
-                for (var i = 0; i < n; ++i)
-                {
-                    var top = dx[i] * x[i];
-                    var cc = ActiveSet.Optimise.dprotdiv(ref top, ref z[i], ref fail);
-                    if (fail != 0 && top == 0) cc = BlasLike.lm_max;
-                    dx[i] = cc - w1[i];
-                }
+                BlasLike.dsubvec(n, dx, w1, dx);
                 Factorise.dmxmulv(n, m, A, db, dc, 0, 0, 0, true);
-                for (var i = 0; i < n; ++i)
-                {
-                    var top = dc[i] * x[i];
-                    var cc = ActiveSet.Optimise.dprotdiv(ref top, ref z[i], ref fail);
-                    if (fail != 0 && top == 0) cc = BlasLike.lm_max;
-                    dc[i] = cc - cx[i];
-                }
-                var cdx = BlasLike.ddotvec(n, c, dx);
-                var cdc = BlasLike.ddotvec(n, c, dc);
+                Factorise.Solve(uplo, n, 1, HCOPY, horder, dc, n);
+                BlasLike.dsubvec(n, dc, dx, dc);
+
+                var cdx = BlasLike.ddotvec(n, cmod, dx);
+                var cdc = BlasLike.ddotvec(n, cmod, dc);
                 var bdy = BlasLike.ddotvec(m, b, dy);
                 var bdb = BlasLike.ddotvec(m, b, db);
-                if (corrector) dtau = (cdx - bdy + rkxy * g1 + (hrmu - g1 * mu - dtau0 * dkappa0) / tau) / (bdb - cdc + kappa / tau);
-                else dtau = (cdx - bdy + rkxy * g1 + (hrmu - g1 * mu) / tau) / (bdb - cdc + kappa / tau);
+                for (int i = 0; i < n; ++i)
+                {
+                    dz[i] = aob((rmu[i] - g1 * mu - dx[i] * z[i] - (corrector ? dx0[i] * dz0[i] : 0)), x[i]);
+                }
+                dtau = (cdx - bdy + rkxy * g1 + (hrmu - g1 * mu - (corrector ? dtau0 * dkappa0 : 0)) / tau) / (bdb - cdc + kappa / tau);
                 BlasLike.daxpyvec(n, dtau, dc, dx);
                 BlasLike.daxpyvec(m, dtau, db, dy);
-                if (corrector) dkappa = (hrmu - g1 * mu - kappa * dtau - dtau0 * dkappa0) / tau;
-                else dkappa = (hrmu - g1 * mu - kappa * dtau) / tau;
+                dkappa = (hrmu - g1 * mu - kappa * dtau - (corrector ? dtau0 * dkappa0 : 0)) / tau;
             }
             else
             {
@@ -187,18 +210,14 @@ namespace InteriorPoint
                 {
                     for (var i = 0; i < n; ++i)
                     {
-                        var top = (rmu[i] - g1 * mu - dx[i] * z[i] - dx0[i] * dz0[i]);
-                        dz[i] = ActiveSet.Optimise.dprotdiv(ref top, ref x[i], ref fail);
-                        if (fail != 0 && top == 0) dz[i] = BlasLike.lm_max;
+                        dz[i] = aob(rmu[i] - g1 * mu - dx[i] * z[i] - dx0[i] * dz0[i], x[i]);
                     }
                 }
                 else
                 {
                     for (var i = 0; i < n; ++i)
                     {
-                        var top = (rmu[i] - g1 * mu - dx[i] * z[i]);
-                        dz[i] = ActiveSet.Optimise.dprotdiv(ref top, ref x[i], ref fail);
-                        if (fail != 0 && top == 0) dz[i] = BlasLike.lm_max;
+                        dz[i] = aob(rmu[i] - g1 * mu - dx[i] * z[i], x[i]);
                     }
                 }
             }
@@ -209,16 +228,16 @@ namespace InteriorPoint
             Factorise.dmxmulv(n, m, A, y, Ay, 0, 0, 0, true);
             BlasLike.dcopyvec(n, Ay, rd);
             BlasLike.dnegvec(n, rd);
-            BlasLike.daxpyvec(n, tau, c, rd);
+            BlasLike.daxpyvec(n, homogenous ? tau : 0, c, rd);
             BlasLike.dsubvec(n, rd, z, rd);
         }
         void MuResidual()
         {
-            for (int i = 0; i < n; ++i) rmu[i] = mu - x[i] * z[i];
+            for (int i = 0; i < x.Length; ++i) rmu[i] = mu - x[i] * z[i];
             if (homogenous)
             {
                 hrmu = mu - tau * kappa;
-                rkxy = kappa + BlasLike.ddotvec(n, c, x) - BlasLike.ddotvec(m, b, y);
+                rkxy = kappa + BlasLike.ddotvec(x.Length, c, x) - BlasLike.ddotvec(y.Length, b, y);
             }
         }
         double Complementarity()
@@ -227,16 +246,20 @@ namespace InteriorPoint
         }
         void Mu()
         {
-            if (homogenous) mu = (BlasLike.ddotvec(n, x, z) + tau * kappa) / (n + 1);
-            else mu = BlasLike.ddotvec(n, x, z) / n;
+            if (homogenous) mu = (BlasLike.ddotvec(x.Length, x, z) + tau * kappa) / (x.Length + 1);
+            else mu = BlasLike.ddotvec(x.Length, x, z) / x.Length;
         }
-        public static double norm(double[] aa) => Math.Sqrt(BlasLike.ddotvec(aa.Length, aa, aa));
         public static int Opt(int n, int m, double[] w, double[] A, double[] b, double[] c, double[] H = null)
         {
             var opt = new Optimise(n, m, w, A, b, c, H);
             BlasLike.dcopyvec(c.Length, c, opt.cmod);//Can use cmod to include Hx in c for reporting
             BlasLike.dsetvec(n, 1, opt.x);
             BlasLike.dsetvec(n, 1, opt.z);
+            var dxold = (double[])opt.dx.Clone();
+            var dzold = (double[])opt.dz.Clone();
+            var dyold = (double[])opt.dy.Clone();
+            var dtauold = opt.dtau;
+            var dkappaold = opt.kappa;
             opt.Mu();
             var mu0 = opt.mu;
             opt.PrimalResidual();
@@ -249,18 +272,54 @@ namespace InteriorPoint
             var comp0 = opt.Complementarity();
             var compnow = comp0;
             var comp1 = comp0;
-            var toosmall = 0.0;
+            var alpha1 = 0.0;
+            var alpha2 = 0.0;
+            var gamma = 0.0;
             var i = 0;
             while (true)
             {
                 rp1 = norm(opt.rp) / rp0;
                 rd1 = norm(opt.rd) / rd0;
                 comp1 = opt.Complementarity() / comp0;
-                if (rp1 < BlasLike.lm_rooteps && rd1 < BlasLike.lm_rooteps && comp1 < BlasLike.lm_rooteps) break;
+                if (rp1 < BlasLike.lm_eps && rd1 < BlasLike.lm_eps && comp1 < BlasLike.lm_eps) break;
                 if (i > opt.maxiter) break;
-                opt.SolvePrimary(0);
+                opt.SolvePrimary();
+                BlasLike.dcopyvec(n, opt.dx, dxold);
+                BlasLike.dcopyvec(n, opt.dz, dzold);
+                BlasLike.dcopyvec(m, opt.dy, dyold);
+                dtauold = opt.dtau;
+                dkappaold = opt.dkappa;
+                opt.MaximumStep();
+                alpha1 = 0.99 * opt.Lowest();
+                BlasLike.dsccopyvec(opt.n, alpha1, opt.dx, opt.dx0);
+                BlasLike.dsccopyvec(opt.n, alpha1, opt.dz, opt.dz0);
+                opt.dtau0 = alpha1 * opt.dtau;
+                opt.dkappa0 = alpha1 * opt.dkappa;
+                gamma = opt.gfunc(alpha1);
+                opt.SolvePrimary(gamma, true);
+                opt.MaximumStep();
+                alpha2 = 0.99 * opt.Lowest();
+                if (alpha1 > alpha2) opt.update(dxold, dyold, dzold, dtauold, dkappaold, alpha1);
+                else opt.update(opt.dx, opt.dy, opt.dz, opt.dtau, opt.dkappa, alpha2);
+                opt.Mu();
+                mu0 = opt.mu;
+                opt.PrimalResidual();
+                opt.DualResudual();
+                opt.MuResidual();
+                i++;
             }
             return -1;
+        }
+        void update(double[] dx, double[] dy, double[] dz, double dtau, double dkappa, double step)
+        {
+            BlasLike.daxpyvec(n, step, dx, x);
+            BlasLike.daxpyvec(n, step, dz, z);
+            BlasLike.daxpyvec(m, step, dy, y);
+            if (homogenous)
+            {
+                tau += dtau * step;
+                kappa += dkappa * step;
+            }
         }
     }
 }

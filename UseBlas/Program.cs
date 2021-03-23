@@ -953,6 +953,9 @@ namespace UseBlas
                 Factorise.dmx_transpose(n, m, A, A);
                 var back = InteriorPoint.Optimise.Opt(n, m, x, A, b, c, H);
                 Console.WriteLine($"{back}");
+                var implied = new double[m];
+                Factorise.dmxmulv(m, n, A, x, implied);
+                foreach (var cc in implied) Console.WriteLine($"Constraint value {cc}");
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
