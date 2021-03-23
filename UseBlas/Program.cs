@@ -777,8 +777,8 @@ namespace UseBlas
                 double[] c = { 1, 2, 3, 4, 5, 6, 17, 8, 9, 10 };
                 double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,
                                    0, 0, 1, 1, 1, 0, 0, 0, 0, 0};
-                double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0.1 };
-                double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5 };
+                double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0.3 };
+                double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.3 };
                 Factorise.dmx_transpose(n, m, A, A);
                 double[] hess = new double[n * (n + 1) / 2];
                 var tdata = 2 * n;
@@ -944,18 +944,24 @@ namespace UseBlas
                                     -0.04135384837511391,
                                     0.12585651441173307};
 
+                BlasLike.dscalvec(H.Length, 1e3, H);
                 var m = 2;
                 var x = new double[n];
                 double[] b = { 1, 0.3 };
                 double[] c = { 1, 2, 3, 4, 5, 6, 17, 8, 9, 10 };
                 double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,
-                                   0, 0, 1, 1, 1, 0, 0, 0, 0, 0};
+                               0, 0, 1, 1, 1, 0, 0, 0, 0, 0};
                 Factorise.dmx_transpose(n, m, A, A);
                 var back = InteriorPoint.Optimise.Opt(n, m, x, A, b, c, H);
-                Console.WriteLine($"{back}");
+                Console.WriteLine($"{back}"); 
                 var implied = new double[m];
                 Factorise.dmxmulv(m, n, A, x, implied);
                 foreach (var cc in implied) Console.WriteLine($"Constraint value {cc}");
+                var cx=BlasLike.ddotvec(c.Length,c,x);
+                implied=new double[n];
+                Factorise.dsmxmulv(n,H,x,implied);
+                var xHx=BlasLike.ddotvec(n,implied,x);
+                Console.WriteLine($"Linear {cx}\nQuadratic {cx+xHx/2}");
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry

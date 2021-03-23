@@ -228,7 +228,7 @@ namespace InteriorPoint
             Factorise.dmxmulv(n, m, A, y, Ay, 0, 0, 0, true);
             BlasLike.dcopyvec(n, Ay, rd);
             BlasLike.dnegvec(n, rd);
-            BlasLike.daxpyvec(n, homogenous ? tau : 0, c, rd);
+            BlasLike.daxpyvec(n, homogenous ? tau : 1, cmod, rd);
             BlasLike.dsubvec(n, rd, z, rd);
         }
         void MuResidual()
@@ -237,7 +237,7 @@ namespace InteriorPoint
             if (homogenous)
             {
                 hrmu = mu - tau * kappa;
-                rkxy = kappa + BlasLike.ddotvec(x.Length, c, x) - BlasLike.ddotvec(y.Length, b, y);
+                rkxy = kappa + BlasLike.ddotvec(x.Length, cmod, x) - BlasLike.ddotvec(y.Length, b, y);
             }
         }
         double Complementarity()
@@ -249,10 +249,25 @@ namespace InteriorPoint
             if (homogenous) mu = (BlasLike.ddotvec(x.Length, x, z) + tau * kappa) / (x.Length + 1);
             else mu = BlasLike.ddotvec(x.Length, x, z) / x.Length;
         }
+        double Primal()
+        {
+            var lin = BlasLike.ddotvec(n, c, x);
+            var linextra = BlasLike.ddotvec(n, cmod, x);
+            return lin + 0.5 * (linextra - lin);
+        }
+        double Dual()
+        {
+            var lin = BlasLike.ddotvec(n, c, x);
+            var linextra = BlasLike.ddotvec(n, cmod, x);
+            var by = BlasLike.ddotvec(m, b, y);
+            return by - 0.5 * (linextra - lin);
+        }
         public static int Opt(int n, int m, double[] w, double[] A, double[] b, double[] c, double[] H = null)
         {
+            ActiveSet.Optimise.clocker(true);
             var opt = new Optimise(n, m, w, A, b, c, H);
-            BlasLike.dcopyvec(c.Length, c, opt.cmod);//Can use cmod to include Hx in c for reporting
+            //       BlasLike.dzerovec(opt.H.Length,opt.H);
+            var usrH = BlasLike.dsumvec(opt.H.Length, opt.H) != 0.0;
             BlasLike.dsetvec(n, 1, opt.x);
             BlasLike.dsetvec(n, 1, opt.z);
             var dxold = (double[])opt.dx.Clone();
@@ -262,6 +277,14 @@ namespace InteriorPoint
             var dkappaold = opt.kappa;
             opt.Mu();
             var mu0 = opt.mu;
+            var i = 0;
+            var extra = new double[n];
+            if (usrH)
+            {
+                Factorise.dsmxmulv(n, opt.H, opt.x, extra);
+                BlasLike.daddvec(n, opt.c, extra, opt.cmod);
+            }
+            else BlasLike.dcopyvec(n, opt.c, opt.cmod);
             opt.PrimalResidual();
             opt.DualResudual();
             opt.MuResidual();
@@ -275,7 +298,6 @@ namespace InteriorPoint
             var alpha1 = 0.0;
             var alpha2 = 0.0;
             var gamma = 0.0;
-            var i = 0;
             while (true)
             {
                 rp1 = norm(opt.rp) / rp0;
@@ -301,6 +323,11 @@ namespace InteriorPoint
                 alpha2 = 0.99 * opt.Lowest();
                 if (alpha1 > alpha2) opt.update(dxold, dyold, dzold, dtauold, dkappaold, alpha1);
                 else opt.update(opt.dx, opt.dy, opt.dz, opt.dtau, opt.dkappa, alpha2);
+                if (usrH)
+                {
+                    Factorise.dsmxmulv(n, opt.H, opt.x, extra);
+                    BlasLike.daddvec(n, opt.c, extra, opt.cmod);
+                }
                 opt.Mu();
                 mu0 = opt.mu;
                 opt.PrimalResidual();
@@ -308,7 +335,15 @@ namespace InteriorPoint
                 opt.MuResidual();
                 i++;
             }
-            return -1;
+            Console.WriteLine($"{i} iterations out of {opt.maxiter}");
+            Console.WriteLine($"Primal Utility:\t{opt.Primal()}");
+            ActiveSet.Optimise.printV(opt.x);
+            Console.WriteLine($"Dual Utility:\t{opt.Dual()}");
+            ActiveSet.Optimise.printV(opt.y);
+            ActiveSet.Optimise.printV(opt.z);
+            Console.WriteLine($"Job took {ActiveSet.Optimise.clocker()} m secs");
+            if (i >= opt.maxiter) return -1;
+            else return 0;
         }
         void update(double[] dx, double[] dy, double[] dz, double dtau, double dkappa, double step)
         {
