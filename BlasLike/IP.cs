@@ -288,7 +288,7 @@ namespace InteriorPoint
             opt.MuResidual();
             var rp0 = norm(opt.rp);
             var rd0 = norm(opt.rd);
-            var rp1 = rp0;
+            var rp1 = rp0;  
             var rd1 = rd0;
             var comp0 = opt.Complementarity();
             var compnow = comp0;
