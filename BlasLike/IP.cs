@@ -121,10 +121,10 @@ namespace InteriorPoint
             if (!corrector)
             {
                 BlasLike.dzerovec(M.Length, M);
-                var lhs = new double[n];
-                var res = new double[m];
                 if (usrH)
                 {
+                    var lhs = w1;//Highjack w1 and dy to save reallocation
+                    var res = dy;
                     HCOPY = (double[])H.Clone();
                     for (int i = 0, ij = 0; i < n; ++i, ij += i) HCOPY[i + ij] += aob(z[i], x[i]);
                     Factorise.Factor(uplo, n, HCOPY, horder);
@@ -223,7 +223,7 @@ namespace InteriorPoint
         }
         double Complementarity()
         {
-            return BlasLike.ddotvec(n, x, z);
+            return BlasLike.ddotvec(n, x, z) + (homogenous ? tau * kappa : 0);
         }
         void Mu()
         {
@@ -259,6 +259,8 @@ namespace InteriorPoint
             ActiveSet.Optimise.clocker(true);
             var opt = new Optimise(n, m, w, A, b, c, H);
             opt.homogenous = true;
+            opt.tau = 1;
+            opt.kappa = 1;
             opt.usrH = BlasLike.dsumvec(opt.H.Length, opt.H) != 0.0;
             BlasLike.dsetvec(n, 1, opt.x);
             BlasLike.dsetvec(n, 1, opt.z);
@@ -288,7 +290,7 @@ namespace InteriorPoint
             opt.MuResidual();
             var rp0 = norm(opt.rp);
             var rd0 = norm(opt.rd);
-            var rp1 = rp0;  
+            var rp1 = rp0;
             var rd1 = rd0;
             var comp0 = opt.Complementarity();
             var compnow = comp0;
