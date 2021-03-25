@@ -5186,12 +5186,13 @@ namespace ActiveSet
             BlasLike.dnegvec(n, PX);
             if (nclin > 0) BlasLike.dnegvec(nclin, AP);
         }
-        public static void printV(double[] a)
+        public static void printV(string name, double[] a)
         {
+            Console.WriteLine(name);
             for (int i = 0; i < a.Length; ++i)
             {
-                Console.Write($"{a[i]} ");
-                if (i % 5 == 4) Console.Write("\n");
+                Console.Write($"{a[i]:0.00000000} ");
+                if (i % 10 == 9) Console.Write("\n");
             }
             Console.Write("\n");
         }

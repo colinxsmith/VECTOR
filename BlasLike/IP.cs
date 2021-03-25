@@ -202,7 +202,8 @@ namespace InteriorPoint
                 var bdy = BlasLike.ddotvec(m, b, dy);
                 var bdb = BlasLike.ddotvec(m, b, db);
                 for (int i = 0; i < n; ++i) dz[i] = aob((rmu[i] - g1 * mu - dx[i] * z[i] - (corrector ? dx0[i] * dz0[i] : 0)), x[i]);
-                dtau = (cdx - bdy + rkxy * g1 + (hrmu - g1 * mu - (corrector ? dtau0 * dkappa0 : 0)) / tau) / (bdb - cdc + kappa / tau);
+                //This can't be right! Check the equations in E. D. Andersen∗, C. Roos†, and T. Terlaky‡
+                dtau = (cdx - bdy + rkxy * g1 + (hrmu - g1 * mu - (corrector ? dtau0 * dkappa0 : 0)) / tau) / (bdb - cdc + aob(kappa, tau));
                 BlasLike.daxpyvec(n, dtau, dc, dx);
                 BlasLike.daxpyvec(m, dtau, db, dy);
                 dkappa = (hrmu - g1 * mu - kappa * dtau - (corrector ? dtau0 * dkappa0 : 0)) / tau;
@@ -281,7 +282,7 @@ namespace InteriorPoint
         {
             ActiveSet.Optimise.clocker(true);
             var opt = new Optimise(n, m, w, A, b, c, nh, H);
-            opt.homogenous = false;
+            opt.homogenous = true;
             opt.tau = 1;
             opt.kappa = 1;
             opt.usrH = nh > 0 && BlasLike.dsumvec(opt.H.Length, opt.H) != 0.0;
@@ -379,10 +380,10 @@ namespace InteriorPoint
             }
             Console.WriteLine($"{i} iterations out of {opt.maxiter}");
             Console.WriteLine($"Primal Utility:\t\t{opt.Primal()}");
-            ActiveSet.Optimise.printV(opt.x);
+            ActiveSet.Optimise.printV("x", opt.x);
             Console.WriteLine($"Dual Utility:\t\t{opt.Dual()}");
-            ActiveSet.Optimise.printV(opt.y);
-            ActiveSet.Optimise.printV(opt.z);
+            ActiveSet.Optimise.printV("y", opt.y);
+            ActiveSet.Optimise.printV("z", opt.z);
             Console.WriteLine($"Complementarity:\t{opt.Complementarity()}");
             Console.WriteLine($"Job took {ActiveSet.Optimise.clocker()} m secs");
             if (i >= opt.maxiter) return -1;

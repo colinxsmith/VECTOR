@@ -871,7 +871,7 @@ namespace UseBlas
                 BlasLike.dsetvec(x.Length, 1.0 / n, x);
                 back = ActiveSet.Optimise.LPopt(n, m, x, L, U, A, c, ref obj, ref iter);
                 Console.WriteLine($"back is {back} {BlasLike.ddotvec(n, x, c)} {obj} {iter} iterations");
-                ActiveSet.Optimise.printV(x);
+                ActiveSet.Optimise.printV("x",x);
                 var implied = new double[m];
                 Factorise.dmxmulv(m, n, A, x, implied);
                 foreach (var cc in implied) Console.WriteLine($"Constraint value {cc}");
@@ -881,7 +881,7 @@ namespace UseBlas
                 implied = new double[n];
                 Factorise.dsmxmulv(n, hess, x, implied);
                 Console.WriteLine($"back is {back} {BlasLike.ddotvec(n, x, c) + 0.5 * BlasLike.ddotvec(n, implied, x)} {obj}  {iter} iterations");
-                ActiveSet.Optimise.printV(x);
+                ActiveSet.Optimise.printV("x",x);
                 implied = new double[m];
                 Factorise.dmxmulv(m, n, A, x, implied);
                 foreach (var cc in implied) Console.WriteLine($"Constraint value {cc}");
