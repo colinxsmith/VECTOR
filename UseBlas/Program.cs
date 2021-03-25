@@ -777,8 +777,8 @@ namespace UseBlas
                 double[] c = { 1, 2, 3, 4, 5, 6, 17, 8, 9, 10 };
                 double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,
                                    0, 0, 1, 1, 1, 0, 0, 0, 0, 0};
-                double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0.3 };
-                double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.3 };
+                double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0.0 };
+                double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5 };
                 Factorise.dmx_transpose(n, m, A, A);
                 double[] hess = new double[n * (n + 1) / 2];
                 var tdata = 2 * n;
@@ -887,7 +887,7 @@ namespace UseBlas
                 foreach (var cc in implied) Console.WriteLine($"Constraint value {cc}");
             }
             {
-                int n = 10;
+                int nh = 10;
                 double[] H ={0.07622384475840693,
                                     -0.0016365991417207626,
                                     0.08604333317714313,
@@ -943,25 +943,27 @@ namespace UseBlas
                                     -0.011735959703553567,
                                     -0.04135384837511391,
                                     0.12585651441173307};
-
+                int n = 11;
                 BlasLike.dscalvec(H.Length, 1e3, H);
                 var m = 2;
                 var x = new double[n];
-                double[] b = { 1, 0.3 };
-                double[] c = { 1, 2, 3, 4, 5, 6, 17, 8, 9, 10 };
-                double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,
-                               0, 0, 1, 1, 1, 0, 0, 0, 0, 0};
+                double[] b = { 1, 0.5 };
+                double[] c = { 1, 2, 3, 4, 5, 6, 17, 8, 9, 10, 0};
+                double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+                               0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1};
                 Factorise.dmx_transpose(n, m, A, A);
-                var back = InteriorPoint.Optimise.Opt(n, m, x, A, b, c, H);
-                Console.WriteLine($"{back}"); 
+                var back = InteriorPoint.Optimise.Opt(n, m, x, A, b, c, nh, H);
+                Console.WriteLine($"{back}");
                 var implied = new double[m];
-                Factorise.dmxmulv(m, n, A, x, implied);
+                var truex=(double[])x.Clone();
+                BlasLike.dzerovec(n-nh,truex,nh);
+                Factorise.dmxmulv(m, n, A, truex, implied);
                 foreach (var cc in implied) Console.WriteLine($"Constraint value {cc}");
-                var cx=BlasLike.ddotvec(c.Length,c,x);
-                implied=new double[n];
-                Factorise.dsmxmulv(n,H,x,implied);
-                var xHx=BlasLike.ddotvec(n,implied,x);
-                Console.WriteLine($"Linear {cx}\nQuadratic {cx+xHx/2}");
+                var cx = BlasLike.ddotvec(c.Length, c, x);
+                implied = new double[nh];
+                Factorise.dsmxmulv(nh, H, x, implied);
+                var xHx = BlasLike.ddotvec(nh, implied, x);
+                Console.WriteLine($"Linear {cx}\nQuadratic {cx + xHx / 2}");
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
