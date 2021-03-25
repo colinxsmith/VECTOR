@@ -777,7 +777,7 @@ namespace UseBlas
                 double[] c = { 1, 2, 3, 4, 5, 6, 17, 8, 9, 10 };
                 double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ,
                                    0, 0, 1, 1, 1, 0, 0, 0, 0, 0};
-                double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0.0 };
+                double[] L = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0.3 };
                 double[] U = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.5 };
                 Factorise.dmx_transpose(n, m, A, A);
                 double[] hess = new double[n * (n + 1) / 2];
@@ -943,26 +943,28 @@ namespace UseBlas
                                     -0.011735959703553567,
                                     -0.04135384837511391,
                                     0.12585651441173307};
-                int n = 11;
+                int n = 12;
                 BlasLike.dscalvec(H.Length, 1e3, H);
-                var m = 2;
+                var m = 3;
                 var x = new double[n];
-                double[] b = { 1, 0.5 };
-                double[] c = { 1, 2, 3, 4, 5, 6, 17, 8, 9, 10, 0};
-                double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
-                               0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1};
+                var nslack=2;
+                double[] b = { 1, 0.5, 0.3 };
+                double[] c = { 1, 2, 3, 4, 5, 6, 17, 8, 9, 10, 0, 0};
+                double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+                               0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0,
+                               0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, -1};
                 Factorise.dmx_transpose(n, m, A, A);
                 var back = InteriorPoint.Optimise.Opt(n, m, x, A, b, c, nh, H);
                 Console.WriteLine($"{back}");
                 var implied = new double[m];
                 var truex=(double[])x.Clone();
-                BlasLike.dzerovec(n-nh,truex,nh);
+                BlasLike.dzerovec(nslack,truex,n-nslack);
                 Factorise.dmxmulv(m, n, A, truex, implied);
                 foreach (var cc in implied) Console.WriteLine($"Constraint value {cc}");
-                var cx = BlasLike.ddotvec(c.Length, c, x);
+                var cx = BlasLike.ddotvec(c.Length, c, truex);
                 implied = new double[nh];
                 Factorise.dsmxmulv(nh, H, x, implied);
-                var xHx = BlasLike.ddotvec(nh, implied, x);
+                var xHx = BlasLike.ddotvec(nh, implied, truex);
                 Console.WriteLine($"Linear {cx}\nQuadratic {cx + xHx / 2}");
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
