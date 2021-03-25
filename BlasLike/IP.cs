@@ -281,7 +281,7 @@ namespace InteriorPoint
         {
             ActiveSet.Optimise.clocker(true);
             var opt = new Optimise(n, m, w, A, b, c, nh, H);
-            opt.homogenous = true;
+            opt.homogenous = false;
             opt.tau = 1;
             opt.kappa = 1;
             opt.usrH = nh > 0 && BlasLike.dsumvec(opt.H.Length, opt.H) != 0.0;
@@ -378,11 +378,12 @@ namespace InteriorPoint
                 else Console.WriteLine("INFEASIBLE");
             }
             Console.WriteLine($"{i} iterations out of {opt.maxiter}");
-            Console.WriteLine($"Primal Utility:\t{opt.Primal()}");
+            Console.WriteLine($"Primal Utility:\t\t{opt.Primal()}");
             ActiveSet.Optimise.printV(opt.x);
-            Console.WriteLine($"Dual Utility:\t{opt.Dual()}");
+            Console.WriteLine($"Dual Utility:\t\t{opt.Dual()}");
             ActiveSet.Optimise.printV(opt.y);
             ActiveSet.Optimise.printV(opt.z);
+            Console.WriteLine($"Complementarity:\t{opt.Complementarity()}");
             Console.WriteLine($"Job took {ActiveSet.Optimise.clocker()} m secs");
             if (i >= opt.maxiter) return -1;
             else if (opt.homogenous && opt.tau < opt.kappa) return 6;
