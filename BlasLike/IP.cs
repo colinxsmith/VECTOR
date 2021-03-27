@@ -201,11 +201,11 @@ namespace InteriorPoint
                 var cdc = BlasLike.ddotvec(n, cmod, dc);
                 var bdy = BlasLike.ddotvec(m, b, dy);
                 var bdb = BlasLike.ddotvec(m, b, db);
-                for (int i = 0; i < n; ++i) dz[i] = aob((rmu[i] - g1 * mu - dx[i] * z[i] - (corrector ? dx0[i] * dz0[i] : 0)), x[i]);
-                //This can't be right! Check the equations in E. D. Andersen∗, C. Roos†, and T. Terlaky‡
+                //Check the equations in E. D. Andersen∗, C. Roos†, and T. Terlaky‡ they're wrong!!!!!!
                 dtau = (cdx - bdy + rkxy * g1 + (hrmu - g1 * mu - (corrector ? dtau0 * dkappa0 : 0)) / tau) / (bdb - cdc + aob(kappa, tau));
                 BlasLike.daxpyvec(n, dtau, dc, dx);
                 BlasLike.daxpyvec(m, dtau, db, dy);
+                for (int i = 0; i < n; ++i) dz[i] = aob((rmu[i] - g1 * mu - dx[i] * z[i] - (corrector ? dx0[i] * dz0[i] : 0)), x[i]);
                 dkappa = (hrmu - g1 * mu - kappa * dtau - (corrector ? dtau0 * dkappa0 : 0)) / tau;
             }
             else
