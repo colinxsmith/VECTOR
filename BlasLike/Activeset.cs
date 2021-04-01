@@ -6,53 +6,53 @@ namespace ActiveSet
 {
     public class Optimise
     {
-        public static double[] xnorm;
-        public static int NROWA;
-        public static bool UNITQ;
-        public static double[] Q;
-        public static double[] W;
-        public static double[] A;
-        public static double[] L;
-        public static double[] U;
-        public static double[] c;
-        public static double AccuracyModify = -1.0;
-        public static int msg;
-        public static bool scldqp;
-        public static int[] ISTATE;
-        public static double[] LAMBDA;
-        public static double[] FEATOL;
-        public static int[] KACTV;
-        public static int[] KFREE;
-        public static int istart;
-        public static double[] parm = new double[4];
-        public static int nq;
-        public static double asize;
-        public static int NROWRT;
-        public static int NCOLRT;
-        public static double dtmax;
-        public static double dtmin;
-        public static double[] ANORM;
-        public static double[] WRK;
-        public static double[] LWRK;
-        public static double[] RT;
-        public static double[] ZY;
-        public static double[] PX;
-        public static double[] QTG;
-        public static double[] RLAM;
-        public static double[] AP;
-        public static long timebase = -1233456;
-        public static long timeaquired = -12233;
-        public static void wrexit(string name, int inform, int iter)
+        double[] xnorm;
+        int NROWA;
+        bool UNITQ;
+        double[] Q;
+        double[] W;
+        double[] A;
+        double[] L;
+        double[] U;
+        double[] c;
+        double AccuracyModify = -1.0;
+        int msg;
+        bool scldqp;
+        int[] ISTATE;
+        double[] LAMBDA;
+        double[] FEATOL;
+        int[] KACTV;
+        int[] KFREE;
+        int istart;
+        double[] parm = new double[4];
+        int nq;
+        double asize;
+        int NROWRT;
+        int NCOLRT;
+        double dtmax;
+        double dtmin;
+        double[] ANORM;
+        double[] WRK;
+        double[] LWRK;
+        double[] RT;
+        double[] ZY;
+        double[] PX;
+        double[] QTG;
+        double[] RLAM;
+        double[] AP;
+        long timebase = -1233456;
+        long timeaquired = -12233;
+        void wrexit(string name, int inform, int iter)
         {
             Console.WriteLine($"{name} Inform={inform} Iter={iter}");
         }
-        public static void wdinky(string name, double ztgnrm, double dinky)
+        void wdinky(string name, double ztgnrm, double dinky)
         {
             Console.WriteLine($"\n//{name}//         ZTGNRM         DINKY\n//{name}//{ztgnrm}{dinky}");
             //lm_wmsg("\n//%s//         ZTGNRM         DINKY\n//%s//%14.5lg%14.5lg",
             //name,name,ztgnrm,dinky);
         }
-        public static long clocker(bool start = false)
+        long clocker(bool start = false)
         {
             long t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             if (start)
@@ -62,9 +62,9 @@ namespace ActiveSet
             timebase = t;
             return timeaquired;
         }
-        public static void dlpcore(bool lp, int minsum, bool orthog, int vertex, ref int inform, ref int iter,
-                int itmax, byte lcrash, int n, int nclin, ref int nctotl, ref int nactiv,
-                ref int nfree, ref int numinf, ref double obj, double[] xnorm)
+        void dlpcore(bool lp, int minsum, bool orthog, int vertex, ref int inform, ref int iter,
+               int itmax, byte lcrash, int n, int nclin, ref int nctotl, ref int nactiv,
+               ref int nfree, ref int numinf, ref double obj, double[] xnorm)
         {
             /*
             lpcore finds a feasible point for the general linear constraints
@@ -229,7 +229,7 @@ namespace ActiveSet
             prnt = added || ndel > 1;
             if (!prnt) goto L40;
 
-            condt = dprotdiv(ref dtmax, ref dtmin, ref ifail);
+            condt = BlasLike.dprotdiv(ref dtmax, ref dtmin, ref ifail);
             if (ifail != 0 && dtmax == 0) condt = BlasLike.lm_max;
             dlpprt(lp, NROWRT, n, nclin, nfree, isdel, nactiv,
                 ncolz, iter, jadd, jdel, alfa, condt, numinf,
@@ -360,7 +360,7 @@ namespace ActiveSet
             /*     ALFA  IS INITIALIZED TO  BIGALF.  IF IT REMAINS THAT WAY AFTER */
             /*     THE CALL TO BNDALF, IT WILL BE REGARDED AS INFINITE. */
 
-            bigalf = dprotdiv(ref bigdx, ref pnorm, ref ifail);
+            bigalf = BlasLike.dprotdiv(ref bigdx, ref pnorm, ref ifail);
             if (ifail != 0 && bigdx == 0) bigalf = BlasLike.lm_max;
             inform = dbndalf(firstv, ref hitlow, ref jadd, n,
     nctotl, numinf, ref alfa, ref palfa, ref atphit, ref bigalf,
@@ -551,107 +551,24 @@ namespace ActiveSet
             dprtsol(nfree, n, nclin, ncnln, nctotl,
                 nactiv);
         }
-        public static double dnrm2vec(int n, double[] x, int xstart = 0)
+        double dnrm2vec(int n, double[] x, int xstart = 0)
         {
             if (n == 1) return (x[xstart] < 0.0 ? -x[xstart] : x[xstart]);
             else
             {
                 double scale = 0.0, ssq = 1.0;
-                dsssqvec(n, x, ref scale, ref ssq, xstart);
+                BlasLike.dsssqvec(n, x, ref scale, ref ssq, xstart);
                 return sc_norm(scale, ssq);
             }
         }
-        public static double sc_norm(double scale, double ssq)
+        double sc_norm(double scale, double ssq)
         {
             ssq = Math.Sqrt(ssq);
             return (scale < BlasLike.lm_max / ssq ? scale * ssq : BlasLike.lm_max);
         }
-        public static void dsssqvec(int n, double[] x, ref double pscale, ref double psumsq, int px = 0)
-        {
-            if (n > 0)
-            {
-                double absxi, d, sumsq = psumsq, scale = pscale;
-                Debug.Assert(scale >= 0);
-                for (int i = 0; i < n; ++i)
-                {
-                    absxi = x[i + px];
-                    if (absxi == 0) continue;
-                    if (absxi < 0) absxi = -absxi;
-                    if (scale < absxi)
-                    {
-                        d = scale / absxi;
-                        sumsq = sumsq * (d * d) + 1;
-                        scale = absxi;
-                    }
-                    else
-                    {
-                        d = absxi / scale;
-                        sumsq += d * d;
-                    }
-                }
-                pscale = scale;
-                psumsq = sumsq;
-            }
-        }
-        public static double dprotdiv(ref double a, ref double b, ref int fail)
-        {
-            /*
-                dprotdiv returns the value div given by
-                    div =	( a/b                 if a/b does not overflow,
-                            (
-                        ( 0.0                 if a == 0.0,
-                        (
-                        ( sign( a/b )*flmax   if a != 0.0  and a/b would overflow,
-
-                where  flmax  is a large value. in addition if
-                a/b would overflow then  fail is returned as 1, otherwise  fail is
-                returned as 0
-                note that when  a and b  are both zero, fail is returned as 1, but
-                div  is returned as  0.0. in all other cases of overflow  div is such
-                that  abs( div ) = flmax
-
-                when  b = 0  then  sign( a/b )  is taken as  sign( a )
-            */
-            double absb, div;
-            int dfail = -90;
-
-            if (fail == 0) fail = dfail;
-
-            if (a == 0.0)
-            {
-                div = 0.0;
-                fail = b == 0 ? 1 : 0;
-            }
-            else if (b == 0.0)
-            {
-                div = BlasLike.dsign(BlasLike.lm_rsafe_range, a);
-                fail = 1;
-            }
-            else
-            {
-                absb = Math.Abs(b);
-                if (absb >= 1.0)
-                {
-                    fail = 0;
-                    div = (Math.Abs(a) >= absb * BlasLike.lm_safe_range ? a / b : 0.0);
-                }
-                else if (Math.Abs(a) <= absb * BlasLike.lm_rsafe_range)
-                {
-                    fail = 0;
-                    div = a / b;
-                }
-                else
-                {
-                    fail = 1;
-                    div = BlasLike.lm_rsafe_range;
-                    if ((a < 0.0 && b > 0.0) || (a > 0.0 && b < 0.0)) div = -div;
-                }
-            }
-            return div;
-        }
-        public static void dlpprt(bool lp, int Nrowrt, int n, int nclin, int nfree, int isdel, int nactiv,
-                int ncolz, int iter, int jadd, int jdel, double alfa, double condt,
-                int numinf, double suminf, double objlp)
+        void dlpprt(bool lp, int Nrowrt, int n, int nclin, int nfree, int isdel, int nactiv,
+               int ncolz, int iter, int jadd, int jdel, double alfa, double condt,
+               int numinf, double suminf, double objlp)
         {
 
             char[] lstate = { ' ', 'L', 'U', 'E', 'T' };
@@ -743,7 +660,7 @@ namespace ActiveSet
                 }
             }
         }
-        public static void lm_mdvwri<T>(string nn, int na, T[] wrk, int wstart = 0)
+        void lm_mdvwri<T>(string nn, int na, T[] wrk, int wstart = 0)
         {
             if (wrk == null) return;
             Console.WriteLine(nn);
@@ -754,13 +671,13 @@ namespace ActiveSet
             }
             Console.Write("\n");
         }
-        public static void itrwri(string name, int n)
+        void itrwri(string name, int n)
         {
             Console.WriteLine($"{name} iteration {n}");
         }
-        public static void dlpcrsh(bool orthog, int vertex, byte lcrash, int n, int nclin, int nctotl,
-          int Nrowrt, int Ncolrt, ref int nactiv, ref int ncolz,
-        ref int nfree)
+        void dlpcrsh(bool orthog, int vertex, byte lcrash, int n, int nclin, int nctotl,
+         int Nrowrt, int Ncolrt, ref int nactiv, ref int ncolz,
+       ref int nfree)
         {
 
             int a_dim1, a_offset, rt_dim1, rt_offset, zy_dim1, zy_offset, i__1,
@@ -1274,8 +1191,8 @@ namespace ActiveSet
                 lm_mdvwri("\nLP VARIABLES AFTER  CRASH...", n, W);
             }
         }
-        public static void dlpgrad(bool lp, int n, int nctotl, double feamin,
-        ref int numinf, ref double suminf)
+        void dlpgrad(bool lp, int n, int nctotl, double feamin,
+       ref int numinf, ref double suminf)
         {
 
             /*
@@ -1373,7 +1290,7 @@ namespace ActiveSet
             /* if feasible, install true objective */
             if (lp && numinf == 0) BlasLike.dcopyvec(n, c, QTG);
         }
-        public static void dzyprod(short mode, int n, int nactiv, int ncolz, int nfree, int nq, int[] kactiv, int[] kfree, double[] v, double[] wrk)
+        void dzyprod(short mode, int n, int nactiv, int ncolz, int nfree, int nq, int[] kactiv, int[] kfree, double[] v, double[] wrk)
         {
             /*
                 dzyprod transforms the vector  v  in various ways using the 
@@ -1487,7 +1404,7 @@ namespace ActiveSet
             }
         }
 
-        public static void dzyprod(short mode, int n, int nactiv, int ncolz, int nfree, int nq, int[] kactiv, int[] kfree, double[] v, double[] wrk, int kc = 0, int kfr = 0, int vst = 0, int wst = 0)
+        void dzyprod(short mode, int n, int nactiv, int ncolz, int nfree, int nq, int[] kactiv, int[] kfree, double[] v, double[] wrk, int kc = 0, int kfr = 0, int vst = 0, int wst = 0)
         {
             /*
                 dzyprod transforms the vector  v  in various ways using the 
@@ -1607,7 +1524,7 @@ namespace ActiveSet
                     BlasLike.dcopyvec(nfixed, wrk, v, nfree + 1 + wst, nfree + 1 + vst);
             }
         }
-        public static void dgetlamd(string lprob, int n, int nactiv, int ncolz, int nfree, ref int jsmlst, ref int ksmlst, ref double smllst)
+        void dgetlamd(string lprob, int n, int nactiv, int ncolz, int nfree, ref int jsmlst, ref int ksmlst, ref double smllst)
         {/*
 	dgetlamd first computes the lagrange multiplier estimates for the
 	given working set.  it then determines the values and indices of
@@ -1718,7 +1635,7 @@ namespace ActiveSet
                 lm_wmsg("\n//dgetlam//  JSMLST     SMLLST     KSMLST\n//dgetlam//%8ld%11.2lg%11ld",
                     jsmlst, smllst, ksmlst);
         }
-        public static void w_lam(string msg1, string msg2, int n, int[] a, double[] r)
+        void w_lam(string msg1, string msg2, int n, int[] a, double[] r)
         {
             int i, j;
 
@@ -1736,60 +1653,60 @@ namespace ActiveSet
             }
             Console.Write("\n");
         }
-        public static void lm_wmsg<T>(string mess, T n1)
+        void lm_wmsg<T>(string mess, T n1)
         {
             Console.WriteLine($"{mess} {n1}");
         }
-        public static void lm_wmsg(string mess, int n1, double n2, int n3)
+        void lm_wmsg(string mess, int n1, double n2, int n3)
         {
             Console.WriteLine($"{mess} {n1} {n2} {n3}");
         }
-        public static void lm_wmsg(string mess, double n1, double n2, double n3)
+        void lm_wmsg(string mess, double n1, double n2, double n3)
         {
             Console.WriteLine($"{mess} {n1} {n2} {n3}");
         }
-        public static void lm_wmsg<T>(string mess, T n1, T n2, double n3, double n4)
+        void lm_wmsg<T>(string mess, T n1, T n2, double n3, double n4)
         {
             Console.WriteLine($"{mess} {n1} {n2} {n3} {n4}");
         }
-        public static void lm_wmsg<T>(string mess, int n1, int n2, int n3, int n4, int n5, T n6)
+        void lm_wmsg<T>(string mess, int n1, int n2, int n3, int n4, int n5, T n6)
         {
             Console.WriteLine($"{mess} {n1} {n2} {n3} {n4} {n5} {n6}");
         }
-        public static void lm_wmsg(string mess, string n1, string n2, string n3, int n4, double n5, double n6)
+        void lm_wmsg(string mess, string n1, string n2, string n3, int n4, double n5, double n6)
         {
             Console.WriteLine($"{mess} {n1} {n2} {n3} {n4} {n5} {n6}");
         }
-        public static void lm_wmsg(string mess, int n1, int n2, double n3, double n4, double n5, bool n6, int n7, int n8, int n9, int n10)
+        void lm_wmsg(string mess, int n1, int n2, double n3, double n4, double n5, bool n6, int n7, int n8, int n9, int n10)
         {
             Console.WriteLine($"{mess} {n1} {n2} {n3} {n4} {n5} {n6} {n7} {n8} {n9} {n10}");
         }
-        public static void lm_wmsg(string mess, int n1, int n2, double n3, double n4, double n5, bool n6, double n7, int n8, double n9)
+        void lm_wmsg(string mess, int n1, int n2, double n3, double n4, double n5, bool n6, double n7, int n8, double n9)
         {
             Console.WriteLine($"{mess} {n1} {n2} {n3} {n4} {n5} {n6} {n7} {n8} {n9}");
         }
-        public static void lm_wmsg(string mess, int n1, int n2, double n3, double n4, double n5, int n6, double n7, int n8, double n9)
+        void lm_wmsg(string mess, int n1, int n2, double n3, double n4, double n5, int n6, double n7, int n8, double n9)
         {
             Console.WriteLine($"{mess} {n1} {n2} {n3} {n4} {n5} {n6} {n7} {n8} {n9}");
         }
-        public static void lm_wmsg(string mess, int n1, int n2, double n3, double n4, double n5, double n6, double n7, double n8, double n9, double n10, double n11, double n12, double n13, double n14)
+        void lm_wmsg(string mess, int n1, int n2, double n3, double n4, double n5, double n6, double n7, double n8, double n9, double n10, double n11, double n12, double n13, double n14)
         {
             Console.WriteLine($"{mess} {n1} {n2} {n3} {n4} {n5} {n6} {n7} {n8} {n9} {n10} {n11} {n12} {n13} {n14}");
         }
-        public static void lm_wmsg(string mess, string n1, string n2, int n3)
+        void lm_wmsg(string mess, string n1, string n2, int n3)
         {
             Console.WriteLine($"{mess} {n1} {n2} {n3}");
         }
-        public static void lm_wmsg<T>(string mess, string n1, T n2)
+        void lm_wmsg<T>(string mess, string n1, T n2)
         {
             Console.WriteLine($"{mess} {n1} {n2}");
         }
-        public static void lm_wmsg(string mess, double n1, double n2)
+        void lm_wmsg(string mess, double n1, double n2)
         {
             Console.WriteLine($"{mess} {n1} {n2}");
         }
-        public static void dlpbgst(int n, int nactiv, int nfree, ref int jbigst, ref int kbigst,
-          double dinky, double feamin, ref double trulam)
+        void dlpbgst(int n, int nactiv, int nfree, ref int jbigst, ref int kbigst,
+         double dinky, double feamin, ref double trulam)
         {
             double rlam, biggst;
             int nlam, j, k, was_is, nfixed;
@@ -1827,7 +1744,7 @@ namespace ActiveSet
             }
             if (msg >= 80) lm_wmsg("\n//LPBGST// JBIGST         BIGGST\n//LPBGST//%7ld%15.4lg", jbigst, biggst);
         }
-        public static void ddelcon(bool modfyg, bool orthog, int jdel, int kdel, int nactiv, int ncolz, int nfree, int n, int Nrowrt)
+        void ddelcon(bool modfyg, bool orthog, int jdel, int kdel, int nactiv, int ncolz, int nfree, int n, int Nrowrt)
         {/*
 	ddelcon updates the factorization of the matrix of
 	constraints in the working set,  A(free)*(Z Y) = (0 T)
@@ -1954,7 +1871,7 @@ namespace ActiveSet
                 BlasLike.dxminmax(nactv1, RT, Nrowrt - 1, ref dtmax, ref dtmin, nactv1 + (ncolz + 2) * Nrowrt - rt_offset);
             }
         }
-        public static void dfindp(bool nullr, bool unitpg, int n, int nclin, int Nrowrt, int ncolr, int ncolz, ref int nfree, bool negligible, ref double gtp, ref double pnorm, ref double rdlast)
+        void dfindp(bool nullr, bool unitpg, int n, int nclin, int Nrowrt, int ncolr, int ncolz, ref int nfree, bool negligible, ref double gtp, ref double pnorm, ref double rdlast)
         {
             /*
                 findp computes the following quantities for  lpcore,  qpcore  and
@@ -2055,7 +1972,7 @@ namespace ActiveSet
             }
             return;
         }
-        public static short dbndalf(bool firstv, ref int hitlow, ref int jadd, int n, int nctotl, int numinf, ref double alfa, ref double palfa, ref double atphit, ref double bigalf, double pnorm)
+        short dbndalf(bool firstv, ref int hitlow, ref int jadd, int n, int nctotl, int numinf, ref double alfa, ref double palfa, ref double atphit, ref double bigalf, double pnorm)
         {
             /*
                 dbndalf finds a step  alfa  such that the point  x + alfa*p
@@ -2301,7 +2218,7 @@ namespace ActiveSet
                 jadd, alfa);
             return inform;
         }
-        public static short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jadd, int nactiv, int ncolr, int ncolz, int nfree, int n, int nrowart, int[] kfree, double condmx, double cslast, double snlast, double[] wrrk1, double[] wrk2, int kfr = 0, int wk1 = 0, int wk2 = 0)
+        short daddcon(bool modfyg, bool modfyr, bool orthog, int ifix, int iadd, int jadd, int nactiv, int ncolr, int ncolz, int nfree, int n, int nrowart, int[] kfree, double condmx, double cslast, double snlast, double[] wrrk1, double[] wrk2, int kfr = 0, int wk1 = 0, int wk2 = 0)
         {
 
             /*
@@ -2469,7 +2386,7 @@ namespace ActiveSet
             /*
                  this is the only general constraint in the working set
             */
-            cond = dprotdiv(ref asize, ref dtnew, ref ifail);
+            cond = BlasLike.dprotdiv(ref asize, ref dtnew, ref ifail);
             if (ifail != 0 && asize == 0)
             {
                 cond = BlasLike.lm_max;
@@ -2490,7 +2407,7 @@ namespace ActiveSet
         L140:
             tdtmax = Math.Max(dtnew, dtmax);
             tdtmin = Math.Min(dtnew, dtmin);
-            cond = dprotdiv(ref tdtmax, ref tdtmin, ref ifail);
+            cond = BlasLike.dprotdiv(ref tdtmax, ref tdtmin, ref ifail);
             if (ifail != 0 && tdtmax == 0)
             {
                 cond = BlasLike.lm_max;
@@ -2527,7 +2444,7 @@ namespace ActiveSet
             /*
                  elimination we use  elm( ..., zero, zero )   to perform an interchange
             */
-            detagen(ncolz1, ref WRK[ncolz - 1], WRK, 1, ref iswap, ref itrans);
+            BlasLike.detagen(ncolz1, ref WRK[ncolz - 1], WRK, 1, ref iswap, ref itrans);
 
             if (iswap > 0)
                 delm(orthog, nfree, ZY, 1, ZY, 1, zero, zero, ncolz * zy_dim1 + 1 - zy_offset, iswap * zy_dim1 + 1 - zy_offset);
@@ -2744,7 +2661,7 @@ namespace ActiveSet
             }
             return 1;
         }
-        public static void dprtsol(int nfree, int n, int nclin, int ncnln, int nctotl, int nactiv)
+        void dprtsol(int nfree, int n, int nclin, int ncnln, int nctotl, int nactiv)
         {
 
             /*
@@ -2847,7 +2764,7 @@ namespace ActiveSet
                 Console.WriteLine($"{wlam},{res}");
             }
         }
-        public static double dnrm2(int n, double[] x, int incx, int xstart = 0)
+        double dnrm2(int n, double[] x, int incx, int xstart = 0)
         {
 
             if (n == 1) return (x[xstart] < 0.0 ? -x[xstart] : x[xstart]);
@@ -2855,12 +2772,12 @@ namespace ActiveSet
             {
                 double scale = 0.0;
                 double ssq = 1.0;
-                if (incx == 1) dsssqvec(n, x, ref scale, ref ssq, xstart);
+                if (incx == 1) BlasLike.dsssqvec(n, x, ref scale, ref ssq, xstart);
                 else BlasLike.dsssq(n, x, incx, ref scale, ref ssq, xstart);
                 return sc_norm(scale, ssq);
             }
         }
-        public static void dtqadd(bool orthog, ref int inform, int k1, int k2, ref int nactiv, ref int ncolz, ref int nfree, int n, double condmx)
+        void dtqadd(bool orthog, ref int inform, int k1, int k2, ref int nactiv, ref int ncolz, ref int nfree, int n, double condmx)
         {
             int a_dim1, a_offset, rt_dim1, rt_offset, zy_dim1, zy_offset, i__1;
 
@@ -2940,7 +2857,7 @@ namespace ActiveSet
                 ;
             }
         }
-        public static void drtmxsolve(int job, int n, double[] t, int nrt, double[] b, ref int idiag, int tstart = 0, int bstart = 0)
+        void drtmxsolve(int job, int n, double[] t, int nrt, double[] b, ref int idiag, int tstart = 0, int bstart = 0)
         {
 
             /*
@@ -3058,7 +2975,7 @@ namespace ActiveSet
             i__1 = n;
             for (j = 1; j <= i__1; ++j)
             {
-                b[j + bstart] = dprotdiv(ref b[j + bstart], ref t[j + k * t_dim1 + tstart], ref fail);
+                b[j + bstart] = BlasLike.dprotdiv(ref b[j + bstart], ref t[j + k * t_dim1 + tstart], ref fail);
                 if (fail != 0)
                 {
                     goto L280;
@@ -3076,7 +2993,7 @@ namespace ActiveSet
             i__1 = n;
             for (k = 1; k <= i__1; ++k)
             {
-                b[j + bstart] = dprotdiv(ref b[j + bstart], ref t[j + k * t_dim1 + tstart], ref fail);
+                b[j + bstart] = BlasLike.dprotdiv(ref b[j + bstart], ref t[j + k * t_dim1 + tstart], ref fail);
                 if (fail != 0)
                 {
                     goto L280;
@@ -3099,7 +3016,7 @@ namespace ActiveSet
             i__1 = n;
             for (j = 1; j <= i__1; ++j)
             {
-                b[j + bstart] = dprotdiv(ref b[j + bstart], ref t[j + k * t_dim1 + tstart], ref fail);
+                b[j + bstart] = BlasLike.dprotdiv(ref b[j + bstart], ref t[j + k * t_dim1 + tstart], ref fail);
                 if (fail != 0)
                 {
                     goto L280;
@@ -3138,7 +3055,7 @@ namespace ActiveSet
             for (j = 1; j <= i__1; ++j)
             {
                 if (j > 1) b[j + bstart] -= BlasLike.ddotvec((int)(j - 1), t, b, k * t_dim1 + 1 + tstart, 1 + bstart);
-                b[j + bstart] = dprotdiv(ref b[j + bstart], ref t[j + k * t_dim1 + bstart], ref fail);
+                b[j + bstart] = BlasLike.dprotdiv(ref b[j + bstart], ref t[j + k * t_dim1 + bstart], ref fail);
                 if (fail != 0) goto L280;
                 --k;
                 /* L200: */
@@ -3151,7 +3068,7 @@ namespace ActiveSet
             for (k = 1; k <= i__1; ++k)
             {
                 if (j < (int)n) b[j + bstart] -= BlasLike.ddotvec((int)(n - j), t, b, j + 1 + k * t_dim1 + tstart, j + 1 + bstart);
-                b[j + bstart] = dprotdiv(ref b[j + bstart], ref t[j + k * t_dim1 + tstart], ref fail);
+                b[j + bstart] = BlasLike.dprotdiv(ref b[j + bstart], ref t[j + k * t_dim1 + tstart], ref fail);
                 if (fail != 0)
                 {
                     goto L280;
@@ -3165,7 +3082,7 @@ namespace ActiveSet
         L280:
             idiag = (int)lm_check_fail((short)(idiag), (short)(j + 1), "drtmxsolve");
         }
-        public static short lm_check_fail(short ifail, short ierror, string srname)
+        short lm_check_fail(short ifail, short ierror, string srname)
         {
             if (ierror != 0)
             {
@@ -3184,7 +3101,7 @@ namespace ActiveSet
             }
             return ierror;
         }
-        public static void delmgen(bool orthog, ref double x, ref double y, ref double cs, ref double sn)
+        void delmgen(bool orthog, ref double x, ref double y, ref double cs, ref double sn)
         {/*
 	If orthog delmgen generates a plane rotation.  Otherwise,
 	delmgen  generates an elimination transformation  E  such that
@@ -3209,7 +3126,7 @@ namespace ActiveSet
             }
             y = 0;
         }
-        public static void delm(bool orthog, int n, double[] x, int incx, double[] y, int incy, double cs, double sn, int xstart = 0, int ystart = 0)
+        void delm(bool orthog, int n, double[] x, int incx, double[] y, int incy, double cs, double sn, int xstart = 0, int ystart = 0)
         {/*
 	If  orthog  is true, delm  applies a plane rotation.  otherwise,
 	elm computes the transformation (x y)*e  and returns the result
@@ -3227,7 +3144,7 @@ namespace ActiveSet
             }
             else dsymplanerotate(n, x, incx, y, incy, cs, sn, xstart, ystart);
         }
-        public static void dsymplanerotate(int n, double[] x, int incx, double[] y, int incy, double c, double s, int xstart = 0, int ystart = 0)
+        void dsymplanerotate(int n, double[] x, int incx, double[] y, int incy, double c, double s, int xstart = 0, int ystart = 0)
         {/*
 	dsymplanerotate performs the symmetric plane rotation
 	( x  y ) = ( x  y )*( c   s )   s != 0
@@ -3398,7 +3315,7 @@ namespace ActiveSet
                 }
             }
         }
-        public static short dtmxsolve(short job, int n, double[] t, int nrt, double[] b, short idiag, int tstart = 0, int bstart = 0)
+        short dtmxsolve(short job, int n, double[] t, int nrt, double[] b, short idiag, int tstart = 0, int bstart = 0)
         {
             /*
                 purpose
@@ -3493,14 +3410,14 @@ namespace ActiveSet
                     case 0:
                         for (; k <= n; ++k)
                         {
-                            b[k + bstart] = dprotdiv(ref b[k + bstart], ref t[k + k * nrt + tstart], ref fail);
+                            b[k + bstart] = BlasLike.dprotdiv(ref b[k + bstart], ref t[k + k * nrt + tstart], ref fail);
                             if (fail != 0) break;
                         }
                         break;
                     case 1:
                         for (; k >= 1; --k)
                         {
-                            b[k + bstart] = dprotdiv(ref b[k + bstart], ref t[k + k * nrt + tstart], ref fail);
+                            b[k + bstart] = BlasLike.dprotdiv(ref b[k + bstart], ref t[k + k * nrt + tstart], ref fail);
                             if (fail != 0) break;
                             if (k > 1) BlasLike.daxpyvec(k - 1, -b[k + bstart], t, b, k * nrt + 1 + tstart, 1 + bstart);
                         }
@@ -3508,7 +3425,7 @@ namespace ActiveSet
                     case 2:
                         for (; k <= n; ++k)
                         {
-                            b[k + bstart] = dprotdiv(ref b[k + bstart], ref t[k + k * nrt + tstart], ref fail);
+                            b[k + bstart] = BlasLike.dprotdiv(ref b[k + bstart], ref t[k + k * nrt + tstart], ref fail);
                             if (fail != 0) break;
                             if (k < n) BlasLike.daxpyvec(n - k, -b[k + bstart], t, b, k + 1 + k * nrt + tstart, k + 1 + bstart);
                         }
@@ -3517,7 +3434,7 @@ namespace ActiveSet
                         for (; k <= n; ++k)
                         {
                             if (k > 1) b[k + bstart] -= BlasLike.ddotvec((k - 1), t, b, k * nrt + 1 + tstart, 1 + bstart);
-                            b[k + bstart] = dprotdiv(ref b[k + bstart], ref t[k + k * nrt + tstart], ref fail);
+                            b[k + bstart] = BlasLike.dprotdiv(ref b[k + bstart], ref t[k + k * nrt + tstart], ref fail);
                             if (fail != 0) break;
                         }
                         break;
@@ -3525,7 +3442,7 @@ namespace ActiveSet
                         for (; k >= 1; --k)
                         {
                             if (k < n) b[k + bstart] -= BlasLike.ddotvec((n - k), t, b, k + 1 + k * nrt + tstart, k + 1 + bstart);
-                            b[k + bstart] = dprotdiv(ref b[k + bstart], ref t[k + k * nrt + tstart], ref fail);
+                            b[k + bstart] = BlasLike.dprotdiv(ref b[k + bstart], ref t[k + k * nrt + tstart], ref fail);
                             if (fail != 0) break;
                         }
                         break;
@@ -3533,7 +3450,7 @@ namespace ActiveSet
 
             return (short)(fail != 0 ? lm_check_fail(idiag, (short)(k + 1), "dtmxsolve") : 0);
         }
-        public static void dbdpert(bool firstv, bool negstp, double bigalf, double pnorm, ref int jadd1, ref int jadd2, ref double palfa1, ref double palfa2, int n, int nctotl)
+        void dbdpert(bool firstv, bool negstp, double bigalf, double pnorm, ref int jadd1, ref int jadd2, ref double palfa1, ref double palfa2, int n, int nctotl)
         {
 
             /*
@@ -3661,84 +3578,7 @@ namespace ActiveSet
                     j, js, FEATOL[j - 1], atx, atp,
                     jadd1, palfa1, jadd2, palfa2);
             }
-        }
-        public static void detagen(int n, ref double alpha, double[] x, int incx, ref int iswap, ref int itrans, int xstart = 0)
-        {
-            /*
-                detagen  generates an elimination transformation  e  such that
-                    e ( alpha )  =  ( delta ) ,
-                      (   x   )     (   0   )
-
-                where  e  has the form
-                    e  =	( 1    ) p
-                        ( z  i )
-
-                for some n-vector  z  and permutation matrix  p  of order  n + 1.
-                in certain circumstances ( x  very small in absolute terms or
-                x very small compared to  alpha),  e  will be the identity matrix.
-                detagen  will then leave  alpha  and  x  unaltered, and will return
-                iswap = 0,  itrans = 0
-
-                more generally,  iswap  and  itrans  indicate the various possible
-                forms of  p  and  z  as follows
-                    if  iswap  =  0,  p = i
-                    if  iswap  gt 0,  p  interchanges  alpha  and  x(iswap)
-                    if  itrans =  0,  z = 0  and the transformation is just  e = p
-                    if  itrans gt 0,  z  is nonzero.  its elements are returned in  x.
-
-                detagen  guards against overflow and underflow
-                it is assumed that  flmin < epsmch**2 (i.e. rtmin < epsmch).
-            */
-            int imax = 1000000000;
-            int nzero;
-            double xmax, absalf, tol, axi;
-            // double* v, vlim;
-
-            iswap = 0;
-            itrans = 0;
-            if (n < 1) return;
-            absalf = Math.Abs(alpha);
-            xmax = 0;
-
-            for (int iv = xstart, ivlim = iv + n * incx/*v = x, vlim = x + n * incx*/; iv != ivlim/*v != vlim*/; iv += incx/*v += incx*/)
-            {
-                if (xmax < (axi = Math.Abs(x[iv])))
-                {
-                    xmax = axi;
-                    imax = (iv - xstart);
-                }
-            }
-            /* exit if  x  is very small */
-            if (xmax <= BlasLike.lm_rootmin) return;
-
-            /* see if an interchange is needed for stability */
-            if (absalf < xmax)
-            {
-                iswap = imax + 1;
-                xmax = x[imax + xstart];
-                x[imax + xstart] = alpha;
-                alpha = xmax;
-            }
-
-            /*
-                 form the multipliers in  x.  they will be no greater than one
-                 in magnitude.  change negligible multipliers to zero
-            */
-            tol = Math.Abs(alpha) * BlasLike.lm_eps;
-            nzero = 0;
-            for (int iv = xstart, ivlim = iv + n * incx/*v = x, vlim = x + n * incx*/; iv != ivlim/*v != vlim*/; iv += incx/*v += incx*/)
-            {
-                if (Math.Abs(x[iv]) > tol) x[iv] = -(x[iv]) / alpha;
-                else
-                {
-                    x[iv] = 0;
-                    ++nzero;
-                }
-            }
-            /*z is zero only if nzero=n*/
-            if (nzero < n) itrans = 1;
-        }
-        public static void dhhrflctgen(int n, ref double alpha, double[] x, int incx, double tol, ref double z1, int xstart = 0)
+        }   void dhhrflctgen(int n, ref double alpha, double[] x, int incx, double tol, ref double z1, int xstart = 0)
         {
 
             /*
@@ -3806,7 +3646,7 @@ namespace ActiveSet
                 }
             }
         }
-        public static short dqpsol(short itmax, short msglvl, int n, int nclin, int nctotl, int nrowa, int nrowh, int ncolh, int cold, int lp, int orthog, ref int iter, ref double obj, int leniw, int lenw, short ifail)
+        short dqpsol(short itmax, short msglvl, int n, int nclin, int nctotl, int nrowa, int nrowh, int ncolh, int cold, int lp, int orthog, ref int iter, ref double obj, int leniw, int lenw, short ifail)
         {
             parm[0] = 1e10;
             parm[1] = 1e20;
@@ -4050,7 +3890,7 @@ namespace ActiveSet
 
             return (short)(inform == 0 ? 0 : lm_check_fail((short)ifail, (short)inform, "QPSOL"));
         }
-        public static void dlpdump(int n, int nclin, int nctotl, int nrowa, int lcrash, int lp, int minsum, int vertex)
+        void dlpdump(int n, int nclin, int nctotl, int nrowa, int lcrash, int lp, int minsum, int vertex)
         {
             int j, k;
             double atx;
@@ -4087,7 +3927,7 @@ namespace ActiveSet
             if ((lp & 1) != 0) lm_mdvwri("\nCVEC ...", n, c);
             if (lcrash != 0) lm_mdvwri("\nISTATE ...", nctotl, ISTATE);
         }
-        public static void lm_gdvwri(int n, double[] x, int inc, int xstart = 0)
+        void lm_gdvwri(int n, double[] x, int inc, int xstart = 0)
         {
             int i, ii;
             for (i = 0, ii = 0; i < n; i++)
@@ -4098,7 +3938,7 @@ namespace ActiveSet
             }
             Console.Write("\n");
         }
-        public static void dalloc(byte nalg, int n, int nclin, int ncnln, int nctotl, ref int litotl, ref int lwtotl)
+        void dalloc(byte nalg, int n, int nclin, int ncnln, int nctotl, ref int litotl, ref int lwtotl)
         {
             int lqtg, lwrk, lrlam, lkfree, lkactv, lanorm, lap, lrt, lpx, lzy;
             lkactv = litotl + 1;
@@ -4124,7 +3964,7 @@ namespace ActiveSet
             WRK = new double[n];
             lwtotl = lwrk + n - 1;
         }
-        public static void dqpdump(int n, int nrowh, int ncolh)
+        void dqpdump(int n, int nrowh, int ncolh)
         {
             int j, i;
 
@@ -4159,11 +3999,11 @@ namespace ActiveSet
                 WRK[i] = 0.0;
             }
         }
-        public static void qphess(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx)
+        void qphess(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx)
         {
             Solver.Factorise.dsmxmulv(n, hess, wrk, hx);
         }
-        public static void dqpcore(int orthog, ref int inform, ref int iter, int itmax, int n, int nclin, int nctotl, int nrowh, int ncolh, int nactiv, int nfree, ref double objqp, double[] xnorm)
+        void dqpcore(int orthog, ref int inform, ref int iter, int itmax, int n, int nclin, int nctotl, int nrowh, int ncolh, int nactiv, int nfree, ref double objqp, double[] xnorm)
         {
 
             /*
@@ -4341,10 +4181,10 @@ namespace ActiveSet
                 use the largest and smallest diagonals of r to estimate the
                 condition number of the projected hessian matrix
                 */
-                condt = dprotdiv(ref dtmax, ref dtmin, ref ifail);
+                condt = BlasLike.dprotdiv(ref dtmax, ref dtmin, ref ifail);
                 if (ifail != 0 && dtmax == 0) condt = BlasLike.lm_max;
                 if (ncolr > 0) BlasLike.dxminmax(ncolr, RT, NROWRT + 1, ref drmax, ref drmin);
-                condh = dprotdiv(ref drmax, ref drmin, ref ifail);
+                condh = BlasLike.dprotdiv(ref drmax, ref drmin, ref ifail);
                 if (ifail != 0 && drmax == 0) condh = BlasLike.lm_max;
                 if (condh >= BlasLike.lm_rootmax) condh = BlasLike.lm_max;
                 if (condh < BlasLike.lm_rootmax) condh *= condh;
@@ -4473,7 +4313,7 @@ namespace ActiveSet
                 alfhit	is initialized to  bigalf.  if it remains that way after
                 the call to bndalf, it will be regarded as infinite
                 */
-                bigalf = dprotdiv(ref bigdx, ref pnorm, ref ifail);
+                bigalf = BlasLike.dprotdiv(ref bigdx, ref pnorm, ref ifail);
                 if (ifail != 0 && bigdx == 0) bigalf = BlasLike.lm_max;
                 dbndalf(firstv != 0, ref hitlow, ref jadd, n,
     nctotl, numinf, ref alfhit, ref palfa, ref atphit, ref bigalf,
@@ -4657,7 +4497,7 @@ namespace ActiveSet
             dprtsol(nfree, n, nclin, ncnln, nctotl,
                 nactiv);
         }
-        public static int dqpcrsh(int n, int ncolz, int nfree, ref int nhess, int Nq, int nrowh, int ncolh, int Nrowrt, ref double hsize, double[] scale)
+        int dqpcrsh(int n, int ncolz, int nfree, ref int nhess, int Nq, int nrowh, int ncolh, int Nrowrt, ref double hsize, double[] scale)
         {
 
             /*
@@ -4792,9 +4632,9 @@ namespace ActiveSet
                     ncolr, ncolz);
             return ncolr;
         }
-        public static short dqpgrad(short mode, int n, int nactiv, int nfree,
-                ref int nhess, int Nq, int nrowh, int ncolh, int jadd,
-                 double alfa, ref double objqp, ref double gfixed, double gtp, double[] wrk2)
+        short dqpgrad(short mode, int n, int nactiv, int nfree,
+               ref int nhess, int Nq, int nrowh, int ncolh, int jadd,
+                double alfa, ref double objqp, ref double gfixed, double gtp, double[] wrk2)
         {
 
             /*
@@ -4876,7 +4716,7 @@ namespace ActiveSet
             ++nhess;
             return 0;
         }
-        public static void dqpprt(int orthog, int isdel, int iter, int jadd, int jdel, int nactiv, int ncolz, int nfree, int n, int nclin, int nhess, double alfa, double condh, double condt, double obj, double gfnorm, double ztgnrm, double emax, double[] wrk2)
+        void dqpprt(int orthog, int isdel, int iter, int jadd, int jdel, int nactiv, int ncolz, int nfree, int n, int nclin, int nhess, double alfa, double condh, double condt, double obj, double gfnorm, double ztgnrm, double emax, double[] wrk2)
         {
 
             /*
@@ -4957,7 +4797,7 @@ namespace ActiveSet
                 lm_gdvwri(ncolz, RT, NROWRT + 1);
             }
         }
-        public static void dqpcolr(ref bool nocurv, ref bool posdef, ref bool renewr, int n, ref int ncolr, ref int nfree, ref int nrowh, ref int ncolh, ref int nhess, int[] kfree, ref double cslast, ref double snlast, ref double drmax, ref double emax, ref double hsize, ref double rdlast, double[] hz1)
+        void dqpcolr(ref bool nocurv, ref bool posdef, ref bool renewr, int n, ref int ncolr, ref int nfree, ref int nrowh, ref int ncolh, ref int nhess, int[] kfree, ref double cslast, ref double snlast, ref double drmax, ref double emax, ref double hsize, ref double rdlast, double[] hz1)
         {
             /*
                 dqpcolr  is used to compute elements of the  (ncolr)-th  column of
@@ -5163,7 +5003,7 @@ namespace ActiveSet
                 posdef, nocurv, emax, rdlast);
             return;
         }
-        public static void dqpchkp(int n, int nclin, int issave, int jdsave)
+        void dqpchkp(int n, int nclin, int issave, int jdsave)
         {/*
 	dqpchkp  is called when a constraint has just been deleted and the
 	sign of the search direction  p  may be incorrect because of
@@ -5198,6 +5038,7 @@ namespace ActiveSet
         }
         public static short LPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, ref double objective, ref int iter)
         {
+            var opt = new Optimise();
             var lp = 1;
             var itmax = (short)20000;
             var orthog = 1;
@@ -5208,31 +5049,32 @@ namespace ActiveSet
             var featolv = 1e-8;
             int cold = 1;
             short msglvl = -1000;
-            ISTATE = new int[n + m + n + n];
+            opt.ISTATE = new int[n + m + n + n];
             var lwrk = 2 * (n * (n + 2) + m) + m;
-            LAMBDA = new double[n + m];
-            FEATOL = new double[n + m];
-            LWRK = new double[lwrk];
-            A = AA;
-            L = LL;
-            U = UU;
-            c = cc;
-            W = ww;
-            BlasLike.dsetvec(n + m, 0, LAMBDA);
-            BlasLike.dsetvec(n + m, featolv, FEATOL);
+            opt.LAMBDA = new double[n + m];
+            opt.FEATOL = new double[n + m];
+            opt.LWRK = new double[lwrk];
+            opt.A = AA;
+            opt.L = LL;
+            opt.U = UU;
+            opt.c = cc;
+            opt.W = ww;
+            BlasLike.dsetvec(n + m, 0, opt.LAMBDA);
+            BlasLike.dsetvec(n + m, featolv, opt.FEATOL);
             short ifail = 89;
             short back;
-            clocker(true);
-            back = dqpsol(itmax, msglvl, n, m, n + m, m,
+            opt.clocker(true);
+            back = opt.dqpsol(itmax, msglvl, n, m, n + m, m,
       n + n, 1, cold, lp, orthog, ref
        iter, ref obj, n + n, lwrk, ifail);
-            var tt = clocker();
+            var tt = opt.clocker();
             Console.WriteLine($"Time elapsed {tt} m secs");
             objective = obj;
             return back;
         }
         public static short QPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] QQ, ref double objective, ref int iter)
         {
+            var opt = new Optimise();
             var lp = 0;
             var itmax = (short)20000;
             var orthog = 1;
@@ -5243,31 +5085,31 @@ namespace ActiveSet
             var featolv = 1e-8;
             int cold = 1;
             short msglvl = -1000;
-            ISTATE = new int[n + m + n + n];
+            opt.ISTATE = new int[n + m + n + n];
             var lwrk = 2 * (n * (n + 2) + m) + m;
-            LAMBDA = new double[n + m];
-            FEATOL = new double[n + m];
-            LWRK = new double[lwrk];
-            BlasLike.dsetvec(n + m, 0, LAMBDA);
-            BlasLike.dsetvec(n + m, featolv, FEATOL);
+            opt.LAMBDA = new double[n + m];
+            opt.FEATOL = new double[n + m];
+            opt.LWRK = new double[lwrk];
+            BlasLike.dsetvec(n + m, 0, opt.LAMBDA);
+            BlasLike.dsetvec(n + m, featolv, opt.FEATOL);
             short ifail = 89;
             short back;
-            A = AA;
-            L = LL;
-            U = UU;
-            c = cc;
-            W = ww;
-            Q = QQ;
-            clocker(true);
-            back = dqpsol(itmax, msglvl, n, m, n + m, m,
+            opt.A = AA;
+            opt.L = LL;
+            opt.U = UU;
+            opt.c = cc;
+            opt.W = ww;
+            opt.Q = QQ;
+            opt.clocker(true);
+            back = opt.dqpsol(itmax, msglvl, n, m, n + m, m,
       n + n, 1, cold, lp, orthog, ref
        iter, ref obj, n + n, lwrk, ifail);
             objective = obj;
-            var tt = clocker();
+            var tt = opt.clocker();
             Console.WriteLine($"Time elapsed {tt} m secs");
             return back;
         }
-        public static int badboundcount()
+        int badboundcount()
         {
             var back = 0;
             for (int i = 0; i < L.Length; ++i) back += ((L[i] <= U[i]) ? 0 : 1);

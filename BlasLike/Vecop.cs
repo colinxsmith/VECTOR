@@ -3090,6 +3090,33 @@ double* x, int incx, double* ap)
         {
             dsccopy(n, a, x, 1, y, 1);
         }
+
+        public static void dsssqvec(int n, double[] x, ref double pscale, ref double psumsq, int px = 0)
+        {
+            if (n > 0)
+            {
+                double absxi, d, sumsq = psumsq, scale = pscale;
+                for (int i = 0; i < n; ++i)
+                {
+                    absxi = x[i + px];
+                    if (absxi == 0) continue;
+                    if (absxi < 0) absxi = -absxi;
+                    if (scale < absxi)
+                    {
+                        d = scale / absxi;
+                        sumsq = sumsq * (d * d) + 1;
+                        scale = absxi;
+                    }
+                    else
+                    {
+                        d = absxi / scale;
+                        sumsq += d * d;
+                    }
+                }
+                pscale = scale;
+                psumsq = sumsq;
+            }
+        }
         public unsafe static void dsssq(int n, double* x, int ix, double* pscale, double* psumsq, int px = 0)
         {
             /*
@@ -3154,35 +3181,6 @@ double* x, int incx, double* ap)
                 }
                 *pscale = scale;
                 *psumsq = sumsq;
-            }
-        }
-
-        public static void dsssqvec(int n, double[] x, ref double pscale,ref  double psumsq,int xstart=0)
-        {
-            if (n > 0)
-            {var i=0;
-                double absxi, d, sumsq = psumsq, scale = pscale;
-                while (n-- > 0)
-                {
-                    absxi = x[i++ +xstart];
-                    if (absxi == 0) continue;
-                    if (absxi < 0) absxi = -absxi;
-                    if (scale < absxi)
-                    {
-                        /* Computing 2nd power */
-                        d = scale / absxi;
-                        sumsq = sumsq * (d * d) + 1;
-                        scale = absxi;
-                    }
-                    else
-                    {
-                        /* Computing 2nd power */
-                        d = absxi / scale;
-                        sumsq += d * d;
-                    }
-                }
-                pscale = scale;
-                psumsq = sumsq;
             }
         }
         public static void dsssq(int n, double[] x, int ix, ref double pscale, ref double psumsq, int px = 0)
@@ -3264,7 +3262,7 @@ double* x, int incx, double* ap)
                 *xmax = xm;
             }
         }
-        public static void dxminmax(int n, double[] x, int ix,ref double xmax,ref double xmin, int px = 0)
+        public static void dxminmax(int n, double[] x, int ix, ref double xmax, ref double xmin, int px = 0)
         {
             if (n < 1) xmin = xmax = 0;
             else
@@ -3282,6 +3280,83 @@ double* x, int incx, double* ap)
                 xmax = xm;
             }
         }
+        public static void detagen(int n, ref double alpha, double[] x, int incx, ref int iswap, ref int itrans, int xstart = 0)
+        {
+            /*
+                detagen  generates an elimination transformation  e  such that
+                    e ( alpha )  =  ( delta ) ,
+                      (   x   )     (   0   )
+
+                where  e  has the form
+                    e  =	( 1    ) p
+                        ( z  i )
+
+                for some n-vector  z  and permutation matrix  p  of order  n + 1.
+                in certain circumstances ( x  very small in absolute terms or
+                x very small compared to  alpha),  e  will be the identity matrix.
+                detagen  will then leave  alpha  and  x  unaltered, and will return
+                iswap = 0,  itrans = 0
+
+                more generally,  iswap  and  itrans  indicate the various possible
+                forms of  p  and  z  as follows
+                    if  iswap  =  0,  p = i
+                    if  iswap  gt 0,  p  interchanges  alpha  and  x(iswap)
+                    if  itrans =  0,  z = 0  and the transformation is just  e = p
+                    if  itrans gt 0,  z  is nonzero.  its elements are returned in  x.
+
+                detagen  guards against overflow and underflow
+                it is assumed that  flmin < epsmch**2 (i.e. rtmin < epsmch).
+            */
+            int imax = 1000000000;
+            int nzero;
+            double xmax, absalf, tol, axi;
+            // double* v, vlim;
+
+            iswap = 0;
+            itrans = 0;
+            if (n < 1) return;
+            absalf = Math.Abs(alpha);
+            xmax = 0;
+
+            for (int iv = xstart, ivlim = iv + n * incx/*v = x, vlim = x + n * incx*/; iv != ivlim/*v != vlim*/; iv += incx/*v += incx*/)
+            {
+                if (xmax < (axi = Math.Abs(x[iv])))
+                {
+                    xmax = axi;
+                    imax = (iv - xstart);
+                }
+            }
+            /* exit if  x  is very small */
+            if (xmax <= BlasLike.lm_rootmin) return;
+
+            /* see if an interchange is needed for stability */
+            if (absalf < xmax)
+            {
+                iswap = imax + 1;
+                xmax = x[imax + xstart];
+                x[imax + xstart] = alpha;
+                alpha = xmax;
+            }
+
+            /*
+                 form the multipliers in  x.  they will be no greater than one
+                 in magnitude.  change negligible multipliers to zero
+            */
+            tol = Math.Abs(alpha) * BlasLike.lm_eps;
+            nzero = 0;
+            for (int iv = xstart, ivlim = iv + n * incx/*v = x, vlim = x + n * incx*/; iv != ivlim/*v != vlim*/; iv += incx/*v += incx*/)
+            {
+                if (Math.Abs(x[iv]) > tol) x[iv] = -(x[iv]) / alpha;
+                else
+                {
+                    x[iv] = 0;
+                    ++nzero;
+                }
+            }
+            /*z is zero only if nzero=n*/
+            if (nzero < n) itrans = 1;
+        }
+
         public unsafe static void detagen(int n, double* alpha, double* x, int ix, long* iswap, int* itrans)
         {
             long imax = 1000000000;
@@ -3614,8 +3689,8 @@ double* x, int incx, double* ap)
             }
             return;
         }
-      
-        public  static void dswap(int n, double[] dx, int incx,    double[] dy, int incy,int xstart=0,int ystart=0)
+
+        public static void dswap(int n, double[] dx, int incx, double[] dy, int incy, int xstart = 0, int ystart = 0)
         { /* System generated locals */
             int i__1;
 
@@ -3640,10 +3715,10 @@ double* x, int incx, double* ap)
             /*     .. Intrinsic Functions .. */
             /*     .. */
             /* Parameter adjustments */
-   //       --dy;
-   //         --dx;
-xstart--;
-ystart--;
+            //       --dy;
+            //         --dx;
+            xstart--;
+            ystart--;
             /* Function Body */
             if (n <= 0)
             {
@@ -3663,7 +3738,7 @@ ystart--;
                     i__1 = m;
                     for (i__ = 1; i__ <= i__1; ++i__)
                     {
-                        Ordering.Order.swap(ref dx[i__+xstart],ref dy[i__+ystart]);
+                        Ordering.Order.swap(ref dx[i__ + xstart], ref dy[i__ + ystart]);
                     }
                     if (n < 3)
                     {
@@ -3674,9 +3749,9 @@ ystart--;
                 i__1 = n;
                 for (i__ = mp1; i__ <= i__1; i__ += 3)
                 {
-                        Ordering.Order.swap(ref dx[i__+xstart],ref dy[i__+ystart]);
-                        Ordering.Order.swap(ref dx[i__+xstart+1],ref dy[i__+ystart+1]);
-                        Ordering.Order.swap(ref dx[i__+xstart+2],ref dy[i__+ystart+2]);
+                    Ordering.Order.swap(ref dx[i__ + xstart], ref dy[i__ + ystart]);
+                    Ordering.Order.swap(ref dx[i__ + xstart + 1], ref dy[i__ + ystart + 1]);
+                    Ordering.Order.swap(ref dx[i__ + xstart + 2], ref dy[i__ + ystart + 2]);
                 }
             }
             else
@@ -3698,7 +3773,7 @@ ystart--;
                 i__1 = n;
                 for (i__ = 1; i__ <= i__1; ++i__)
                 {
-                    Ordering.Order.swap(ref dx[ix+xstart],ref dy[iy+ystart]);
+                    Ordering.Order.swap(ref dx[ix + xstart], ref dy[iy + ystart]);
                     ix += incx;
                     iy += incy;
                 }
@@ -3720,7 +3795,7 @@ ystart--;
                 b[iib + bstart] = temp;
             }
         }
-        public unsafe static        void dswapvec(int n, double* a, double* b)
+        public unsafe static void dswapvec(int n, double* a, double* b)
         {
             while ((n--) > 0)
             {
@@ -3729,12 +3804,12 @@ ystart--;
                 *b++ = temp;
             }
         }
-    
-        public static        void dswapvec(int n, double[] a, double[] b,int astart=0,int bstart=0)
+
+        public static void dswapvec(int n, double[] a, double[] b, int astart = 0, int bstart = 0)
         {
-            for(int i=0;i<n;++i)
+            for (int i = 0; i < n; ++i)
             {
-                Ordering.Order.swap(ref a[i+astart],ref b[i+bstart]);
+                Ordering.Order.swap(ref a[i + astart], ref b[i + bstart]);
             }
         }
         public unsafe static double didot(int n, double* x, int iix, double* y, int iy    /*increment for y*/    )
@@ -4003,9 +4078,9 @@ ystart--;
             return div;
         }
 
+
         public static double dprotdiv(ref double a, ref double b, ref int fail)
         {
-
             /*
                 dprotdiv returns the value div given by
                     div =	( a/b                 if a/b does not overflow,
@@ -4024,9 +4099,9 @@ ystart--;
                 when  b = 0  then  sign( a/b )  is taken as  sign( a )
             */
             double absb, div;
-            int dfail = -2;
+            int dfail = -90;
 
-            if (fail == -2) fail = dfail;
+            if (fail == 0) fail = dfail;
 
             if (a == 0.0)
             {
@@ -4035,7 +4110,7 @@ ystart--;
             }
             else if (b == 0.0)
             {
-                div = dsign(lm_rsafe_range, a);
+                div = BlasLike.dsign(BlasLike.lm_rsafe_range, a);
                 fail = 1;
             }
             else
@@ -4044,9 +4119,9 @@ ystart--;
                 if (absb >= 1.0)
                 {
                     fail = 0;
-                    div = (Math.Abs(a) >= absb * lm_safe_range ? a / b : 0.0);
+                    div = (Math.Abs(a) >= absb * BlasLike.lm_safe_range ? a / b : 0.0);
                 }
-                else if (Math.Abs(a) <= absb * lm_rsafe_range)
+                else if (Math.Abs(a) <= absb * BlasLike.lm_rsafe_range)
                 {
                     fail = 0;
                     div = a / b;
@@ -4054,13 +4129,12 @@ ystart--;
                 else
                 {
                     fail = 1;
-                    div = lm_rsafe_range;
+                    div = BlasLike.lm_rsafe_range;
                     if ((a < 0.0 && b > 0.0) || (a > 0.0 && b < 0.0)) div = -div;
                 }
             }
             return div;
         }
-
         public unsafe static void drotg(double* a, double* b, double* c, double* s)
         {
             int fail;

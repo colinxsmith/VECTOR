@@ -57,7 +57,7 @@ namespace InteriorPoint
         double aob(double a, double b)
         {
             int fail = 21;
-            var back = ActiveSet.Optimise.dprotdiv(ref a, ref b, ref fail);
+            var back = BlasLike.dprotdiv(ref a, ref b, ref fail);
             if (fail != 0 && b == 0) back = BlasLike.lm_max;
             return back;
         }
@@ -278,10 +278,23 @@ namespace InteriorPoint
             var by = BlasLike.ddotvec(m, b, y);
             return by - 0.5 * (linextra - lin);
         }
+         long timebase = -1233456;
+         long timeaquired = -12233;
+         long clocker(bool start = false)
+        {
+            long t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            if (start)
+                timeaquired = 0;
+            else
+                timeaquired += (t - timebase);
+            timebase = t;
+            return timeaquired;
+        }
+  
         public static int Opt(int n, int m, double[] w, double[] A, double[] b, double[] c, int nh = 0, double[] H = null)
         {
-            ActiveSet.Optimise.clocker(true);
             var opt = new Optimise(n, m, w, A, b, c, nh, H);
+            opt.clocker(true);
             opt.homogenous = true;
             opt.tau = 1;
             opt.kappa = 1;
@@ -385,7 +398,7 @@ namespace InteriorPoint
             ActiveSet.Optimise.printV("y", opt.y);
             ActiveSet.Optimise.printV("z", opt.z);
             Console.WriteLine($"Complementarity:\t{opt.Complementarity()}");
-            Console.WriteLine($"Job took {ActiveSet.Optimise.clocker()} m secs");
+            Console.WriteLine($"Job took {opt.clocker()} m secs");
             if (i >= opt.maxiter) return -1;
             else if (opt.homogenous && opt.tau < opt.kappa) return 6;
             else return 0;

@@ -251,13 +251,13 @@ namespace BlasLikeTest
             {
                 double scale = 1;
                 double sumsq = 0;
-                ActiveSet.Optimise.dsssqvec(a.Length, a, ref scale, ref sumsq);
+                BlasLike.dsssqvec(a.Length, a, ref scale, ref sumsq);
                 Assert.IsTrue(scale == 10 && sumsq == 3.85, $"scale is {scale}, sumsq is {sumsq}");
             }
             {
                 double scale = 1;
                 double sumsq = 0;
-                ActiveSet.Optimise.dsssqvec(a.Length, a, ref scale, ref sumsq);
+                BlasLike.dsssqvec(a.Length, a, ref scale, ref sumsq);
                 Assert.IsTrue(scale == 10 && sumsq == 3.85, $"scale is {scale}, sumsq is {sumsq}");
             }
         }
@@ -313,7 +313,7 @@ namespace BlasLikeTest
             alpha = 0;
             int iswap1 = 0;
             itrans = 0;
-            ActiveSet.Optimise.detagen(x.Length / 2, ref alpha, y, 2, ref iswap1, ref itrans, 1);
+            BlasLike.detagen(x.Length / 2, ref alpha, y, 2, ref iswap1, ref itrans, 1);
             Assert.IsTrue(alpha == 10 && iswap == 9 && itrans == 1, $"alpha={alpha}, iswap1={iswap1}, itrans={itrans}, lm_rooteps={BlasLike.lm_rooteps}");
             Assert.IsTrue(x[0] == y[0] && x[1] == y[1] && x[2] == y[2] && x[3] == y[3] && x[4] == y[4] && x[5] == y[5] && x[6] == y[6] && x[7] == y[7] && x[8] == y[8] && x[9] == y[9],
             $"{x[0]} {x[1]} {x[2]} {x[3]} {x[4]} {x[5]} {x[6]} {x[7]} {x[8]}\n{x[0]} {x[1]} {x[2]} {x[3]} {x[4]} {x[5]} {x[6]} {x[7]} {x[8]} ");
