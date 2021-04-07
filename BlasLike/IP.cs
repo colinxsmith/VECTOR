@@ -29,7 +29,7 @@ namespace InteriorPoint
         double[] dz = null;
         double[] H = null;
         int nh;
-        char[] uplo = { 'U' };
+        char uplo = 'U' ;
         double[] HCOPY = null;
         double tau = 1;
         double dtau = 1;
@@ -278,9 +278,9 @@ namespace InteriorPoint
             var by = BlasLike.ddotvec(m, b, y);
             return by - 0.5 * (linextra - lin);
         }
-         long timebase = -1233456;
-         long timeaquired = -12233;
-         long clocker(bool start = false)
+        long timebase = -1233456;
+        long timeaquired = -12233;
+        long clocker(bool start = false)
         {
             long t = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             if (start)
@@ -290,7 +290,7 @@ namespace InteriorPoint
             timebase = t;
             return timeaquired;
         }
-  
+
         public static int Opt(int n, int m, double[] w, double[] A, double[] b, double[] c, int nh = 0, double[] H = null)
         {
             var opt = new Optimise(n, m, w, A, b, c, nh, H);
@@ -402,6 +402,202 @@ namespace InteriorPoint
             if (i >= opt.maxiter) return -1;
             else if (opt.homogenous && opt.tau < opt.kappa) return 6;
             else return 0;
+        }
+
+        //Methods for Second Order Cone Programming operations
+        double root2m1 = Math.Sqrt(0.5);
+
+        void Tmulvec(int ncone, double[] x, int xstart = 0, bool rotate = false)
+        {
+            int ncm1 = ncone - 1;
+            if (rotate)
+            {
+                double a12 = (-x[ncone - 2 + xstart] + x[ncm1 + xstart]) * root2m1;
+                double a11 = (x[ncone - 2 + xstart] + x[ncm1 + xstart]) * root2m1;
+                x[ncm1 + xstart] = a11;
+                x[ncone - 2 + xstart] = a12;
+            }
+        }
+        void Qmulvec(int ncone, double[] x, int xstart = 0, bool rotate = false)
+        {
+            int ncm1 = ncone - 1;
+            if (!rotate)
+            {
+                if (ncone > 1)
+                {
+                    BlasLike.dnegvec(ncm1, x, xstart);
+                }
+            }
+            else
+            {
+                BlasLike.dnegvec(ncone - 2, x, xstart);
+                Ordering.Order.swap(ref x[ncone - 2 + xstart], ref x[ncm1 + xstart]);
+            }
+        }
+        void applyX(int ncone, double[] x, double[] A, double[] XA, int xstart = 0, int Astart = 0, int XAstart = 0)
+        {
+            int ncm1 = ncone - 1;
+            double inner;
+            if (ncone == 1)
+            {
+                XA[XAstart] = A[Astart] * x[xstart];
+            }
+            else
+            {
+                inner = BlasLike.ddotvec(ncm1, A, x, Astart, xstart);
+                for (int j = 0; j < ncone; ++j)
+                {
+                    if (j != ncm1) { XA[j + XAstart] = x[xstart + ncm1] * A[j + Astart] + A[Astart + ncm1] * x[j + xstart]; }
+                    else { XA[j + XAstart] = inner + x[xstart + ncm1] * A[Astart + ncm1]; }
+                }
+            }
+        }
+        void applyXm1(int ncone, double[] x, double[] A, double[] Xm1A, int xstart = 0, int Astart = 0, int Xm1Astart = 0)
+        {
+            int ncm1 = ncone - 1;
+            double outer, inner;
+            if (ncone == 1)
+            {
+                Xm1A[Xm1Astart] = A[Astart] / x[xstart];
+            }
+            else
+            {
+                outer = x[ncm1 + xstart] * x[ncm1 + xstart] - BlasLike.ddotvec(ncm1, x, x, xstart, xstart);
+                if (outer <= 0)
+                {
+                    Console.WriteLine($"outer is not positive in applyXm1 {x[ncm1 + xstart]} {outer}");
+                    if (x[ncm1] > BlasLike.lm_rooteps)
+                    {
+                        BlasLike.dscalvec(ncm1, .95 * x[ncm1 + xstart] / Math.Sqrt(x[ncm1 + xstart] * x[ncm1 + xstart] - outer), x, xstart);
+                    }
+                    else
+                    {
+                        BlasLike.dsetvec(ncm1, BlasLike.lm_rooteps, x, xstart);
+                        x[ncm1 + xstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)ncone);
+                    }
+                    outer = x[ncm1 + xstart] * x[ncm1 + xstart] - BlasLike.ddotvec(ncm1, x, x, xstart, xstart);
+                    Console.WriteLine($"fixed outer is now {outer}");
+                }
+                inner = BlasLike.ddotvec(ncm1, A, x, Astart, xstart);
+                for (int j = 0; j < ncone; ++j)
+                {
+                    if (j != ncm1) { Xm1A[Xm1Astart + j] = x[j + xstart] * inner / x[ncm1 + xstart] / outer + A[j + Astart] / x[ncm1 + xstart] - A[ncm1 + Astart] * x[j + xstart] / outer; }
+                    else { Xm1A[Xm1Astart + j] = (-inner + A[ncm1 + Astart] * x[ncm1 + xstart]) / outer; }
+                }
+            }
+        }
+        void thetaScale(int ncone, double[] A, double theta, bool recip = false, bool square = false, int Astart = 0)
+        {
+            if ((A != null || ncone > 1) && theta != 1)
+            {
+                if (square)
+                    theta *= theta;
+                if (recip)
+                    theta = 1.0 / theta;
+                BlasLike.dscalvec(ncone, theta, A, Astart);
+            }
+        }
+        void Wtrans(int ncone, double[] A, double[] w, double[] WA, int Astart = 0, int wstart = 0, int WAStart = 0)
+        {
+            int ncm1 = ncone - 1;
+            double wc, bot;
+            if (ncone == 1)
+            {
+                WA[WAStart] = w[wstart] * A[Astart];
+            }
+            else
+            {
+                wc = BlasLike.ddotvec(ncm1, w, A, wstart, Astart);
+                bot = 1.0 + w[ncm1 + wstart];
+                if (bot < BlasLike.lm_eps)
+                    Console.WriteLine($"bad cone in Wtrans {bot}");
+                /*   for (int j = 0; j < ncm1; ++j)
+                               {
+                                   if (wc != 0) WA[j + WAStart] = w[j + wstart] * wc / bot;
+                                   else WA[j + WAStart] = 0;
+                                   WA[j + WAStart] += A[j + Astart] + w[j + wstart] * A[ncm1 + Astart];
+                               }*/
+                BlasLike.dsccopyvec(ncm1, wc / bot, w, WA, wstart, WAStart);
+                BlasLike.daxpyvec(ncm1, A[ncm1 + Astart], w, WA, wstart, WAStart);
+                BlasLike.daddvec(ncm1, WA, A, WA, WAStart, Astart, WAStart);
+
+                WA[ncm1 + WAStart] = wc + w[ncm1 + wstart] * A[ncm1 + Astart];
+            }
+        }
+        void WtransR(int ncone, double[] A, double[] w, double[] WA, int Astart = 0, int wstart = 0, int WAStart = 0)
+        {
+            int ncm1 = ncone - 1;
+            double wc, bot;
+            Tmulvec(ncone, A, Astart, true);
+            wc = BlasLike.ddotvec(ncm1, w, A, wstart, Astart);
+            bot = 1 + w[ncm1 + wstart];
+            if (bot < BlasLike.lm_eps)
+                Console.WriteLine($"bad cone in WtransR {bot}");
+            /*  for (int j = 0; j < ncm1; ++j)
+              {
+                  if (wc != 0) WA[j + WAStart] = w[j + wstart] * wc / bot;
+                  else WA[j + WAStart] = 0;
+                  WA[j + WAStart] += A[j + Astart] + w[j + wstart] * A[ncm1 + Astart];
+              }*/
+            BlasLike.dsccopyvec(ncm1, wc / bot, w, WA, wstart, WAStart);
+            BlasLike.daxpyvec(ncm1, A[ncm1 + Astart], w, WA, wstart, WAStart);
+            BlasLike.daddvec(ncm1, WA, A, WA, WAStart, Astart, WAStart);
+            WA[ncm1 + WAStart] = wc + w[ncm1 + wstart] * A[ncm1 + Astart];
+            Tmulvec(ncone, A, Astart, true);
+            Tmulvec(ncone, WA, WAStart, true);
+        }
+        void W2trans(int ncone, double[] A, double[] w, double[] W2A, int Astart = 0, int wstart = 0, int W2Astart = 0)
+        {
+            int ncm1 = ncone - 1;
+            double wc;
+            if (ncone == 1)
+            {
+                if (w[wstart] != 0 && A[Astart] != 0) W2A[W2Astart] = w[wstart] * w[wstart] * A[Astart];
+                else W2A[W2Astart] = 0;
+            }
+            else
+            {
+                wc = BlasLike.ddotvec(ncone, w, A, wstart, Astart);
+                if (wc != 0.0)
+                {
+                    /*   for (int j = 0; j < ncm1; ++j)
+                       {
+                           W2A[j + W2Astart] = 2 * w[j + wstart] * wc + A[j + Astart];
+                       }*/
+                    BlasLike.dsccopyvec(ncm1, 2 * wc, w, W2A, wstart, W2Astart);
+                    BlasLike.daddvec(ncm1, W2A, A, W2A, W2Astart, Astart, W2Astart);
+                    W2A[ncm1 + W2Astart] = 2 * w[ncm1 + wstart] * wc - A[ncm1 + Astart];
+                }
+                else
+                {
+                    BlasLike.dcopyvec(ncm1, A, W2A, Astart, W2Astart);
+                    W2A[ncm1 + W2Astart] = -A[ncm1 + Astart];
+                }
+            }
+        }
+        void W2transR(int ncone, double[] A, double[] w, double[] W2A, int Astart = 0, int wstart = 0, int W2Astart = 0)
+        {
+            int ncm1 = ncone - 1;
+            double wc;
+            Tmulvec(ncone, A, Astart, true);
+            wc = BlasLike.ddotvec(ncone, w, A, wstart, Astart);
+            if (wc != 0.0)
+            {
+                /*   for (int j = 0; j < ncm1; ++j)
+                           {
+                               W2A[j + W2Astart] = 2 * w[j + wstart] * wc + A[j + Astart];
+                           }*/
+                BlasLike.dsccopyvec(ncm1, 2 * wc, w, W2A, wstart, W2Astart);
+                BlasLike.daddvec(ncm1, W2A, A, W2A, W2Astart, Astart, W2Astart);
+                W2A[ncm1 + W2Astart] = 2 * w[ncm1 + wstart] * wc - A[ncm1 + Astart];
+            }
+            else
+            {
+                BlasLike.dcopyvec(ncm1, A, W2A, Astart, W2Astart);
+                W2A[ncm1 + W2Astart] = -A[ncm1 + Astart];
+            }
+            Tmulvec(ncone, A, Astart, true);
+            Tmulvec(ncone, W2A, W2Astart, true);
         }
     }
 }

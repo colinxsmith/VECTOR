@@ -372,7 +372,7 @@ namespace BlasLikeTest
                             7,8,9,10};
             double[] acopy = (double[])a.Clone();
             int[] piv = { 1, 2, 3, 4 };
-            char[] U = { 'U' };
+            char U = 'U';
             int back = 10;
             back = Factorise.Factor(U, n, a, piv);
             Assert.IsTrue(back == 0);
@@ -397,7 +397,7 @@ namespace BlasLikeTest
                             10};
             double[] acopy = (double[])a.Clone();
             int[] piv = { 1, 2, 3, 4 };
-            char[] U = { 'L' };
+            char U =  'L' ;
             int back = 10;
             back = Factorise.Factor(U, n, a, piv);
             Assert.IsTrue(back == 0);
@@ -443,8 +443,8 @@ namespace BlasLikeTest
             var unit1 = new double[n];
             var unit1T = new double[n];
             for (var i = 0; i < n; ++i) unit1T[i] = unit1[i] = 1;
-            char[] U = { 'U' };
-            char[] L = { 'L' };
+            char U =  'U';
+            char L =  'L' ;
             var ipiv = new int[n];
             var Sbefore = (double[])S.Clone();
             var back = Factorise.Factor(U, n, S, ipiv);
@@ -532,26 +532,26 @@ namespace BlasLikeTest
                 }
             }
 
-            char[] way = { 'L' };
+            char way =  'L' ;
             var piv = new int[n];
-            var back = way[0] == 'L' ? Factorise.Factor(way, n, ST, piv) : Factorise.Factor(way, n, S, piv);
+            var back = way == 'L' ? Factorise.Factor(way, n, ST, piv) : Factorise.Factor(way, n, S, piv);
             var Sback = new double[n * n];
             for (int i = 0; i < n; ++i) Sback[i * n + i] = 1;
             var whichroot = 2;
-            var info = way[0] == 'L' ? Factorise.Solve(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
+            var info = way == 'L' ? Factorise.Solve(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
             whichroot = 0;
-            info = way[0] == 'L' ? Factorise.Solve(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
+            info = way == 'L' ? Factorise.Solve(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
             for (int i = 0; i < n; ++i) Sback[n * i + i] += -1;
             var error = Math.Sqrt(BlasLike.ddotvec(n * n, Sback, Sback)) / n;
             Assert.IsTrue(error < BlasLike.lm_eps * 128, $"error is {error}");
-            way[0] = 'U';
-            back = way[0] == 'L' ? Factorise.Factor(way, n, ST, piv) : Factorise.Factor(way, n, S, piv);
+            way = 'U';
+            back = way == 'L' ? Factorise.Factor(way, n, ST, piv) : Factorise.Factor(way, n, S, piv);
             BlasLike.dzerovec(Sback.Length, Sback);
             for (int i = 0; i < n; ++i) Sback[i * n + i] = 1;
             whichroot = 2;
-            info = way[0] == 'L' ? Factorise.Solve(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
+            info = way == 'L' ? Factorise.Solve(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
             whichroot = 0;
-            info = way[0] == 'L' ? Factorise.Solve(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
+            info = way == 'L' ? Factorise.Solve(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
             for (int i = 0; i < n; ++i) Sback[n * i + i] += -1;
             error = Math.Sqrt(BlasLike.ddotvec(n * n, Sback, Sback)) / n;
             Assert.IsTrue(error < BlasLike.lm_eps * 128, $"error is {error}");
@@ -566,10 +566,10 @@ namespace BlasLikeTest
             double[] L = {1,1,2,
                              1,3,
                              1};
-            var way = new char[1];
+            var way = 'L';
             for (int itest = 0; itest < 2; ++itest)
             {
-                way[0] = itest == 0 ? 'L' : 'U';
+                way = itest == 0 ? 'L' : 'U';
                 var unit = new double[n * n * 2];
                 var piv = new int[n];
                 for (int i = 0; i < n; i++)
@@ -578,20 +578,20 @@ namespace BlasLikeTest
                     unit[i + n * i] = 1;
                     unit[i + n * i + n * n] = 1;
                 }
-                var symdef = Factorise.Solve(way, n, n, way[0] == 'L' ? L : U, piv, unit, n, 0, 0, 0, 1);
-                symdef = Factorise.Solve(way, n, n, way[0] == 'L' ? L : U, piv, unit, n, 0, 0, n * n, -1);
+                var symdef = Factorise.Solve(way, n, n, way == 'L' ? L : U, piv, unit, n, 0, 0, 0, 1);
+                symdef = Factorise.Solve(way, n, n, way == 'L' ? L : U, piv, unit, n, 0, 0, n * n, -1);
                 var start = 0;
                 start = n * n;
                 Factorise.dmx_transpose(n, n, unit, unit, n * n, n * n);
-                if (way[0] == 'L') Assert.IsTrue(unit[start + 6] == (-unit[6] + unit[3] * unit[7]), $"{unit[start + 6]} {-unit[6] + unit[3] * unit[7]}");
-                else if (way[0] == 'U') Assert.IsTrue(unit[start + 2] == (-unit[2] + unit[1] * unit[5]), $"{unit[start + 2]} {-unit[2] + unit[1] * unit[5]}");
+                if (way == 'L') Assert.IsTrue(unit[start + 6] == (-unit[6] + unit[3] * unit[7]), $"{unit[start + 6]} {-unit[6] + unit[3] * unit[7]}");
+                else if (way == 'U') Assert.IsTrue(unit[start + 2] == (-unit[2] + unit[1] * unit[5]), $"{unit[start + 2]} {-unit[2] + unit[1] * unit[5]}");
             }
         }
         [TestMethod]
         public void Test_FixSingular()
         {
             var n = 3;
-            char[] way = { 'U' };
+            char way = 'U' ;
             double[] M ={1,
                            1,1,
                            1,1,1};//singular
@@ -606,7 +606,7 @@ namespace BlasLikeTest
             Assert.IsTrue(resolve[n * n - 1] == 1, $"\n{resolve[0]} {resolve[1]} {resolve[2]} \n{resolve[3]} {resolve[4]} {resolve[5]} \n{resolve[6]} {resolve[7]} {resolve[8]} ");
             info = Factorise.Factor(way, n, S, piv);
 
-            way[0] = 'L';
+            way = 'L';
             BlasLike.dcopyvec(S.Length, M, S);
             info = Factorise.Factor(way, n, S, piv);
             BlasLike.dzerovec(n * n, resolve);

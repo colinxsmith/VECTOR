@@ -322,14 +322,14 @@ namespace Blas
         {
             daxpy(n, a, x, 1, y, 1);
         }
-        public static void dadd(int n, double[] x, int ix, double[] y, int iy, double[] z, int iz)
+        public static void dadd(int n, double[] x, int ix, double[] y, int iy, double[] z, int iz,int xstart=0,int ystart=0,int zstart=0)
         {
             for (int i = 0, iix = 0, iiy = 0, iiz = 0; i < n; i++, iix += ix, iiy += iy, iiz += iz)
-                z[iiz] = x[iix] + y[iiy];
+                z[iiz+zstart] = x[iix+xstart] + y[iiy+ystart];
         }
-        public static void daddvec(int n, double[] x, double[] y, double[] z)
+        public static void daddvec(int n, double[] x, double[] y, double[] z,int xstart=0,int ystart=0,int zstart=0)
         {
-            dadd(n, x, 1, y, 1, z, 1);
+            dadd(n, x, 1, y, 1, z, 1,xstart,ystart,zstart);
         }
         public static void dzero(int n, double[] x, int ix, int xstart = 0)
         {
@@ -761,10 +761,10 @@ namespace Blas
             for (int i = 0, iix = ix < 0 ? -(n - 1) * ix : 0; i < n; i++, iix += ix)
                 x[iix] = -x[iix];
         }
-        public static void dnegvec(int n, double[] x)
+        public static void dnegvec(int n, double[] x,int xstart=0)
         {
             for (int i = 0; i < n; ++i)
-                x[i] = -x[i];
+                x[i+xstart] = -x[i+xstart];
         }
         public unsafe static void dnegvec(int n, double* x)
         {
@@ -2423,7 +2423,7 @@ double beta, double[] y, int incy, int astart = 0, int xstart = 0, int ystart = 
             /*     End of DGEMV . */
 
         }
-        public unsafe static void dspr(char* uplo, int n, double alpha,
+        public unsafe static void dspr(char *uplo, int n, double alpha,
 double* x, int incx, double* ap)
         {
             int i__, j, k, kk, ix, jx, kx = 0, info;
@@ -2590,7 +2590,7 @@ double* x, int incx, double* ap)
                 }
             }
         }
-        public static void dspr(char[] uplo, int n, double alpha,
+        public static void dspr(char uplo, int n, double alpha,
         double[] x, int incx, double[] ap, int xstart = 0, int astart = 0)
         {
             int i__, j, k, kk, ix, jx, kx = 0, info;
@@ -2624,7 +2624,7 @@ double* x, int incx, double* ap)
 
             /* Function Body */
             info = 0;
-            if (uplo[0] != 'U' && uplo[0] != 'L')
+            if (uplo != 'U' && uplo != 'L')
             {
                 info = 1;
             }
@@ -2664,7 +2664,7 @@ double* x, int incx, double* ap)
             /*     are accessed sequentially with one pass through AP. */
 
             kk = 1;
-            if (uplo[0] == 'U')
+            if (uplo == 'U')
             {
 
                 /*        Form  A  when upper triangle is stored in AP. */
@@ -3061,34 +3061,34 @@ double* x, int incx, double* ap)
         {
             dscal(n, a, x, 1);
         }
-        public static void dsccopy(int n, double a, double[] x, int ix, double[] y, int iy)
+        public static void dsccopy(int n, double a, double[] x, int ix, double[] y, int iy,int xstart=0,int ystart=0)
         {
             if (n > 0)
             {
-                if (a == 0) dzero(n, y, iy);
-                else if (a == 1) dcopy(n, x, ix, y, iy);
+                if (a == 0) dzero(n, y, iy,ystart);
+                else if (a == 1) dcopy(n, x, ix, y, iy,xstart,ystart);
                 else
                 {
                     if (a == -1)
                     {
                         for (int i = 0, iix = ix < 0 ? -(n - 1) * ix : 0, iiy = iy < 0 ? -(n - 1) * iy : 0; i < n; i++, iix += ix, iiy += iy)
                         {
-                            y[iiy] = -x[iix];
+                            y[iiy+ystart] = -x[iix+xstart];
                         }
                     }
                     else
                     {
                         for (int i = 0, iix = ix < 0 ? -(n - 1) * ix : 0, iiy = iy < 0 ? -(n - 1) * iy : 0; i < n; i++, iix += ix, iiy += iy)
                         {
-                            y[iiy] = a * x[iix];
+                            y[iiy+ystart] = a * x[iix+xstart];
                         }
                     }
                 }
             }
         }
-        public static void dsccopyvec(int n, double a, double[] x, double[] y)
+        public static void dsccopyvec(int n, double a, double[] x, double[] y,int xstart=0,int ystart=0)
         {
-            dsccopy(n, a, x, 1, y, 1);
+            dsccopy(n, a, x, 1, y, 1,xstart,ystart);
         }
 
         public static void dsssqvec(int n, double[] x, ref double pscale, ref double psumsq, int px = 0)

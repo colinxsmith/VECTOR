@@ -18,7 +18,7 @@ namespace Solver
             fixed (double* bb = b)
                 Writevec(n, bb + bstart, ib);
         }
-        public static int Solve(char[] uplo, int n, int nrhs, double[] ap, int[] ipiv, double[] b, int ldb, int astart = 0, int pstart = 0, int bstart = 0, int root = 0, bool fix = false)
+        public static int Solve(char uplo, int n, int nrhs, double[] ap, int[] ipiv, double[] b, int ldb, int astart = 0, int pstart = 0, int bstart = 0, int root = 0, bool fix = false)
         {
             int b_dim1, b_offset;
             int j, k;
@@ -42,7 +42,7 @@ namespace Solver
             bstart -= b_offset;
 
             int info = 0;
-            if (uplo[0] != 'U' && uplo[0] != 'L')
+            if (uplo != 'U' && uplo != 'L')
             {
                 info = -1;
             }
@@ -71,7 +71,7 @@ namespace Solver
                 return 0;
             }
 
-            if (uplo[0] == 'U')
+            if (uplo == 'U')
             {
                 /*        Solve A*X = B, where A = U*D*U**T. */
 
@@ -728,7 +728,7 @@ namespace Solver
             return 0;
         }
 
-        public static int Factor(char[] uplo, int n, double[] ap, int[] ipiv, int astart = 0, int pstart = 0)
+        public static int Factor(char uplo, int n, double[] ap, int[] ipiv, int astart = 0, int pstart = 0)
         {
             int info;
             int i__, j, k;
@@ -775,7 +775,7 @@ namespace Solver
 
             /* Function Body */
             info = 0;
-            if (uplo[0] != 'U' && uplo[0] != 'L')
+            if (uplo != 'U' && uplo != 'L')
             {
                 info = -1;
             }
@@ -793,7 +793,7 @@ namespace Solver
 
             alpha = (Math.Sqrt(17) + 1) / 8;
 
-            if (uplo[0] == 'U')
+            if (uplo== 'U')
             {
                 /*        Factorize A as U*D*U**T using the upper triangle of A */
 

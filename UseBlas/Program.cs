@@ -32,17 +32,12 @@ namespace UseBlas
                             10};
                 double[] acopy = (double[])aa.Clone();
                 int[] piv = { 1, 2, 3, 4 };
-                char[] U = { 'L' };
+                char U = 'L' ;
                 int back = 10;
                 back = Factorise.Factor(U, n, aa, piv);
                 Console.WriteLine($"{back} {piv[0]} {piv[1]} {piv[2]} {piv[3]}  {aa[0]} {aa[1]} {aa[2]} {aa[3]} {aa[4]} {aa[5]} {aa[6]} {aa[7]} {aa[8]} {aa[9]} ");
                 double[] b = { 1, 2, 3, 4 };
                 double[] bcopy = (double[])b.Clone();
-                fixed (double* ap = aa)
-                fixed (double* bp = b)
-                fixed (int* ipiv = piv)
-                fixed (char* UP = U)
-                    //            Factorise.Solve(UP, n, 1, ap, ipiv, bp, n);
                     Factorise.Solve(U, n, 1, aa, piv, b, n);
                 double[] c = new double[n];
                 fixed (double* acp = acopy)
@@ -69,18 +64,12 @@ namespace UseBlas
                                 7,8,9,10};
                 double[] acopy = (double[])aa.Clone();
                 int[] piv = { 1, 2, 3, 4 };
-                char[] U = { 'U' };
+                char U = 'U' ;
                 int back = 10;
                 back = Factorise.Factor(U, n, aa, piv);
                 Console.WriteLine($"{back} {piv[0]} {piv[1]} {piv[2]} {piv[3]}  {aa[0]} {aa[1]} {aa[2]} {aa[3]} {aa[4]} {aa[5]} {aa[6]} {aa[7]} {aa[8]} {aa[9]} ");
                 double[] b = { 1, 2, 3, 4 };
-                double[] bcopy = (double[])b.Clone();
-                fixed (double* ap = aa)
-                fixed (double* bp = b)
-                fixed (int* ipiv = piv)
-                fixed (char* UP = U)
-                    //               Factorise.Solve(UP, n, 1, ap, ipiv, bp, n);
-                    Factorise.Solve(U, n, 1, aa, piv, b, n);
+                double[] bcopy = (double[])b.Clone();  Factorise.Solve(U, n, 1, aa, piv, b, n);
                 double[] c = new double[n];
                 fixed (double* acp = acopy)
                 fixed (double* bp = b)
@@ -130,22 +119,14 @@ namespace UseBlas
                 double[] cc = (double[])c.Clone();
                 double[] b = new double[n];
                 int[] piv = new int[n];
-                char[] U = { 'U' };
+                char U =  'U' ;
                 int back;
-                fixed (double* SSS = S)
-                fixed (char* UU = U)
-                fixed (int* pv = piv)
-                fixed (double* ccc = c)
-                {
-                    // back = Factorise.Factor(UU, n, SSS, pv);
-                    // Factorise.Solve(UU, n, 1, SSS, pv, ccc, n);
-                }
                 back = Factorise.Factor(U, n, S, piv);
                 Factorise.Solve(U, n, 1, S, piv, c, n);
                 Factorise.dsmxmulv(n, SS, c, b);
                 BlasLike.dsubvec(n, b, cc, b);
                 double error = Math.Sqrt(BlasLike.ddotvec(n, b, b) / n);
-                Console.WriteLine($"{U[0]}\t\t{back}\tError: {error}");
+                Console.WriteLine($"{U}\t\t{back}\tError: {error}");
             }
             {
                 double[] aref = new double[1];
@@ -173,23 +154,14 @@ namespace UseBlas
                 double[] cc = (double[])c.Clone();
                 double[] b = new double[n];
                 int[] piv = new int[n];
-                char[] U = { 'L' };
-                int back;
-                fixed (double* SSS = S)
-                fixed (char* UU = U)
-                fixed (int* pv = piv)
-                    //              back = Factorise.Factor(UU, n, SSS, pv);
-                    back = Factorise.Factor(U, n, S, piv);
-                fixed (double* SSS = S)
-                fixed (int* pv = piv)
-                fixed (char* UU = U)
-                fixed (double* ccc = c)
-                    //Factorise.Solve(UU, n, 1, SSS, pv, ccc, n);
+                char U =  'L' ;
+                int back;    //              back = Factorise.Factor(UU, n, SSS, pv);
+                    back = Factorise.Factor(U, n, S, piv); //Factorise.Solve(UU, n, 1, SSS, pv, ccc, n);
                     Factorise.Solve(U, n, 1, S, piv, c, n);
                 Factorise.dsmxmulvT(n, SS, c, b);
                 BlasLike.dsubvec(n, b, cc, b);
                 double error = Math.Sqrt(BlasLike.ddotvec(n, b, b) / n);
-                Console.WriteLine($"{U[0]}\t\t{back}\tError: {error}");
+                Console.WriteLine($"{U}\t\t{back}\tError: {error}");
             }
 
             {
@@ -231,8 +203,8 @@ namespace UseBlas
                 Console.WriteLine($"{diff[0]},{diff[1]},{diff[2]},{diff[3]}");
                 Factorise.dsmxmulvT(n, ST, unit1T, diff);
                 Console.WriteLine($"{diff[0]},{diff[1]},{diff[2]},{diff[3]}");
-                char[] U = { 'U' };
-                char[] L = { 'L' };
+                char U = 'U';
+                char L = 'L' ;
                 var ipiv = new int[n];
                 var Sbefore = (double[])S.Clone();
                 var back = Factorise.Factor(U, n, S, ipiv);
@@ -270,26 +242,26 @@ namespace UseBlas
                         ST[i * n - i * (i - 1) / 2 + j - i] = S[j * (j + 1) / 2 + i] = cov[j * (j + 1) / 2 + i];
                     }
                 }
-                char[] way = { 'U' };
+                char way = 'U' ;
                 var piv = new int[n];
-                var back = way[0] == 'L' ? Factorise.Factor(way, n, ST, piv) : Factorise.Factor(way, n, S, piv);
+                var back = way == 'L' ? Factorise.Factor(way, n, ST, piv) : Factorise.Factor(way, n, S, piv);
                 var Sback = new double[n * n];
                 for (int i = 0; i < n; ++i) Sback[i * n + i] = 1;
                 var whichroot = 2;
-                var info = way[0] == 'L' ? Factorise.Solve(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
+                var info = way== 'L' ? Factorise.Solve(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
                 whichroot = 0;
-                info = way[0] == 'L' ? Factorise.Solve(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
+                info = way == 'L' ? Factorise.Solve(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
                 for (int i = 0; i < n; ++i) Sback[n * i + i] += -1;
                 var error = Math.Sqrt(BlasLike.ddotvec(n * n, Sback, Sback)) / n;
                 Console.WriteLine($"{error}");
-                way[0] = 'L';
-                back = way[0] == 'L' ? Factorise.Factor(way, n, ST, piv) : Factorise.Factor(way, n, S, piv);
+                way = 'L';
+                back = way == 'L' ? Factorise.Factor(way, n, ST, piv) : Factorise.Factor(way, n, S, piv);
                 BlasLike.dzerovec(Sback.Length, Sback);
                 for (int i = 0; i < n; ++i) Sback[i * n + i] = 1;
                 whichroot = 2;
-                info = way[0] == 'L' ? Factorise.Solve(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
+                info = way == 'L' ? Factorise.Solve(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
                 whichroot = 0;
-                info = way[0] == 'L' ? Factorise.Solve(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
+                info = way == 'L' ? Factorise.Solve(way, n, n, ST, piv, Sback, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, S, piv, Sback, n, 0, 0, 0, whichroot);
                 for (int i = 0; i < n; ++i) Sback[n * i + i] += -1;
                 error = Math.Sqrt(BlasLike.ddotvec(n * n, Sback, Sback)) / n;
                 Console.WriteLine($"{error}");
@@ -297,7 +269,7 @@ namespace UseBlas
             {
                 var n = 500;
                 var tdata = 40;
-                char[] way = { 'U' };
+                char way = 'U' ;
                 var cov = new double[n * (n + 1) / 2];
                 var M = new double[n * (n + 1) / 2];
                 var MT = new double[n * (n + 1) / 2];
@@ -341,11 +313,11 @@ namespace UseBlas
                 for (int i = 0; i < n; ++i)
                 {
                     xxx[i] = 1;
-                    if (way[0] == 'U') Factorise.dsmxmulv(n, M, xxx, start, i * n);
+                    if (way == 'U') Factorise.dsmxmulv(n, M, xxx, start, i * n);
                     else Factorise.dsmxmulvT(n, MT, xxx, start, i * n);
                     xxx[i] = 0;
                 }
-                var back = (way[0] == 'U') ? Factorise.Factor(way, n, M, piv) : Factorise.Factor(way, n, MT, piv);
+                var back = (way == 'U') ? Factorise.Factor(way, n, M, piv) : Factorise.Factor(way, n, MT, piv);
                 var r = new double[n * n];
                 for (int i = 0; i < n; ++i) r[i * n + i] = 1;
                 Console.WriteLine($"{r[0]} {r[1]} {r[2]}");
@@ -356,12 +328,12 @@ namespace UseBlas
                 var rBack = new double[n * n];
                 for (int i = 0; i < n; ++i) rBack[i * n + i] = 1;
                 var whichroot = 2;
-                var symback = (way[0] == 'U') ? Factorise.Solve(way, n, n, M, piv, rBack, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, MT, piv, rBack, n, 0, 0, 0, whichroot);
+                var symback = (way == 'U') ? Factorise.Solve(way, n, n, M, piv, rBack, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, MT, piv, rBack, n, 0, 0, 0, whichroot);
                 whichroot = 0;
-                symback = (way[0] == 'U') ? Factorise.Solve(way, n, n, M, piv, rI, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, MT, piv, rI, n, 0, 0, 0, whichroot);
+                symback = (way== 'U') ? Factorise.Solve(way, n, n, M, piv, rI, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, MT, piv, rI, n, 0, 0, 0, whichroot);
                 whichroot = 1;
-                symback = (way[0] == 'U') ? Factorise.Solve(way, n, n, M, piv, r, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, MT, piv, r, n, 0, 0, 0, whichroot);
-                if (whichroot != 0 && way[0] == 'L') Factorise.dmx_transpose(n, n, r, r);
+                symback = (way == 'U') ? Factorise.Solve(way, n, n, M, piv, r, n, 0, 0, 0, whichroot) : Factorise.Solve(way, n, n, MT, piv, r, n, 0, 0, 0, whichroot);
+                if (whichroot != 0 && way == 'L') Factorise.dmx_transpose(n, n, r, r);
                 Console.WriteLine($"{r[0]} {r[1]} {r[2]}");
                 Console.WriteLine($"{r[3]} {r[4]} {r[5]}");
                 Console.WriteLine($"{r[6]} {r[7]} {r[8]}");
@@ -379,7 +351,7 @@ namespace UseBlas
                 {
                     for (int j = 0; j <= i; j++, ij++)
                     {
-                        rr2[ij] = way[0] == 'L' ? BlasLike.ddotvec(n, lower, lower, i * n, j * n) : BlasLike.ddotvec(n, r, r, i * n, j * n);
+                        rr2[ij] = way== 'L' ? BlasLike.ddotvec(n, lower, lower, i * n, j * n) : BlasLike.ddotvec(n, r, r, i * n, j * n);
                     }
                 }
                 var diff = new double[n * (n + 1) / 2];
@@ -390,7 +362,7 @@ namespace UseBlas
             {
                 var n = 3;
                 var tdata = 30;
-                char[] way = { 'U' };
+                char way =  'U' ;
                 var cov = new double[n * (n + 1) / 2];
                 var M = new double[n * (n + 1) / 2];
                 var MT = new double[n * (n + 1) / 2];
@@ -557,11 +529,11 @@ namespace UseBlas
                         S[j * n - j * (j - 1) / 2 + i - j + cov.Length] = cov[i * (i + 1) / 2 + j];
                     }
                 }
-                char[] way = { 'U' };
+                char way =  'U' ;
                 var R = new double[n * n * 2];
                 var R_Inverse = new double[n * n + n * (n + 1) / 2];
                 var whichroot = 0;
-                var back = Factorise.Factor(way, n, S, piv, way[0] == 'U' ? 0 : cov.Length);
+                var back = Factorise.Factor(way, n, S, piv, way== 'U' ? 0 : cov.Length);
                 var npiv = 0;
                 for (int i = 0; i < n; ++i) if (piv[i] < 0) npiv++;
                 Console.WriteLine($"{npiv} negative pivots");
@@ -570,12 +542,12 @@ namespace UseBlas
                 for (int i = 0; i < n; i++) R_Inverse[i * n + i] = 1;
                 for (int i = 0; i < n; i++) R[i * n + i + n * n] = 1;
                 whichroot = 1;
-                var symprob = Factorise.Solve(way, n, n, S, piv, R, n, way[0] == 'U' ? 0 : cov.Length, 0, 0, whichroot);
+                var symprob = Factorise.Solve(way, n, n, S, piv, R, n, way == 'U' ? 0 : cov.Length, 0, 0, whichroot);
                 whichroot = -1;
-                symprob = Factorise.Solve(way, n, n, S, piv, R, n, way[0] == 'U' ? 0 : cov.Length, 0, n * n, whichroot);
+                symprob = Factorise.Solve(way, n, n, S, piv, R, n, way == 'U' ? 0 : cov.Length, 0, n * n, whichroot);
                 if (symprob == -10) Console.WriteLine("not positive definite!");
                 whichroot = 0;
-                symprob = Factorise.Solve(way, n, n, S, piv, R_Inverse, n, way[0] == 'U' ? 0 : cov.Length, 0, 0, whichroot);
+                symprob = Factorise.Solve(way, n, n, S, piv, R_Inverse, n,way == 'U' ? 0 : cov.Length, 0, 0, whichroot);
                 var unit = new double[n * n];
                 for (int i = 0; i < n; ++i)
                 {//Check inv(R)*inv(RT) is inverse of cov
@@ -598,7 +570,7 @@ namespace UseBlas
                 double[] L ={1,1,2,
                              1,3,
                              1};
-                char[] way = { 'U' };
+                char way = 'U' ;
                 var unit = new double[n * n * 2];
                 var piv = new int[n];
                 for (int i = 0; i < n; i++)
@@ -607,8 +579,8 @@ namespace UseBlas
                     unit[i + n * i] = 1;
                     unit[i + n * i + n * n] = 1;
                 }
-                var symdef = Factorise.Solve(way, n, n, way[0] == 'L' ? L : U, piv, unit, n, 0, 0, 0, 1);
-                symdef = Factorise.Solve(way, n, n, way[0] == 'L' ? L : U, piv, unit, n, 0, 0, n * n, -1);
+                var symdef = Factorise.Solve(way, n, n,way == 'L' ? L : U, piv, unit, n, 0, 0, 0, 1);
+                symdef = Factorise.Solve(way, n, n, way == 'L' ? L : U, piv, unit, n, 0, 0, n * n, -1);
                 var start = 0;
                 Console.WriteLine($"{unit[start + 0]} {unit[start + 1]} {unit[start + 2]} ");
                 Console.WriteLine($"{unit[start + 3]} {unit[start + 4]} {unit[start + 5]} ");
@@ -618,15 +590,15 @@ namespace UseBlas
                 Console.WriteLine($"\n{unit[start + 0]} {unit[start + 1]} {unit[start + 2]} ");
                 Console.WriteLine($"{unit[start + 3]} {unit[start + 4]} {unit[start + 5]} ");
                 Console.WriteLine($"{unit[start + 6]} {unit[start + 7]} {unit[start + 8]} ");
-                if (way[0] == 'L') Console.WriteLine($"{unit[start + 6]} {-unit[6] + unit[3] * unit[7]}");
-                else if (way[0] == 'U') Console.WriteLine($"{unit[start + 2]} {-unit[2] + unit[1] * unit[5]}");
+                if (way == 'L') Console.WriteLine($"{unit[start + 6]} {-unit[6] + unit[3] * unit[7]}");
+                else if (way == 'U') Console.WriteLine($"{unit[start + 2]} {-unit[2] + unit[1] * unit[5]}");
             }
             {
                 //double[] S = { 3, 20, 2, 0.1, -0.1, 1 }; //not positive definite
                 double[] S = { 10, 0.1, 2, 0.1, 0.1, 3 }; //positive definite
                 var n = 3;
                 var piv = new int[n];
-                char[] way = { 'U' };
+                char way =  'U' ;
                 var info = Factorise.Factor(way, n, S, piv);
                 var root = new double[n * n];
                 for (int i = 0; i < n; ++i) root[i + i * n] = 1;
@@ -655,7 +627,7 @@ namespace UseBlas
             }
             {
                 var n = 3;
-                char[] way = { 'L' };
+                char way =  'L' ;
                 double[] M ={1,
                            1,1,
                            1,1,1};//singular
@@ -674,7 +646,7 @@ namespace UseBlas
                     Console.WriteLine($"{resolve[6]} {resolve[7]} {resolve[8]} ");
                 }
 
-                way[0] = 'U';
+                way = 'U';
                 BlasLike.dcopyvec(S.Length, M, S);
                 info = Factorise.Factor(way, n, S, piv);
                 for (int i = 0; i < 2; ++i)
