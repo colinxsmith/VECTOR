@@ -4,8 +4,13 @@ using Solver;
 using System.Diagnostics;
 namespace InteriorPoint
 {
+    public enum conetype { QP, SOCP, SOCPR };
     public class Optimise
     {
+        string optMode = "QP";
+        int numberOfCones = 0;
+        int[] cone = null;
+        int[] typecone = null;
         bool usrH = false;
         bool homogenous = false;
         double mu;
@@ -28,8 +33,10 @@ namespace InteriorPoint
         double[] z = null;
         double[] dz = null;
         double[] H = null;
+        double[] xbar = null;
+        double[] zbar = null;
         int nh;
-        char uplo = 'U' ;
+        char uplo = 'U';
         double[] HCOPY = null;
         double tau = 1;
         double dtau = 1;
@@ -52,7 +59,7 @@ namespace InteriorPoint
         double[] dx0 = null;
         double[] dz0 = null;
         static double norm(double[] aa) => Math.Sqrt(BlasLike.ddotvec(aa.Length, aa, aa));
-        double square(double a) => a * a;
+        static double square(double a) => a * a;
         double gfunc(double a) => Math.Min(0.5, square(1 - a)) * (1 - a);
         double aob(double a, double b)
         {
@@ -101,124 +108,386 @@ namespace InteriorPoint
         }
         void MaximumStep()
         {
-            ddx = 1.0;
-            ddz = 1.0;
-            dd = 1.0;
-            for (int i = 0; i < n; ++i)
+            if (optMode == "SOCP")
             {
-                if (dx[i] < 0) ddx = Math.Min(ddx, -aob(x[i], dx[i]));
-                if (dz[i] < 0) ddz = Math.Min(ddz, -aob(z[i], dz[i]));
+                ddx = 1.0;
+                ddz = 1.0;
+                dd = 1.0;
+                for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                {
+                    var n = cone[icone];
+                    if (typecone[icone] == (int)conetype.QP)
+                    {
+                        for (int i = cstart; i < n + cstart; ++i)
+                        {
+                            if (dx[i] < 0) ddx = Math.Min(ddx, -aob(x[i], dx[i]));
+                            if (dz[i] < 0) ddz = Math.Min(ddz, -aob(z[i], dz[i]));
+                        }
+                    }
+                }
+                if (homogenous)
+                {
+                    if (dtau < 0) dd = Math.Min(dd, -aob(tau, dtau));
+                    if (dkappa < 0) dd = Math.Min(dd, -aob(kappa, dkappa));
+                }
             }
-            if (homogenous)
+
+            else if (optMode == "QP")
             {
-                if (dtau < 0) dd = Math.Min(dd, -aob(tau, dtau));
-                if (dkappa < 0) dd = Math.Min(dd, -aob(kappa, dkappa));
+                ddx = 1.0;
+                ddz = 1.0;
+                dd = 1.0;
+                for (int i = 0; i < n; ++i)
+                {
+                    if (dx[i] < 0) ddx = Math.Min(ddx, -aob(x[i], dx[i]));
+                    if (dz[i] < 0) ddz = Math.Min(ddz, -aob(z[i], dz[i]));
+                }
+                if (homogenous)
+                {
+                    if (dtau < 0) dd = Math.Min(dd, -aob(tau, dtau));
+                    if (dkappa < 0) dd = Math.Min(dd, -aob(kappa, dkappa));
+                }
             }
         }
         void SolvePrimary(double gamma = 0.0, bool corrector = false)
         {
-            var g1 = 1.0 - gamma;
-            //            for (var k = 0; k < order.Length; ++k) order.SetValue(0, k);
-            //            for (var k = 0; k < horder.Length; ++k) horder.SetValue(0, k);
-            if (!corrector)
+            if (optMode == "QP")
             {
-                BlasLike.dzerovec(M.Length, M);
+                var g1 = 1.0 - gamma;
+                if (!corrector)
+                {
+                    BlasLike.dzerovec(M.Length, M);
+                    if (usrH)
+                    {
+                        var lhs = w1;//Highjack w1 and dy to save reallocation
+                        var res = dy;
+                        HCOPY = (double[])H.Clone();
+                        for (int i = 0, ij = 0; i < nh; ++i, ij += i) HCOPY[i + ij] += aob(z[i], x[i]);
+                        Factorise.Factor(uplo, nh, HCOPY, horder);
+                        for (int con = 0, ij = 0; con < m; ++con, ij += con)
+                        {
+                            BlasLike.dcopy(n, A, m, lhs, 1, con);
+                            Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh);
+                            for (int i = 0; i < (n - nh); ++i) lhs[i + nh] /= aob(z[i + nh], x[i + nh]);
+                            Factorise.dmxmulv(m, n, A, lhs, res);
+                            BlasLike.dcopyvec(con + 1, res, M, 0, ij);
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0, ij = 0; i < m; ++i, ij += i)
+                        {
+                            for (var k = 0; k < n; ++k)
+                            {
+                                if (A[k * m + i] != 0.0)
+                                {
+                                    var xoz = aob(x[k], z[k]);
+                                    xoz *= A[k * m + i];
+                                    BlasLike.daxpyvec(i + 1, xoz, A, M, k * m, ij);
+                                }
+                            }
+                        }
+                    }
+                    if (m != 1) Factorise.Factor(uplo, m, M, order);
+                    for (var i = 0; i < n; ++i) w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu, x[i]);
+                }
+                else for (var i = 0; i < n; ++i) w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu - dx0[i] * dz0[i], x[i]);
                 if (usrH)
                 {
-                    var lhs = w1;//Highjack w1 and dy to save reallocation
-                    var res = dy;
-                    HCOPY = (double[])H.Clone();
-                    for (int i = 0, ij = 0; i < nh; ++i, ij += i) HCOPY[i + ij] += aob(z[i], x[i]);
-                    Factorise.Factor(uplo, nh, HCOPY, horder);
-                    for (int con = 0, ij = 0; con < m; ++con, ij += con)
+                    Factorise.Solve(uplo, nh, 1, HCOPY, horder, w1, nh);
+                    for (int i = 0; i < (n - nh); ++i) w1[i + nh] /= aob(z[i + nh], x[i + nh]);
+                }
+                else for (int i = 0; i < n; ++i) w1[i] *= aob(x[i], z[i]);
+                Factorise.dmxmulv(m, n, A, w1, dy);
+                BlasLike.daxpyvec(m, g1, rp, dy);
+                if (m == 1) dy[0] /= M[0];
+                else Factorise.Solve(uplo, m, 1, M, order, dy, m);
+                if (homogenous)
+                {
+                    BlasLike.dcopyvec(n, cmod, cx);
+                    if (usrH)
                     {
-                        BlasLike.dcopy(n, A, m, lhs, 1, con);
-                        Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh);
-                        for (int i = 0; i < (n - nh); ++i) lhs[i + nh] /= aob(z[i + nh], x[i + nh]);
-                        Factorise.dmxmulv(m, n, A, lhs, res);
-                        BlasLike.dcopyvec(con + 1, res, M, 0, ij);
+                        Factorise.Solve(uplo, nh, 1, HCOPY, horder, cx, nh);
+                        for (int i = 0; i < (n - nh); ++i) cx[i + nh] /= aob(z[i + nh], x[i + nh]);
+                    }
+                    else for (int i = 0; i < n; ++i) cx[i] *= aob(x[i], z[i]);
+                    Factorise.dmxmulv(m, n, A, cx, db);
+                    BlasLike.daddvec(m, db, b, db);
+                    if (m == 1) db[0] /= M[0];
+                    else Factorise.Solve(uplo, m, 1, M, order, db, m);
+                    Factorise.dmxmulv(n, m, A, dy, dx, 0, 0, 0, true);
+                    if (usrH)
+                    {
+                        Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh);
+                        for (int i = 0; i < (n - nh); ++i) dx[i + nh] /= aob(z[i + nh], x[i + nh]);
+                    }
+                    else for (int i = 0; i < n; ++i) dx[i] *= aob(x[i], z[i]);
+                    BlasLike.dsubvec(n, dx, w1, dx);
+                    Factorise.dmxmulv(n, m, A, db, dc, 0, 0, 0, true);
+                    if (usrH)
+                    {
+                        Factorise.Solve(uplo, nh, 1, HCOPY, horder, dc, nh);
+                        for (int i = 0; i < (n - nh); ++i) dc[i + nh] /= aob(z[i + nh], x[i + nh]);
+                    }
+                    else for (int i = 0; i < n; ++i) dc[i] *= aob(x[i], z[i]);
+                    BlasLike.dsubvec(n, dc, cx, dc);
+                    var cdx = BlasLike.ddotvec(n, cmod, dx);
+                    var cdc = BlasLike.ddotvec(n, cmod, dc);
+                    var bdy = BlasLike.ddotvec(m, b, dy);
+                    var bdb = BlasLike.ddotvec(m, b, db);
+                    //Check the equations in E. D. Andersen∗, C. Roos†, and T. Terlaky‡ they're wrong!!!!!!
+                    dtau = (cdx - bdy + rkxy * g1 + (hrmu - g1 * mu - (corrector ? dtau0 * dkappa0 : 0)) / tau) / (bdb - cdc + aob(kappa, tau));
+                    BlasLike.daxpyvec(n, dtau, dc, dx);
+                    BlasLike.daxpyvec(m, dtau, db, dy);
+                    for (int i = 0; i < n; ++i) dz[i] = aob((rmu[i] - g1 * mu - dx[i] * z[i] - (corrector ? dx0[i] * dz0[i] : 0)), x[i]);
+                    dkappa = (hrmu - g1 * mu - kappa * dtau - (corrector ? dtau0 * dkappa0 : 0)) / tau;
+                }
+                else
+                {
+                    Factorise.dmxmulv(n, m, A, dy, dx, 0, 0, 0, true);
+                    if (usrH)
+                    {
+                        Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh);
+                        for (int i = 0; i < (n - nh); ++i) dx[i + nh] /= aob(z[i + nh], x[i + nh]);
+                    }
+                    else for (int i = 0; i < n; ++i) dx[i] *= aob(x[i], z[i]);
+                    BlasLike.dsubvec(n, dx, w1, dx);
+                    for (var i = 0; i < n; ++i) dz[i] = aob(rmu[i] - g1 * mu - dx[i] * z[i] - ((corrector) ? dx0[i] * dz0[i] : 0), x[i]);
+                }
+            }
+            else if (optMode == "SOCP")
+            {
+                var g1 = 1.0 - gamma;
+                if (!corrector)
+                {
+                    BlasLike.dzerovec(M.Length, M);
+                    if (usrH)
+                    {
+                        var lhs = w1;//Highjack w1 and dy to save reallocation
+                        var res = dy;
+                        HCOPY = (double[])H.Clone();
+                        for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                        {
+                            var n = cone[icone];
+                            if (typecone[icone] == (int)conetype.QP)
+                            {
+                                for (int i = 0, ij = 0; i < nh; ++i, ij += i) HCOPY[i + ij] += aob(z[i + cstart], x[i + cstart]);
+                                Factorise.Factor(uplo, nh, HCOPY, horder);
+                                for (int con = 0, ij = 0; con < m; ++con, ij += con)
+                                {
+                                    BlasLike.dcopy(n, A, m, lhs, 1, con + cstart * m, cstart);
+                                    Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh, 0, 0, cstart);
+                                    for (int i = 0; i < (n - nh); ++i) lhs[i + nh + cstart] /= aob(z[i + nh + cstart], x[i + nh + cstart]);
+                                    Factorise.dmxmulv(m, n, A, lhs, res, cstart * m, cstart, cstart);
+                                    BlasLike.dcopyvec(con + 1, res, M, cstart, ij);
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                        {
+                            var n = cone[icone];
+                            if (typecone[icone] == (int)conetype.QP)
+                            {
+                                for (int i = 0, ij = 0; i < m; ++i, ij += i)
+                                {
+                                    for (var k = cstart; k < n + cstart; ++k)
+                                    {
+                                        if (A[k * m + i] != 0.0)
+                                        {
+                                            var xoz = aob(x[k], z[k]);
+                                            xoz *= A[k * m + i];
+                                            BlasLike.daxpyvec(i + 1, xoz, A, M, k * m, ij);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (m != 1) Factorise.Factor(uplo, m, M, order);
+                    for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                    {
+                        var n = cone[icone];
+                        if (typecone[icone] == (int)conetype.QP)
+                        {
+                            for (var i = 0; i < n; ++i) w1[i + cstart] = rd[i + cstart] * g1 - aob(rmu[i + cstart] - g1 * mu, x[i + cstart]);
+                        }
                     }
                 }
                 else
                 {
-                    for (int i = 0, ij = 0; i < m; ++i, ij += i)
+                    for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
                     {
-                        for (var k = 0; k < n; ++k)
+                        var n = cone[icone];
+                        if (typecone[icone] == (int)conetype.QP)
                         {
-                            if (A[k * m + i] != 0.0)
-                            {
-                                var xoz = aob(x[k], z[k]);
-                                xoz *= A[k * m + i];
-                                BlasLike.daxpyvec(i + 1, xoz, A, M, k * m, ij);
-                            }
+                            for (var i = 0; i < n; ++i) w1[i + cstart] = rd[i + cstart] * g1 - aob(rmu[i + cstart] - g1 * mu - dx0[i + cstart] * dz0[i + cstart], x[i + cstart]);
                         }
                     }
                 }
-                if (m != 1) Factorise.Factor(uplo, m, M, order);
-                for (var i = 0; i < n; ++i) w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu, x[i]);
-            }
-            else for (var i = 0; i < n; ++i) w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu - dx0[i] * dz0[i], x[i]);
-            if (usrH)
-            {
-                Factorise.Solve(uplo, nh, 1, HCOPY, horder, w1, nh);
-                for (int i = 0; i < (n - nh); ++i) w1[i + nh] /= aob(z[i + nh], x[i + nh]);
-            }
-            else for (int i = 0; i < n; ++i) w1[i] *= aob(x[i], z[i]);
-            Factorise.dmxmulv(m, n, A, w1, dy);
-            BlasLike.daxpyvec(m, g1, rp, dy);
-            if (m == 1) dy[0] /= M[0];
-            else Factorise.Solve(uplo, m, 1, M, order, dy, m);
-            if (homogenous)
-            {
-                BlasLike.dcopyvec(n, cmod, cx);
                 if (usrH)
                 {
-                    Factorise.Solve(uplo, nh, 1, HCOPY, horder, cx, nh);
-                    for (int i = 0; i < (n - nh); ++i) cx[i + nh] /= aob(z[i + nh], x[i + nh]);
+                    for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                    {
+                        var n = cone[icone];
+                        if (typecone[icone] == (int)conetype.QP)
+                        {
+                            Factorise.Solve(uplo, nh, 1, HCOPY, horder, w1, nh, 0, 0, cstart);
+                            for (int i = 0; i < (n - nh); ++i) w1[i + nh + cstart] /= aob(z[i + nh + cstart], x[i + nh + cstart]);
+                        }
+                    }
                 }
-                else for (int i = 0; i < n; ++i) cx[i] *= aob(x[i], z[i]);
-                Factorise.dmxmulv(m, n, A, cx, db);
-                BlasLike.daddvec(m, db, b, db);
-                if (m == 1) db[0] /= M[0];
-                else Factorise.Solve(uplo, m, 1, M, order, db, m);
-                Factorise.dmxmulv(n, m, A, dy, dx, 0, 0, 0, true);
-                if (usrH)
+                else
                 {
-                    Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh);
-                    for (int i = 0; i < (n - nh); ++i) dx[i + nh] /= aob(z[i + nh], x[i + nh]);
+                    for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                    {
+                        var n = cone[icone];
+                        if (typecone[icone] == (int)conetype.QP)
+                        {
+                            for (int i = 0; i < n; ++i) w1[i + cstart] *= aob(x[i + cstart], z[i + cstart]);
+                        }
+                    }
                 }
-                else for (int i = 0; i < n; ++i) dx[i] *= aob(x[i], z[i]);
-                BlasLike.dsubvec(n, dx, w1, dx);
-                Factorise.dmxmulv(n, m, A, db, dc, 0, 0, 0, true);
-                if (usrH)
+                Factorise.dmxmulv(m, n, A, w1, dy);
+                BlasLike.daxpyvec(m, g1, rp, dy);
+                if (m == 1) dy[0] /= M[0];
+                else Factorise.Solve(uplo, m, 1, M, order, dy, m);
+                if (homogenous)
                 {
-                    Factorise.Solve(uplo, nh, 1, HCOPY, horder, dc, nh);
-                    for (int i = 0; i < (n - nh); ++i) dc[i + nh] /= aob(z[i + nh], x[i + nh]);
+                    BlasLike.dcopyvec(n, cmod, cx);
+                    if (usrH)
+                    {
+                        for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                        {
+                            var n = cone[icone];
+                            if (typecone[icone] == (int)conetype.QP)
+                            {
+                                Factorise.Solve(uplo, nh, 1, HCOPY, horder, cx, nh, 0, 0, cstart);
+                                for (int i = 0; i < (n - nh); ++i) cx[i + nh + cstart] /= aob(z[i + nh + cstart], x[i + nh + cstart]);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                        {
+                            var n = cone[icone];
+                            if (typecone[icone] == (int)conetype.QP)
+                            {
+                                for (int i = 0; i < n; ++i) cx[i + cstart] *= aob(x[i + cstart], z[i + cstart]);
+                            }
+                        }
+                    }
+                    Factorise.dmxmulv(m, n, A, cx, db);
+                    BlasLike.daddvec(m, db, b, db);
+                    if (m == 1) db[0] /= M[0];
+                    else Factorise.Solve(uplo, m, 1, M, order, db, m);
+                    Factorise.dmxmulv(n, m, A, dy, dx, 0, 0, 0, true);
+                    if (usrH)
+                    {
+                        for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                        {
+                            var n = cone[icone];
+                            if (typecone[icone] == (int)conetype.QP)
+                            {
+                                Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh, 0, 0, cstart);
+                                for (int i = 0; i < (n - nh); ++i) dx[i + nh + cstart] /= aob(z[i + nh + cstart], x[i + nh + cstart]);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                        {
+                            var n = cone[icone];
+                            if (typecone[icone] == (int)conetype.QP)
+                            {
+                                for (int i = 0; i < n; ++i) dx[i + cstart] *= aob(x[i + cstart], z[i + cstart]);
+                            }
+                        }
+                    }
+                    BlasLike.dsubvec(n, dx, w1, dx);
+                    Factorise.dmxmulv(n, m, A, db, dc, 0, 0, 0, true);
+                    if (usrH)
+                    {
+                        for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                        {
+                            var n = cone[icone];
+                            if (typecone[icone] == (int)conetype.QP)
+                            {
+                                Factorise.Solve(uplo, nh, 1, HCOPY, horder, dc, nh, 0, 0, cstart);
+                                for (int i = 0; i < (n - nh); ++i) dc[i + nh + cstart] /= aob(z[i + nh + cstart], x[i + nh + cstart]);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                        {
+                            var n = cone[icone];
+                            if (typecone[icone] == (int)conetype.QP)
+                            {
+                                for (int i = 0; i < n; ++i) dc[i + cstart] *= aob(x[i + cstart], z[i + cstart]);
+                            }
+                        }
+                    }
+                    BlasLike.dsubvec(n, dc, cx, dc);
+                    var cdx = BlasLike.ddotvec(n, cmod, dx);
+                    var cdc = BlasLike.ddotvec(n, cmod, dc);
+                    var bdy = BlasLike.ddotvec(m, b, dy);
+                    var bdb = BlasLike.ddotvec(m, b, db);
+                    //Check the equations in E. D. Andersen∗, C. Roos†, and T. Terlaky‡ they're wrong!!!!!!
+                    dtau = (cdx - bdy + rkxy * g1 + (hrmu - g1 * mu - (corrector ? dtau0 * dkappa0 : 0)) / tau) / (bdb - cdc + aob(kappa, tau));
+                    BlasLike.daxpyvec(n, dtau, dc, dx);
+                    BlasLike.daxpyvec(m, dtau, db, dy);
+                    for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                    {
+                        var n = cone[icone];
+                        if (typecone[icone] == (int)conetype.QP)
+                        {
+                            for (int i = 0; i < n; ++i) dz[i + cstart] = aob((rmu[i + cstart] - g1 * mu - dx[i + cstart] * z[i + cstart] - (corrector ? dx0[i + cstart] * dz0[i + cstart] : 0)), x[i + cstart]);
+                        }
+                    }
+                    dkappa = (hrmu - g1 * mu - kappa * dtau - (corrector ? dtau0 * dkappa0 : 0)) / tau;
                 }
-                else for (int i = 0; i < n; ++i) dc[i] *= aob(x[i], z[i]);
-                BlasLike.dsubvec(n, dc, cx, dc);
-                var cdx = BlasLike.ddotvec(n, cmod, dx);
-                var cdc = BlasLike.ddotvec(n, cmod, dc);
-                var bdy = BlasLike.ddotvec(m, b, dy);
-                var bdb = BlasLike.ddotvec(m, b, db);
-                //Check the equations in E. D. Andersen∗, C. Roos†, and T. Terlaky‡ they're wrong!!!!!!
-                dtau = (cdx - bdy + rkxy * g1 + (hrmu - g1 * mu - (corrector ? dtau0 * dkappa0 : 0)) / tau) / (bdb - cdc + aob(kappa, tau));
-                BlasLike.daxpyvec(n, dtau, dc, dx);
-                BlasLike.daxpyvec(m, dtau, db, dy);
-                for (int i = 0; i < n; ++i) dz[i] = aob((rmu[i] - g1 * mu - dx[i] * z[i] - (corrector ? dx0[i] * dz0[i] : 0)), x[i]);
-                dkappa = (hrmu - g1 * mu - kappa * dtau - (corrector ? dtau0 * dkappa0 : 0)) / tau;
-            }
-            else
-            {
-                Factorise.dmxmulv(n, m, A, dy, dx, 0, 0, 0, true);
-                if (usrH)
+                else
                 {
-                    Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh);
-                    for (int i = 0; i < (n - nh); ++i) dx[i + nh] /= aob(z[i + nh], x[i + nh]);
+                    Factorise.dmxmulv(n, m, A, dy, dx, 0, 0, 0, true);
+                    if (usrH)
+                    {
+                        for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                        {
+                            var n = cone[icone];
+                            if (typecone[icone] == (int)conetype.QP)
+                            {
+                                Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh, 0, 0, cstart);
+                                for (int i = 0; i < (n - nh); ++i) dx[i + nh + cstart] /= aob(z[i + nh + cstart], x[i + nh + cstart]);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                        {
+                            var n = cone[icone];
+                            if (typecone[icone] == (int)conetype.QP)
+                            {
+                                for (int i = cstart; i < n + cstart; ++i) dx[i] *= aob(x[i], z[i]);
+                            }
+                        }
+                    }
+                    BlasLike.dsubvec(n, dx, w1, dx);
+                    for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                    {
+                        var n = cone[icone];
+                        if (typecone[icone] == (int)conetype.QP)
+                        {
+                            for (var i = cstart; i < n + cstart; ++i) dz[i] = aob(rmu[i] - g1 * mu - dx[i] * z[i] - ((corrector) ? dx0[i] * dz0[i] : 0), x[i]);
+                        }
+                    }
                 }
-                else for (int i = 0; i < n; ++i) dx[i] *= aob(x[i], z[i]);
-                BlasLike.dsubvec(n, dx, w1, dx);
-                for (var i = 0; i < n; ++i) dz[i] = aob(rmu[i] - g1 * mu - dx[i] * z[i] - ((corrector) ? dx0[i] * dz0[i] : 0), x[i]);
             }
         }
         void PrimalResidual()
@@ -291,9 +560,21 @@ namespace InteriorPoint
             return timeaquired;
         }
 
-        public static int Opt(int n, int m, double[] w, double[] A, double[] b, double[] c, int nh = 0, double[] H = null)
+        public static int Opt(int n, int m, double[] w, double[] A, double[] b, double[] c, int nh = 0, double[] H = null, string mode = "QP", int[] cone = null, int[] typecone = null)
         {
             var opt = new Optimise(n, m, w, A, b, c, nh, H);
+            opt.optMode = mode;
+            if (mode == "SOCP")
+            {
+                opt.cone = cone;
+                opt.typecone = typecone;
+                opt.numberOfCones = cone.Length;
+                int ncheck = 0;
+                foreach (int icc in opt.cone) ncheck += icc;
+                Debug.Assert(ncheck == n);
+                opt.xbar = new double[n];
+                opt.zbar = new double[n];
+            }
             opt.clocker(true);
             opt.homogenous = true;
             opt.tau = 1;
@@ -312,15 +593,36 @@ namespace InteriorPoint
             var extra = new double[nh];
             if (opt.usrH)
             {
-                if (opt.homogenous)
+                if (opt.optMode == "QP")
                 {
-                    BlasLike.dcopyvec(opt.c.Length, opt.x, opt.cmod);
-                    BlasLike.dscalvec(opt.c.Length, 1.0 / opt.tau, opt.cmod);
-                    Factorise.dsmxmulv(nh, opt.H, opt.cmod, extra);
+                    if (opt.homogenous)
+                    {
+                        BlasLike.dcopyvec(opt.c.Length, opt.x, opt.cmod);
+                        BlasLike.dscalvec(opt.c.Length, 1.0 / opt.tau, opt.cmod);
+                        Factorise.dsmxmulv(nh, opt.H, opt.cmod, extra);
+                    }
+                    else Factorise.dsmxmulv(nh, opt.H, opt.x, extra);
+                    BlasLike.dzerovec(n - nh, opt.cmod, nh);
+                    BlasLike.daddvec(nh, opt.c, extra, opt.cmod);
                 }
-                else Factorise.dsmxmulv(nh, opt.H, opt.x, extra);
-                BlasLike.dzerovec(n - nh, opt.cmod, nh);
-                BlasLike.daddvec(nh, opt.c, extra, opt.cmod);
+                else if (opt.optMode == "SOCP")
+                {
+                    for (int icone = 0, istart = 0; icone < opt.cone.Length; istart += opt.cone[icone], ++icone)
+                    {
+                        if (opt.typecone[i] == (int)conetype.QP)
+                        {
+                            if (opt.homogenous)
+                            {
+                                BlasLike.dcopyvec(opt.cone[icone], opt.x, opt.cmod, istart, istart);
+                                BlasLike.dscalvec(opt.cone[icone], 1.0 / opt.tau, opt.cmod, istart);
+                                Factorise.dsmxmulv(nh, opt.H, opt.cmod, extra, istart);
+                            }
+                            else Factorise.dsmxmulv(nh, opt.H, opt.x, extra, istart);
+                            BlasLike.dzerovec(n - nh, opt.cmod, istart + nh);
+                            BlasLike.daddvec(nh, opt.c, extra, opt.cmod, istart, 0, istart);
+                        }
+                    }
+                }
             }
             else BlasLike.dcopyvec(opt.c.Length, opt.c, opt.cmod);
             opt.PrimalResidual();
@@ -405,7 +707,7 @@ namespace InteriorPoint
         }
 
         //Methods for Second Order Cone Programming operations
-        double root2m1 = Math.Sqrt(0.5);
+        static double root2m1 = Math.Sqrt(0.5);
 
         void Tmulvec(int ncone, double[] x, int xstart = 0, bool rotate = false)
         {
