@@ -1014,7 +1014,7 @@ namespace UseBlas
                 int[] typecone = { (int)InteriorPoint.conetype.QP };
 
                 Factorise.dmx_transpose(n, m, A, A);
-                var back = InteriorPoint.Optimise.Opt(nvar, m, x, A, b, c, nh, H, "SOCP", cone, typecone);
+                var back = InteriorPoint.Optimise.Opt(nvar, m, x, A, b, c, nh, H, "SOCP", cone, typecone,true);
                 Console.WriteLine($"{back}");
                 var implied = new double[m];
                 var truex = (double[])x.Clone();
