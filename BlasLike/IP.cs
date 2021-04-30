@@ -27,6 +27,8 @@ namespace InteriorPoint
         double[] b = null;
         double[] x = null;
         double[] w1 = null;
+        double[] W = null;
+        double[] THETA = null;
         double[] dx = null;
         double[] y = null;
         double[] dy = null;
@@ -297,7 +299,10 @@ namespace InteriorPoint
                                     }
                                 }
                             }
-                            for (var i = cstart; i < n + cstart; ++i) w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu, x[i]);
+                            for (var i = cstart; i < n + cstart; ++i)
+                            {
+                                w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu, x[i]);
+                            }
                         }
                     }
                     if (m != 1) Factorise.Factor(uplo, m, M, order);
@@ -309,7 +314,10 @@ namespace InteriorPoint
                         var n = cone[icone];
                         if (typecone[icone] == (int)conetype.QP)
                         {
-                            for (var i = cstart; i < n + cstart; ++i) w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu - dx0[i] * dz0[i], x[i]);
+                            for (var i = cstart; i < n + cstart; ++i)
+                            {//-dx0[i]*W[i] *dz0[i]/W[i]
+                                w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu - dx0[i] * dz0[i], x[i]);
+                            }
                         }
                     }
                 }
@@ -466,7 +474,14 @@ namespace InteriorPoint
                     var n = cone[icone];
                     if (typecone[icone] == (int)conetype.QP)
                     {
-                        for (int i = cstart; i < n + cstart; ++i) rmu[i] = mu - x[i] * z[i];
+                        for (int i = cstart; i < n + cstart; ++i)
+                        {
+                            THETA[icone] = -100;// Not used in conetype.QP
+                            W[i] = Math.Sqrt(aob(x[i], z[i]));
+                            xbar[i] = x[i] / W[i];
+                            zbar[i] = z[i] * W[i];
+                            rmu[i] = mu - xbar[i] * zbar[i];
+                        }
                     }
                 }
             }
@@ -536,6 +551,8 @@ namespace InteriorPoint
                 Debug.Assert(ncheck == n);
                 opt.xbar = new double[n];
                 opt.zbar = new double[n];
+                opt.W = new double[n];
+                opt.THETA = new double[cone.Length];
             }
             opt.clocker(true);
             opt.homogenous = homogenous;
@@ -554,8 +571,8 @@ namespace InteriorPoint
                     if (opt.typecone[icone] == (int)conetype.QP)
                     {
                         var nn = opt.cone[icone];
-                        BlasLike.dsetvec(nn, 1, opt.x,istart);
-                        BlasLike.dsetvec(nn, 1, opt.z,istart);
+                        BlasLike.dsetvec(nn, 1, opt.x, istart);
+                        BlasLike.dsetvec(nn, 1, opt.z, istart);
                     }
                 }
             }
