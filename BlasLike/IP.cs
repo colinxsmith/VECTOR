@@ -28,6 +28,7 @@ namespace InteriorPoint
         double[] x = null;
         double[] w1 = null;
         double[] W = null;
+        double[] W2 = null;
         double[] THETA = null;
         double[] dx = null;
         double[] y = null;
@@ -273,13 +274,13 @@ namespace InteriorPoint
                         {
                             if (usrH)
                             {
-                                for (int i = 0, ij = 0; i < nh; ++i, ij += i) HCOPY[i + ij] += aob(z[i + cstart], x[i + cstart]);
+                                for (int i = 0, ij = 0; i < nh; ++i, ij += i) HCOPY[i + ij] += 1.0 / W2[i + cstart];
                                 Factorise.Factor(uplo, nh, HCOPY, horder);
                                 for (int con = 0, ij = 0; con < m; ++con, ij += con)
                                 {
                                     BlasLike.dcopy(n, A, m, lhs, 1, con + cstart * m, cstart);
                                     Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh, 0, 0, cstart);
-                                    for (int i = nh + cstart; i < n + cstart; ++i) lhs[i] /= aob(z[i], x[i]);
+                                    for (int i = nh + cstart; i < n + cstart; ++i) lhs[i] *= W2[i];
                                     Factorise.dmxmulv(m, n, A, lhs, res, cstart * m, cstart, cstart);
                                     BlasLike.dcopyvec(con + 1, res, M, cstart, ij);
                                 }
@@ -292,7 +293,7 @@ namespace InteriorPoint
                                     {
                                         if (A[k * m + i] != 0.0)
                                         {
-                                            var xoz = aob(x[k], z[k]);
+                                            var xoz = W2[k];
                                             xoz *= A[k * m + i];
                                             BlasLike.daxpyvec(i + 1, xoz, A, M, k * m, ij);
                                         }
@@ -301,7 +302,7 @@ namespace InteriorPoint
                             }
                             for (var i = cstart; i < n + cstart; ++i)
                             {
-                                w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu, x[i]);
+                                w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu, xbar[i]) / W[i];
                             }
                         }
                     }
@@ -315,8 +316,8 @@ namespace InteriorPoint
                         if (typecone[icone] == (int)conetype.QP)
                         {
                             for (var i = cstart; i < n + cstart; ++i)
-                            {//-dx0[i]*W[i] *dz0[i]/W[i]
-                                w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu - dx0[i] * dz0[i], x[i]);
+                            {//-dx0[i]/W[i] *dz0[i]*W[i]
+                                w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu - dx0[i] * dz0[i], xbar[i]) / W[i];
                             }
                         }
                     }
@@ -329,11 +330,11 @@ namespace InteriorPoint
                         if (usrH)
                         {
                             Factorise.Solve(uplo, nh, 1, HCOPY, horder, w1, nh, 0, 0, cstart);
-                            for (int i = nh + cstart; i < n + cstart; ++i) w1[i] /= aob(z[i], x[i]);
+                            for (int i = nh + cstart; i < n + cstart; ++i) w1[i] *= W2[i];
                         }
                         else
                         {
-                            for (int i = cstart; i < n + cstart; ++i) w1[i] *= aob(x[i], z[i]);
+                            for (int i = cstart; i < n + cstart; ++i) w1[i] *= W2[i];
                         }
                     }
                 }
@@ -352,11 +353,11 @@ namespace InteriorPoint
                             if (usrH)
                             {
                                 Factorise.Solve(uplo, nh, 1, HCOPY, horder, cx, nh, 0, 0, cstart);
-                                for (int i = cstart + nh; i < n + cstart; ++i) cx[i] /= aob(z[i], x[i]);
+                                for (int i = cstart + nh; i < n + cstart; ++i) cx[i] *= W2[i];
                             }
                             else
                             {
-                                for (int i = cstart; i < n + cstart; ++i) cx[i] *= aob(x[i], z[i]);
+                                for (int i = cstart; i < n + cstart; ++i) cx[i] *= W2[i];
                             }
                         }
                     }
@@ -373,11 +374,11 @@ namespace InteriorPoint
                             if (usrH)
                             {
                                 Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh, 0, 0, cstart);
-                                for (int i = nh + cstart; i < n + cstart; ++i) dx[i] /= aob(z[i], x[i]);
+                                for (int i = nh + cstart; i < n + cstart; ++i) dx[i] *= W2[i];
                             }
                             else
                             {
-                                for (int i = cstart; i < n + cstart; ++i) dx[i] *= aob(x[i], z[i]);
+                                for (int i = cstart; i < n + cstart; ++i) dx[i] *= W2[i];
                             }
                         }
                     }
@@ -391,11 +392,11 @@ namespace InteriorPoint
                             if (usrH)
                             {
                                 Factorise.Solve(uplo, nh, 1, HCOPY, horder, dc, nh, 0, 0, cstart);
-                                for (int i = nh + cstart; i < n + cstart; ++i) dc[i] /= aob(z[i], x[i]);
+                                for (int i = nh + cstart; i < n + cstart; ++i) dc[i] *= W2[i];
                             }
                             else
                             {
-                                for (int i = cstart; i < n + cstart; ++i) dc[i] *= aob(x[i], z[i]);
+                                for (int i = cstart; i < n + cstart; ++i) dc[i] *= W2[i];
                             }
                         }
                     }
@@ -413,7 +414,7 @@ namespace InteriorPoint
                         var n = cone[icone];
                         if (typecone[icone] == (int)conetype.QP)
                         {
-                            for (int i = cstart; i < n + cstart; ++i) dz[i] = aob((rmu[i] - g1 * mu - dx[i] * z[i] - (corrector ? dx0[i] * dz0[i] : 0)), x[i]);
+                            for (int i = cstart; i < n + cstart; ++i) dz[i] = aob((rmu[i] - g1 * mu - dx[i] * zbar[i] / W[i] - (corrector ? dx0[i] * dz0[i] : 0)), xbar[i]) / W[i];
                         }
                     }
                     dkappa = (hrmu - g1 * mu - kappa * dtau - (corrector ? dtau0 * dkappa0 : 0)) / tau;
@@ -429,11 +430,11 @@ namespace InteriorPoint
                             if (usrH)
                             {
                                 Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh, 0, 0, cstart);
-                                for (int i = nh + cstart; i < n + cstart; ++i) dx[i] /= aob(z[i], x[i]);
+                                for (int i = nh + cstart; i < n + cstart; ++i) dx[i] *= W2[i];
                             }
                             else
                             {
-                                for (int i = cstart; i < n + cstart; ++i) dx[i] *= aob(x[i], z[i]);
+                                for (int i = cstart; i < n + cstart; ++i) dx[i] *= W2[i];
                             }
                         }
                     }
@@ -443,7 +444,7 @@ namespace InteriorPoint
                         var n = cone[icone];
                         if (typecone[icone] == (int)conetype.QP)
                         {
-                            for (var i = cstart; i < n + cstart; ++i) dz[i] = aob(rmu[i] - g1 * mu - dx[i] * z[i] - ((corrector) ? dx0[i] * dz0[i] : 0), x[i]);
+                            for (var i = cstart; i < n + cstart; ++i) dz[i] = aob(rmu[i] - g1 * mu - dx[i] * zbar[i] / W[i] - ((corrector) ? dx0[i] * dz0[i] : 0), xbar[i]) / W[i];
                         }
                     }
                 }
@@ -477,7 +478,8 @@ namespace InteriorPoint
                         for (int i = cstart; i < n + cstart; ++i)
                         {
                             THETA[icone] = -100;// Not used in conetype.QP
-                            W[i] = Math.Sqrt(aob(x[i], z[i]));
+                            W2[i] = aob(x[i], z[i]);
+                            W[i] = Math.Sqrt(W2[i]);
                             xbar[i] = x[i] / W[i];
                             zbar[i] = z[i] * W[i];
                             rmu[i] = mu - xbar[i] * zbar[i];
@@ -552,6 +554,7 @@ namespace InteriorPoint
                 opt.xbar = new double[n];
                 opt.zbar = new double[n];
                 opt.W = new double[n];
+                opt.W2 = new double[n];
                 opt.THETA = new double[cone.Length];
             }
             opt.clocker(true);
