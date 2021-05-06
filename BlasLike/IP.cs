@@ -90,7 +90,7 @@ namespace InteriorPoint
             cx = new double[n];
             y = new double[m];
             dy = new double[m];
-            w1 = new double[n];
+            w1 = new double[2 * n];
             Ax = new double[m];
             rp = new double[m];
             Ay = new double[n];
@@ -274,13 +274,13 @@ namespace InteriorPoint
                         {
                             if (usrH)
                             {
-                                for (int i = 0, ij = 0; i < nh; ++i, ij += i) HCOPY[i + ij] += 1.0 / W2[i + cstart];
+                                for (int i = 0, ij = 0; i < nh; ++i, ij += i) HCOPY[i + ij] += 1.0 * W2[i + cstart]; 
                                 Factorise.Factor(uplo, nh, HCOPY, horder);
                                 for (int con = 0, ij = 0; con < m; ++con, ij += con)
                                 {
                                     BlasLike.dcopy(n, A, m, lhs, 1, con + cstart * m, cstart);
                                     Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh, 0, 0, cstart);
-                                    for (int i = nh + cstart; i < n + cstart; ++i) lhs[i] *= W2[i];
+                                    for (int i = nh + cstart; i < n + cstart; ++i) lhs[i] /= W2[i];
                                     Factorise.dmxmulv(m, n, A, lhs, res, cstart * m, cstart, cstart);
                                     BlasLike.dcopyvec(con + 1, res, M, cstart, ij);
                                 }
@@ -293,7 +293,7 @@ namespace InteriorPoint
                                     {
                                         if (A[k * m + i] != 0.0)
                                         {
-                                            var xoz = W2[k];
+                                            var xoz = 1.0/W2[k];
                                             xoz *= A[k * m + i];
                                             BlasLike.daxpyvec(i + 1, xoz, A, M, k * m, ij);
                                         }
@@ -302,7 +302,34 @@ namespace InteriorPoint
                             }
                             for (var i = cstart; i < n + cstart; ++i)
                             {
-                                w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu, xbar[i]) / W[i];
+                                w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu, xbar[i]) * W[i];
+                            }
+                        }
+                        if (typecone[icone] == (int)conetype.SOCP)
+                        {
+                            for (int i = 0, ij = 0; i < m; ++i, ij += i)
+                            {
+                                BlasLike.dcopy(n, A, m, lhs, 1, i + cstart * m, x.Length + cstart);
+                                Qmulvec(n, lhs, x.Length + cstart);
+                                W2trans(n, lhs, W, lhs,x.Length + cstart,  cstart, cstart);
+                                Qmulvec(n, lhs, cstart);
+                                thetaScale(n, lhs, THETA[icone], true, true, cstart);
+                                for (var k = cstart; k < n + cstart; ++k)
+                                {
+                                    if (lhs[k] != 0.0)
+                                    {
+                                        BlasLike.daxpyvec(i + 1, lhs[k], A, M, k * m, ij);
+                                    }
+                                }
+                            }
+                            rmu[n - 1 + cstart] -= g1 * mu;
+                            applyXm1(n, xbar, rmu, lhs, cstart, cstart, x.Length + cstart);
+                            rmu[n - 1 + cstart] += g1 * mu;
+                            Wtrans(n, lhs, W, w1, x.Length + cstart, cstart, cstart);
+                            thetaScale(n, w1, THETA[icone], false, false, cstart);
+                            for (var i = cstart; i < n + cstart; ++i)
+                            {
+                                w1[i] = rd[i] * g1 - w1[i];
                             }
                         }
                     }
@@ -316,8 +343,8 @@ namespace InteriorPoint
                         if (typecone[icone] == (int)conetype.QP)
                         {
                             for (var i = cstart; i < n + cstart; ++i)
-                            {//-dx0[i]/W[i] *dz0[i]*W[i]
-                                w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu - dx0[i] * dz0[i], xbar[i]) / W[i];
+                            {//-dx0[i]*W[i] *dz0[i]/W[i]
+                                w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu - dx0[i] * dz0[i], xbar[i]) * W[i];
                             }
                         }
                     }
@@ -330,11 +357,11 @@ namespace InteriorPoint
                         if (usrH)
                         {
                             Factorise.Solve(uplo, nh, 1, HCOPY, horder, w1, nh, 0, 0, cstart);
-                            for (int i = nh + cstart; i < n + cstart; ++i) w1[i] *= W2[i];
+                            for (int i = nh + cstart; i < n + cstart; ++i) w1[i] /= W2[i];
                         }
                         else
                         {
-                            for (int i = cstart; i < n + cstart; ++i) w1[i] *= W2[i];
+                            for (int i = cstart; i < n + cstart; ++i) w1[i] /= W2[i];
                         }
                     }
                 }
@@ -353,11 +380,11 @@ namespace InteriorPoint
                             if (usrH)
                             {
                                 Factorise.Solve(uplo, nh, 1, HCOPY, horder, cx, nh, 0, 0, cstart);
-                                for (int i = cstart + nh; i < n + cstart; ++i) cx[i] *= W2[i];
+                                for (int i = cstart + nh; i < n + cstart; ++i) cx[i] /= W2[i];
                             }
                             else
                             {
-                                for (int i = cstart; i < n + cstart; ++i) cx[i] *= W2[i];
+                                for (int i = cstart; i < n + cstart; ++i) cx[i] /= W2[i];
                             }
                         }
                     }
@@ -374,11 +401,11 @@ namespace InteriorPoint
                             if (usrH)
                             {
                                 Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh, 0, 0, cstart);
-                                for (int i = nh + cstart; i < n + cstart; ++i) dx[i] *= W2[i];
+                                for (int i = nh + cstart; i < n + cstart; ++i) dx[i] /= W2[i];
                             }
                             else
                             {
-                                for (int i = cstart; i < n + cstart; ++i) dx[i] *= W2[i];
+                                for (int i = cstart; i < n + cstart; ++i) dx[i] /= W2[i];
                             }
                         }
                     }
@@ -392,11 +419,11 @@ namespace InteriorPoint
                             if (usrH)
                             {
                                 Factorise.Solve(uplo, nh, 1, HCOPY, horder, dc, nh, 0, 0, cstart);
-                                for (int i = nh + cstart; i < n + cstart; ++i) dc[i] *= W2[i];
+                                for (int i = nh + cstart; i < n + cstart; ++i) dc[i] /= W2[i];
                             }
                             else
                             {
-                                for (int i = cstart; i < n + cstart; ++i) dc[i] *= W2[i];
+                                for (int i = cstart; i < n + cstart; ++i) dc[i] /= W2[i];
                             }
                         }
                     }
@@ -414,7 +441,7 @@ namespace InteriorPoint
                         var n = cone[icone];
                         if (typecone[icone] == (int)conetype.QP)
                         {
-                            for (int i = cstart; i < n + cstart; ++i) dz[i] = aob((rmu[i] - g1 * mu - dx[i] * zbar[i] / W[i] - (corrector ? dx0[i] * dz0[i] : 0)), xbar[i]) / W[i];
+                            for (int i = cstart; i < n + cstart; ++i) dz[i] = aob((rmu[i] - g1 * mu - dx[i] * zbar[i] * W[i] - (corrector ? dx0[i] * dz0[i] : 0)), xbar[i]) * W[i];
                         }
                     }
                     dkappa = (hrmu - g1 * mu - kappa * dtau - (corrector ? dtau0 * dkappa0 : 0)) / tau;
@@ -430,11 +457,11 @@ namespace InteriorPoint
                             if (usrH)
                             {
                                 Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh, 0, 0, cstart);
-                                for (int i = nh + cstart; i < n + cstart; ++i) dx[i] *= W2[i];
+                                for (int i = nh + cstart; i < n + cstart; ++i) dx[i] /= W2[i];
                             }
                             else
                             {
-                                for (int i = cstart; i < n + cstart; ++i) dx[i] *= W2[i];
+                                for (int i = cstart; i < n + cstart; ++i) dx[i] /= W2[i];
                             }
                         }
                     }
@@ -444,7 +471,7 @@ namespace InteriorPoint
                         var n = cone[icone];
                         if (typecone[icone] == (int)conetype.QP)
                         {
-                            for (var i = cstart; i < n + cstart; ++i) dz[i] = aob(rmu[i] - g1 * mu - dx[i] * zbar[i] / W[i] - ((corrector) ? dx0[i] * dz0[i] : 0), xbar[i]) / W[i];
+                            for (var i = cstart; i < n + cstart; ++i) dz[i] = aob(rmu[i] - g1 * mu - dx[i] * zbar[i] *W[i] - ((corrector) ? dx0[i] * dz0[i] : 0), xbar[i]) * W[i];
                         }
                     }
                 }
@@ -477,13 +504,104 @@ namespace InteriorPoint
                     {
                         for (int i = cstart; i < n + cstart; ++i)
                         {
-                            THETA[icone] = -100;// Not used in conetype.QP
-                            W2[i] = aob(x[i], z[i]);
+                            W2[i] = aob(z[i], x[i]);
                             W[i] = Math.Sqrt(W2[i]);
-                            xbar[i] = x[i] / W[i];
-                            zbar[i] = z[i] * W[i];
+                            THETA[icone] =-1e4;
+                            xbar[i] = x[i] * W[i];
+                            zbar[i] = z[i] / W[i];
                             rmu[i] = mu - xbar[i] * zbar[i];
                         }
+                    }
+                    else if (typecone[icone] == (int)conetype.SOCP)
+                    {
+                        var xQx=0.0;
+                        var zQz=0.0;
+                        if (n == 1) THETA[icone] = Math.Sqrt(aob(z[cstart], x[cstart]));
+                        else
+                        {
+                            xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
+                            if (xQx <= 0)
+                            {
+                                if (x[n - 1 + cstart] > BlasLike.lm_rooteps)
+                                {
+                                    BlasLike.dscalvec(n - 1, .95 * x[n - 1 + cstart] / Math.Sqrt(x[n - 1 + cstart] * x[n - 1 + cstart] - xQx), x);
+                                }
+                                else
+                                {
+                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, x, cstart);
+                                    x[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                    xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
+                                }
+                            }
+                            zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
+                            if (zQz <= 0)
+                            {
+                                if (z[n - 1 + cstart] > BlasLike.lm_rooteps)
+                                {
+                                    BlasLike.dscalvec(n - 1, .95 * z[n - 1 + cstart] / Math.Sqrt(z[n - 1 + cstart] * z[n - 1 + cstart] - zQz), z);
+                                }
+                                else
+                                {
+                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, z, cstart);
+                                    z[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                    zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
+                                }
+                            }
+                            THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
+                            if (double.IsNaN(THETA[icone]))
+                            {
+                                if (double.IsNaN(zQz))
+                                {
+                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, z, cstart);
+                                    z[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                    zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
+                                }
+                                if (double.IsNaN(xQx))
+                                {
+                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, x, cstart);
+                                    x[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                    xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
+                                }
+                                THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
+                            }
+
+                        }
+
+                        if (!double.IsNaN(THETA[icone]) && THETA[icone] >= 0)
+                        {
+                            if (n == 1) W[cstart] = Math.Sqrt(aob(z[cstart], x[cstart]));
+                            else
+                            {
+                                double zx = BlasLike.ddotvec(n, z, x, cstart, cstart);
+                                double bot = Math.Sqrt((zx + Math.Sqrt(xQx * zQz)) * 2.0);
+                                double z1 = THETA[icone] / bot;
+                                double z2 = THETA[icone] * bot;
+                                if (THETA[icone] == BlasLike.lm_eps) { z1 = 1.0; z2 = BlasLike.lm_eps; }
+                                for (var i = cstart; i < n - 1 + cstart; ++i)
+                                {
+                                    W[i] = -z1 * x[i] + z[i] / z2;
+                                }
+                                W[n - 1 + cstart] = z1 * x[n - 1 + cstart] + z[n - 1 + cstart] / z2;
+                            }
+                        }
+                        else
+                        {
+                            //DO something to stop main loop
+                        }
+                        double wcheck = BlasLike.ddotvec(n, W, W, cstart, cstart);
+                        if (double.IsNaN(wcheck)) Console.WriteLine("BAD W");
+                        Wtrans(n, x, W, xbar, cstart, cstart, cstart);
+                        Wtrans(n, z, W, zbar, cstart, cstart, cstart);
+                        thetaScale(n, xbar, THETA[icone], false, false, cstart);
+                        thetaScale(n, zbar, THETA[icone], true, false, cstart);
+                        Tmulvec(n, xbar, cstart);//Tmulvec does nothing for SOCP, needed for SOCPR
+                        Tmulvec(n, zbar, cstart);
+                        applyX(n, xbar, zbar, rmu, cstart, cstart, cstart);
+                        BlasLike.dnegvec(n, rmu, cstart);
+                        rmu[n - 1 + cstart] += mu;
+                        Tmulvec(n, xbar, cstart);
+                        Tmulvec(n, zbar, cstart);
+                        Tmulvec(n, rmu, cstart);
                     }
                 }
             }
@@ -499,8 +617,21 @@ namespace InteriorPoint
         }
         void Mu()
         {
-            if (homogenous) mu = (BlasLike.ddotvec(x.Length, x, z) + tau * kappa) / (x.Length + 1);
-            else mu = BlasLike.ddotvec(x.Length, x, z) / x.Length;
+            if (optMode == "QP")
+            {
+                if (homogenous) mu = (BlasLike.ddotvec(x.Length, x, z) + tau * kappa) / (x.Length + 1);
+                else mu = BlasLike.ddotvec(x.Length, x, z) / x.Length;
+            }
+            else if (optMode == "SOCP")
+            {
+                int R1 = 0;
+                for (int icone = 0; icone < numberOfCones; ++icone)
+                {
+                    R1 += Math.Min(1, n);
+                }
+                if (homogenous) mu = (BlasLike.ddotvec(x.Length, x, z) + tau * kappa) / (R1 + 1);
+                else mu = BlasLike.ddotvec(x.Length, x, z) / R1;
+            }
         }
         void update(double[] dx, double[] dy, double[] dz, double dtau, double dkappa, double step)
         {
@@ -577,6 +708,14 @@ namespace InteriorPoint
                         BlasLike.dsetvec(nn, 1, opt.x, istart);
                         BlasLike.dsetvec(nn, 1, opt.z, istart);
                     }
+                    else if (opt.typecone[icone] == (int)conetype.SOCP)
+                    {
+                        var nn = opt.cone[icone];
+                        BlasLike.dzerovec(nn - 1, opt.x, istart);
+                        BlasLike.dzerovec(nn - 1, opt.z, istart);
+                        opt.x[nn - 1 + istart] = 1.0;
+                        opt.z[nn - 1 + istart] = 1.0;
+                    }
                 }
             }
             var dxold = (double[])opt.dx.Clone();
@@ -608,9 +747,9 @@ namespace InteriorPoint
             {
                 for (int icone = 0, istart = 0; icone < opt.cone.Length; istart += opt.cone[icone], ++icone)
                 {
+                    var nn = opt.cone[icone];
                     if (opt.typecone[icone] == (int)conetype.QP)
                     {
-                        var nn = opt.cone[icone];
                         if (opt.usrH)
                         {
                             if (opt.homogenous)
@@ -623,7 +762,11 @@ namespace InteriorPoint
                             BlasLike.dzerovec(nn - nh, opt.cmod, istart + nh);
                             BlasLike.daddvec(nh, opt.c, extra, opt.cmod, istart, 0, istart);
                         }
-                        else BlasLike.dcopyvec(nn, opt.c, opt.cmod);
+                        else BlasLike.dcopyvec(nn, opt.c, opt.cmod, istart, istart);
+                    }
+                    else if (opt.typecone[icone] == (int)conetype.SOCP)
+                    {
+                        BlasLike.dcopyvec(nn, opt.c, opt.cmod, istart, istart);
                     }
                 }
             }
