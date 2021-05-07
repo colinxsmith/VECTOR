@@ -111,7 +111,7 @@ namespace InteriorPoint
             back = Math.Min(back, ddz);
             return Math.Min(back, dd);
         }
-        void MaximumStep()
+        void MaximumStep(double gamma = 1.0)
         {
             double XX = BlasLike.ddotvec(n, x, x);
             double XdX = BlasLike.ddotvec(n, x, dx);
@@ -133,9 +133,9 @@ namespace InteriorPoint
             }
             else
             {
-                if (Math.Abs(XdX) > BlasLike.lm_eps) desc = 1.0- XX * dXdX / XdX / XdX;
+                if (Math.Abs(XdX) > BlasLike.lm_eps) desc = 1.0 - XX * dXdX / XdX / XdX;
                 else desc = -XX * dXdX;
-                if (desc > BlasLike.lm_eps*8)
+                if (desc > BlasLike.lm_eps * 8)
                 {
                     if (Math.Abs(XdX) > BlasLike.lm_eps) desc = Math.Sqrt(desc) * Math.Abs(XdX);
                     else desc = Math.Sqrt(desc);
@@ -153,16 +153,16 @@ namespace InteriorPoint
             }
             else
             {
-                if (Math.Abs(SdS) > BlasLike.lm_eps) desc = 1.0- SS * dSdS / SdS / SdS;
+                if (Math.Abs(SdS) > BlasLike.lm_eps) desc = 1.0 - SS * dSdS / SdS / SdS;
                 else desc = -SS * dSdS;
-                if (desc > BlasLike.lm_eps*8)
+                if (desc > BlasLike.lm_eps * 8)
                 {
                     if (Math.Abs(SdS) > BlasLike.lm_eps) desc = Math.Sqrt(desc) * Math.Abs(SdS);
                     else desc = Math.Sqrt(desc);
                     if (SdS + desc < 0)
                         alpha = Math.Min(alpha, lowest1 * ((-SdS - desc) / dSdS));
                 }
-                else if (desc >= -BlasLike.lm_eps*8 && SdS < 0)
+                else if (desc >= -BlasLike.lm_eps * 8 && SdS < 0)
                     alpha = Math.Min(alpha, lowest1 * ((-SdS) / dSdS));
             }
 
@@ -173,26 +173,32 @@ namespace InteriorPoint
             }
             else
             {
-                if (Math.Abs(XdS + dXS) > BlasLike.lm_eps) desc = 1.0- 4 * XS * dXdS / (XdS + dXS) / (XdS + dXS);
+                if (Math.Abs(XdS + dXS) > BlasLike.lm_eps) desc = 1.0 - 4 * XS * dXdS / (XdS + dXS) / (XdS + dXS);
                 else desc = -4 * XS * dXdS;
-                if (desc > BlasLike.lm_eps*8)
+                if (desc > BlasLike.lm_eps * 8)
                 {
                     if (Math.Abs(XdS + dXS) > BlasLike.lm_eps) desc = Math.Sqrt(desc) * Math.Abs(XdS + dXS);
                     else desc = Math.Sqrt(desc);
                     if ((XdS + dXS + desc) > 0 && dXdS < 0)
-                        alpha = Math.Min(alpha, lowest1 * ((-XdS - dXS - desc) / 2.0/ dXdS));
+                        alpha = Math.Min(alpha, lowest1 * ((-XdS - dXS - desc) / 2.0 / dXdS));
                     else if ((XdS + dXS + desc) / dXdS < 0)
-                        alpha = Math.Min(alpha, lowest1 * ((-XdS - dXS - desc) / 2.0/ dXdS));
+                        alpha = Math.Min(alpha, lowest1 * ((-XdS - dXS - desc) / 2.0 / dXdS));
                 }
-                else if (desc >= -BlasLike.lm_eps*8 && (XdS + dXS) / dXdS < 0)
-                    alpha = Math.Min(alpha, lowest1 * ((-XdS - dXS) / 2.0/ dXdS));
+                else if (desc >= -BlasLike.lm_eps * 8 && (XdS + dXS) / dXdS < 0)
+                    alpha = Math.Min(alpha, lowest1 * ((-XdS - dXS) / 2.0 / dXdS));
             }
 
             if (optMode == "SOCP")
             {
-                ddx = 1.0;
-                ddz = 1.0;
-                dd = 1.0;
+                ddx = alpha;
+                ddz = alpha;
+                dd = alpha;
+                var vz1 = new double[cone.Length];
+                var vz2 = new double[cone.Length];
+                var vz3 = new double[cone.Length];
+                var vx1 = new double[cone.Length];
+                var vx2 = new double[cone.Length];
+                var vx3 = new double[cone.Length];
                 for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
                 {
                     var n = cone[icone];
@@ -206,10 +212,129 @@ namespace InteriorPoint
                     }
                     else if (typecone[icone] == (int)conetype.SOCP)
                     {
-                        for (int i = cstart; i < n + cstart; ++i)
+                        var Qz = new double[n];
+                        var Qdz = new double[n];
+                        var Qx = new double[n];
+                        var Qdx = new double[n];
+                        BlasLike.dcopyvec(n, z, Qz, cstart, 0);//Qz
+                        Qmulvec(n, Qz);
+                        BlasLike.dcopyvec(n, dz, Qdz, cstart, 0);//Qdz
+                        Qmulvec(n, Qdz);
+                        vz1[icone] = BlasLike.ddotvec(n, z, Qz, cstart, 0);//z.Qz
+                        vz2[icone] = 2.0 * BlasLike.ddotvec(n, dz, Qz, cstart, 0);//dz.Qz
+                        vz3[icone] = BlasLike.ddotvec(n, dz, Qdz, cstart, 0);//dz.Qdz
+                        if (Qdz[n - 1] < 0) alpha = Math.Min(lowest1 * (-Qz[n - 1]) / Qdz[n - 1], alpha);
+                        if (dz[n - 1 + cstart] < 0) alpha = Math.Min(lowest1 * (-z[n - 1 + cstart]) / dz[n - 1 + cstart], alpha);
+                        BlasLike.dcopyvec(n, x, Qx, cstart, 0);//Qx
+                        Qmulvec(n, Qx);
+                        BlasLike.dcopyvec(n, dx, Qdx, cstart, 0);//Qdx
+                        Qmulvec(n, Qdx);
+                        vx1[icone] = BlasLike.ddotvec(n, x, Qx, cstart, 0);//x.Qx
+                        vx2[icone] = 2.0 * BlasLike.ddotvec(n, dx, Qx, cstart, 0);//dx.Qx
+                        vx3[icone] = BlasLike.ddotvec(n, dx, Qdx, cstart, 0);//dx.Qdx
+                        if (Qdx[n - 1] < 0) alpha = Math.Min(lowest1 * (-Qx[n - 1]) / Qdx[n - 1], alpha);
+                        if (dx[n - 1 + cstart] < 0) alpha = Math.Min(lowest1 * (-x[n - 1 + cstart]) / dx[n - 1 + cstart], alpha);
+                        if (homogenous && dtau < 0) alpha = Math.Min(lowest1 * -tau / dtau, alpha);
+                        if (homogenous && dkappa < 0) alpha = Math.Min(lowest1 * -kappa / dkappa, alpha);
+                        double inner, r1, r2;
+                        for (var i = 0; i < n; ++i)
                         {
-
+                            if (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]) < -BlasLike.lm_eps * 8)
+                            {
+                                if (Math.Abs(vz3[i]) <= BlasLike.lm_eps)
+                                {
+                                    if (vz2[i] < -BlasLike.lm_eps)
+                                        alpha = Math.Min(lowest1 * -vz1[i] / vz2[i], alpha);
+                                }
+                                else if (Math.Abs(vz2[i]) > BlasLike.lm_eps && (inner = 1.0 - 4 * vz3[i] * vz1[i] / vz2[i] / vz2[i]) > -BlasLike.lm_eps)
+                                {
+                                    inner = (inner > BlasLike.lm_eps * 8 ? Math.Sqrt(inner) * Math.Abs(vz2[i]) : 0);
+                                    r1 = (-vz2[i] - inner) / 2.0 / vz3[i]; r2 = (-vz2[i] + inner) / 2.0 / vz3[i];
+                                    if (vz3[i] < -BlasLike.lm_eps)
+                                    {
+                                        alpha = Math.Min(lowest1 * (-vz2[i] - inner) / 2.0 / vz3[i], alpha);
+                                    }
+                                    else if (vz3[i] > BlasLike.lm_eps)
+                                    {
+                                        alpha = Math.Min(lowest1 * (-vz2[i] - inner) / 2.0 / vz3[i], alpha);
+                                    }
+                                }
+                                else if (Math.Abs(vz2[i]) <= BlasLike.lm_eps && (inner = -4 * vz3[i] * vz1[i]) > -BlasLike.lm_eps)
+                                {
+                                    inner = (inner > BlasLike.lm_eps * 8 ? Math.Sqrt(inner) : 0);
+                                    r1 = (-vz2[i] - inner) / 2.0 / vz3[i]; r2 = (-vz2[i] + inner) / 2.0 / vz3[i];
+                                    if (vz3[i] < -BlasLike.lm_eps)
+                                    {
+                                        alpha = Math.Min(lowest1 * (-vz2[i] - inner) / 2.0 / vz3[i], alpha);
+                                    }
+                                    else if (vz3[i] > BlasLike.lm_eps)
+                                    {
+                                        alpha = Math.Min(lowest1 * (-vz2[i] - inner) / 2.0 / vz3[i], alpha);
+                                    }
+                                }
+                                else
+                                    Console.WriteLine("still negative");
+                            }
                         }
+
+                        for (var i = 0; i < n; ++i)
+                        {
+                            if (vx1[i] + alpha * (vx2[i] + alpha * vx3[i]) < -BlasLike.lm_eps * 8)
+                            {
+                                if (Math.Abs(vx3[i]) <= BlasLike.lm_eps)
+                                {
+                                    if (vx2[i] < -BlasLike.lm_eps)
+                                        alpha = Math.Min(lowest1 * -vx1[i] / vx2[i], alpha);
+                                }
+                                else if (Math.Abs(vx2[i]) > BlasLike.lm_eps && (inner = 1.0 - 4 * vx3[i] * vx1[i] / vx2[i] / vx2[i]) > -BlasLike.lm_eps)
+                                {
+                                    inner = (inner > BlasLike.lm_eps * 8 ? Math.Sqrt(inner) * Math.Abs(vx2[i]) : 0);
+                                    r1 = (-vx2[i] - inner) / 2.0 / vx3[i]; r2 = (-vx2[i] + inner) / 2.0 / vx3[i];
+                                    if (vx3[i] < -BlasLike.lm_eps)
+                                    {
+                                        alpha = Math.Min(lowest1 * (-vx2[i] - inner) / 2.0 / vx3[i], alpha);
+                                    }
+                                    else if (vx3[i] > BlasLike.lm_eps)
+                                    {
+                                        alpha = Math.Min(lowest1 * (-vx2[i] - inner) / 2.0 / vx3[i], alpha);
+                                    }
+                                }
+                                else if (Math.Abs(vx2[i]) <= BlasLike.lm_eps && (inner = -4 * vx3[i] * vx1[i]) > -BlasLike.lm_eps)
+                                {
+                                    inner = (inner > BlasLike.lm_eps * 8 ? Math.Sqrt(inner) : 0);
+                                    r1 = (-vx2[i] - inner) / 2.0 / vx3[i]; r2 = (-vx2[i] + inner) / 2.0 / vx3[i];
+                                    if (vx3[i] < -BlasLike.lm_eps)
+                                    {
+                                        alpha = Math.Min(lowest1 * (-vx2[i] - inner) / 2.0 / vx3[i], alpha);
+                                    }
+                                    else if (vx3[i] > BlasLike.lm_eps)
+                                    {
+                                        alpha = Math.Min(lowest1 * (-vx2[i] - inner) / 2.0 / vx3[i], alpha);
+                                    }
+                                }
+                                else
+                                    Console.WriteLine("still negative");
+                            }
+                        }
+
+
+                        double rhs, gamma1 = 1 - gamma, test1, test2 = 1, beta = 1e-6;
+                        for (var l = 0; l < 1000; ++l)
+                        {
+                            rhs = beta * (1 - alpha * gamma1) * mu;
+                            if (homogenous) test2 = (tau + alpha * dtau) * (kappa + alpha * dkappa);
+                            test1 = 0;
+                            for (var i = 0; i < n; ++i)
+                            {
+                                test1 += (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]));
+                            }
+
+                            test1 = Math.Sqrt(test1);
+                            if (test1 >= rhs && test2 >= rhs) break;
+                            alpha *= lowest1;
+                        }
+
+                        ddx = ddz = dd = alpha;
                     }
                 }
                 if (homogenous)
@@ -1008,7 +1133,7 @@ namespace InteriorPoint
                 opt.dkappa0 = alpha1 * opt.dkappa;
                 gamma = opt.gfunc(alpha1);
                 opt.SolvePrimary(gamma, true);
-                opt.MaximumStep();
+                opt.MaximumStep(gamma);
                 alpha2 = 0.99 * opt.Lowest();
                 if (alpha1 > alpha2) opt.update(dxold, dyold, dzold, dtauold, dkappaold, alpha1);
                 else opt.update(opt.dx, opt.dy, opt.dz, opt.dtau, opt.dkappa, alpha2);
