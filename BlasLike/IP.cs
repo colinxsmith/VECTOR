@@ -237,8 +237,9 @@ namespace InteriorPoint
                         if (homogenous && dtau < 0) alpha = Math.Min(lowest1 * -tau / dtau, alpha);
                         if (homogenous && dkappa < 0) alpha = Math.Min(lowest1 * -kappa / dkappa, alpha);
                         double inner, r1, r2;
-                  //      for (var i = icone; i < cone.Length; ++i)
-                        {var i=icone;
+                        //      for (var i = icone; i < cone.Length; ++i)
+                        {
+                            var i = icone;
                             if (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]) < -BlasLike.lm_eps * 8)
                             {
                                 if (Math.Abs(vz3[i]) <= BlasLike.lm_eps)
@@ -277,8 +278,9 @@ namespace InteriorPoint
                             }
                         }
 
- //                       for (var i = 0; i < cone.Length; ++i)
-                        {var i=icone;
+                        //                       for (var i = 0; i < cone.Length; ++i)
+                        {
+                            var i = icone;
                             if (vx1[i] + alpha * (vx2[i] + alpha * vx3[i]) < -BlasLike.lm_eps * 8)
                             {
                                 if (Math.Abs(vx3[i]) <= BlasLike.lm_eps)
@@ -324,8 +326,9 @@ namespace InteriorPoint
                             rhs = beta * (1 - alpha * gamma1) * mu;
                             if (homogenous) test2 = (tau + alpha * dtau) * (kappa + alpha * dkappa);
                             test1 = 0;
-                     //       for (var i = 0; i < cone.Length; ++i)
-                            {var i=icone;
+                            //       for (var i = 0; i < cone.Length; ++i)
+                            {
+                                var i = icone;
                                 test1 += (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]));
                             }
 
@@ -475,7 +478,7 @@ namespace InteriorPoint
                     BlasLike.dzerovec(M.Length, M);
                     var lhs = w1;//Highjack w1 and dy to save reallocation
                     var res = dy;
-                    HCOPY = (double[])H.Clone();
+                    HCOPY = nh > 0 ? (double[])H.Clone() : null;
                     for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
                     {
                         var n = cone[icone];
@@ -757,11 +760,11 @@ namespace InteriorPoint
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {
-                            Qmulvec(icone, dx, cstart);
-                            W2trans(icone, dx, W, w1, cstart, cstart, x.Length + cstart);
+                            Qmulvec(n, dx, cstart);
+                            W2trans(n, dx, W, w1, cstart, cstart, x.Length + cstart);
                             BlasLike.dcopyvec(n, w1, dx, x.Length + cstart, cstart);
-                            Qmulvec(icone, dx, cstart);
-                            thetaScale(icone, dx, THETA[icone], true, true, cstart);
+                            Qmulvec(n, dx, cstart);
+                            thetaScale(n, dx, THETA[icone], true, true, cstart);
                         }
                     }
                     BlasLike.dsubvec(n, dx, w1, dx);
@@ -785,7 +788,7 @@ namespace InteriorPoint
                             if (corrector)
                             {
                                 BlasLike.dcopyvec(n, dz0, w1, cstart, x.Length + cstart);//dz0
-                                thetaScale(icone, w1, THETA[icone], true, false, x.Length + cstart);//theta-1dz0
+                                thetaScale(n, w1, THETA[icone], true, false, x.Length + cstart);//theta-1dz0
                                 Qmulvec(n, w1, x.Length + cstart);
                                 Wtrans(n, w1, W, dzbar, x.Length + cstart, cstart, cstart);//Wtheta-1dz0
                                 Qmulvec(n, dzbar, cstart);//dzbar
@@ -1104,6 +1107,7 @@ namespace InteriorPoint
             opt.MuResidual();
             var rp0 = norm(opt.rp);
             var rd0 = norm(opt.rd);
+            rd0 = rd0 == 0 ? 1 : rd0;
             var rp1 = rp0;
             var rd1 = rd0;
             var comp0 = opt.Complementarity();
@@ -1300,11 +1304,12 @@ namespace InteriorPoint
                 WA[ncm1 + WAStart] = wc + w[ncm1 + wstart] * A[ncm1 + Astart];
             }
         }
-        void Wm1transR(int ncone, double[] A, double[] w, double[] WA, int Astart = 0, int wstart = 0, int WAStart = 0){
-            Qmulvec(ncone,A,wstart);//A is changed to QA
-            Wtrans(ncone,A,w,WA,0,wstart,WAStart); //WQA
-            Qmulvec(ncone,WA,wstart);// QWQA = W-1A since QWQ = inverse(W)
-            Qmulvec(ncone,A,wstart);//Change QA back to A, since QQ=I (avoid having to copy A at start)
+        void Wm1transR(int ncone, double[] A, double[] w, double[] WA, int Astart = 0, int wstart = 0, int WAStart = 0)
+        {
+            Qmulvec(ncone, A, wstart);//A is changed to QA
+            Wtrans(ncone, A, w, WA, 0, wstart, WAStart); //WQA
+            Qmulvec(ncone, WA, wstart);// QWQA = W-1A since QWQ = inverse(W)
+            Qmulvec(ncone, A, wstart);//Change QA back to A, since QQ=I (avoid having to copy A at start)
         }
         void WtransR(int ncone, double[] A, double[] w, double[] WA, int Astart = 0, int wstart = 0, int WAStart = 0)
         {

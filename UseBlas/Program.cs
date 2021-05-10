@@ -313,8 +313,8 @@ namespace UseBlas
                 for (int i = 0; i < n; ++i)
                 {
                     xxx[i] = 1;
-                    if (way == 'U') Factorise.dsmxmulv(n, M, xxx, start,0, i * n);
-                    else Factorise.dsmxmulvT(n, MT, xxx, start,0, i * n);
+                    if (way == 'U') Factorise.dsmxmulv(n, M, xxx, start, 0, i * n);
+                    else Factorise.dsmxmulvT(n, MT, xxx, start, 0, i * n);
                     xxx[i] = 0;
                 }
                 var back = (way == 'U') ? Factorise.Factor(way, n, M, piv) : Factorise.Factor(way, n, MT, piv);
@@ -941,91 +941,28 @@ namespace UseBlas
             }
 
             {
-                int nh = 10;
-                double[] H ={0.07622384475840693,
-                                    -0.0016365991417207626,
-                                    0.08604333317714313,
-                                    -0.011316860823247121,
-                                    -0.030434772808639987,
-                                    0.11211083919582854,
-                                    -0.005442735249764186,
-                                    0.004464673502705685,
-                                    0.02884916845203872,
-                                    0.07030671358796253,
-                                    0.011709823440838929,
-                                    0.02086299454025381,
-                                    -0.015170796975208789,
-                                    -0.0005067292359139386,
-                                    0.059822876920856805,
-                                    0.030315371151201392,
-                                    0.0034082127351833247,
-                                    -0.022933127136383458,
-                                    0.0016861298409444059,
-                                    0.012600705278736524,
-                                    0.08316673826220947,
-                                    0.0115607066361883,
-                                    -0.0034806816621613668,
-                                    -0.0010519351552628065,
-                                    -0.0028576346296797506,
-                                    0.008573189337515441,
-                                    -0.025115408356197216,
-                                    0.08293672602298946,
-                                    0.014699977532219966,
-                                    -0.019735088940840084,
-                                    0.05551477101220931,
-                                    -0.019246450916202917,
-                                    -0.01412419584221336,
-                                    -0.0025011076826836065,
-                                    -0.013239288762594226,
-                                    0.0907984789770602,
-                                    -0.013526556333058826,
-                                    0.0098303768770443,
-                                    -0.042483694444829995,
-                                    -0.035685449490480525,
-                                    0.015581944899869915,
-                                    -0.0008483921768689395,
-                                    -0.006279985059017501,
-                                    -0.00375529364246191,
-                                    0.10266907898364636,
-                                    0.03999356589115988,
-                                    0.045353250040677695,
-                                    -0.0019274282309346968,
-                                    0.010712719440722496,
-                                    0.024816489058402724,
-                                    0.03416835576827826,
-                                    -0.001184721225989449,
-                                    -0.011735959703553567,
-                                    -0.04135384837511391,
-                                    0.12585651441173307};
+                Console.WriteLine("SOCP");
                 int n = 12;
-                BlasLike.dscalvec(H.Length, 1e3, H);
-                var m = 3;
+                var m = 1;
                 var x = new double[n];
-                var nslack = 2;
-                double[] b = { 1, 0.5, 0.3 };
-                double[] c = { 1, 2, 3, 4, 5, 6, 17, 8, 9, 10, 0, 0 };
-                double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
-                               0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0,
-                               0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, -1};
+                double[] b = { 1e-2 };
+                double[] c = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
+                double[] A = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
 
                 int[] cone = { n };
                 int nvar = 0;
                 foreach (int ic in cone) nvar += ic;
-                int[] typecone = { (int)InteriorPoint.conetype.QP };
+                int[] typecone = { (int)InteriorPoint.conetype.SOCP };
 
                 Factorise.dmx_transpose(n, m, A, A);
-                var back = InteriorPoint.Optimise.Opt(nvar, m, x, A, b, c, nh, H, "SOCP", cone, typecone,true);
+                var back = InteriorPoint.Optimise.Opt(nvar, m, x, A, b, c, 0, null, "SOCP", cone, typecone, false);
                 Console.WriteLine($"{back}");
                 var implied = new double[m];
                 var truex = (double[])x.Clone();
-                BlasLike.dzerovec(nslack, truex, n - nslack);
                 Factorise.dmxmulv(m, n, A, truex, implied);
                 foreach (var cc in implied) Console.WriteLine($"Constraint value {cc}");
                 var cx = BlasLike.ddotvec(c.Length, c, truex);
-                implied = new double[nh];
-                Factorise.dsmxmulv(nh, H, x, implied);
-                var xHx = BlasLike.ddotvec(nh, implied, truex);
-                Console.WriteLine($"Linear {cx}\nQuadratic {cx + xHx / 2}");
+                Console.WriteLine($"Linear {cx}");
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
