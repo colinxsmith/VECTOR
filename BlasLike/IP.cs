@@ -237,8 +237,8 @@ namespace InteriorPoint
                         if (homogenous && dtau < 0) alpha = Math.Min(lowest1 * -tau / dtau, alpha);
                         if (homogenous && dkappa < 0) alpha = Math.Min(lowest1 * -kappa / dkappa, alpha);
                         double inner, r1, r2;
-                        for (var i = 0; i < n; ++i)
-                        {
+                  //      for (var i = icone; i < cone.Length; ++i)
+                        {var i=icone;
                             if (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]) < -BlasLike.lm_eps * 8)
                             {
                                 if (Math.Abs(vz3[i]) <= BlasLike.lm_eps)
@@ -277,8 +277,8 @@ namespace InteriorPoint
                             }
                         }
 
-                        for (var i = 0; i < n; ++i)
-                        {
+ //                       for (var i = 0; i < cone.Length; ++i)
+                        {var i=icone;
                             if (vx1[i] + alpha * (vx2[i] + alpha * vx3[i]) < -BlasLike.lm_eps * 8)
                             {
                                 if (Math.Abs(vx3[i]) <= BlasLike.lm_eps)
@@ -324,8 +324,8 @@ namespace InteriorPoint
                             rhs = beta * (1 - alpha * gamma1) * mu;
                             if (homogenous) test2 = (tau + alpha * dtau) * (kappa + alpha * dkappa);
                             test1 = 0;
-                            for (var i = 0; i < n; ++i)
-                            {
+                     //       for (var i = 0; i < cone.Length; ++i)
+                            {var i=icone;
                                 test1 += (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]));
                             }
 
@@ -569,13 +569,13 @@ namespace InteriorPoint
                                 w1[i] = rd[i] * g1 - w1[i];
                             }
                             BlasLike.dcopyvec(n, dz0, lhs, cstart, x.Length + cstart);
-                            thetaScale(icone, lhs, THETA[icone], true, false, x.Length + cstart);
-                            Qmulvec(icone, lhs, x.Length + cstart);
-                            Wtrans(icone, lhs, W, dzbar, x.Length + cstart, cstart, cstart);
-                            Qmulvec(icone, dzbar, cstart);
-                            Wtrans(icone, dx0, W, dxbar, cstart, cstart, cstart);
-                            thetaScale(icone, dxbar, THETA[icone], false, false, cstart);
-                            applyX(icone, dxbar, dzbar, lhs, cstart, cstart, x.Length + cstart);
+                            thetaScale(n, lhs, THETA[icone], true, false, x.Length + cstart);
+                            Qmulvec(n, lhs, x.Length + cstart);
+                            Wtrans(n, lhs, W, dzbar, x.Length + cstart, cstart, cstart);
+                            Qmulvec(n, dzbar, cstart);
+                            Wtrans(n, dx0, W, dxbar, cstart, cstart, cstart);
+                            thetaScale(n, dxbar, THETA[icone], false, false, cstart);
+                            applyX(n, dxbar, dzbar, lhs, cstart, cstart, x.Length + cstart);
                             BlasLike.dsubvec(n, w1, lhs, w1, cstart, x.Length + cstart, cstart);
                         }
                     }
@@ -719,7 +719,7 @@ namespace InteriorPoint
                             if (corrector)
                             {
                                 BlasLike.dcopyvec(n, dz0, w1, cstart, x.Length + cstart);//dz0
-                                thetaScale(icone, w1, THETA[icone], true, false, x.Length + cstart);//theta-1dz0
+                                thetaScale(n, w1, THETA[icone], true, false, x.Length + cstart);//theta-1dz0
                                 Qmulvec(n, w1, x.Length + cstart);
                                 Wtrans(n, w1, W, dzbar, x.Length + cstart, cstart, cstart);//Wtheta-1dz0
                                 Qmulvec(n, dzbar, cstart);//dzbar
@@ -918,8 +918,8 @@ namespace InteriorPoint
                         double wcheck = BlasLike.ddotvec(n, W, W, cstart, cstart);
                         if (double.IsNaN(wcheck)) Console.WriteLine("BAD W");
                         Wtrans(n, x, W, xbar, cstart, cstart, cstart);
-                        Wtrans(n, z, W, zbar, cstart, cstart, cstart);
                         thetaScale(n, xbar, THETA[icone], false, false, cstart);
+                        Wm1transR(n, z, W, zbar, cstart, cstart, cstart);
                         thetaScale(n, zbar, THETA[icone], true, false, cstart);
                         Tmulvec(n, xbar, cstart);//Tmulvec does nothing for SOCP, needed for SOCPR
                         Tmulvec(n, zbar, cstart);
@@ -1299,6 +1299,12 @@ namespace InteriorPoint
 
                 WA[ncm1 + WAStart] = wc + w[ncm1 + wstart] * A[ncm1 + Astart];
             }
+        }
+        void Wm1transR(int ncone, double[] A, double[] w, double[] WA, int Astart = 0, int wstart = 0, int WAStart = 0){
+            Qmulvec(ncone,A,wstart);//A is changed to QA
+            Wtrans(ncone,A,w,WA,0,wstart,WAStart); //WQA
+            Qmulvec(ncone,WA,wstart);// QWQA = W-1A since QWQ = inverse(W)
+            Qmulvec(ncone,A,wstart);//Change QA back to A, since QQ=I (avoid having to copy A at start)
         }
         void WtransR(int ncone, double[] A, double[] w, double[] WA, int Astart = 0, int wstart = 0, int WAStart = 0)
         {
