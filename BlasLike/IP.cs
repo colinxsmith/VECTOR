@@ -364,7 +364,7 @@ namespace InteriorPoint
                 }
             }
         }
-        void SolvePrimary(double gamma = 0.0, bool corrector = false)
+        void SolvePrimaryDual(double gamma = 0.0, bool corrector = false)
         {
             if (optMode == "QP")
             {
@@ -522,9 +522,7 @@ namespace InteriorPoint
                             for (int i = 0, ij = 0; i < m; ++i, ij += i)
                             {
                                 BlasLike.dcopy(n, A, m, lhs, 1, i + cstart * m, x.Length + cstart);
-                                Qmulvec(n, lhs, x.Length + cstart);
-                                W2trans(n, lhs, W, lhs, x.Length + cstart, cstart, cstart);
-                                Qmulvec(n, lhs, cstart);
+                                W2m1trans(n, lhs, W, lhs, x.Length + cstart, cstart, cstart);
                                 thetaScale(n, lhs, THETA[icone], true, true, cstart);
                                 for (var k = cstart; k < n + cstart; ++k)
                                 {
@@ -539,10 +537,12 @@ namespace InteriorPoint
                             rmu[n - 1 + cstart] += g1 * mu;
                             Wtrans(n, lhs, W, w1, x.Length + cstart, cstart, cstart);
                             thetaScale(n, w1, THETA[icone], false, false, cstart);
-                            for (var i = cstart; i < n + cstart; ++i)
-                            {
-                                w1[i] = rd[i] * g1 - w1[i];
-                            }
+                            /*            for (var i = cstart; i < n + cstart; ++i)
+                                                       {
+                                                           w1[i] = rd[i] * g1 - w1[i];
+                                                       }*/
+                            BlasLike.daxpyvec(n, -g1, rd, w1, cstart, cstart);
+                            BlasLike.dnegvec(n, w1, cstart);
                         }
                     }
                     if (m != 1) Factorise.Factor(uplo, m, M, order);
@@ -563,23 +563,25 @@ namespace InteriorPoint
                         {
                             var lhs = w1;
                             rmu[n - 1 + cstart] -= g1 * mu;
-                            applyXm1(n, xbar, rmu, lhs, cstart, cstart, x.Length + cstart);
-                            rmu[n - 1 + cstart] += g1 * mu;
-                            Wtrans(n, lhs, W, w1, x.Length + cstart, cstart, cstart);
-                            thetaScale(n, w1, THETA[icone], false, false, cstart);
-                            for (var i = cstart; i < n + cstart; ++i)
-                            {
-                                w1[i] = rd[i] * g1 - w1[i];
-                            }
-                            BlasLike.dcopyvec(n, dz0, lhs, cstart, x.Length + cstart);
-                            thetaScale(n, lhs, THETA[icone], true, false, x.Length + cstart);
-                            Qmulvec(n, lhs, x.Length + cstart);
-                            Wtrans(n, lhs, W, dzbar, x.Length + cstart, cstart, cstart);
-                            Qmulvec(n, dzbar, cstart);
+                            BlasLike.dcopyvec(n, rmu, lhs, cstart, cstart);
+
+                            Wm1trans(n, dz0, W, dzbar, cstart, cstart, cstart);
+                            thetaScale(n, dzbar, THETA[icone], true, false, cstart);
                             Wtrans(n, dx0, W, dxbar, cstart, cstart, cstart);
                             thetaScale(n, dxbar, THETA[icone], false, false, cstart);
                             applyX(n, dxbar, dzbar, lhs, cstart, cstart, x.Length + cstart);
-                            BlasLike.dsubvec(n, w1, lhs, w1, cstart, x.Length + cstart, cstart);
+                            BlasLike.dsubvec(n, lhs, lhs, lhs, cstart, x.Length + cstart, cstart);
+
+                            applyXm1(n, xbar, lhs, lhs, cstart, x.Length + cstart, x.Length + cstart);
+                            rmu[n - 1 + cstart] += g1 * mu;
+                            Wtrans(n, lhs, W, w1, x.Length + cstart, cstart, cstart);
+                            thetaScale(n, w1, THETA[icone], false, false, cstart);
+                            /*                       for (var i = cstart; i < n + cstart; ++i)
+                                                   {
+                                                       w1[i] = rd[i] * g1 - w1[i];
+                                                   }*/
+                            BlasLike.daxpyvec(n, -g1, rd, w1, cstart, cstart);
+                            BlasLike.dnegvec(n, w1, cstart);
                         }
                     }
                 }
@@ -600,10 +602,8 @@ namespace InteriorPoint
                     }
                     else if (typecone[icone] == (int)conetype.SOCP)
                     {
-                        Qmulvec(n, w1, cstart);
-                        W2trans(n, w1, W, w1, cstart, cstart, x.Length + cstart);
+                        W2m1trans(n, w1, W, w1, cstart, cstart, x.Length + cstart);
                         BlasLike.dcopyvec(n, w1, w1, x.Length + cstart, cstart);
-                        Qmulvec(n, w1, cstart);
                         thetaScale(n, w1, THETA[icone], true, true, cstart);
                     }
                 }
@@ -631,10 +631,8 @@ namespace InteriorPoint
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {
-                            Qmulvec(n, cx, cstart);
-                            W2trans(n, cx, W, w1, cstart, cstart, x.Length + cstart);
+                            W2m1trans(n, cx, W, w1, cstart, cstart, x.Length + cstart);
                             BlasLike.dcopyvec(n, w1, cx, x.Length + cstart, cstart);
-                            Qmulvec(n, cx, cstart);
                             thetaScale(n, cx, THETA[icone], true, true, cstart);
                         }
                     }
@@ -660,10 +658,8 @@ namespace InteriorPoint
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {
-                            Qmulvec(n, dx, cstart);
-                            W2trans(n, dx, W, w1, cstart, cstart, x.Length + cstart);
+                            W2m1trans(n, dx, W, w1, cstart, cstart, x.Length + cstart);
                             BlasLike.dcopyvec(n, w1, dx, x.Length + cstart, cstart);
-                            Qmulvec(n, dx, cstart);
                             thetaScale(n, dx, THETA[icone], true, true, cstart);
                         }
                     }
@@ -686,10 +682,8 @@ namespace InteriorPoint
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {
-                            Qmulvec(n, dc, cstart);
-                            W2trans(n, dc, W, w1, cstart, cstart, x.Length + cstart);
+                            W2m1trans(n, dc, W, w1, cstart, cstart, x.Length + cstart);
                             BlasLike.dcopyvec(n, w1, dc, x.Length + cstart, cstart);
-                            Qmulvec(n, dc, cstart);
                             thetaScale(n, dc, THETA[icone], true, true, cstart);
                         }
                     }
@@ -711,27 +705,29 @@ namespace InteriorPoint
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {
-                            double[] dxWzbarxbarm1 = new double[n];
-                            Wtrans(n, dx, W, w1, cstart, cstart, x.Length + cstart);
-                            thetaScale(n, w1, THETA[icone], false, false, x.Length + cstart);
-                            applyX(n, zbar, w1, dxWzbarxbarm1, cstart, x.Length + cstart, 0);
+                            double[] dxzbar = new double[n];
+                            //                            Wtrans(n, dx, W, w1, cstart, cstart, x.Length + cstart);
+                            //                            thetaScale(n, w1, THETA[icone], false, false, x.Length + cstart);
+                            //                            applyX(n, zbar, w1, dxWzbarxbarm1, cstart, x.Length + cstart, 0);
+                            applyX(n, dx, zbar, dxzbar, cstart, cstart, 0);
+                            Wtrans(n, dxzbar, W, w1, 0, cstart, cstart);//times W
+                            thetaScale(n, w1, THETA[icone], false, false, cstart);
+                            BlasLike.dcopyvec(n, w1, dxzbar, cstart, 0);
 
                             rmu[n - 1 + cstart] -= g1 * mu;
                             BlasLike.dcopyvec(n, rmu, w1, cstart, cstart);
                             rmu[n - 1 + cstart] += g1 * mu;
                             if (corrector)
                             {
-                                BlasLike.dcopyvec(n, dz0, w1, cstart, x.Length + cstart);//dz0
-                                thetaScale(n, w1, THETA[icone], true, false, x.Length + cstart);//theta-1dz0
-                                Qmulvec(n, w1, x.Length + cstart);
-                                Wtrans(n, w1, W, dzbar, x.Length + cstart, cstart, cstart);//Wtheta-1dz0
-                                Qmulvec(n, dzbar, cstart);//dzbar
-                                Wtrans(n, dx0, W, dxbar, cstart, cstart, cstart);
-                                thetaScale(n, dxbar, THETA[icone], false, false, cstart);//dxbar
+                                // We've already got dzbar and dxbar, no need to repeat
+                                //    Wm1trans(n, dz0, W, dzbar, cstart, cstart, cstart);
+                                //    thetaScale(n, dzbar, THETA[icone], true, false, cstart);//dzbar
+                                //    Wtrans(n, dx0, W, dxbar, cstart, cstart, cstart);
+                                //    thetaScale(n, dxbar, THETA[icone], false, false, cstart);//dxbar
                                 applyX(n, dxbar, dzbar, w1, cstart, cstart, x.Length + cstart);//dxbardzbar
                                 BlasLike.dsubvec(n, w1, w1, w1, cstart, x.Length + cstart, cstart);
                             }
-                            BlasLike.dsubvec(n, w1, dxWzbarxbarm1, w1, cstart, 0, cstart);
+                            BlasLike.dsubvec(n, w1, dxzbar, w1, cstart, 0, cstart);
                             applyXm1(n, xbar, w1, w1, cstart, cstart, x.Length + cstart);//over xbar
 
                             Wtrans(n, w1, W, dz, x.Length + cstart, cstart, cstart);//times W
@@ -760,10 +756,8 @@ namespace InteriorPoint
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {
-                            Qmulvec(n, dx, cstart);
-                            W2trans(n, dx, W, w1, cstart, cstart, x.Length + cstart);
+                            W2m1trans(n, dx, W, w1, cstart, cstart, x.Length + cstart);
                             BlasLike.dcopyvec(n, w1, dx, x.Length + cstart, cstart);
-                            Qmulvec(n, dx, cstart);
                             thetaScale(n, dx, THETA[icone], true, true, cstart);
                         }
                     }
@@ -777,27 +771,29 @@ namespace InteriorPoint
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {
-                            double[] dxWzbarxbarm1 = new double[n];
-                            Wtrans(n, dx, W, w1, cstart, cstart, x.Length + cstart);
-                            thetaScale(n, w1, THETA[icone], false, false, x.Length + cstart);
-                            applyX(n, zbar, w1, dxWzbarxbarm1, cstart, x.Length + cstart, 0);
+                            double[] dxzbar = new double[n];
+                            //                            Wtrans(n, dx, W, w1, cstart, cstart, x.Length + cstart);
+                            //                            thetaScale(n, w1, THETA[icone], false, false, x.Length + cstart);
+                            //                            applyX(n, zbar, w1, dxWzbarxbarm1, cstart, x.Length + cstart, 0);
+                            applyX(n, dx, zbar, dxzbar, cstart, cstart, 0);
+                            Wtrans(n, dxzbar, W, w1, 0, cstart, cstart);//times W
+                            thetaScale(n, w1, THETA[icone], false, false, cstart);
+                            BlasLike.dcopyvec(n, w1, dxzbar, cstart, 0);
 
                             rmu[n - 1 + cstart] -= g1 * mu;
                             BlasLike.dcopyvec(n, rmu, w1, cstart, cstart);
                             rmu[n - 1 + cstart] += g1 * mu;
                             if (corrector)
                             {
-                                BlasLike.dcopyvec(n, dz0, w1, cstart, x.Length + cstart);//dz0
-                                thetaScale(n, w1, THETA[icone], true, false, x.Length + cstart);//theta-1dz0
-                                Qmulvec(n, w1, x.Length + cstart);
-                                Wtrans(n, w1, W, dzbar, x.Length + cstart, cstart, cstart);//Wtheta-1dz0
-                                Qmulvec(n, dzbar, cstart);//dzbar
-                                Wtrans(n, dx0, W, dxbar, cstart, cstart, cstart);
-                                thetaScale(n, dxbar, THETA[icone], false, false, cstart);//dxbar
+                                // We've already got dzbar and dxbar, no need to repeat
+                                //    Wm1trans(n, dz0, W, dzbar, cstart, cstart, cstart);
+                                //    thetaScale(n, dzbar, THETA[icone], true, false, cstart);//dzbar
+                                //    Wtrans(n, dx0, W, dxbar, cstart, cstart, cstart);
+                                //    thetaScale(n, dxbar, THETA[icone], false, false, cstart);//dxbar
                                 applyX(n, dxbar, dzbar, w1, cstart, cstart, x.Length + cstart);//dxbardzbar
                                 BlasLike.dsubvec(n, w1, w1, w1, cstart, x.Length + cstart, cstart);
                             }
-                            BlasLike.dsubvec(n, w1, dxWzbarxbarm1, w1, cstart, 0, cstart);
+                            BlasLike.dsubvec(n, w1, dxzbar, w1, cstart, 0, cstart);
                             applyXm1(n, xbar, w1, w1, cstart, cstart, x.Length + cstart);//over xbar
 
                             Wtrans(n, w1, W, dz, x.Length + cstart, cstart, cstart);//times W
@@ -836,7 +832,7 @@ namespace InteriorPoint
                         {
                             W2[i] = aob(z[i], x[i]);
                             W[i] = Math.Sqrt(W2[i]);
-                            THETA[icone] = -1e4;
+                            THETA[icone] = 1;
                             xbar[i] = x[i] * W[i];
                             zbar[i] = z[i] / W[i];
                             rmu[i] = mu - xbar[i] * zbar[i];
@@ -920,10 +916,10 @@ namespace InteriorPoint
                         }
                         double wcheck = BlasLike.ddotvec(n, W, W, cstart, cstart);
                         if (double.IsNaN(wcheck)) Console.WriteLine("BAD W");
-                        Wtrans(n, x, W, xbar, cstart, cstart, cstart);
+                        Wtrans(n, x, W, xbar, cstart, cstart, cstart); //xbar=thetaW.x
                         thetaScale(n, xbar, THETA[icone], false, false, cstart);
-                        Wm1transR(n, z, W, zbar, cstart, cstart, cstart);
-                        thetaScale(n, zbar, THETA[icone], true, false, cstart);
+                        Wm1trans(n, z, W, zbar, cstart, cstart, cstart);//z=(thetaW)(thetaW)x
+                        thetaScale(n, zbar, THETA[icone], true, false, cstart);//zbar=(Wtheta)m1.z=xbar
                         Tmulvec(n, xbar, cstart);//Tmulvec does nothing for SOCP, needed for SOCPR
                         Tmulvec(n, zbar, cstart);
                         applyX(n, xbar, zbar, rmu, cstart, cstart, cstart);
@@ -1107,6 +1103,7 @@ namespace InteriorPoint
             opt.MuResidual();
             var rp0 = norm(opt.rp);
             var rd0 = norm(opt.rd);
+            rp0 = rp0 == 0 ? 1 : rp0;
             rd0 = rd0 == 0 ? 1 : rd0;
             var rp1 = rp0;
             var rd1 = rd0;
@@ -1121,9 +1118,9 @@ namespace InteriorPoint
                 rp1 = norm(opt.rp) / rp0;
                 rd1 = norm(opt.rd) / rd0;
                 comp1 = opt.Complementarity() / comp0;
-                if (rp1 < BlasLike.lm_eps && rd1 < BlasLike.lm_eps && comp1 < BlasLike.lm_eps) break;
+                if (rp1 < BlasLike.lm_rooteps /*&& rd1 < BlasLike.lm_rooteps*/ && comp1 < BlasLike.lm_rooteps) break;
                 if (i > opt.maxiter) break;
-                opt.SolvePrimary();
+                opt.SolvePrimaryDual();
                 BlasLike.dcopyvec(n, opt.dx, dxold);
                 BlasLike.dcopyvec(n, opt.dz, dzold);
                 BlasLike.dcopyvec(m, opt.dy, dyold);
@@ -1136,7 +1133,7 @@ namespace InteriorPoint
                 opt.dtau0 = alpha1 * opt.dtau;
                 opt.dkappa0 = alpha1 * opt.dkappa;
                 gamma = opt.gfunc(alpha1);
-                opt.SolvePrimary(gamma, true);
+                opt.SolvePrimaryDual(gamma, true);
                 opt.MaximumStep(gamma);
                 alpha2 = 0.99 * opt.Lowest();
                 if (alpha1 > alpha2) opt.update(dxold, dyold, dzold, dtauold, dkappaold, alpha1);
@@ -1304,12 +1301,19 @@ namespace InteriorPoint
                 WA[ncm1 + WAStart] = wc + w[ncm1 + wstart] * A[ncm1 + Astart];
             }
         }
-        void Wm1transR(int ncone, double[] A, double[] w, double[] WA, int Astart = 0, int wstart = 0, int WAStart = 0)
+        void Wm1trans(int ncone, double[] A, double[] w, double[] WA, int Astart = 0, int wstart = 0, int WAStart = 0)
         {
-            Qmulvec(ncone, A, wstart);//A is changed to QA
-            Wtrans(ncone, A, w, WA, 0, wstart, WAStart); //WQA
-            Qmulvec(ncone, WA, wstart);// QWQA = W-1A since QWQ = inverse(W)
-            Qmulvec(ncone, A, wstart);//Change QA back to A, since QQ=I (avoid having to copy A at start)
+            Qmulvec(ncone, A, Astart);//A is changed to QA
+            Wtrans(ncone, A, w, WA, Astart, wstart, WAStart); //WQA
+            Qmulvec(ncone, WA, WAStart);// QWQA = W-1A since QWQ = inverse(W)
+            Qmulvec(ncone, A, Astart);//Change QA back to A, since QQ=I (avoid having to copy A at start)
+        }
+        void W2m1trans(int ncone, double[] A, double[] w, double[] WA, int Astart = 0, int wstart = 0, int WAStart = 0)
+        {
+            Qmulvec(ncone, A, Astart);//A is changed to QA
+            W2trans(ncone, A, w, WA, Astart, wstart, WAStart); //WWQA
+            Qmulvec(ncone, WA, WAStart);// QWWQA = WW-1A since QWWQ = inverse(WW)
+            Qmulvec(ncone, A, Astart);//Change QA back to A, since QQ=I (avoid having to copy A at start)
         }
         void WtransR(int ncone, double[] A, double[] w, double[] WA, int Astart = 0, int wstart = 0, int WAStart = 0)
         {

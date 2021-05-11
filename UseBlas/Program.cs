@@ -945,8 +945,8 @@ namespace UseBlas
                 int n = 12;
                 var m = 1;
                 var x = new double[n];
-                double[] b = { 1e-2 };
-                double[] c = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
+                double[] b = { 0.5};
+                double[] c = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0 };
                 double[] A = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
 
                 int[] cone = { n };
@@ -963,6 +963,7 @@ namespace UseBlas
                 foreach (var cc in implied) Console.WriteLine($"Constraint value {cc}");
                 var cx = BlasLike.ddotvec(c.Length, c, truex);
                 Console.WriteLine($"Linear {cx}");
+                Console.WriteLine($"SOCP check {Math.Sqrt(BlasLike.ddotvec(x.Length-1,x,x))} {x[x.Length-1]}");
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
