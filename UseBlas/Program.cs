@@ -945,7 +945,7 @@ namespace UseBlas
                 int n = 12;
                 var m = 1;
                 var x = new double[n];
-                double[] b = { 0.5};
+                double[] b = { 1};
                 double[] c = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0 };
                 double[] A = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
 
@@ -955,7 +955,7 @@ namespace UseBlas
                 int[] typecone = { (int)InteriorPoint.conetype.SOCP };
 
                 Factorise.dmx_transpose(n, m, A, A);
-                var back = InteriorPoint.Optimise.Opt(nvar, m, x, A, b, c, 0, null, "SOCP", cone, typecone, true);
+                var back = InteriorPoint.Optimise.Opt(nvar, m, x, A, b, c, 0, null, "SOCP", cone, typecone, false);
                 Console.WriteLine($"{back}");
                 var implied = new double[m];
                 var truex = (double[])x.Clone();

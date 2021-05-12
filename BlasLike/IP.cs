@@ -7,6 +7,7 @@ namespace InteriorPoint
     public enum conetype { QP, SOCP, SOCPR };
     public class Optimise
     {
+        double conv = BlasLike.lm_rooteps*1e-1;
         string optMode = "QP";
         int numberOfCones = 0;
         int[] cone = null;
@@ -533,14 +534,10 @@ namespace InteriorPoint
                                 }
                             }
                             rmu[n - 1 + cstart] -= g1 * mu;
-                            applyXm1(n, xbar, rmu, lhs, cstart, cstart, x.Length + cstart);
+                            applyXm1(n, x, rmu, lhs, cstart, cstart, cstart);
                             rmu[n - 1 + cstart] += g1 * mu;
-                            Wtrans(n, lhs, W, w1, x.Length + cstart, cstart, cstart);
-                            thetaScale(n, w1, THETA[icone], false, false, cstart);
-                            /*            for (var i = cstart; i < n + cstart; ++i)
-                                                       {
-                                                           w1[i] = rd[i] * g1 - w1[i];
-                                                       }*/
+                            //        Wtrans(n, lhs, W, w1, x.Length + cstart, cstart, cstart);
+                            //        thetaScale(n, w1, THETA[icone], false, false, cstart);
                             BlasLike.daxpyvec(n, -g1, rd, w1, cstart, cstart);
                             BlasLike.dnegvec(n, w1, cstart);
                         }
@@ -572,14 +569,11 @@ namespace InteriorPoint
                             applyX(n, dx0, dz0, lhs, cstart, cstart, x.Length + cstart);
                             BlasLike.dsubvec(n, lhs, lhs, lhs, cstart, x.Length + cstart, cstart);
 
-                            applyXm1(n, xbar, lhs, lhs, cstart, cstart, x.Length + cstart);
+                            applyXm1(n, x, lhs, lhs, cstart, cstart, x.Length + cstart);
                             rmu[n - 1 + cstart] += g1 * mu;
-                            Wtrans(n, lhs, W, w1, x.Length + cstart, cstart, cstart);
-                            thetaScale(n, w1, THETA[icone], false, false, cstart);
-                            /*                       for (var i = cstart; i < n + cstart; ++i)
-                                                   {
-                                                       w1[i] = rd[i] * g1 - w1[i];
-                                                   }*/
+                            BlasLike.dcopyvec(n, w1, w1, x.Length + cstart, cstart);
+                            //       Wtrans(n, lhs, W, w1, x.Length + cstart, cstart, cstart);
+                            //       thetaScale(n, w1, THETA[icone], false, false, cstart);
                             BlasLike.daxpyvec(n, -g1, rd, w1, cstart, cstart);
                             BlasLike.dnegvec(n, w1, cstart);
                         }
@@ -705,14 +699,8 @@ namespace InteriorPoint
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {
-                            double[] dxzbar = new double[n];
-                            //                            Wtrans(n, dx, W, w1, cstart, cstart, x.Length + cstart);
-                            //                            thetaScale(n, w1, THETA[icone], false, false, x.Length + cstart);
-                            //                            applyX(n, zbar, w1, dxWzbarxbarm1, cstart, x.Length + cstart, 0);
-                            applyX(n, dx, zbar, dxzbar, cstart, cstart, 0);
-                            Wtrans(n, dxzbar, W, w1, 0, cstart, cstart);//times W
-                            thetaScale(n, w1, THETA[icone], false, false, cstart);
-                            BlasLike.dcopyvec(n, w1, dxzbar, cstart, 0);
+                            double[] dxz = new double[n];
+                            applyX(n, dx, z, dxz, cstart, cstart, 0);
 
                             rmu[n - 1 + cstart] -= g1 * mu;
                             BlasLike.dcopyvec(n, rmu, w1, cstart, cstart);
@@ -722,11 +710,11 @@ namespace InteriorPoint
                                 applyX(n, dx0, dz0, w1, cstart, cstart, x.Length + cstart);//dxbardzbar
                                 BlasLike.dsubvec(n, w1, w1, w1, cstart, x.Length + cstart, cstart);
                             }
-                            BlasLike.dsubvec(n, w1, dxzbar, w1, cstart, 0, cstart);
-                            applyXm1(n, xbar, w1, w1, cstart, cstart, x.Length + cstart);//over xbar
+                            BlasLike.dsubvec(n, w1, dxz, w1, cstart, 0, cstart);
+                            applyXm1(n, x, w1, dz, cstart, cstart, cstart);//over xbar
 
-                            Wtrans(n, w1, W, dz, x.Length + cstart, cstart, cstart);//times W
-                            thetaScale(n, dz, THETA[icone], false, false, cstart);
+                            //    Wtrans(n, w1, W, dz, x.Length + cstart, cstart, cstart);//times W
+                            //    thetaScale(n, dz, THETA[icone], false, false, cstart);
                         }
                     }
                     dkappa = (hrmu - g1 * mu - kappa * dtau - (corrector ? dtau0 * dkappa0 : 0)) / tau;
@@ -766,14 +754,8 @@ namespace InteriorPoint
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {
-                            double[] dxzbar = new double[n];
-                            //                            Wtrans(n, dx, W, w1, cstart, cstart, x.Length + cstart);
-                            //                            thetaScale(n, w1, THETA[icone], false, false, x.Length + cstart);
-                            //                            applyX(n, zbar, w1, dxWzbarxbarm1, cstart, x.Length + cstart, 0);
-                            applyX(n, dx, zbar, dxzbar, cstart, cstart, 0);
-                            Wtrans(n, dxzbar, W, w1, 0, cstart, cstart);//times W
-                            thetaScale(n, w1, THETA[icone], false, false, cstart);
-                            BlasLike.dcopyvec(n, w1, dxzbar, cstart, 0);
+                            double[] dxz = new double[n];
+                            applyX(n, dx, z, dxz, cstart, cstart, 0);
 
                             rmu[n - 1 + cstart] -= g1 * mu;
                             BlasLike.dcopyvec(n, rmu, w1, cstart, cstart);
@@ -783,11 +765,11 @@ namespace InteriorPoint
                                 applyX(n, dx0, dz0, w1, cstart, cstart, x.Length + cstart);//dxbardzbar
                                 BlasLike.dsubvec(n, w1, w1, w1, cstart, x.Length + cstart, cstart);
                             }
-                            BlasLike.dsubvec(n, w1, dxzbar, w1, cstart, 0, cstart);
-                            applyXm1(n, xbar, w1, w1, cstart, cstart, x.Length + cstart);//over xbar
+                            BlasLike.dsubvec(n, w1, dxz, w1, cstart, 0, cstart);
+                            applyXm1(n, x, w1, dz, cstart, cstart, cstart);//over xbar
 
-                            Wtrans(n, w1, W, dz, x.Length + cstart, cstart, cstart);//times W
-                            thetaScale(n, dz, THETA[icone], false, false, cstart);
+                            //    Wtrans(n, w1, W, dz, x.Length + cstart, cstart, cstart);//times W
+                            //    thetaScale(n, dz, THETA[icone], false, false, cstart);
                         }
                     }
                 }
@@ -1108,7 +1090,7 @@ namespace InteriorPoint
                 rp1 = norm(opt.rp) / rp0;
                 rd1 = norm(opt.rd) / rd0;
                 comp1 = opt.Complementarity() / comp0;
-                if (rp1 < BlasLike.lm_rooteps && rd1 < BlasLike.lm_rooteps && comp1 < BlasLike.lm_rooteps) break;
+                if (rp1 < opt.conv && rd1 < opt.conv && comp1 < opt.conv) break;
                 if (i > opt.maxiter) break;
                 opt.SolvePrimaryDual();
                 BlasLike.dcopyvec(n, opt.dx, dxold);
