@@ -565,14 +565,14 @@ namespace InteriorPoint
                             rmu[n - 1 + cstart] -= g1 * mu;
                             BlasLike.dcopyvec(n, rmu, lhs, cstart, cstart);
 
-                            Wm1trans(n, dz0, W, dzbar, cstart, cstart, cstart);
-                            thetaScale(n, dzbar, THETA[icone], true, false, cstart);
-                            Wtrans(n, dx0, W, dxbar, cstart, cstart, cstart);
-                            thetaScale(n, dxbar, THETA[icone], false, false, cstart);
-                            applyX(n, dxbar, dzbar, lhs, cstart, cstart, x.Length + cstart);
+                            /*                Wm1trans(n, dz0, W, dzbar, cstart, cstart, cstart);
+                                            thetaScale(n, dzbar, THETA[icone], true, false, cstart);
+                                            Wtrans(n, dx0, W, dxbar, cstart, cstart, cstart);
+                                            thetaScale(n, dxbar, THETA[icone], false, false, cstart);*/
+                            applyX(n, dx0, dz0, lhs, cstart, cstart, x.Length + cstart);
                             BlasLike.dsubvec(n, lhs, lhs, lhs, cstart, x.Length + cstart, cstart);
 
-                            applyXm1(n, xbar, lhs, lhs, cstart, x.Length + cstart, x.Length + cstart);
+                            applyXm1(n, xbar, lhs, lhs, cstart, cstart, x.Length + cstart);
                             rmu[n - 1 + cstart] += g1 * mu;
                             Wtrans(n, lhs, W, w1, x.Length + cstart, cstart, cstart);
                             thetaScale(n, w1, THETA[icone], false, false, cstart);
@@ -719,12 +719,7 @@ namespace InteriorPoint
                             rmu[n - 1 + cstart] += g1 * mu;
                             if (corrector)
                             {
-                                // We've already got dzbar and dxbar, no need to repeat
-                                //    Wm1trans(n, dz0, W, dzbar, cstart, cstart, cstart);
-                                //    thetaScale(n, dzbar, THETA[icone], true, false, cstart);//dzbar
-                                //    Wtrans(n, dx0, W, dxbar, cstart, cstart, cstart);
-                                //    thetaScale(n, dxbar, THETA[icone], false, false, cstart);//dxbar
-                                applyX(n, dxbar, dzbar, w1, cstart, cstart, x.Length + cstart);//dxbardzbar
+                                applyX(n, dx0, dz0, w1, cstart, cstart, x.Length + cstart);//dxbardzbar
                                 BlasLike.dsubvec(n, w1, w1, w1, cstart, x.Length + cstart, cstart);
                             }
                             BlasLike.dsubvec(n, w1, dxzbar, w1, cstart, 0, cstart);
@@ -785,12 +780,7 @@ namespace InteriorPoint
                             rmu[n - 1 + cstart] += g1 * mu;
                             if (corrector)
                             {
-                                // We've already got dzbar and dxbar, no need to repeat
-                                //    Wm1trans(n, dz0, W, dzbar, cstart, cstart, cstart);
-                                //    thetaScale(n, dzbar, THETA[icone], true, false, cstart);//dzbar
-                                //    Wtrans(n, dx0, W, dxbar, cstart, cstart, cstart);
-                                //    thetaScale(n, dxbar, THETA[icone], false, false, cstart);//dxbar
-                                applyX(n, dxbar, dzbar, w1, cstart, cstart, x.Length + cstart);//dxbardzbar
+                                applyX(n, dx0, dz0, w1, cstart, cstart, x.Length + cstart);//dxbardzbar
                                 BlasLike.dsubvec(n, w1, w1, w1, cstart, x.Length + cstart, cstart);
                             }
                             BlasLike.dsubvec(n, w1, dxzbar, w1, cstart, 0, cstart);
@@ -1118,7 +1108,7 @@ namespace InteriorPoint
                 rp1 = norm(opt.rp) / rp0;
                 rd1 = norm(opt.rd) / rd0;
                 comp1 = opt.Complementarity() / comp0;
-                if (rp1 < BlasLike.lm_rooteps /*&& rd1 < BlasLike.lm_rooteps*/ && comp1 < BlasLike.lm_rooteps) break;
+                if (rp1 < BlasLike.lm_rooteps && rd1 < BlasLike.lm_rooteps && comp1 < BlasLike.lm_rooteps) break;
                 if (i > opt.maxiter) break;
                 opt.SolvePrimaryDual();
                 BlasLike.dcopyvec(n, opt.dx, dxold);
