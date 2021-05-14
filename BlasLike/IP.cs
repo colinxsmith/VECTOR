@@ -7,6 +7,7 @@ namespace InteriorPoint
     public enum conetype { QP, SOCP, SOCPR };
     public class Optimise
     {
+        bool useScaling = true;
         double conv = BlasLike.lm_eps;
         string optMode = "QP";
         int numberOfCones = 0;
@@ -523,8 +524,15 @@ namespace InteriorPoint
                             for (int i = 0, ij = 0; i < m; ++i, ij += i)
                             {
                                 BlasLike.dcopy(n, A, m, lhs, 1, i + cstart * m, x.Length + cstart);
-                                W2m1trans(n, lhs, W, lhs, x.Length + cstart, cstart, cstart);
-                                thetaScale(n, lhs, THETA[icone], true, true, cstart);
+                                if (useScaling)
+                                {
+                                    W2m1trans(n, lhs, W, lhs, x.Length + cstart, cstart, cstart);
+                                    thetaScale(n, lhs, THETA[icone], true, true, cstart);
+                                }
+                                else
+                                {
+                                    applyX(n, W, lhs, lhs, cstart, x.Length + cstart, cstart);
+                                }
                                 for (var k = cstart; k < n + cstart; ++k)
                                 {
                                     if (lhs[k] != 0.0)
@@ -586,9 +594,17 @@ namespace InteriorPoint
                     }
                     else if (typecone[icone] == (int)conetype.SOCP)
                     {
-                        W2m1trans(n, w1, W, w1, cstart, cstart, x.Length + cstart);
-                        BlasLike.dcopyvec(n, w1, w1, x.Length + cstart, cstart);
-                        thetaScale(n, w1, THETA[icone], true, true, cstart);
+                        if (useScaling)
+                        {
+                            W2m1trans(n, w1, W, w1, cstart, cstart, x.Length + cstart);
+                            BlasLike.dcopyvec(n, w1, w1, x.Length + cstart, cstart);
+                            thetaScale(n, w1, THETA[icone], true, true, cstart);
+                        }
+                        else
+                        {
+                            applyX(n, W, w1, w1, cstart, cstart, x.Length + cstart);
+                            BlasLike.dcopyvec(n, w1, w1, x.Length + cstart, cstart);
+                        }
                     }
                 }
                 Factorise.dmxmulv(m, n, A, w1, dy);
@@ -615,9 +631,17 @@ namespace InteriorPoint
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {
-                            W2m1trans(n, cx, W, w1, cstart, cstart, x.Length + cstart);
-                            BlasLike.dcopyvec(n, w1, cx, x.Length + cstart, cstart);
-                            thetaScale(n, cx, THETA[icone], true, true, cstart);
+                            if (useScaling)
+                            {
+                                W2m1trans(n, cx, W, w1, cstart, cstart, x.Length + cstart);
+                                BlasLike.dcopyvec(n, w1, cx, x.Length + cstart, cstart);
+                                thetaScale(n, cx, THETA[icone], true, true, cstart);
+                            }
+                            else
+                            {
+                                applyX(n, W, cx, w1, cstart, cstart, x.Length + cstart);
+                                BlasLike.dcopyvec(n, w1, cx, x.Length + cstart, cstart);
+                            }
                         }
                     }
                     Factorise.dmxmulv(m, n, A, cx, db);
@@ -642,9 +666,17 @@ namespace InteriorPoint
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {
-                            W2m1trans(n, dx, W, w1, cstart, cstart, x.Length + cstart);
-                            BlasLike.dcopyvec(n, w1, dx, x.Length + cstart, cstart);
-                            thetaScale(n, dx, THETA[icone], true, true, cstart);
+                            if (useScaling)
+                            {
+                                W2m1trans(n, dx, W, w1, cstart, cstart, x.Length + cstart);
+                                BlasLike.dcopyvec(n, w1, dx, x.Length + cstart, cstart);
+                                thetaScale(n, dx, THETA[icone], true, true, cstart);
+                            }
+                            else
+                            {
+                                applyX(n, W, dx, w1, cstart, cstart, x.Length + cstart);
+                                BlasLike.dcopyvec(n, w1, dx, x.Length + cstart, cstart);
+                            }
                         }
                     }
                     BlasLike.dsubvec(n, dx, w1, dx);
@@ -666,9 +698,17 @@ namespace InteriorPoint
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {
-                            W2m1trans(n, dc, W, w1, cstart, cstart, x.Length + cstart);
-                            BlasLike.dcopyvec(n, w1, dc, x.Length + cstart, cstart);
-                            thetaScale(n, dc, THETA[icone], true, true, cstart);
+                            if (useScaling)
+                            {
+                                W2m1trans(n, dc, W, w1, cstart, cstart, x.Length + cstart);
+                                BlasLike.dcopyvec(n, w1, dc, x.Length + cstart, cstart);
+                                thetaScale(n, dc, THETA[icone], true, true, cstart);
+                            }
+                            else
+                            {
+                                applyX(n, W, dc, w1, cstart, cstart, x.Length + cstart);
+                                BlasLike.dcopyvec(n, w1, dc, x.Length + cstart, cstart);
+                            }
                         }
                     }
                     BlasLike.dsubvec(n, dc, cx, dc);
@@ -725,9 +765,17 @@ namespace InteriorPoint
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {
-                            W2m1trans(n, dx, W, w1, cstart, cstart, x.Length + cstart);
-                            BlasLike.dcopyvec(n, w1, dx, x.Length + cstart, cstart);
-                            thetaScale(n, dx, THETA[icone], true, true, cstart);
+                            if (useScaling)
+                            {
+                                W2m1trans(n, dx, W, w1, cstart, cstart, x.Length + cstart);
+                                BlasLike.dcopyvec(n, w1, dx, x.Length + cstart, cstart);
+                                thetaScale(n, dx, THETA[icone], true, true, cstart);
+                            }
+                            else
+                            {
+                                applyX(n, W, dx, w1, cstart, cstart, x.Length + cstart);
+                                BlasLike.dcopyvec(n, w1, dx, x.Length + cstart, cstart);
+                            }
                         }
                     }
                     BlasLike.dsubvec(n, dx, w1, dx);
@@ -794,90 +842,113 @@ namespace InteriorPoint
                     }
                     else if (typecone[icone] == (int)conetype.SOCP)
                     {
-                        var xQx = 0.0;
-                        var zQz = 0.0;
-                        if (n == 1) THETA[icone] = Math.Sqrt(aob(z[cstart], x[cstart]));
-                        else
+                        if (useScaling)
                         {
-                            xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
-                            if (xQx <= 0)
-                            {
-                                if (x[n - 1 + cstart] > BlasLike.lm_rooteps)
-                                {
-                                    BlasLike.dscalvec(n - 1, .95 * x[n - 1 + cstart] / Math.Sqrt(x[n - 1 + cstart] * x[n - 1 + cstart] - xQx), x);
-                                }
-                                else
-                                {
-                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, x, cstart);
-                                    x[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
-                                    xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
-                                }
-                            }
-                            zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
-                            if (zQz <= 0)
-                            {
-                                if (z[n - 1 + cstart] > BlasLike.lm_rooteps)
-                                {
-                                    BlasLike.dscalvec(n - 1, .95 * z[n - 1 + cstart] / Math.Sqrt(z[n - 1 + cstart] * z[n - 1 + cstart] - zQz), z);
-                                }
-                                else
-                                {
-                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, z, cstart);
-                                    z[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
-                                    zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
-                                }
-                            }
-                            THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
-                            if (double.IsNaN(THETA[icone]))
-                            {
-                                if (double.IsNaN(zQz))
-                                {
-                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, z, cstart);
-                                    z[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
-                                    zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
-                                }
-                                if (double.IsNaN(xQx))
-                                {
-                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, x, cstart);
-                                    x[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
-                                    xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
-                                }
-                                THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
-                            }
-
-                        }
-
-                        if (!double.IsNaN(THETA[icone]) && THETA[icone] >= 0)
-                        {
-                            if (n == 1) W[cstart] = Math.Sqrt(aob(z[cstart], x[cstart]));
+                            var xQx = 0.0;
+                            var zQz = 0.0;
+                            if (n == 1) THETA[icone] = Math.Sqrt(aob(z[cstart], x[cstart]));
                             else
                             {
-                                double zx = BlasLike.ddotvec(n, z, x, cstart, cstart);
-                                double bot = Math.Sqrt((zx + Math.Sqrt(xQx * zQz)) * 2.0);
-                                double z1 = THETA[icone] / bot;
-                                double z2 = THETA[icone] * bot;
-                                if (THETA[icone] == BlasLike.lm_eps) { z1 = 1.0; z2 = BlasLike.lm_eps; }
-                                for (var i = cstart; i < n - 1 + cstart; ++i)
+                                xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
+                                if (xQx <= BlasLike.lm_eps)
                                 {
-                                    W[i] = -z1 * x[i] + z[i] / z2;
+                                    if (x[n - 1 + cstart] > BlasLike.lm_rooteps)
+                                    {
+                                        BlasLike.dscalvec(n - 1, .95 * x[n - 1 + cstart] / Math.Sqrt(x[n - 1 + cstart] * x[n - 1 + cstart] - xQx), x);
+                                        xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
+                                    }
+                                    else
+                                    {
+                                        BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, x, cstart);
+                                        x[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                        xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
+                                    }
                                 }
-                                W[n - 1 + cstart] = z1 * x[n - 1 + cstart] + z[n - 1 + cstart] / z2;
+                                zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
+                                if (zQz <= BlasLike.lm_eps)
+                                {
+                                    if (z[n - 1 + cstart] > BlasLike.lm_rooteps)
+                                    {
+                                        BlasLike.dscalvec(n - 1, .95 * z[n - 1 + cstart] / Math.Sqrt(z[n - 1 + cstart] * z[n - 1 + cstart] - zQz), z);
+                                        zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
+                                    }
+                                    else
+                                    {
+                                        BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, z, cstart);
+                                        z[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                        zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
+                                    }
+                                }
+                                THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
+                                if (double.IsNaN(THETA[icone]))
+                                {
+                                    if (double.IsNaN(zQz))
+                                    {
+                                        BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, z, cstart);
+                                        z[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                        zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
+                                    }
+                                    if (double.IsNaN(xQx))
+                                    {
+                                        BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, x, cstart);
+                                        x[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                        xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
+                                    }
+                                    THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
+                                }
+
                             }
+
+                            if (!double.IsNaN(THETA[icone]) && THETA[icone] >= BlasLike.lm_eps)
+                            {
+                                if (n == 1) W[cstart] = Math.Sqrt(aob(z[cstart], x[cstart]));
+                                else
+                                {
+                                    double zx = BlasLike.ddotvec(n, z, x, cstart, cstart);
+                                    double bot = Math.Sqrt((zx + Math.Sqrt(xQx * zQz)) * 2.0);
+                                    double z1 = THETA[icone] / bot;
+                                    double z2 = THETA[icone] * bot;
+                                    if (THETA[icone] == BlasLike.lm_eps) { z1 = 1.0; z2 = BlasLike.lm_eps; }
+                                    for (var i = cstart; i < n - 1 + cstart; ++i)
+                                    {
+                                        W[i] = -z1 * x[i] + z[i] / z2;
+                                    }
+                                    W[n - 1 + cstart] = z1 * x[n - 1 + cstart] + z[n - 1 + cstart] / z2;
+                                }
+                            }
+                            else
+                            {
+                                Debug.Assert(false);
+                                //DO something to stop main loop
+                            }
+                            double wcheck = BlasLike.ddotvec(n, W, W, cstart, cstart);
+                            if (double.IsNaN(wcheck))
+                            {
+                                Console.WriteLine("BAD W"); Debug.Assert(false);
+                            }
+                            Wtrans(n, x, W, xbar, cstart, cstart, cstart); //xbar=thetaW.x
+                            thetaScale(n, xbar, THETA[icone], false, false, cstart);
+                            Wm1trans(n, z, W, zbar, cstart, cstart, cstart);//z=(thetaW)(thetaW)x
+                            thetaScale(n, zbar, THETA[icone], true, false, cstart);//zbar=(Wtheta)m1.z=xbar
+                            Tmulvec(n, xbar, cstart);//Tmulvec does nothing for SOCP, needed for SOCPR
+                            Tmulvec(n, zbar, cstart);
+                            applyX(n, xbar, zbar, rmu, cstart, cstart, cstart);
+                            Tmulvec(n, rmu, cstart);
                         }
                         else
                         {
-                            //DO something to stop main loop
+                            var xoz = W;
+                            xbar = null;
+                            zbar = null;
+                            W2 = null;
+                            Tmulvec(n, x, cstart);
+                            Tmulvec(n, z, cstart);
+                            applyX(n, x, z, rmu, cstart, cstart, cstart);
+                            Tmulvec(n, x, cstart);
+                            Tmulvec(n, z, cstart);
+                            Tmulvec(n, rmu, cstart);
+                            applyXm1(n, z, x, xoz, cstart, cstart, cstart);
                         }
-                        double wcheck = BlasLike.ddotvec(n, W, W, cstart, cstart);
-                        if (double.IsNaN(wcheck)) Console.WriteLine("BAD W");
-                        Wtrans(n, x, W, xbar, cstart, cstart, cstart); //xbar=thetaW.x
-                        thetaScale(n, xbar, THETA[icone], false, false, cstart);
-                        Wm1trans(n, z, W, zbar, cstart, cstart, cstart);//z=(thetaW)(thetaW)x
-                        thetaScale(n, zbar, THETA[icone], true, false, cstart);//zbar=(Wtheta)m1.z=xbar
-                        Tmulvec(n, xbar, cstart);//Tmulvec does nothing for SOCP, needed for SOCPR
-                        Tmulvec(n, zbar, cstart);
-                        applyX(n, xbar, zbar, rmu, cstart, cstart, cstart);
-                        Tmulvec(n, rmu, cstart);
                         BlasLike.dnegvec(n, rmu, cstart);
                         rmu[n - 1 + cstart] += mu;
                     }
@@ -1075,7 +1146,7 @@ namespace InteriorPoint
                 comp1 = opt.Complementarity() / comp0;
                 if (rp1 < opt.conv && rd1 < opt.conv && comp1 < opt.conv) break;
                 if (i > opt.maxiter) break;
-                if (i > 2 && opt.optMode == "SOCP")
+                if (opt.useScaling && i > 2 && opt.optMode == "SOCP")
                 {
                     BlasLike.dsubvec(n, opt.xbar, opt.zbar, diff);
                     double test = BlasLike.ddotvec(n, diff, diff);
