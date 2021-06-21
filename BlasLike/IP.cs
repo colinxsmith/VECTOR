@@ -113,7 +113,7 @@ namespace InteriorPoint
             back = Math.Min(back, ddz);
             return Math.Min(back, dd);
         }
-        void MaximumStep(double gamma = 1.0)
+        void MaximumStep(double gamma = 0)
         {
             if (optMode == "SOCP")
             {
@@ -1183,10 +1183,10 @@ namespace InteriorPoint
                 dkappaold = opt.dkappa;
                 opt.MaximumStep();
                 alpha1 = stepReduce * opt.Lowest();
-                BlasLike.dsccopyvec(opt.n, alpha1, opt.dx, opt.dx0);
-                BlasLike.dsccopyvec(opt.n, alpha1, opt.dz, opt.dz0);
-                opt.dtau0 = alpha1 * opt.dtau;
-                opt.dkappa0 = alpha1 * opt.dkappa;
+                BlasLike.dsccopyvec(opt.n, 1.0, opt.dx, opt.dx0);//was alpha1
+                BlasLike.dsccopyvec(opt.n, 1.0, opt.dz, opt.dz0);//was alpha1
+                opt.dtau0 = 1.0 * opt.dtau;//was alpha1
+                opt.dkappa0 = 1.0 * opt.dkappa;//was alpha1
                 gamma = opt.gfunc(alpha1);
                 opt.SolvePrimaryDual(gamma, true);
                 opt.MaximumStep(gamma);
