@@ -17,22 +17,22 @@ namespace Ordering
         }
     }
     class compare : IComparer<compareitem>
-    {
+    {// I used to think return 0 was correct but got some wrong answers so changed to return 1
         public int Compare(compareitem x, compareitem y)
         {
-            if ((y.x - x.x) > 0 && (y.bad == x.bad)) return 0;//smallest have largest index
+            if ((y.x - x.x) > 0 && (y.bad == x.bad)) return 1;//smallest have largest index
             else if ((y.bad == x.bad)) return -1;
-            else if (y.bad > 0) return 0;
+            else if (y.bad > 0) return 1;
             else return -1;
         }
     }
     class compareAbs : IComparer<compareitem>
-    {
+    {// I used to think return 0 was correct but got some wrong answers so changed to return 1
         public int Compare(compareitem x, compareitem y)
         {
-            if ((Math.Abs(y.x) - Math.Abs(x.x)) > 0 && (y.bad == x.bad)) return 0;//smallest have largest index
+            if ((Math.Abs(y.x) - Math.Abs(x.x)) > 0 && (y.bad == x.bad)) return 1;//smallest have largest index
             else if ((y.bad == x.bad)) return -1;
-            else if (y.bad > 0) return 0;
+            else if (y.bad > 0) return 1;
             else return -1;
         }
     }
@@ -44,7 +44,7 @@ namespace Ordering
             a = b;
             b = k2;
         }
-        public static void getorder(int n, double[] x, int[] order = null, byte[] dropbad = null, double init = 0, byte sign = 1)
+        public static void getorder(int n, double[] x, int[] order = null, byte[] dropbad = null, double init = 0, short sign = 1)
         {
             var cmp = new compare();
             var xx = new compareitem[n];

@@ -65,6 +65,14 @@ namespace InteriorPoint
         double[] M = null;
         double[] dx0 = null;
         double[] dz0 = null;
+        double laststep = 0;
+        double[] lastdx = null;
+        double[] lastdy = null;
+        double[] lastdz = null;
+        double lastdtau;
+        double lastdkappa;
+        double condition;
+        double regularise;
         static double norm(double[] aa) => Math.Sqrt(BlasLike.ddotvec(aa.Length, aa, aa));
         static double square(double a) => a * a;
         double gfunc(double a) => Math.Min(0.5, square(1 - a)) * (1 - a);
@@ -368,6 +376,109 @@ namespace InteriorPoint
                 }
             }
         }
+        void CreateNormalMatrix()
+        {
+            if (optMode == "QP")
+            {
+                BlasLike.dzerovec(M.Length, M);
+                if (usrH)
+                {
+                    var lhs = w1;//Highjack w1 and dy to save reallocation
+                    var res = dy;
+                    HCOPY = (double[])H.Clone();
+                    for (int i = 0, ij = 0; i < nh; ++i, ij += i) HCOPY[i + ij] += aob(z[i], x[i]);
+                    Factorise.Factor(uplo, nh, HCOPY, horder);
+                    for (int con = 0, ij = 0; con < m; ++con, ij += con)
+                    {
+                        BlasLike.dcopy(n, A, m, lhs, 1, con);
+                        Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh);
+                        for (int i = 0; i < (n - nh); ++i) lhs[i + nh] /= aob(z[i + nh], x[i + nh]);
+                        Factorise.dmxmulv(m, n, A, lhs, res);
+                        BlasLike.dcopyvec(con + 1, res, M, 0, ij);
+                    }
+                }
+                else
+                {
+                    for (int i = 0, ij = 0; i < m; ++i, ij += i)
+                    {
+                        for (var k = 0; k < n; ++k)
+                        {
+                            if (A[k * m + i] != 0.0)
+                            {
+                                var xoz = aob(x[k], z[k]);
+                                xoz *= A[k * m + i];
+                                BlasLike.daxpyvec(i + 1, xoz, A, M, k * m, ij);
+                            }
+                        }
+                    }
+                }
+            }
+            else if (optMode == "SOCP")
+            {
+                BlasLike.dzerovec(M.Length, M);
+                var lhs = w1;//Highjack w1 and dy to save reallocation
+                var res = dy;
+                HCOPY = nh > 0 ? (double[])H.Clone() : null;
+                for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                {
+                    var n = cone[icone];
+                    if (typecone[icone] == (int)conetype.QP)
+                    {
+                        if (usrH)
+                        {
+                            for (int i = 0, ij = 0; i < nh; ++i, ij += i) HCOPY[i + ij] += 1.0 * W2[i + cstart];
+                            Factorise.Factor(uplo, nh, HCOPY, horder);
+                            for (int con = 0, ij = 0; con < m; ++con, ij += con)
+                            {
+                                BlasLike.dcopy(n, A, m, lhs, 1, con + cstart * m, cstart);
+                                Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh, 0, 0, cstart);
+                                for (int i = nh + cstart; i < n + cstart; ++i) lhs[i] /= W2[i];
+                                Factorise.dmxmulv(m, n, A, lhs, res, cstart * m, cstart, cstart);
+                                BlasLike.dcopyvec(con + 1, res, M, cstart, ij);
+                            }
+                        }
+                        else
+                        {
+                            for (int i = 0, ij = 0; i < m; ++i, ij += i)
+                            {
+                                for (var k = cstart; k < n + cstart; ++k)
+                                {
+                                    if (A[k * m + i] != 0.0)
+                                    {
+                                        var xoz = 1.0 / W2[k];
+                                        xoz *= A[k * m + i];
+                                        BlasLike.daxpyvec(i + 1, xoz, A, M, k * m, ij);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    else if (typecone[icone] == (int)conetype.SOCP)
+                    {
+                        for (int i = 0, ij = 0; i < m; ++i, ij += i)
+                        {
+                            BlasLike.dcopy(n, A, m, lhs, 1, i + cstart * m, x.Length + cstart);
+                            if (useScaling)
+                            {
+                                W2m1trans(n, lhs, W, lhs, x.Length + cstart, cstart, cstart);
+                                thetaScale(n, lhs, THETA[icone], true, true, cstart);
+                            }
+                            else
+                            {
+                                applyX(n, W, lhs, lhs, cstart, x.Length + cstart, cstart);
+                            }
+                            for (var k = cstart; k < n + cstart; ++k)
+                            {
+                                if (lhs[k] != 0.0)
+                                {
+                                    BlasLike.daxpyvec(i + 1, lhs[k], A, M, k * m, ij);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
         void SolvePrimaryDual(double gamma = 0.0, bool corrector = false)
         {
             if (optMode == "QP")
@@ -375,38 +486,6 @@ namespace InteriorPoint
                 var g1 = 1.0 - gamma;
                 if (!corrector)
                 {
-                    BlasLike.dzerovec(M.Length, M);
-                    if (usrH)
-                    {
-                        var lhs = w1;//Highjack w1 and dy to save reallocation
-                        var res = dy;
-                        HCOPY = (double[])H.Clone();
-                        for (int i = 0, ij = 0; i < nh; ++i, ij += i) HCOPY[i + ij] += aob(z[i], x[i]);
-                        Factorise.Factor(uplo, nh, HCOPY, horder);
-                        for (int con = 0, ij = 0; con < m; ++con, ij += con)
-                        {
-                            BlasLike.dcopy(n, A, m, lhs, 1, con);
-                            Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh);
-                            for (int i = 0; i < (n - nh); ++i) lhs[i + nh] /= aob(z[i + nh], x[i + nh]);
-                            Factorise.dmxmulv(m, n, A, lhs, res);
-                            BlasLike.dcopyvec(con + 1, res, M, 0, ij);
-                        }
-                    }
-                    else
-                    {
-                        for (int i = 0, ij = 0; i < m; ++i, ij += i)
-                        {
-                            for (var k = 0; k < n; ++k)
-                            {
-                                if (A[k * m + i] != 0.0)
-                                {
-                                    var xoz = aob(x[k], z[k]);
-                                    xoz *= A[k * m + i];
-                                    BlasLike.daxpyvec(i + 1, xoz, A, M, k * m, ij);
-                                }
-                            }
-                        }
-                    }
                     if (m != 1) Factorise.Factor(uplo, m, M, order);
                     for (var i = 0; i < n; ++i) w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu, x[i]);
                 }
@@ -479,43 +558,13 @@ namespace InteriorPoint
                 var g1 = 1.0 - gamma;
                 if (!corrector)
                 {
-                    BlasLike.dzerovec(M.Length, M);
                     var lhs = w1;//Highjack w1 and dy to save reallocation
                     var res = dy;
-                    HCOPY = nh > 0 ? (double[])H.Clone() : null;
                     for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
                     {
                         var n = cone[icone];
                         if (typecone[icone] == (int)conetype.QP)
                         {
-                            if (usrH)
-                            {
-                                for (int i = 0, ij = 0; i < nh; ++i, ij += i) HCOPY[i + ij] += 1.0 * W2[i + cstart];
-                                Factorise.Factor(uplo, nh, HCOPY, horder);
-                                for (int con = 0, ij = 0; con < m; ++con, ij += con)
-                                {
-                                    BlasLike.dcopy(n, A, m, lhs, 1, con + cstart * m, cstart);
-                                    Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh, 0, 0, cstart);
-                                    for (int i = nh + cstart; i < n + cstart; ++i) lhs[i] /= W2[i];
-                                    Factorise.dmxmulv(m, n, A, lhs, res, cstart * m, cstart, cstart);
-                                    BlasLike.dcopyvec(con + 1, res, M, cstart, ij);
-                                }
-                            }
-                            else
-                            {
-                                for (int i = 0, ij = 0; i < m; ++i, ij += i)
-                                {
-                                    for (var k = cstart; k < n + cstart; ++k)
-                                    {
-                                        if (A[k * m + i] != 0.0)
-                                        {
-                                            var xoz = 1.0 / W2[k];
-                                            xoz *= A[k * m + i];
-                                            BlasLike.daxpyvec(i + 1, xoz, A, M, k * m, ij);
-                                        }
-                                    }
-                                }
-                            }
                             for (var i = cstart; i < n + cstart; ++i)
                             {
                                 w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu, xbar[i]) * W[i];
@@ -523,26 +572,6 @@ namespace InteriorPoint
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {
-                            for (int i = 0, ij = 0; i < m; ++i, ij += i)
-                            {
-                                BlasLike.dcopy(n, A, m, lhs, 1, i + cstart * m, x.Length + cstart);
-                                if (useScaling)
-                                {
-                                    W2m1trans(n, lhs, W, lhs, x.Length + cstart, cstart, cstart);
-                                    thetaScale(n, lhs, THETA[icone], true, true, cstart);
-                                }
-                                else
-                                {
-                                    applyX(n, W, lhs, lhs, cstart, x.Length + cstart, cstart);
-                                }
-                                for (var k = cstart; k < n + cstart; ++k)
-                                {
-                                    if (lhs[k] != 0.0)
-                                    {
-                                        BlasLike.daxpyvec(i + 1, lhs[k], A, M, k * m, ij);
-                                    }
-                                }
-                            }
                             BlasLike.dcopyvec(n, rmu, lhs, cstart, cstart);
                             lhs[n - 1 + cstart] -= g1 * mu;
                             applyXm1(n, xbar, lhs, lhs, cstart, cstart, x.Length + cstart);
@@ -985,6 +1014,21 @@ namespace InteriorPoint
                 hrmu = mu - tau * kappa;
                 rkxy = kappa + BlasLike.ddotvec(x.Length, cmod, x) - BlasLike.ddotvec(y.Length, b, y);
             }
+            CreateNormalMatrix();
+        }
+        void ConditionEstimate()
+        {
+            var diags = new double[m];
+            var order = new int[m];
+            for (var i = 0; i < m; ++i)
+            {
+                diags[i] = M[i * (i + 3) / 2];
+            }
+            Ordering.Order.getorder(m, diags, order, null, 0, 1);
+            int o1 = Math.Max(order[0], order[1]), o2 = Math.Min(order[0], order[1]);
+            double a1 = Math.Max(diags[o1], diags[o2]), a2 = Math.Min(diags[o2], diags[o1]), a12 = M[o1 * (o1 + 1) / 2 + o2];
+            condition = a1 * (a1 - a12 * a12 / a2);//cond is a quick estimate of condition number using only 2 pivots.
+            regularise = BlasLike.lm_eps * (int)(conv / BlasLike.lm_eps) * 100;
         }
         double Complementarity()
         {
@@ -1008,8 +1052,17 @@ namespace InteriorPoint
                 else mu = BlasLike.ddotvec(x.Length, x, z) / R1;
             }
         }
-        void update(double[] dx, double[] dy, double[] dz, double dtau, double dkappa, double step)
+        void update(double[] dx, double[] dy, double[] dz, double dtau, double dkappa, double step, double test = 0)
         {
+            if (test == 0)
+            {
+                laststep = step;
+                lastdx = dx;
+                lastdy = dy;
+                lastdz = dz;
+                lastdtau = dtau;
+                lastdkappa = dkappa;
+            }
             BlasLike.daxpyvec(n, step, dx, x);
             BlasLike.daxpyvec(n, step, dz, z);
             BlasLike.daxpyvec(m, step, dy, y);
@@ -1052,7 +1105,7 @@ namespace InteriorPoint
             opt.optMode = mode;
             if (mode == "SOCP")
             {
-                opt.conv = 2e-8;//BlasLike.lm_eps;
+                opt.conv = 1e-10;//BlasLike.lm_eps;
                 opt.cone = cone;
                 opt.typecone = typecone;
                 opt.numberOfCones = cone.Length;
@@ -1246,6 +1299,22 @@ namespace InteriorPoint
                 opt.PrimalResidual();
                 opt.DualResudual();
                 opt.MuResidual();
+                opt.ConditionEstimate();
+                if (false && 1.0 / opt.condition < BlasLike.lm_rooteps)
+                {
+                    opt.update(opt.lastdx, opt.lastdx, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
+                    opt.update(opt.lastdx, opt.lastdx, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.5 * opt.laststep, 1);
+
+                    opt.MuResidual();
+                    opt.ConditionEstimate();
+                }
+                if (1.0 / opt.condition < BlasLike.lm_rooteps)
+                {
+                    for (int ii = 0, id = 0; ii < m; ++ii, id += ii)
+                    {
+                        /*if (opt.M[id + ii] < opt.regularise)*/ opt.M[id + ii] += opt.regularise;
+                    }
+                }
                 gap = opt.Primal() - opt.Dual();
                 i++;
             }
