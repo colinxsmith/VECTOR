@@ -7,7 +7,6 @@ namespace InteriorPoint
     public enum conetype { QP, SOCP, SOCPR };
     public class Optimise
     {
-        bool useScaling = true;
         double conv = BlasLike.lm_eps;
         string optMode = "QP";
         int numberOfCones = 0;
@@ -458,15 +457,8 @@ namespace InteriorPoint
                         for (int i = 0, ij = 0; i < m; ++i, ij += i)
                         {
                             BlasLike.dcopy(n, A, m, lhs, 1, i + cstart * m, x.Length + cstart);
-                            if (useScaling)
-                            {
-                                W2m1trans(n, lhs, W, lhs, x.Length + cstart, cstart, cstart);
-                                thetaScale(n, lhs, THETA[icone], true, true, cstart);
-                            }
-                            else
-                            {
-                                applyX(n, W, lhs, lhs, cstart, x.Length + cstart, cstart);
-                            }
+                            W2m1trans(n, lhs, W, lhs, x.Length + cstart, cstart, cstart);
+                            thetaScale(n, lhs, THETA[icone], true, true, cstart);
                             for (var k = cstart; k < n + cstart; ++k)
                             {
                                 if (lhs[k] != 0.0)
@@ -628,17 +620,9 @@ namespace InteriorPoint
                     }
                     else if (typecone[icone] == (int)conetype.SOCP)
                     {
-                        if (useScaling)
-                        {
-                            W2m1trans(n, w1, W, w1, cstart, cstart, x.Length + cstart);
-                            BlasLike.dcopyvec(n, w1, w1, x.Length + cstart, cstart);
-                            thetaScale(n, w1, THETA[icone], true, true, cstart);
-                        }
-                        else
-                        {
-                            applyX(n, W, w1, w1, cstart, cstart, x.Length + cstart);
-                            BlasLike.dcopyvec(n, w1, w1, x.Length + cstart, cstart);
-                        }
+                        W2m1trans(n, w1, W, w1, cstart, cstart, x.Length + cstart);
+                        BlasLike.dcopyvec(n, w1, w1, x.Length + cstart, cstart);
+                        thetaScale(n, w1, THETA[icone], true, true, cstart);
                     }
                 }
                 Factorise.dmxmulv(m, n, A, w1, dy);
@@ -665,17 +649,9 @@ namespace InteriorPoint
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {
-                            if (useScaling)
-                            {
-                                W2m1trans(n, cx, W, w1, cstart, cstart, x.Length + cstart);
-                                BlasLike.dcopyvec(n, w1, cx, x.Length + cstart, cstart);
-                                thetaScale(n, cx, THETA[icone], true, true, cstart);
-                            }
-                            else
-                            {
-                                applyX(n, W, cx, w1, cstart, cstart, x.Length + cstart);
-                                BlasLike.dcopyvec(n, w1, cx, x.Length + cstart, cstart);
-                            }
+                            W2m1trans(n, cx, W, w1, cstart, cstart, x.Length + cstart);
+                            BlasLike.dcopyvec(n, w1, cx, x.Length + cstart, cstart);
+                            thetaScale(n, cx, THETA[icone], true, true, cstart);
                         }
                     }
                     Factorise.dmxmulv(m, n, A, cx, db);
@@ -700,17 +676,9 @@ namespace InteriorPoint
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {
-                            if (useScaling)
-                            {
-                                W2m1trans(n, dx, W, w1, cstart, cstart, x.Length + cstart);
-                                BlasLike.dcopyvec(n, w1, dx, x.Length + cstart, cstart);
-                                thetaScale(n, dx, THETA[icone], true, true, cstart);
-                            }
-                            else
-                            {
-                                applyX(n, W, dx, w1, cstart, cstart, x.Length + cstart);
-                                BlasLike.dcopyvec(n, w1, dx, x.Length + cstart, cstart);
-                            }
+                            W2m1trans(n, dx, W, w1, cstart, cstart, x.Length + cstart);
+                            BlasLike.dcopyvec(n, w1, dx, x.Length + cstart, cstart);
+                            thetaScale(n, dx, THETA[icone], true, true, cstart);
                         }
                     }
                     BlasLike.dsubvec(n, dx, w1, dx);
@@ -732,17 +700,9 @@ namespace InteriorPoint
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {
-                            if (useScaling)
-                            {
-                                W2m1trans(n, dc, W, w1, cstart, cstart, x.Length + cstart);
-                                BlasLike.dcopyvec(n, w1, dc, x.Length + cstart, cstart);
-                                thetaScale(n, dc, THETA[icone], true, true, cstart);
-                            }
-                            else
-                            {
-                                applyX(n, W, dc, w1, cstart, cstart, x.Length + cstart);
-                                BlasLike.dcopyvec(n, w1, dc, x.Length + cstart, cstart);
-                            }
+                            W2m1trans(n, dc, W, w1, cstart, cstart, x.Length + cstart);
+                            BlasLike.dcopyvec(n, w1, dc, x.Length + cstart, cstart);
+                            thetaScale(n, dc, THETA[icone], true, true, cstart);
                         }
                     }
                     BlasLike.dsubvec(n, dc, cx, dc);
@@ -803,17 +763,9 @@ namespace InteriorPoint
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {
-                            if (useScaling)
-                            {
-                                W2m1trans(n, dx, W, w1, cstart, cstart, x.Length + cstart);
-                                BlasLike.dcopyvec(n, w1, dx, x.Length + cstart, cstart);
-                                thetaScale(n, dx, THETA[icone], true, true, cstart);
-                            }
-                            else
-                            {
-                                applyX(n, W, dx, w1, cstart, cstart, x.Length + cstart);
-                                BlasLike.dcopyvec(n, w1, dx, x.Length + cstart, cstart);
-                            }
+                            W2m1trans(n, dx, W, w1, cstart, cstart, x.Length + cstart);
+                            BlasLike.dcopyvec(n, w1, dx, x.Length + cstart, cstart);
+                            thetaScale(n, dx, THETA[icone], true, true, cstart);
                         }
                     }
                     BlasLike.dsubvec(n, dx, w1, dx);
@@ -885,66 +837,64 @@ namespace InteriorPoint
                     }
                     else if (typecone[icone] == (int)conetype.SOCP)
                     {
-                        if (useScaling)
+                        var xQx = 0.0;
+                        var zQz = 0.0;
+                        if (n == 1) THETA[icone] = Math.Sqrt(aob(z[cstart], x[cstart]));
+                        else
                         {
-                            var xQx = 0.0;
-                            var zQz = 0.0;
-                            if (n == 1) THETA[icone] = Math.Sqrt(aob(z[cstart], x[cstart]));
-                            else
+                            xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
+                            xcopy = false;
+                            if (xQx <= BlasLike.lm_eps)
                             {
-                                xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
-                                xcopy = false;
-                                if (xQx <= BlasLike.lm_eps)
+                                xcopy = true;
+                                if (x[n - 1 + cstart] > BlasLike.lm_rooteps)
                                 {
-                                    xcopy = true;
-                                    if (x[n - 1 + cstart] > BlasLike.lm_rooteps)
-                                    {
-                                        BlasLike.dscalvec(n - 1, .99 * x[n - 1 + cstart] / Math.Sqrt(x[n - 1 + cstart] * x[n - 1 + cstart] - xQx), x);
-                                        xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
-                                    }
-                                    else
-                                    {
-                                        BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, x, cstart);
-                                        x[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
-                                        xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
-                                    }
+                                    BlasLike.dscalvec(n - 1, .99 * x[n - 1 + cstart] / Math.Sqrt(x[n - 1 + cstart] * x[n - 1 + cstart] - xQx), x);
+                                    xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
                                 }
-                                zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
-                                zcopy = false;
-                                if (zQz <= BlasLike.lm_eps)
+                                else
                                 {
-                                    zcopy = true;
-                                    if (z[n - 1 + cstart] > BlasLike.lm_eps * 0)
-                                    {
-                                        BlasLike.dscalvec(n - 1, .99 * z[n - 1 + cstart] / Math.Sqrt(z[n - 1 + cstart] * z[n - 1 + cstart] - zQz), z);
-                                        zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
-                                    }
-                                    else
-                                    {
-                                        BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, z, cstart);
-                                        z[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
-                                        zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
-                                    }
+                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, x, cstart);
+                                    x[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                    xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
+                                }
+                            }
+                            zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
+                            zcopy = false;
+                            if (zQz <= BlasLike.lm_eps)
+                            {
+                                zcopy = true;
+                                if (z[n - 1 + cstart] > BlasLike.lm_eps * 0)
+                                {
+                                    BlasLike.dscalvec(n - 1, .99 * z[n - 1 + cstart] / Math.Sqrt(z[n - 1 + cstart] * z[n - 1 + cstart] - zQz), z);
+                                    zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
+                                }
+                                else
+                                {
+                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, z, cstart);
+                                    z[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                    zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
+                                }
+                            }
+                            THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
+                            if (double.IsNaN(THETA[icone]))
+                            {
+                                if (double.IsNaN(zQz))
+                                {
+                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, z, cstart);
+                                    z[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                    zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
+                                }
+                                if (double.IsNaN(xQx))
+                                {
+                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, x, cstart);
+                                    x[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                    xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
                                 }
                                 THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
-                                if (double.IsNaN(THETA[icone]))
-                                {
-                                    if (double.IsNaN(zQz))
-                                    {
-                                        BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, z, cstart);
-                                        z[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
-                                        zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
-                                    }
-                                    if (double.IsNaN(xQx))
-                                    {
-                                        BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, x, cstart);
-                                        x[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
-                                        xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
-                                    }
-                                    THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
-                                }
-
                             }
+
+
 
                             if (!double.IsNaN(THETA[icone]) && THETA[icone] >= BlasLike.lm_eps)
                             {
@@ -990,20 +940,7 @@ namespace InteriorPoint
                             applyX(n, xbar, zbar, rmu, cstart, cstart, cstart);
                             Tmulvec(n, rmu, cstart);
                         }
-                        else
-                        {
-                            var xoz = W;
-                            xbar = null;
-                            zbar = null;
-                            W2 = null;
-                            Tmulvec(n, x, cstart);
-                            Tmulvec(n, z, cstart);
-                            applyX(n, x, z, rmu, cstart, cstart, cstart);
-                            Tmulvec(n, x, cstart);
-                            Tmulvec(n, z, cstart);
-                            Tmulvec(n, rmu, cstart);
-                            applyXm1(n, z, x, xoz, cstart, cstart, cstart);
-                        }
+
                         BlasLike.dnegvec(n, rmu, cstart);
                         rmu[n - 1 + cstart] += mu;
                     }
@@ -1018,17 +955,25 @@ namespace InteriorPoint
         }
         void ConditionEstimate()
         {
-            var diags = new double[m];
-            var order = new int[m];
-            for (var i = 0; i < m; ++i)
+            if (m > 1)
             {
-                diags[i] = M[i * (i + 3) / 2];
+                var diags = new double[m];
+                var order = new int[m];
+                for (var i = 0; i < m; ++i)
+                {
+                    diags[i] = M[i * (i + 3) / 2];
+                }
+                Ordering.Order.getorder(m, diags, order, null, 0, 1);
+                int o1 = Math.Max(order[0], order[1]), o2 = Math.Min(order[0], order[1]);
+                double a1 = Math.Max(diags[o1], diags[o2]), a2 = Math.Min(diags[o2], diags[o1]), a12 = M[o1 * (o1 + 1) / 2 + o2];
+                condition = a1 * (a1 - a12 * a12 / a2);//cond is a quick estimate of condition number using only 2 pivots.
+                regularise = a1 * BlasLike.lm_rooteps;
             }
-            Ordering.Order.getorder(m, diags, order, null, 0, 1);
-            int o1 = Math.Max(order[0], order[1]), o2 = Math.Min(order[0], order[1]);
-            double a1 = Math.Max(diags[o1], diags[o2]), a2 = Math.Min(diags[o2], diags[o1]), a12 = M[o1 * (o1 + 1) / 2 + o2];
-            condition = a1 * (a1 - a12 * a12 / a2);//cond is a quick estimate of condition number using only 2 pivots.
-            regularise = BlasLike.lm_eps * (int)(conv / BlasLike.lm_eps) * 100;
+            else
+            {
+                condition = square(M[0]);
+                regularise = M[0] * BlasLike.lm_rooteps;
+            }
         }
         double Complementarity()
         {
@@ -1105,7 +1050,7 @@ namespace InteriorPoint
             opt.optMode = mode;
             if (mode == "SOCP")
             {
-                opt.conv = 1e-10;//BlasLike.lm_eps;
+                opt.conv = (Math.Floor(1e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
                 opt.cone = cone;
                 opt.typecone = typecone;
                 opt.numberOfCones = cone.Length;
@@ -1224,9 +1169,10 @@ namespace InteriorPoint
                 rp1 = norm(opt.rp) / rp0;
                 rd1 = norm(opt.rd) / rd0;
                 comp1 = opt.Complementarity() / comp0;
-                if (rp1 < opt.conv && rd1 < opt.conv && comp1 < opt.conv) break;
+                if (Math.Abs(gap) < opt.conv && rp1 < opt.conv && rd1 < opt.conv && comp1 < opt.conv * square(opt.tau))
+                    break;
                 if (i > opt.maxiter) break;
-                if (opt.useScaling && i > 2 && opt.optMode == "SOCP")
+                if (i > 2 && opt.optMode == "SOCP")
                 {
                     BlasLike.dsubvec(n, opt.xbar, opt.zbar, diff);
                     double test = BlasLike.ddotvec(n, diff, diff);
@@ -1236,7 +1182,7 @@ namespace InteriorPoint
                         Console.WriteLine($"rp1 = {rp1}");
                         Console.WriteLine($"rd1 = {rd1}");
                         Console.WriteLine($"comp1 = {comp1}");
-                        break;
+                        //   break;
                     }
                 }
                 opt.SolvePrimaryDual();
@@ -1269,9 +1215,9 @@ namespace InteriorPoint
                     BlasLike.dzerovec(opt.c.Length - nh, opt.cmod, nh);
                     BlasLike.daddvec(nh, opt.c, extra, opt.cmod);
                 }
-                if (false && ((true && opt.tau < 1e-3) /*|| (rd1 > rp1 * 1e5 || rp1 > rd1 * 1e5)*/))
+                if (comp1 < opt.conv && opt.tau < 1e-2)
                 {
-                    var scl = 1.0;
+                    var scl = opt.tau*10;
                     if (false && (gap < 0))
                     {
                         //  var dgap = BlasLike.ddotvec(opt.y.Length, opt.y, opt.b);
@@ -1280,18 +1226,14 @@ namespace InteriorPoint
                         //  if (dgap != 0) BlasLike.dscalvec(opt.y.Length, (1.0 - gap / dgap), opt.y);
                         BlasLike.dsetvec(opt.y.Length, (1.0 + BlasLike.lm_rooteps), opt.y);
                     }
+
+                    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
+                    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.9 * opt.laststep, 1);
                     BlasLike.dscalvec(opt.y.Length, scl / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, scl / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, scl / opt.tau, opt.z);
-                    if (true && opt.optMode == "SOCP")
-                    {
-                        for (int ic = 0, cs = 0, nn = opt.cone[ic]; ic < opt.cone.Length; cs += nn, ic++)
-                        {
-                            opt.x[nn - 1 + cs] += 1e-5;
-                            opt.z[nn - 1 + cs] += 1e-5;
-                        }
-                    }
-                    opt.kappa *= scl / opt.tau;
+
+                    opt.kappa *= scl * opt.tau;
                     opt.tau = scl;
                 }
                 opt.Mu();
@@ -1302,17 +1244,18 @@ namespace InteriorPoint
                 opt.ConditionEstimate();
                 if (false && 1.0 / opt.condition < BlasLike.lm_rooteps)
                 {
-                    opt.update(opt.lastdx, opt.lastdx, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
-                    opt.update(opt.lastdx, opt.lastdx, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.5 * opt.laststep, 1);
+                    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
+                    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.5 * opt.laststep, 1);
 
                     opt.MuResidual();
                     opt.ConditionEstimate();
                 }
-                if (1.0 / opt.condition < BlasLike.lm_rooteps)
+                if (1.0 / opt.condition < BlasLike.lm_eps)
                 {
                     for (int ii = 0, id = 0; ii < m; ++ii, id += ii)
                     {
-                        /*if (opt.M[id + ii] < opt.regularise)*/ opt.M[id + ii] += opt.regularise;
+                        if (opt.M[id + ii] < opt.regularise)
+                            opt.M[id + ii] += opt.regularise;
                     }
                 }
                 gap = opt.Primal() - opt.Dual();
@@ -1338,7 +1281,7 @@ namespace InteriorPoint
             Console.WriteLine($"Dual Utility:\t\t{opt.Dual()}");
             ActiveSet.Optimise.printV("y", opt.y);
             ActiveSet.Optimise.printV("z", opt.z);
-            Console.WriteLine($"Complementarity:\t{opt.Complementarity()}");
+            Console.WriteLine($"Complementarity:\t{BlasLike.ddotvec(opt.n, opt.x, opt.z)}");
             Console.WriteLine($"Job took {opt.clocker()} m secs");
             if (i >= opt.maxiter) return -1;
             else if (opt.homogenous && opt.tau < opt.kappa) return 6;

@@ -397,7 +397,7 @@ namespace BlasLikeTest
                             10};
             double[] acopy = (double[])a.Clone();
             int[] piv = { 1, 2, 3, 4 };
-            char U =  'L' ;
+            char U = 'L';
             int back = 10;
             back = Factorise.Factor(U, n, a, piv);
             Assert.IsTrue(back == 0);
@@ -443,8 +443,8 @@ namespace BlasLikeTest
             var unit1 = new double[n];
             var unit1T = new double[n];
             for (var i = 0; i < n; ++i) unit1T[i] = unit1[i] = 1;
-            char U =  'U';
-            char L =  'L' ;
+            char U = 'U';
+            char L = 'L';
             var ipiv = new int[n];
             var Sbefore = (double[])S.Clone();
             var back = Factorise.Factor(U, n, S, ipiv);
@@ -532,7 +532,7 @@ namespace BlasLikeTest
                 }
             }
 
-            char way =  'L' ;
+            char way = 'L';
             var piv = new int[n];
             var back = way == 'L' ? Factorise.Factor(way, n, ST, piv) : Factorise.Factor(way, n, S, piv);
             var Sback = new double[n * n];
@@ -591,7 +591,7 @@ namespace BlasLikeTest
         public void Test_FixSingular()
         {
             var n = 3;
-            char way = 'U' ;
+            char way = 'U';
             double[] M ={1,
                            1,1,
                            1,1,1};//singular
@@ -722,6 +722,25 @@ namespace BlasLikeTest
                     Assert.IsTrue(back == 0 && Math.Abs(constraintVal[0] - budget) < BlasLike.lm_eps * 16, $"QP back is {back} {BlasLike.ddotvec(n, x, c) + 0.5 * BlasLike.ddotvec(n, implied, x)} {obj} {iter} {constraintVal[1]}");
                 }
             }
+        }
+        [TestMethod]
+        public void Test_SOCP()
+        {
+            //Simplest SOCP optimisation; minimise c.x so that sum(x*x)=1
+            int n = 12;
+            var m = 1;
+            var x = new double[n];
+            double[] b = { 1 };
+            double[] c = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0 };
+            double[] A = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }; int[] cone = { n };
+            int nvar = 0;
+            foreach (int ic in cone) nvar += ic;
+            int[] typecone = { (int)InteriorPoint.conetype.SOCP };
+
+            Factorise.dmx_transpose(n, m, A, A);// Does nothing here
+            var back = InteriorPoint.Optimise.Opt(nvar, m, x, A, b, c, 0, null, "SOCP", cone, typecone, true);
+            var util = BlasLike.ddotvec(n, c, x);
+            Assert.IsTrue(back == 0 && Math.Abs(x[n - 1] - 1) < 1e-8, $"util = {util}");
         }
     }
 }
