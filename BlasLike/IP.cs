@@ -72,6 +72,16 @@ namespace InteriorPoint
         double lastdkappa;
         double condition;
         double regularise;
+        static double denomTest(double x) => x == 0 ? 1 : x;
+        static double lInfinity(double[] x)
+        {
+            var back = 0.0;
+            foreach (var k in x)
+            {
+                back = Math.Max(back, k);
+            }
+            return back;
+        }
         static double norm(double[] aa) => Math.Sqrt(BlasLike.ddotvec(aa.Length, aa, aa));
         static double square(double a) => a * a;
         double gfunc(double a) => Math.Min(0.5, square(1 - a)) * (1 - a);
@@ -135,7 +145,7 @@ namespace InteriorPoint
                 double dXS = BlasLike.ddotvec(n, dx, z);
                 double dXdS = BlasLike.ddotvec(n, dx, dz);
                 double alpha = 1.0, desc;
-                double lowest = 1e-1, lowest1 = 1 - lowest;
+                double lowest = 5e-2, lowest1 = 1 - lowest;
 
                 if (dXdX <= BlasLike.lm_eps)
                 {
@@ -929,14 +939,14 @@ namespace InteriorPoint
                             thetaScale(n, zbar, THETA[icone], true, false, cstart);//zbar=(Wtheta)m1.z=xbar
                             Tmulvec(n, xbar, cstart);//Tmulvec does nothing for SOCP, needed for SOCPR
                             Tmulvec(n, zbar, cstart);
-                            /*            if (zcopy)
-                                        {
-                                            BlasLike.dcopyvec(n, xbar, zbar);
-                                        }
-                                        else if (xcopy)
-                                        {
-                                            BlasLike.dcopyvec(n, zbar, xbar);
-                                        }*/
+                            if (zcopy)
+                            {
+                                BlasLike.dcopyvec(n, xbar, zbar);
+                            }
+                            else if (xcopy)
+                            {
+                                BlasLike.dcopyvec(n, zbar, xbar);
+                            }
                             applyX(n, xbar, zbar, rmu, cstart, cstart, cstart);
                             Tmulvec(n, rmu, cstart);
                         }
@@ -1023,6 +1033,10 @@ namespace InteriorPoint
             var linextra = BlasLike.ddotvec(n, cmod, x);
             return lin + 0.5 * (linextra - lin);
         }
+        double Gap()
+        {
+            return Math.Abs(Dual() - Primal() - (homogenous ? kappa : 0));
+        }
         double Dual()
         {
             var lin = BlasLike.ddotvec(n, c, x);
@@ -1050,7 +1064,7 @@ namespace InteriorPoint
             opt.optMode = mode;
             if (mode == "SOCP")
             {
-                opt.conv = (Math.Floor(1e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.conv = (Math.Floor(1e-9 / BlasLike.lm_eps)) * BlasLike.lm_eps;
                 opt.cone = cone;
                 opt.typecone = typecone;
                 opt.numberOfCones = cone.Length;
@@ -1150,12 +1164,14 @@ namespace InteriorPoint
             opt.PrimalResidual();
             opt.DualResudual();
             opt.MuResidual();
-            var rp0 = norm(opt.rp);
-            var rd0 = norm(opt.rd);
-            rp0 = rp0 == 0 ? 1 : rp0;
-            rd0 = rd0 == 0 ? 1 : rd0;
+            var rp0 = lInfinity(opt.rp);
+            var rd0 = lInfinity(opt.rd);
+            var gap0 = denomTest(opt.Gap());
+            rp0 = denomTest(rp0);
+            rd0 = denomTest(rd0);
             var rp1 = rp0;
             var rd1 = rd0;
+            var gap1 = gap0;
             var comp0 = opt.Complementarity();
             var compnow = comp0;
             var comp1 = comp0;
@@ -1166,10 +1182,11 @@ namespace InteriorPoint
             var gap = 1.0;
             while (true)
             {
-                rp1 = norm(opt.rp) / rp0;
-                rd1 = norm(opt.rd) / rd0;
-                comp1 = opt.Complementarity() / comp0;
-                if (Math.Abs(gap) < opt.conv && rp1 < opt.conv && rd1 < opt.conv && comp1 < opt.conv * square(opt.tau))
+                rp1 = lInfinity(opt.rp) / denomTest(rp0);
+                rd1 = lInfinity(opt.rd) / denomTest(rd0);
+                gap1 = opt.Gap() / denomTest(gap0);
+                comp1 = opt.Complementarity();
+                if (Math.Abs(gap) < opt.conv && rp1 < opt.conv && rd1 < opt.conv && comp1 < opt.conv/* * square(opt.tau)*/)
                     break;
                 if (i > opt.maxiter) break;
                 if (i > 2 && opt.optMode == "SOCP")
@@ -1215,25 +1232,25 @@ namespace InteriorPoint
                     BlasLike.dzerovec(opt.c.Length - nh, opt.cmod, nh);
                     BlasLike.daddvec(nh, opt.c, extra, opt.cmod);
                 }
-                if (comp1 < opt.conv && opt.tau < 1e-2)
+                if (Math.Max(alpha1, alpha2) < 1e-1/*comp1 < opt.conv &&*//* || (i > 5 && opt.tau < 1e-2)*/)
                 {
-                    var scl = opt.tau*10;
-                    if (false && (gap < 0))
-                    {
-                        //  var dgap = BlasLike.ddotvec(opt.y.Length, opt.y, opt.b);
-                        // BlasLike.dsetvec(opt.y.Length, scl, opt.y);
-                        //  dgap -= BlasLike.ddotvec(opt.y.Length, opt.y, opt.b);
-                        //  if (dgap != 0) BlasLike.dscalvec(opt.y.Length, (1.0 - gap / dgap), opt.y);
-                        BlasLike.dsetvec(opt.y.Length, (1.0 + BlasLike.lm_rooteps), opt.y);
-                    }
-
-                    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
-                    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.9 * opt.laststep, 1);
+                    var scl = 1.0;//opt.tau*10;
+                    //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
+                    //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.9 * opt.laststep, 1);
                     BlasLike.dscalvec(opt.y.Length, scl / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, scl / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, scl / opt.tau, opt.z);
 
-                    opt.kappa *= scl * opt.tau;
+                    if (gap < 0)
+                    {
+                        var dgap = BlasLike.ddotvec(opt.y.Length, opt.y, opt.b);
+                        BlasLike.dsetvec(opt.y.Length, 1.0, opt.y);
+                        dgap -= BlasLike.ddotvec(opt.y.Length, opt.y, opt.b);
+                        double step = -gap / dgap;
+                        if (dgap != 0) BlasLike.dsetvec(opt.y.Length, (1.0 + BlasLike.lm_rooteps) * step, opt.y);
+                    }
+
+                    opt.kappa = opt.mu; //*=  scl / opt.tau;
                     opt.tau = scl;
                 }
                 opt.Mu();
