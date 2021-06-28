@@ -7,7 +7,9 @@ namespace InteriorPoint
     public enum conetype { QP, SOCP, SOCPR };
     public class Optimise
     {
+        bool restep = true;
         double conv = BlasLike.lm_eps;
+        int badindex = -1;
         string optMode = "QP";
         int numberOfCones = 0;
         int[] cone = null;
@@ -145,7 +147,7 @@ namespace InteriorPoint
                 double dXS = BlasLike.ddotvec(n, dx, z);
                 double dXdS = BlasLike.ddotvec(n, dx, dz);
                 double alpha = 1.0, desc;
-                double lowest = 5e-2, lowest1 = 1 - lowest;
+                double lowest = 1e-1, lowest1 = 1 - lowest;
 
                 if (dXdX <= BlasLike.lm_eps)
                 {
@@ -488,7 +490,7 @@ namespace InteriorPoint
                 var g1 = 1.0 - gamma;
                 if (!corrector)
                 {
-                    if (m != 1) Factorise.Factor(uplo, m, M, order);
+                    if (m != 1) badindex = Factorise.Factor(uplo, m, M, order);
                     for (var i = 0; i < n; ++i) w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu, x[i]);
                 }
                 else for (var i = 0; i < n; ++i) w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu - dx0[i] * dz0[i], x[i]);
@@ -583,7 +585,7 @@ namespace InteriorPoint
                             BlasLike.dnegvec(n, w1, cstart);
                         }
                     }
-                    if (m != 1) Factorise.Factor(uplo, m, M, order);
+                    if (m != 1) badindex = Factorise.Factor(uplo, m, M, order);
                 }
                 else
                 {
@@ -961,7 +963,9 @@ namespace InteriorPoint
                 hrmu = mu - tau * kappa;
                 rkxy = kappa + BlasLike.ddotvec(x.Length, cmod, x) - BlasLike.ddotvec(y.Length, b, y);
             }
+            badindex = -1;
             CreateNormalMatrix();
+            if (badindex != -1) Console.WriteLine($"Normal is unstable: badindex={badindex}");
         }
         void ConditionEstimate()
         {
@@ -1232,8 +1236,9 @@ namespace InteriorPoint
                     BlasLike.dzerovec(opt.c.Length - nh, opt.cmod, nh);
                     BlasLike.daddvec(nh, opt.c, extra, opt.cmod);
                 }
-                if (Math.Max(alpha1, alpha2) < 1e-1/*comp1 < opt.conv &&*//* || (i > 5 && opt.tau < 1e-2)*/)
+                if (false&&(Math.Max(alpha1, alpha2) < 1e-1)/*comp1 < opt.conv &&*//* || (opt.restep &&  opt.tau < 1e-2)*/)
                 {
+                    opt.restep = false;
                     var scl = 1.0;//opt.tau*10;
                     //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
                     //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.9 * opt.laststep, 1);
@@ -1299,6 +1304,7 @@ namespace InteriorPoint
             ActiveSet.Optimise.printV("y", opt.y);
             ActiveSet.Optimise.printV("z", opt.z);
             Console.WriteLine($"Complementarity:\t{BlasLike.ddotvec(opt.n, opt.x, opt.z)}");
+            Console.WriteLine($"Gap:\t\t\t{opt.Dual() - opt.Primal()}");
             Console.WriteLine($"Job took {opt.clocker()} m secs");
             if (i >= opt.maxiter) return -1;
             else if (opt.homogenous && opt.tau < opt.kappa) return 6;
