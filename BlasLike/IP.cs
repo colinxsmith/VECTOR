@@ -7,7 +7,7 @@ namespace InteriorPoint
     public enum conetype { QP, SOCP, SOCPR };
     public class Optimise
     {
-        bool restep = true;
+        double alphamin = 1e-1;
         double conv = BlasLike.lm_eps;
         int badindex = -1;
         string optMode = "QP";
@@ -963,9 +963,7 @@ namespace InteriorPoint
                 hrmu = mu - tau * kappa;
                 rkxy = kappa + BlasLike.ddotvec(x.Length, cmod, x) - BlasLike.ddotvec(y.Length, b, y);
             }
-            badindex = -1;
             CreateNormalMatrix();
-            if (badindex != -1) Console.WriteLine($"Normal is unstable: badindex={badindex}");
         }
         void ConditionEstimate()
         {
@@ -1016,9 +1014,9 @@ namespace InteriorPoint
             if (test == 0)
             {
                 laststep = step;
-                lastdx = dx;
-                lastdy = dy;
-                lastdz = dz;
+                lastdx = (double[])dx.Clone();
+                lastdy = (double[])dy.Clone();
+                lastdz = (double[])dz.Clone();
                 lastdtau = dtau;
                 lastdkappa = dkappa;
             }
@@ -1039,7 +1037,7 @@ namespace InteriorPoint
         }
         double Gap()
         {
-            return Math.Abs(Dual() - Primal() - (homogenous ? kappa : 0));
+            return Math.Abs(Primal() - Dual() - (homogenous ? kappa : 0));
         }
         double Dual()
         {
@@ -1068,7 +1066,7 @@ namespace InteriorPoint
             opt.optMode = mode;
             if (mode == "SOCP")
             {
-                opt.conv = (Math.Floor(1e-9 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.conv = (Math.Floor(5e-9 / BlasLike.lm_eps)) * BlasLike.lm_eps;
                 opt.cone = cone;
                 opt.typecone = typecone;
                 opt.numberOfCones = cone.Length;
@@ -1124,6 +1122,7 @@ namespace InteriorPoint
             var extra = new double[nh];
             if (opt.optMode == "QP")
             {
+                opt.conv = (Math.Floor(1e-15 / BlasLike.lm_eps)) * BlasLike.lm_eps;
                 if (opt.usrH)
                 {
                     if (opt.homogenous)
@@ -1207,6 +1206,7 @@ namespace InteriorPoint
                     }
                 }
                 opt.SolvePrimaryDual();
+                if (opt.badindex != 0) Console.WriteLine($"Normal matrix is unstable: badindex={opt.badindex}");
                 BlasLike.dcopyvec(n, opt.dx, dxold);
                 BlasLike.dcopyvec(n, opt.dz, dzold);
                 BlasLike.dcopyvec(m, opt.dy, dyold);
@@ -1236,27 +1236,27 @@ namespace InteriorPoint
                     BlasLike.dzerovec(opt.c.Length - nh, opt.cmod, nh);
                     BlasLike.daddvec(nh, opt.c, extra, opt.cmod);
                 }
-                if (false&&(Math.Max(alpha1, alpha2) < 1e-1)/*comp1 < opt.conv &&*//* || (opt.restep &&  opt.tau < 1e-2)*/)
+                if ((Math.Max(alpha1, alpha2) < opt.alphamin))
                 {
-                    opt.restep = false;
-                    var scl = 1.0;//opt.tau*10;
-                    //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
-                    //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.9 * opt.laststep, 1);
+                    var scl = 1.0;
+                    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
+                    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.9 * opt.laststep, 1);
                     BlasLike.dscalvec(opt.y.Length, scl / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, scl / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, scl / opt.tau, opt.z);
-
+                    gap = opt.Primal() - opt.Dual();
                     if (gap < 0)
                     {
                         var dgap = BlasLike.ddotvec(opt.y.Length, opt.y, opt.b);
                         BlasLike.dsetvec(opt.y.Length, 1.0, opt.y);
                         dgap -= BlasLike.ddotvec(opt.y.Length, opt.y, opt.b);
-                        double step = -gap / dgap;
+                        var step = -gap / dgap / opt.tau;
                         if (dgap != 0) BlasLike.dsetvec(opt.y.Length, (1.0 + BlasLike.lm_rooteps) * step, opt.y);
                     }
 
                     opt.kappa = opt.mu; //*=  scl / opt.tau;
                     opt.tau = scl;
+                    i = 0;
                 }
                 opt.Mu();
                 mu0 = opt.mu;
@@ -1264,15 +1264,19 @@ namespace InteriorPoint
                 opt.DualResudual();
                 opt.MuResidual();
                 opt.ConditionEstimate();
-                if (false && 1.0 / opt.condition < BlasLike.lm_rooteps)
+                if (false && opt.condition > BlasLike.lm_reps)
                 {
                     opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
                     opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.5 * opt.laststep, 1);
-
+                    /*    BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
+                                        BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
+                                        BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
+                                        opt.kappa /= opt.tau;
+                                        opt.tau = 1;*/
                     opt.MuResidual();
                     opt.ConditionEstimate();
                 }
-                if (1.0 / opt.condition < BlasLike.lm_eps)
+                if (false && opt.condition > BlasLike.lm_reps)
                 {
                     for (int ii = 0, id = 0; ii < m; ++ii, id += ii)
                     {
@@ -1304,7 +1308,7 @@ namespace InteriorPoint
             ActiveSet.Optimise.printV("y", opt.y);
             ActiveSet.Optimise.printV("z", opt.z);
             Console.WriteLine($"Complementarity:\t{BlasLike.ddotvec(opt.n, opt.x, opt.z)}");
-            Console.WriteLine($"Gap:\t\t\t{opt.Dual() - opt.Primal()}");
+            Console.WriteLine($"Gap:\t\t\t{opt.Primal() - opt.Dual()}");
             Console.WriteLine($"Job took {opt.clocker()} m secs");
             if (i >= opt.maxiter) return -1;
             else if (opt.homogenous && opt.tau < opt.kappa) return 6;
