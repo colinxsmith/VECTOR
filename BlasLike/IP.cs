@@ -1066,7 +1066,7 @@ namespace InteriorPoint
             opt.optMode = mode;
             if (mode == "SOCP")
             {
-                opt.conv = (Math.Floor(1e-11 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.conv = (Math.Floor(5e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
                 opt.cone = cone;
                 opt.typecone = typecone;
                 opt.numberOfCones = cone.Length;
@@ -1119,7 +1119,7 @@ namespace InteriorPoint
             opt.Mu();
             var mu0 = opt.mu;
             var i = 0;
-            var ir=0;
+            var ir = 0;
             var extra = new double[nh];
             if (opt.optMode == "QP")
             {
@@ -1188,10 +1188,10 @@ namespace InteriorPoint
             {
                 rp1 = lInfinity(opt.rp) / denomTest(rp0);
                 rd1 = lInfinity(opt.rd) / denomTest(rd0);
-                gap=opt.Gap();
+                gap = opt.Gap();
                 gap1 = gap / denomTest(gap0);
                 comp1 = opt.Complementarity();
-                if (Math.Abs(gap/opt.tau) < opt.conv && rp1 < opt.conv && rd1 < opt.conv && comp1 < opt.conv/* * square(opt.tau)*/)
+                if (Math.Abs(gap / opt.tau) < opt.conv && rp1 < opt.conv && rd1 < opt.conv && comp1 < opt.conv/* * square(opt.tau)*/)
                     break;
                 if (i > opt.maxiter) break;
                 if (ir > opt.maxiter) break;
@@ -1260,6 +1260,7 @@ namespace InteriorPoint
                     opt.kappa = opt.mu; //*=  scl / opt.tau;
                     opt.tau = scl;
                     i = 0;
+                    opt.conv *= 1.05;
                 }
                 opt.Mu();
                 mu0 = opt.mu;
@@ -1267,7 +1268,7 @@ namespace InteriorPoint
                 opt.DualResudual();
                 opt.MuResidual();
                 opt.ConditionEstimate();
-                if (true && opt.condition > BlasLike.lm_reps)
+                if (false && opt.condition > BlasLike.lm_reps)
                 {
                     opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
                     opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.5 * opt.laststep, 1);
@@ -1278,19 +1279,19 @@ namespace InteriorPoint
                                         opt.tau = 1;*/
                     opt.MuResidual();
                     opt.ConditionEstimate();
-                    i=0;
+                    i = 0;
                 }
-                if (true && opt.condition > BlasLike.lm_reps)
+                if (false && opt.condition > BlasLike.lm_reps)
                 {
                     for (int ii = 0, id = 0; ii < m; ++ii, id += ii)
                     {
                         if (opt.M[id + ii] < opt.regularise)
                             opt.M[id + ii] += opt.regularise;
                     }
-                    i=0;
+                    i = 0;
                 }
                 gap = opt.Primal() - opt.Dual();
-                i++;ir++;
+                i++; ir++;
             }
             if (opt.homogenous)
             {
@@ -1303,6 +1304,7 @@ namespace InteriorPoint
                 }
                 else Console.WriteLine("INFEASIBLE");
             }
+            Console.WriteLine($"{ir} outer iterations out of {opt.maxiter}");
             Console.WriteLine($"{i} iterations out of {opt.maxiter}");
             Console.WriteLine($"Relative Primal Residual\t\t {rp1}");
             Console.WriteLine($"Relative Dual Residual\t\t\t {rd1}");
