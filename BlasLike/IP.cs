@@ -1067,7 +1067,7 @@ namespace InteriorPoint
             opt.optMode = mode;
             if (mode == "SOCP")
             {
-                opt.conv = (Math.Floor(1e-15 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.conv = (Math.Floor(1e-11 / BlasLike.lm_eps)) * BlasLike.lm_eps;
                 opt.cone = cone;
                 opt.typecone = typecone;
                 opt.numberOfCones = cone.Length;
