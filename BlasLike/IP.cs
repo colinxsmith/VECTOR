@@ -17,7 +17,8 @@ namespace InteriorPoint
         bool usrH = false;
         bool homogenous = false;
         double mu;
-        int maxiter = 100;
+        int maxouter = 1000;
+        int maxinner = 100;
         int n;
         int m;
         double[] A = null;
@@ -341,7 +342,7 @@ namespace InteriorPoint
                         }
                     }
 
-                    double rhs, gamma1 = 1 - gamma, test1, test2 = 1, beta = 1e-6;
+                    double rhs, gamma1 = 1 - gamma, test1, test2 = 1, beta = 1e-8;
                     for (var l = 0; l < 1000; ++l)
                     {
                         rhs = beta * (1 - alpha * gamma1) * mu;
@@ -941,14 +942,14 @@ namespace InteriorPoint
                             thetaScale(n, zbar, THETA[icone], true, false, cstart);//zbar=(Wtheta)m1.z=xbar
                             Tmulvec(n, xbar, cstart);//Tmulvec does nothing for SOCP, needed for SOCPR
                             Tmulvec(n, zbar, cstart);
-                            if (zcopy)
-                            {
-                                BlasLike.dcopyvec(n, xbar, zbar);
-                            }
-                            else if (xcopy)
-                            {
-                                BlasLike.dcopyvec(n, zbar, xbar);
-                            }
+                            /*       if (zcopy)
+                                   {
+                                       BlasLike.dcopyvec(n, xbar, zbar);
+                                   }
+                                   else if (xcopy)
+                                   {
+                                       BlasLike.dcopyvec(n, zbar, xbar);
+                                   }*/
                             applyX(n, xbar, zbar, rmu, cstart, cstart, cstart);
                             Tmulvec(n, rmu, cstart);
                         }
@@ -1066,7 +1067,7 @@ namespace InteriorPoint
             opt.optMode = mode;
             if (mode == "SOCP")
             {
-                opt.conv = (Math.Floor(5e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.conv = (Math.Floor(1e-15 / BlasLike.lm_eps)) * BlasLike.lm_eps;
                 opt.cone = cone;
                 opt.typecone = typecone;
                 opt.numberOfCones = cone.Length;
@@ -1119,7 +1120,7 @@ namespace InteriorPoint
             opt.Mu();
             var mu0 = opt.mu;
             var i = 0;
-            var ir = 0;
+            var ir = 1;
             var extra = new double[nh];
             if (opt.optMode == "QP")
             {
@@ -1191,10 +1192,21 @@ namespace InteriorPoint
                 gap = opt.Gap();
                 gap1 = gap / denomTest(gap0);
                 comp1 = opt.Complementarity();
-                if (Math.Abs(gap / opt.tau) < opt.conv && rp1 < opt.conv && rd1 < opt.conv && comp1 < opt.conv/* * square(opt.tau)*/)
+                if (/*Math.Abs(gap / opt.tau) < opt.conv && */rp1 < opt.conv && rd1 < opt.conv && comp1 < opt.conv/* * square(opt.tau)*/)
                     break;
-                if (i > opt.maxiter) break;
-                if (ir > opt.maxiter) break;
+                if (ir > opt.maxouter) break;
+                if (i > opt.maxinner)
+                {
+                    ir++; i = 0;
+                    BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
+                    BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
+                    BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
+                    opt.kappa /= opt.tau;
+                    opt.tau = 1;
+                    rp0 = denomTest(lInfinity(opt.rp));
+                    rd0 = denomTest(lInfinity(opt.rd));
+                    gap0 = denomTest(opt.Gap());
+                };
                 if (i > 2 && opt.optMode == "SOCP")
                 {
                     BlasLike.dsubvec(n, opt.xbar, opt.zbar, diff);
@@ -1239,7 +1251,8 @@ namespace InteriorPoint
                     BlasLike.dzerovec(opt.c.Length - nh, opt.cmod, nh);
                     BlasLike.daddvec(nh, opt.c, extra, opt.cmod);
                 }
-                if ((Math.Max(alpha1, alpha2) < opt.alphamin))
+                var t1 = 0.0;
+                if (((t1 = Math.Max(alpha1, alpha2)) < opt.alphamin))
                 {
                     var scl = 1.0;
                     opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
@@ -1259,8 +1272,11 @@ namespace InteriorPoint
 
                     opt.kappa = opt.mu; //*=  scl / opt.tau;
                     opt.tau = scl;
-                    i = 0;
+                    i = 0; ir++;
                     opt.conv *= 1.05;
+                    rp0 = denomTest(lInfinity(opt.rp));
+                    rd0 = denomTest(lInfinity(opt.rd));
+                    gap0 = denomTest(opt.Gap());
                 }
                 opt.Mu();
                 mu0 = opt.mu;
@@ -1280,6 +1296,9 @@ namespace InteriorPoint
                     opt.MuResidual();
                     opt.ConditionEstimate();
                     i = 0;
+                    rp0 = denomTest(lInfinity(opt.rp));
+                    rd0 = denomTest(lInfinity(opt.rd));
+                    gap0 = denomTest(opt.Gap());
                 }
                 if (false && opt.condition > BlasLike.lm_reps)
                 {
@@ -1289,9 +1308,12 @@ namespace InteriorPoint
                             opt.M[id + ii] += opt.regularise;
                     }
                     i = 0;
+                    rp0 = denomTest(lInfinity(opt.rp));
+                    rd0 = denomTest(lInfinity(opt.rd));
+                    gap0 = denomTest(opt.Gap());
                 }
                 gap = opt.Primal() - opt.Dual();
-                i++; ir++;
+                i++;
             }
             if (opt.homogenous)
             {
@@ -1304,8 +1326,8 @@ namespace InteriorPoint
                 }
                 else Console.WriteLine("INFEASIBLE");
             }
-            Console.WriteLine($"{ir} outer iterations out of {opt.maxiter}");
-            Console.WriteLine($"{i} iterations out of {opt.maxiter}");
+            Console.WriteLine($"{ir} outer iterations out of {opt.maxouter}");
+            Console.WriteLine($"{i} iterations out of {opt.maxinner}");
             Console.WriteLine($"Relative Primal Residual\t\t {rp1}");
             Console.WriteLine($"Relative Dual Residual\t\t\t {rd1}");
             Console.WriteLine($"Relative Complementarity Residual\t {comp1}");
@@ -1317,7 +1339,8 @@ namespace InteriorPoint
             Console.WriteLine($"Complementarity:\t{BlasLike.ddotvec(opt.n, opt.x, opt.z)}");
             Console.WriteLine($"Gap:\t\t\t{opt.Primal() - opt.Dual()}");
             Console.WriteLine($"Job took {opt.clocker()} m secs");
-            if (i >= opt.maxiter) return -1;
+            Console.WriteLine($"Last conv {opt.conv}");
+            if (i >= opt.maxinner || ir >= opt.maxouter) return -1;
             else if (opt.homogenous && opt.tau < opt.kappa) return 6;
             else return 0;
         }
