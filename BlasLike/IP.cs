@@ -7,8 +7,9 @@ namespace InteriorPoint
     public enum conetype { QP, SOCP, SOCPR };
     public class Optimise
     {
-        double alphamin = 1e-1;
+        double alphamin = 1e-2;
         double conv = BlasLike.lm_eps;
+        double compConv = BlasLike.lm_eps;
         int badindex = -1;
         string optMode = "QP";
         int numberOfCones = 0;
@@ -1067,7 +1068,8 @@ namespace InteriorPoint
             opt.optMode = mode;
             if (mode == "SOCP")
             {
-                opt.conv = (Math.Floor(1e-11 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.conv = (Math.Floor(1e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.compConv = (Math.Floor(1e-11 / BlasLike.lm_eps)) * BlasLike.lm_eps;
                 opt.cone = cone;
                 opt.typecone = typecone;
                 opt.numberOfCones = cone.Length;
@@ -1192,7 +1194,7 @@ namespace InteriorPoint
                 gap = opt.Gap();
                 gap1 = gap / denomTest(gap0);
                 comp1 = opt.Complementarity();
-                if (/*Math.Abs(gap / opt.tau) < opt.conv && */rp1 < opt.conv && rd1 < opt.conv && comp1 < opt.conv/* * square(opt.tau)*/)
+                if (/*Math.Abs(gap / opt.tau) < opt.conv && */rp1 < opt.conv && rd1 < opt.conv && comp1 < opt.compConv /* * square(opt.tau)*/)
                     break;
                 if (ir > opt.maxouter) break;
                 if (i > opt.maxinner)
@@ -1273,7 +1275,7 @@ namespace InteriorPoint
                     opt.kappa = opt.mu; //*=  scl / opt.tau;
                     opt.tau = scl;
                     i = 0; ir++;
-                    opt.conv *= 1.05;
+                    opt.conv *= 1.01;
                     rp0 = denomTest(lInfinity(opt.rp));
                     rd0 = denomTest(lInfinity(opt.rd));
                     gap0 = denomTest(opt.Gap());
@@ -1313,12 +1315,25 @@ namespace InteriorPoint
                     gap0 = denomTest(opt.Gap());
                 }
                 gap = opt.Primal() - opt.Dual();
+                if (opt.tau < 1e-5 && opt.kappa < 1e-5)
+                {
+                    BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
+                    BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
+                    BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
+                    opt.kappa /= opt.tau;
+                    ir++; i = 0;
+                    rp0 = denomTest(lInfinity(opt.rp));
+                    rd0 = denomTest(lInfinity(opt.rd));
+                    gap0 = denomTest(opt.Gap());
+                }
                 i++;
             }
+
+            var infease = !(opt.homogenous && (opt.tau > 1e3 * opt.kappa));
             if (opt.homogenous)
             {
                 Console.WriteLine($"tau = {opt.tau} kappa={opt.kappa}");
-                if (opt.tau > opt.kappa)
+                if (!infease)
                 {
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
@@ -1330,7 +1345,7 @@ namespace InteriorPoint
             Console.WriteLine($"{i} iterations out of {opt.maxinner}");
             Console.WriteLine($"Relative Primal Residual\t\t {rp1}");
             Console.WriteLine($"Relative Dual Residual\t\t\t {rd1}");
-            Console.WriteLine($"Relative Complementarity Residual\t {comp1}");
+            Console.WriteLine($"Relative Complementarity\t\t {comp1}");
             Console.WriteLine($"Primal Utility:\t\t{opt.Primal()}");
             ActiveSet.Optimise.printV("x", opt.x);
             Console.WriteLine($"Dual Utility:\t\t{opt.Dual()}");
@@ -1341,7 +1356,7 @@ namespace InteriorPoint
             Console.WriteLine($"Job took {opt.clocker()} m secs");
             Console.WriteLine($"Last conv {opt.conv}");
             if (i >= opt.maxinner || ir >= opt.maxouter) return -1;
-            else if (opt.homogenous && opt.tau < opt.kappa) return 6;
+            else if (opt.homogenous && infease) return 6;
             else return 0;
         }
 
