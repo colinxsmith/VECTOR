@@ -5,9 +5,41 @@ using System.Diagnostics;
 namespace InteriorPoint
 {
     public enum conetype { QP, SOCP, SOCPR };
+    class BestResults
+    {
+        public double[] x;
+        public double[] y;
+        public double[] z;
+        public double tau;
+        public double kappa;
+        public double norm;
+        public BestResults(double[] x = null, double[] y = null, double[] z = null, double tau = -1, double kappa = -1, double rp = BlasLike.lm_max, double rd = BlasLike.lm_max, double comp = BlasLike.lm_max)
+        {
+            set(x, y, z, tau, kappa, rp, rd, comp);
+        }
+        public void set(double[] x, double[] y, double[] z, double tau, double kappa, double rp, double rd, double comp)
+        {
+            this.x = x != null ? (double[])x.Clone() : null;
+            this.y = y == null ? null : (double[])y.Clone();
+            this.z = z == null ? null : (double[])z.Clone();
+            this.tau = tau;
+            this.kappa = kappa;
+            double[] pass = { rp, rd, comp };
+            this.norm = Optimise.lInfinity(pass);
+        }
+        public void update(double[] x, double[] y, double[] z, double tau, double kappa, double rp, double rd, double comp)
+        {
+            double[] pass = { rp, rd, comp };
+            double norm = Optimise.lInfinity(pass);
+            if (norm < this.norm)
+                set(x, y, z, tau, kappa, rp, rd, comp);
+        }
+    }
     public class Optimise
     {
-        double alphamin = 1e-2;
+        BestResults keep;
+        bool copyKept = false;
+        double alphamin = 1e-3;
         double conv = BlasLike.lm_eps;
         double compConv = BlasLike.lm_eps;
         int badindex = -1;
@@ -77,12 +109,12 @@ namespace InteriorPoint
         double condition;
         double regularise;
         static double denomTest(double x) => x == 0 ? 1 : x;
-        static double lInfinity(double[] x)
+        public static double lInfinity(double[] x)
         {
             var back = 0.0;
             foreach (var k in x)
             {
-                back = Math.Max(back, k);
+                back = Math.Max(back, Math.Abs(k));
             }
             return back;
         }
@@ -98,6 +130,7 @@ namespace InteriorPoint
         }
         Optimise(int n, int m, double[] x, double[] A, double[] b, double[] c, int nh = 0, double[] H = null)
         {
+            keep = new BestResults();
             this.n = n;
             this.m = m;
             this.A = A;
@@ -1180,6 +1213,7 @@ namespace InteriorPoint
             var rd1 = rd0;
             var gap1 = gap0;
             var comp0 = opt.Complementarity();
+            opt.keep.set(opt.x, opt.y, opt.z, opt.tau, opt.kappa, rp0, rd0, comp0);
             var compnow = comp0;
             var comp1 = comp0;
             var alpha1 = 0.0;
@@ -1194,6 +1228,7 @@ namespace InteriorPoint
                 gap = opt.Gap();
                 gap1 = gap / denomTest(gap0);
                 comp1 = opt.Complementarity();
+                opt.keep.update(opt.x, opt.y, opt.z, opt.tau, opt.kappa, lInfinity(opt.rp), lInfinity(opt.rd), comp1);
                 if (/*Math.Abs(gap / opt.tau) < opt.conv && */rp1 < opt.conv && rd1 < opt.conv && comp1 < opt.compConv /* * square(opt.tau)*/)
                     break;
                 if (ir > opt.maxouter) break;
@@ -1272,6 +1307,12 @@ namespace InteriorPoint
                         if (dgap != 0) BlasLike.dsetvec(opt.y.Length, (1.0 + BlasLike.lm_rooteps) * step, opt.y);
                     }
 
+                    opt.Mu();
+                    mu0 = opt.mu;
+                    opt.PrimalResidual();
+                    opt.DualResudual();
+                    opt.MuResidual();
+                    opt.ConditionEstimate();
                     opt.kappa = opt.mu; //*=  scl / opt.tau;
                     opt.tau = scl;
                     i = 0; ir++;
@@ -1322,24 +1363,37 @@ namespace InteriorPoint
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
                     opt.kappa /= opt.tau;
                     ir++; i = 0;
+                    opt.Mu();
+                    mu0 = opt.mu;
+                    opt.PrimalResidual();
+                    opt.DualResudual();
+                    opt.MuResidual();
+                    opt.ConditionEstimate();
                     rp0 = denomTest(lInfinity(opt.rp));
                     rd0 = denomTest(lInfinity(opt.rd));
                     gap0 = denomTest(opt.Gap());
                 }
                 i++;
             }
-
-            var infease = !(opt.homogenous && (opt.tau > 1e3 * opt.kappa));
+            if (opt.copyKept)
+            {
+                BlasLike.dcopyvec(opt.x.Length, opt.keep.x, opt.x);
+                BlasLike.dcopyvec(opt.y.Length, opt.keep.y, opt.y);
+                BlasLike.dcopyvec(opt.z.Length, opt.keep.z, opt.z);
+                opt.tau = opt.keep.tau;
+                opt.kappa = opt.keep.kappa;
+            }
+            var infease = !(opt.homogenous && (opt.tau > 1e2 * opt.kappa));
             if (opt.homogenous)
             {
                 Console.WriteLine($"tau = {opt.tau} kappa={opt.kappa}");
-                if (!infease)
+                if (opt.tau != 0)
                 {
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                 }
-                else Console.WriteLine("INFEASIBLE");
+                if (infease) Console.WriteLine("INFEASIBLE");
             }
             Console.WriteLine($"{ir} outer iterations out of {opt.maxouter}");
             Console.WriteLine($"{i} iterations out of {opt.maxinner}");
@@ -1355,6 +1409,7 @@ namespace InteriorPoint
             Console.WriteLine($"Gap:\t\t\t{opt.Primal() - opt.Dual()}");
             Console.WriteLine($"Job took {opt.clocker()} m secs");
             Console.WriteLine($"Last conv {opt.conv}");
+
             if (i >= opt.maxinner || ir >= opt.maxouter) return -1;
             else if (opt.homogenous && infease) return 6;
             else return 0;

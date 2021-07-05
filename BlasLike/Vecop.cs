@@ -12,7 +12,7 @@ namespace Blas
         public static double lm_eps2 = lm_eps * lm_eps;
         public static double lambdatest = lm_eps;
         public static double lm_min = 2.2250738585072014e-308;
-        public static double lm_max = 1.7976931348623157e+308;
+        public const double lm_max = 1.7976931348623157e+308;
         public static double lm_safe_range = 5.5626846462680084e-309;
         public static double lm_rsafe_range = 1.7976931348623143e+308;
         public static double lm_rootmin = Math.Sqrt(lm_min);

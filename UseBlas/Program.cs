@@ -945,7 +945,7 @@ namespace UseBlas
                 int n = 12;
                 var m = 2;
                 var x = new double[n];
-                double[] b = { 3.4, 1 };
+                double[] b = { 3, 1 };
                 double[] c = { 1, 2, 3, 4, 5, 6000, 7, 8, 9, 10, 11, 0 };
                 double[] A = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 ,
                                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
