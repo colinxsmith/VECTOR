@@ -139,7 +139,7 @@ namespace Solver
                             var bot = Math.Max(ap[kc + k - 1 + astart], 0);
                             if (fix) bot = Math.Max(bot, BlasLike.lm_eps2);
                             else if (ap[kc + k - 1 + astart] < -BlasLike.lm_eps2) return -10;
-                            BlasLike.dscal(nrhs, Math.Sqrt(bot), b, ldb, bstart + k + b_dim1);
+                            BlasLike.dscal(nrhs, Math.Sqrt(1.0 / bot), b, ldb, bstart + k + b_dim1);
                         }
                         --k;
                     }
@@ -793,7 +793,7 @@ namespace Solver
 
             alpha = (Math.Sqrt(17) + 1) / 8;
 
-            if (uplo== 'U')
+            if (uplo == 'U')
             {
                 /*        Factorize A as U*D*U**T using the upper triangle of A */
 
@@ -1160,7 +1160,7 @@ namespace Solver
         {
             int i, iS, ix;//This needed change to be compatable with BLAS ddot
             for (i = 1, iS = 0, ix = 0; i <= n; i++, ix++, iS += i)
-                y[i - 1 + ystart] = BlasLike.ddot(i, S, -1, x, -1, iS + 1 - i,xstart) + BlasLike.didot(n - i, S, i + 1, x, 1, i + iS, 1 + ix+xstart);
+                y[i - 1 + ystart] = BlasLike.ddot(i, S, -1, x, -1, iS + 1 - i, xstart) + BlasLike.didot(n - i, S, i + 1, x, 1, i + iS, 1 + ix + xstart);
         }
         public unsafe static void dsmxmulv(int n, double* S, double* x, double* y)
         {
@@ -1172,7 +1172,7 @@ namespace Solver
         {
             int i, iS, ix;
             for (i = 1, iS = 0, ix = 0; i <= n; i++, ix++, iS += n - i + 2)
-                y[i - 1 + ystart] = BlasLike.ddot(n - i + 1, S, 1, x, 1, iS, ix+xstart) + BlasLike.didot(i - 1, S, -(n - 1), x, 1, i - 1,xstart);
+                y[i - 1 + ystart] = BlasLike.ddot(n - i + 1, S, 1, x, 1, iS, ix + xstart) + BlasLike.didot(i - 1, S, -(n - 1), x, 1, i - 1, xstart);
         }
         public unsafe static void dsmxmulvT(int n, double* S, double* x, double* y)
         {
