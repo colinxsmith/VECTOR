@@ -966,6 +966,33 @@ namespace UseBlas
                 Console.WriteLine($"Linear {cx}");
                 Console.WriteLine($"SOCP x check {Math.Sqrt(BlasLike.ddotvec(x.Length - 1, x, x))} {x[x.Length - 1]}");
             }
+            {
+                Console.WriteLine("--------------FMP-------------");
+                var nfac = 2;
+                var n = 3;
+                double[] SV = { 1, 2, 3 };
+                var Q = new double[(nfac + 1) * n];
+                double[] FC = { 2,
+                                1, 3 };
+                double[] FL ={1,0,
+                            0,1,
+                            1,1};
+                var back = Factorise.FMP(n, nfac, FC, SV, FL, Q);
+                if (back > 0) Console.WriteLine($"unstable FC: n={back}");
+                else if (back == -10) Console.WriteLine($"FC is not positive definite!!!!!!");
+                else Console.WriteLine($"Condition {back} from solver");
+                var result = new double[n * n];
+                var ij = 0;
+                for (var i = 0; i < n; ++i)
+                {
+                    for (var j = 0; j < n; ++j, ij++)
+                    {
+                        result[ij] = BlasLike.ddotvec(nfac, Q, Q, i * nfac, j * nfac);
+                    }
+                }
+                ActiveSet.Optimise.printV("Q", Q);
+                ActiveSet.Optimise.printV("Check", result);
+            }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
             {
