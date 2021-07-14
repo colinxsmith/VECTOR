@@ -24,12 +24,12 @@ namespace InteriorPoint
             this.z = z == null ? null : (double[])z.Clone();
             this.tau = tau;
             this.kappa = kappa;
-            double[] pass = { rp, rd, comp };
+            double[] pass = { rp, rd, 1e4 * comp };
             this.norm = Optimise.lInfinity(pass);
         }
         public void update(double[] x, double[] y, double[] z, double tau, double kappa, double rp, double rd, double comp)
         {
-            double[] pass = { rp, rd, comp };
+            double[] pass = { rp, rd, 1e4 * comp };
             double norm = Optimise.lInfinity(pass);
             if (norm < this.norm)
                 set(x, y, z, tau, kappa, rp, rd, comp);
@@ -39,7 +39,7 @@ namespace InteriorPoint
     {
         BestResults keep;
         bool copyKept = false;
-        double alphamin = 1e-3;
+        double alphamin = 1e-1;
         double conv = BlasLike.lm_eps;
         double compConv = BlasLike.lm_eps;
         int badindex = -1;
@@ -1229,8 +1229,9 @@ namespace InteriorPoint
                 gap1 = gap / denomTest(gap0);
                 comp1 = opt.Complementarity();
                 opt.keep.update(opt.x, opt.y, opt.z, opt.tau, opt.kappa, lInfinity(opt.rp), lInfinity(opt.rd), comp1);
-                if (/*Math.Abs(gap / opt.tau) < opt.conv && */rp1 < opt.conv && rd1 < opt.conv && comp1 < opt.compConv /* * square(opt.tau)*/)
+                if (/*Math.Abs(gap / opt.tau) < opt.conv && */ rp1 < opt.conv && rd1 < opt.conv && comp1 < opt.compConv /* * square(opt.tau)*/)
                     break;
+                if (comp1 < opt.compConv && opt.tau < 1e-5 * opt.kappa) break;
                 if (ir > opt.maxouter) break;
                 if (i > opt.maxinner)
                 {
@@ -1316,7 +1317,7 @@ namespace InteriorPoint
                     opt.kappa = opt.mu; //*=  scl / opt.tau;
                     opt.tau = scl;
                     i = 0; ir++;
-                    opt.conv *= 1.01;
+                    //    opt.conv *= 1.01;
                     rp0 = denomTest(lInfinity(opt.rp));
                     rd0 = denomTest(lInfinity(opt.rd));
                     gap0 = denomTest(opt.Gap());
@@ -1362,6 +1363,7 @@ namespace InteriorPoint
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
                     opt.kappa /= opt.tau;
+                    opt.tau = 1;
                     ir++; i = 0;
                     opt.Mu();
                     mu0 = opt.mu;
