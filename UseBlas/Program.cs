@@ -976,9 +976,9 @@ namespace UseBlas
                                 1, 3 };
                 double[] FL = { 1, 0, 1,
                                  0, 1, 1 }; //Factors by assets
-                bool needTranspose = true; //Set FL by factors here, don't transpose in FMP
-                if (needTranspose) Factorise.dmx_transpose(n, nfac, FL, FL);
-                var back = Factorise.FMP(n, nfac, FC, SV, FL, Q, 'U', !needTranspose);
+                bool needTransposeInFMP = true; //Set FL by factors here, don't transpose in FMP
+                if (needTransposeInFMP) Factorise.dmx_transpose(n, nfac, FL, FL);
+                var back = Factorise.FMP(n, nfac, FC, SV, FL, Q, 'U', !needTransposeInFMP);
                 if (back > 0) Console.WriteLine($"unstable FC: n={back}");
                 else if (back == -10) Console.WriteLine($"FC is not positive definite!!!!!!");
                 else Console.WriteLine($"Condition {back} from solver");
