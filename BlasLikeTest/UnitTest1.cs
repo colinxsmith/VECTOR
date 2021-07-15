@@ -742,5 +742,31 @@ namespace BlasLikeTest
             var util = BlasLike.ddotvec(n, c, x);
             Assert.IsTrue(back == 0 && Math.Abs(x[n - 1] - 1) < 1e-8, $"util = {util}");
         }
+        [TestMethod]
+        public void Test_FMP()
+        {
+            //FMP calculates data for compressed risk model
+            var nfac = 2;
+            var n = 3;
+            double[] SV = { 1, 2, 3 };
+            var Q = new double[(nfac + 1) * n];
+            double[] FC = { 2,
+                                1, 3 };
+            double[] FL = { 1, 0, 1,
+                            0, 1, 1 }; //Factors by assets
+            var back = Factorise.FMP(n, nfac, FC, SV, FL, Q, 'L');
+            double[] correct = { 2, 1, 3, 1, 3, 4, 3, 4, 7 };
+            var result = new double[n * n];
+            for (var i = 0; i < n; ++i) //Multiply out the factor part of the compressed model
+            {
+                Factorise.dmxmulv(n, nfac, Q, Q, result, n, n + nfac * i, i * n, true);
+            }
+            var test = 0.0;
+            for (var i = 0; i < result.Length; ++i)
+            {
+                test = Math.Max(Math.Abs(result[i] - correct[i]), test);
+            }
+            Assert.IsTrue(back == 0 && test <= BlasLike.lm_eps*8, $"{test}:{result[0]},{result[1]},{result[2]},{result[3]},{result[4]},{result[5]},{result[6]},{result[7]},{result[8]},");
+        }
     }
 }

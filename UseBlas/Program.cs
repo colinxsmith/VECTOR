@@ -983,15 +983,20 @@ namespace UseBlas
                 else if (back == -10) Console.WriteLine($"FC is not positive definite!!!!!!");
                 else Console.WriteLine($"Condition {back} from solver");
                 var result = new double[n * n];
-                for (var i = 0; i < n; ++i)
-                {
-                    for (var k = 0; k < nfac; ++k)
+                /*    for (var i = 0; i < n; ++i) // Same as below, shows how dmxmulv works!
                     {
-                        BlasLike.daxpy(n, Q[n + i * nfac + k], Q, nfac, result, 1, n + k, i * n);
-                    }
+                        for (var k = 0; k < nfac; ++k)
+                        {
+                            BlasLike.daxpy(n, Q[n + i * nfac + k], Q, nfac, result, 1, n + k, i * n);
+
+                        }
+                    }*/
+                for (var i = 0; i < n; ++i) //Multiply out the factor part of the compressed risk model
+                {
+                    Factorise.dmxmulv(n, nfac, Q, Q, result, n, n + nfac * i, i * n, true);
                 }
-                ActiveSet.Optimise.printV("Q", Q);
-                ActiveSet.Optimise.printV("Check", result);
+                ActiveSet.Optimise.printV("Compressed risk model", Q);
+                ActiveSet.Optimise.printV("Check the factor part 2 1 3 1 3 4 3 4 7", result);
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry

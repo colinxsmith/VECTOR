@@ -2162,18 +2162,10 @@ double beta, double* y, int incy)
 
         }
 
-        public unsafe static int dgemv(char[] trans, int m, int n, double alpha,
+        public static int dgemv(char trans, int m, int n, double alpha,
 double[] a, int lda, double[] x, int incx,
 double beta, double[] y, int incy, int astart = 0, int xstart = 0, int ystart = 0)
         {
-            if (baseref != 0)
-            {
-                fixed (char* tt = trans)
-                fixed (double* aa = a)
-                fixed (double* xx = x)
-                fixed (double* yy = y)
-                    return dgemv(tt, m, n, alpha, aa + astart, lda, xx + xstart, incx, beta, yy + ystart, incy);
-            }/* System generated locals */
             int a_dim1, a_offset;
 
             /* Local variables */
@@ -2219,7 +2211,7 @@ double beta, double[] y, int incy, int astart = 0, int xstart = 0, int ystart = 
 
             /* Function Body */
             info = 0;
-            if (trans[0] != 'N' && trans[0] != 'T' && trans[0] != 'C')
+            if (trans != 'N' && trans != 'T' && trans != 'C')
             {
                 info = 1;
             }
@@ -2259,7 +2251,7 @@ double beta, double[] y, int incy, int astart = 0, int xstart = 0, int ystart = 
             /*     Set  LENX  and  LENY, the lengths of the vectors x and y, and set */
             /*     up the start points in  X  and  Y. */
 
-            if (trans[0] == 'N')
+            if (trans == 'N')
             {
                 lenx = n;
                 leny = m;
@@ -2339,7 +2331,7 @@ double beta, double[] y, int incy, int astart = 0, int xstart = 0, int ystart = 
             {
                 return 0;
             }
-            if (trans[0] == 'N')
+            if (trans == 'N')
             {
 
                 /*        Form  y := alpha*A*x + y. */

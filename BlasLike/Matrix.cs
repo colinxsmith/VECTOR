@@ -1255,8 +1255,7 @@ namespace Solver
             else if (way == 2)
             {
                 BlasLike.dzerovec(n, y, ystart);
-                var N = new char[1];
-                N[0] = atran ? 'T' : 'N';
+                var N = atran ? 'T' : 'N';
                 if (atran) BlasLike.dgemv(N, m, n, 1, A, m, x, 1, 0, y, 1, astart, xstart, ystart);
                 else BlasLike.dgemv(N, n, m, 1, A, n, x, 1, 0, y, 1, astart, xstart, ystart);
             }
