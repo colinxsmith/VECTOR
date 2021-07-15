@@ -974,20 +974,20 @@ namespace UseBlas
                 var Q = new double[(nfac + 1) * n];
                 double[] FC = { 2,
                                 1, 3 };
-                double[] FL ={1,0,
-                            0,1,
-                            1,1};
-                var back = Factorise.FMP(n, nfac, FC, SV, FL, Q);
+                double[] FL = { 1, 0, 1,
+                                 0, 1, 1 }; //Factors by assets
+                bool needTranspose = true; //Set FL by factors here, don't transpose in FMP
+                if (needTranspose) Factorise.dmx_transpose(n, nfac, FL, FL);
+                var back = Factorise.FMP(n, nfac, FC, SV, FL, Q, 'U', !needTranspose);
                 if (back > 0) Console.WriteLine($"unstable FC: n={back}");
                 else if (back == -10) Console.WriteLine($"FC is not positive definite!!!!!!");
                 else Console.WriteLine($"Condition {back} from solver");
                 var result = new double[n * n];
-                var ij = 0;
                 for (var i = 0; i < n; ++i)
                 {
-                    for (var j = 0; j < n; ++j, ij++)
+                    for (var k = 0; k < nfac; ++k)
                     {
-                        result[ij] = BlasLike.ddotvec(nfac, Q, Q, i * nfac, j * nfac);
+                        BlasLike.daxpy(n, Q[n + i * nfac + k], Q, nfac, result, 1, n + k, i * n);
                     }
                 }
                 ActiveSet.Optimise.printV("Q", Q);

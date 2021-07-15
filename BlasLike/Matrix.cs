@@ -1291,16 +1291,17 @@ void ddmxmulv(int n, double* d, int incd, double* x, int incx)
                     }
             }
         }
-        public static int FMP(int n, int nfac, double[] FC, double[] SV, double[] FL, double[] Q,char uplow = 'U')
+        public static int FMP(int n, int nfac, double[] FC, double[] SV, double[] FL, double[] Q, char uplow = 'U', bool transpose = true)
         {
             //Factor model process; 
-            //Find K=sqrt(FC)*FL and set Q to [K1,K2,.....,SV1,SV2...]
+            //Find K=sqrt(FC)*FL and set Q to [SV1,SV2..., K1,K2,.....]
             var piv = new int[nfac];
             var FCc = (double[])FC.Clone();
-            BlasLike.dcopyvec(n * nfac, FL, Q);
+            if (transpose) Factorise.dmx_transpose(n, nfac, FL, Q, 0, n); //Transpose to Q after SV
+            else BlasLike.dcopyvec(n * nfac, FL, Q, 0, n); //Copy to Q after SV
+            BlasLike.dcopyvec(n, SV, Q); //Copy to Q
             var back = Factorise.Factor(uplow, nfac, FCc, piv);
-            if (back == 0) back = Factorise.Solve(uplow, nfac, n, FCc, piv, Q, nfac, 0, 0, 0, 1); //Copy to Q
-            BlasLike.dcopyvec(n, SV, Q, 0, n * nfac); //Copy to Q after sqrt(FC)*FL
+            if (back == 0) back = Factorise.Solve(uplow, nfac, n, FCc, piv, Q, nfac, 0, 0, n, 1);
             return back;
         }
     }
