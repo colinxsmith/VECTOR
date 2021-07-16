@@ -1006,7 +1006,7 @@ namespace UseBlas
                 Ordering.Order.Reorder_gen(n, order, Q, nfac, n, trans, n);
                 if (!trans) Factorise.dmx_transpose(n, nfac, Q, Q, n, n);
                 ActiveSet.Optimise.printV("Compressed risk model", Q);
-                BlasLike.dzerovec(n * n, result);
+            //    BlasLike.dzerovec(n * n, result);
                 for (var i = 0; i < n; ++i) //Multiply out the factor part of the compressed risk model
                 {
                     Factorise.dmxmulv(n, nfac, Q, Q, result, n, n + nfac * i, i * n, true);
@@ -1054,7 +1054,7 @@ namespace UseBlas
                     Console.WriteLine("exception" + prob);
                 }
                 lic = new Byte[20];
-                var fiddlelic = "18;ed;58;7a;e8;46;d1;6e;1d;5a;04;ae;0b;ad;66;83;ff;03;00;00";
+                var fiddlelic = "e2;76;67;a8;69;9c;b1;b5;2e;29;73;f2;84;a9;da;7f;ff;03;00;00";
                 var il = 0;
                 foreach (string ll in fiddlelic.Split(';'))
                 {
