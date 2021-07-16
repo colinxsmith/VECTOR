@@ -44,13 +44,13 @@ namespace Ordering
             a = b;
             b = k2;
         }
-        public static void getorder(int n, double[] x, int[] order = null, byte[] dropbad = null, double init = 0, short sign = 1)
+        public static void getorder(int n, double[] x, int[] order = null, byte[] dropbad = null, double init = 0, short sign = 1, int xstart = 0)
         {
             var cmp = new compare();
             var xx = new compareitem[n];
             for (int i = 0; i < n; ++i)
             {
-                xx[i] = new compareitem((x[i] - init) * sign, (dropbad == null) ? (byte)0 : dropbad[i]);
+                xx[i] = new compareitem((x[i + xstart] - init) * sign, (dropbad == null) ? (byte)0 : dropbad[i]);
             }
             if (order == null) Array.Sort(xx, cmp);
             else
@@ -60,14 +60,14 @@ namespace Ordering
                 Array.Sort(xxx, order, cmp);
             }
         }
-        public static void getorderabs(int n, double[] x, int[] order = null, byte[] dropbad = null)
+        public static void getorderabs(int n, double[] x, int[] order = null, byte[] dropbad = null, int xstart = 0)
         {
             var cmp = new compareAbs();
             var xx = new compareitem[n];
 
             for (int i = 0; i < n; ++i)
             {
-                xx[i] = new compareitem(x[i], dropbad == null ? (byte)0 : dropbad[i]);
+                xx[i] = new compareitem(x[i + xstart], dropbad == null ? (byte)0 : dropbad[i]);
             }
             if (order == null) Array.Sort(xx, cmp);
             else
@@ -77,7 +77,7 @@ namespace Ordering
                 Array.Sort(xxx, order, cmp);
             }
         }
-        public static void Reorder<T>(int n, int[] order, T[] array)
+        public static void Reorder<T>(int n, int[] order, T[] array, int astart = 0)
         {
             if (array == null || order == null) return;
             int i;
@@ -90,7 +90,7 @@ namespace Ordering
                 {
                     for (j = i, k = order[j]; k != i; k = order[j = k])
                     {
-                        swap(ref array[k], ref array[j]);
+                        swap(ref array[k + astart], ref array[j + astart]);
                         marked[k] = true;
                     }
                     marked[i] = true;
@@ -99,7 +99,7 @@ namespace Ordering
         }
 
 
-        public static void ReorderSymm<T>(int n, int[] order, T[] array, char way = 'U')
+        public static void ReorderSymm<T>(int n, int[] order, T[] array, char way = 'U', int astart = 0)
         {
             if (array == null || order == null) return;
             var marked = new bool[n];//This will set marked[i] = false for all i
@@ -118,23 +118,23 @@ namespace Ordering
                                 var ll = l * (l + 1) / 2;
                                 if (l == j)
                                 {
-                                    swap(ref array[jj + j], ref array[kk + k]);
+                                    swap(ref array[jj + j + astart], ref array[kk + k + astart]);
                                 }
                                 else if (l < j && l < k)
                                 {
-                                    swap(ref array[jj + l], ref array[kk + l]);
+                                    swap(ref array[jj + l + astart], ref array[kk + l + astart]);
                                 }
                                 else if (l > j && l > k)
                                 {
-                                    swap(ref array[ll + j], ref array[ll + k]);
+                                    swap(ref array[ll + j + astart], ref array[ll + k + astart]);
                                 }
                                 else if (l > j && l < k)
                                 {
-                                    swap(ref array[ll + j], ref array[kk + l]);
+                                    swap(ref array[ll + j + astart], ref array[kk + l + astart]);
                                 }
                                 else if (l < j && l > k)
                                 {
-                                    swap(ref array[jj + l], ref array[ll + k]);
+                                    swap(ref array[jj + l + astart], ref array[ll + k + astart]);
                                 }
                             }
                             marked[k] = true;
@@ -158,23 +158,23 @@ namespace Ordering
                                 var ll = l * n - l * (l - 1) / 2;
                                 if (l == j)
                                 {
-                                    swap(ref array[jj], ref array[kk]);
+                                    swap(ref array[jj + astart], ref array[kk + astart]);
                                 }
                                 else if (l > j && l > k)
                                 {
-                                    swap(ref array[jj + l - j], ref array[kk + l - k]);
+                                    swap(ref array[jj + l - j + astart], ref array[kk + l - k + astart]);
                                 }
                                 else if (l < j && l < k)
                                 {
-                                    swap(ref array[ll + j - l], ref array[ll + k - l]);
+                                    swap(ref array[ll + j - l + astart], ref array[ll + k - l + astart]);
                                 }
                                 else if (l > j && l < k)
                                 {
-                                    swap(ref array[jj + l - j], ref array[ll + k - l]);
+                                    swap(ref array[jj + l - j + astart], ref array[ll + k - l + astart]);
                                 }
                                 else if (l < j && l > k)
                                 {
-                                    swap(ref array[jj + l - j], ref array[kk + l - k]);
+                                    swap(ref array[jj + l - j + astart], ref array[kk + l - k + astart]);
                                 }
                             }
                             marked[k] = true;
@@ -185,9 +185,9 @@ namespace Ordering
             }
             else return;
         }
-        public static void Reorder_gen<T>(int n, int[] order, T[] array, int m = 1, int im = 1)
+        public static void Reorder_gen<T>(int n, int[] order, T[] array, int m = 1, int im = 1, bool columns = false, int astart = 0)
         {
-            if (m == 1 && im == 1) { Reorder(n, order, array); return; }
+            if (m == 1 && im == 1) { Reorder(n, order, array, astart); return; }
             if (array == null || order == null) return;
             var marked = new bool[n];//This will set marked[i] = false for all i
             for (var i = 0; i < n; i++)
@@ -200,14 +200,16 @@ namespace Ordering
                         {
                             for (int l = 0; l < m; l++)
                             {
-                                swap(ref array[k * m + l], ref array[j * m + l]);
+                                if (columns) swap(ref array[k * m + l + astart], ref array[j * m + l + astart]);
+                                else swap(ref array[k + l + astart], ref array[j + l + astart]);
                             }
                         }
                         else
                         {
-                            for (int l = 0, ll = 0; l < m; l++, ll += im)
+                            for (int l = 0; l < m; l++)
                             {
-                                swap(ref array[k + ll], ref array[j + ll]);
+                                if (columns) swap(ref array[k * m + l + astart], ref array[j * m + l + astart]);
+                                else swap(ref array[k + l * im + astart], ref array[j + l * im + astart]);
                             }
                         }
                         marked[k] = true;
