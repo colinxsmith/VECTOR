@@ -2,6 +2,7 @@
 using System.Runtime.InteropServices;
 using Blas;
 using Solver;
+using DataFile;
 using Microsoft.Win32;
 
 namespace UseBlas
@@ -692,7 +693,7 @@ namespace UseBlas
                 Ordering.Order.Display(MN, "Two Rows", m);
                 Factorise.dmx_transpose(MN.Length / m, m, MN, MN);
                 Ordering.Order.Display(MN, "Two Columns", MN.Length / m);
-                Ordering.Order.Reorder_gen(MN.Length / m, ord, MN, m,1,true);
+                Ordering.Order.Reorder_gen(MN.Length / m, ord, MN, m, 1, true);
                 Ordering.Order.Display(MN, "Two Columns", MN.Length / m);
                 Factorise.dmx_transpose(m, MN.Length / m, MN, MN);
                 Ordering.Order.Display(MN, "Two Rows", m);
@@ -1006,12 +1007,16 @@ namespace UseBlas
                 Ordering.Order.Reorder_gen(n, order, Q, nfac, n, trans, n);
                 if (!trans) Factorise.dmx_transpose(n, nfac, Q, Q, n, n);
                 ActiveSet.Optimise.printV("Compressed risk model", Q);
-            //    BlasLike.dzerovec(n * n, result);
+                //    BlasLike.dzerovec(n * n, result);
                 for (var i = 0; i < n; ++i) //Multiply out the factor part of the compressed risk model
                 {
                     Factorise.dmxmulv(n, nfac, Q, Q, result, n, n + nfac * i, i * n, true);
                 }
                 ActiveSet.Optimise.printV("Check the factor part 7 4 3 4 3 1 3 1 2", result);
+            }
+            {
+                var TestData = new Input();
+                TestData.Read();
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
