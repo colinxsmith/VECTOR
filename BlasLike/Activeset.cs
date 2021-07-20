@@ -3578,7 +3578,8 @@ namespace ActiveSet
                     j, js, FEATOL[j - 1], atx, atp,
                     jadd1, palfa1, jadd2, palfa2);
             }
-        }   void dhhrflctgen(int n, ref double alpha, double[] x, int incx, double tol, ref double z1, int xstart = 0)
+        }
+        void dhhrflctgen(int n, ref double alpha, double[] x, int incx, double tol, ref double z1, int xstart = 0)
         {
 
             /*
@@ -5026,12 +5027,16 @@ namespace ActiveSet
             BlasLike.dnegvec(n, PX);
             if (nclin > 0) BlasLike.dnegvec(nclin, AP);
         }
-        public static void printV(string name, double[] a)
+        public static void printV<T>(string name, T[] a)
         {
             Console.WriteLine(name);
             for (int i = 0; i < a.Length; ++i)
             {
-                Console.Write($"{a[i]:0.00000000} ");
+                var p = a[i].GetType();
+                if (p.FullName == "System.Double")
+                    Console.Write($"{a[i]:0.00000000} ");
+                else
+                    Console.Write($"{a[i]} ");
                 if (i % 10 == 9) Console.Write("\n");
             }
             Console.Write("\n");

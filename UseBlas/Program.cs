@@ -1015,8 +1015,18 @@ namespace UseBlas
                 ActiveSet.Optimise.printV("Check the factor part 7 4 3 4 3 1 3 1 2", result);
             }
             {
-                var TestData = new Input();
-                TestData.Read();
+                Console.WriteLine("--------------Data File-------------");
+                using (var TestData = new InputSomeData()) // We can use using because DataFile.InputSomeData has Dispose() method
+                {
+                    TestData.stringFields = "names";
+                    TestData.intFields = "n m";
+                    TestData.Read("/Users/colin/VECTOR/UseBlas/testData");
+                    TestData.PrintField("n");
+                    TestData.PrintField("m");
+                    TestData.PrintField("c");
+                    TestData.PrintField("alpha");
+                    TestData.PrintField("names");
+                }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
