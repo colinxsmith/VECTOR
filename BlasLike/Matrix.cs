@@ -1156,11 +1156,11 @@ namespace Solver
 
             return info;
         }
-        public static void dsmxmulv(int n, double[] S, double[] x, double[] y, int xstart = 0, int ystart = 0)
+        public static void dsmxmulv(int n, double[] S, double[] x, double[] y, int xstart = 0, int ystart = 0, int Sstart = 0)
         {
             int i, iS, ix;//This needed change to be compatable with BLAS ddot
             for (i = 1, iS = 0, ix = 0; i <= n; i++, ix++, iS += i)
-                y[i - 1 + ystart] = BlasLike.ddot(i, S, -1, x, -1, iS + 1 - i, xstart) + BlasLike.didot(n - i, S, i + 1, x, 1, i + iS, 1 + ix + xstart);
+                y[i - 1 + ystart] = BlasLike.ddot(i, S, -1, x, -1, iS + 1 - i + Sstart, xstart) + BlasLike.didot(n - i, S, i + 1, x, 1, i + iS + Sstart, 1 + ix + xstart);
         }
         public unsafe static void dsmxmulv(int n, double* S, double* x, double* y)
         {
@@ -1168,11 +1168,11 @@ namespace Solver
             for (i = 1, iS = 0, ix = 0; i <= n; i++, ix++, iS += i)
                 y[i - 1] = BlasLike.ddot(i, S + iS + 1 - i, -1, x, -1) + BlasLike.didot(n - i, S + i + iS, i + 1, x + 1 + ix, 1);
         }
-        public static void dsmxmulvT(int n, double[] S, double[] x, double[] y, int xstart = 0, int ystart = 0)
+        public static void dsmxmulvT(int n, double[] S, double[] x, double[] y, int xstart = 0, int ystart = 0, int Sstart = 0)
         {
             int i, iS, ix;
             for (i = 1, iS = 0, ix = 0; i <= n; i++, ix++, iS += n - i + 2)
-                y[i - 1 + ystart] = BlasLike.ddot(n - i + 1, S, 1, x, 1, iS, ix + xstart) + BlasLike.didot(i - 1, S, -(n - 1), x, 1, i - 1, xstart);
+                y[i - 1 + ystart] = BlasLike.ddot(n - i + 1, S, 1, x, 1, iS + Sstart, ix + xstart) + BlasLike.didot(i - 1, S, -(n - 1), x, 1, i - 1 + Sstart, xstart);
         }
         public unsafe static void dsmxmulvT(int n, double* S, double* x, double* y)
         {
@@ -1302,6 +1302,26 @@ void ddmxmulv(int n, double* d, int incd, double* x, int incx)
             var back = Factorise.Factor(uplow, nfac, FCc, piv);
             if (back == 0) back = Factorise.Solve(uplow, nfac, n, FCc, piv, Q, nfac, 0, 0, n, 1);
             return back;
+        }
+        public static void DiagMul(int n, double[] Q, double[] w, double[] Qw, int Qstart = 0, int wstart = 0, int Qwstart = 0)
+        {
+            for (var i = 0; i < n; ++i)
+            {
+                Qw[i + Qwstart] = Q[i + Qstart] * w[i + wstart];
+            }
+        }
+        public static void CovMul(int n, double[] Q, double[] w, double[] Qw, int Qstart = 0, int wstart = 0, int Qwstart = 0, char uplow = 'U')
+        {
+            if (uplow == 'U') dsmxmulv(n, Q, w, Qw, wstart, Qwstart, Qstart);
+            else if (uplow == 'L') dsmxmulvT(n, Q, w, Qw, wstart, Qwstart, Qstart);
+        }
+        public static void FacMul(int n, int nfac, double[] Q, double[] w, double[] Qw, int Qstart = 0, int wstart = 0, int Qwstart = 0)
+        {
+            DiagMul(n, Q, w, Qw, Qstart, wstart, Qwstart);
+            for (var k = 0; k < nfac; ++k)
+            {
+                BlasLike.daxpy(n, BlasLike.ddot(n, Q, nfac, w, 1, Qstart + n + k, wstart), Q, nfac, Qw, 1, Qstart + n + k, Qwstart);
+            }
         }
     }
 }

@@ -766,7 +766,15 @@ namespace BlasLikeTest
             {
                 test = Math.Max(Math.Abs(result[i] - correct[i]), test);
             }
-            Assert.IsTrue(back == 0 && test <= BlasLike.lm_eps*8, $"{test}:{result[0]},{result[1]},{result[2]},{result[3]},{result[4]},{result[5]},{result[6]},{result[7]},{result[8]},");
+            Assert.IsTrue(back == 0 && test <= BlasLike.lm_eps * 8, $"{test}:{result[0]},{result[1]},{result[2]},{result[3]},{result[4]},{result[5]},{result[6]},{result[7]},{result[8]},");
+            var w = new double[n];
+            w[0] = 1;
+            var Qw = new double[n];
+            Factorise.FacMul(n, nfac, Q, w, Qw);
+            result[0] += Q[0];//
+            BlasLike.dsubvec(n, Qw, result, Qw);
+            test = BlasLike.ddotvec(n, Qw, Qw);
+            Assert.IsTrue(Math.Abs(test) < BlasLike.lm_eps2, $"test={test}");
         }
     }
 }

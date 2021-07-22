@@ -5027,14 +5027,15 @@ namespace ActiveSet
             BlasLike.dnegvec(n, PX);
             if (nclin > 0) BlasLike.dnegvec(nclin, AP);
         }
-        public static void printV<T>(string name, T[] a)
+        public static void printV<T>(string name, T[] a, int upto = -1)
         {
             Console.WriteLine(name);
-            for (int i = 0; i < a.Length; ++i)
+            if (upto == -1) upto = a.Length;
+            for (int i = 0; i < upto; ++i)
             {
                 var p = a[i].GetType();
                 if (p.FullName == "System.Double")
-                    Console.Write($"{a[i]:0.00000000} ");
+                    Console.Write($"{a[i]:F8} ");
                 else
                     Console.Write($"{a[i]} ");
                 if (i % 10 == 9) Console.Write("\n");

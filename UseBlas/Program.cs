@@ -1027,6 +1027,66 @@ namespace UseBlas
                     TestData.PrintField("alpha");
                     TestData.PrintField("names");
                 }
+                using (var TestData = new InputSomeData())
+                {
+                    Console.WriteLine("--------------Test FMP with real data frpm file-------------");
+                    TestData.doubleFields = "FC SV FL";
+                    TestData.intFields = "n nfac";
+                    TestData.stringFields = "names";
+                    TestData.Read("/Users/colin/VECTOR/pylog.log");
+                    var n = TestData.mapInt["n"][0];
+                    var nfac = TestData.mapInt["nfac"][0];
+                    var SV = TestData.mapDouble["SV"];
+                    var FL = TestData.mapDouble["FL"];
+                    var FC = TestData.mapDouble["FC"];
+                    var FCl = (double[])FC.Clone();
+                    for (int ij = 0, i = 0; i < nfac; ++i)
+                    {
+                        for (var j = i; j < nfac; ++j, ij++)
+                        {
+                            FCl[ij] = FC[j * (j + 1) / 2 + i];
+                        }
+                    }
+                    var names = TestData.mapString == null ? null : TestData.mapString["names"];// All unwanted data in the file will go into names
+                    if (names != null)
+                    {
+                        Console.WriteLine($"{names.Length} names");
+                        Array.Resize(ref names, n);
+                        Console.WriteLine($"{names.Length} names");
+                    }
+                    var Q = new double[(nfac + 1) * n];
+                    var result = (double[])new double[n * n];
+                    var back = Factorise.FMP(n, nfac, FCl, SV, FL, Q, 'L');
+                    if (back == -10) Console.WriteLine("Factor Covraince matrix is not positive definite");
+                    var upto = 30;
+                    for (var i = 0; i < n; ++i) //Multiply out the factor part of the compressed risk model
+                    {
+                        Factorise.dmxmulv(n, nfac, Q, Q, result, n, n + nfac * i, i * n, true);
+                    }
+                    for (var i = 0; i < n; ++i)
+                    {
+                        result[i * n + i] += Q[i];
+                    }
+                    ActiveSet.Optimise.printV("Asset COV via lower case", result, upto);
+                    back = Factorise.FMP(n, nfac, FC, SV, FL, Q);
+                    if (back == -10) Console.WriteLine("Factor Covraince matrix is not positive definite");
+                    for (var i = 0; i < n; ++i) //Multiply out the factor part of the compressed risk model
+                    {
+                        Factorise.dmxmulv(n, nfac, Q, Q, result, n, n + nfac * i, i * n, true);
+                    }
+                    for (var i = 0; i < n; ++i)
+                    {
+                        result[i * n + i] += Q[i];
+                    }
+                    ActiveSet.Optimise.printV("Asset COV via upper case", result, upto);
+                    var w = new double[n];
+                    var Qw = new double[n];
+                    w[0] = 1;
+                    Factorise.FacMul(n, nfac, Q, w, Qw);
+                    var variance = BlasLike.ddotvec(n, w, Qw);
+                    Console.WriteLine($"variance = {variance:F8}");
+                    ActiveSet.Optimise.printV("Test first row of assembled covariance matrix", Qw, upto);
+                }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry

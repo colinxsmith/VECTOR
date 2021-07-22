@@ -7,21 +7,30 @@ namespace DataFile
     {
         public void Dispose()
         {
-            foreach (var dv in mapDouble.Keys)
+            if (mapDouble != null)
             {
-                mapDouble[dv] = null;
+                foreach (var dv in mapDouble.Keys)
+                {
+                    mapDouble[dv] = null;
+                }
+                mapDouble.Clear();
             }
-            mapDouble.Clear();
-            foreach (var dv in mapInt.Keys)
+            if (mapInt != null)
             {
-                mapInt[dv] = null;
+                foreach (var dv in mapInt.Keys)
+                {
+                    mapInt[dv] = null;
+                }
+                mapInt.Clear();
             }
-            mapInt.Clear();
-            foreach (var dv in mapString.Keys)
+            if (mapString != null)
             {
-                mapString[dv] = null;
+                foreach (var dv in mapString.Keys)
+                {
+                    mapString[dv] = null;
+                }
+                mapString.Clear();
             }
-            mapString.Clear();
         }
         public Dictionary<string, double[]> mapDouble = null;
         public Dictionary<string, int[]> mapInt = null;
@@ -41,6 +50,7 @@ namespace DataFile
                     line = line.Trim();
                     var lf = line.Split(dataSep);
                     setData = false;
+                    if (line == "") continue;
                     if (!setData)
                         foreach (var k in doubleFields.Split(dataSep))
                         {
@@ -79,24 +89,27 @@ namespace DataFile
         {
             var back = false;
             if (k == -1) return true;
-            foreach (var p in doubleFields.Split(dataSep))
-            {
-                if (p[0] == (char)k) back = true;
-            }
-            foreach (var p in intFields.Split(dataSep))
-            {
-                if (p[0] == (char)k) back = true;
-            }
-            foreach (var p in stringFields.Split(dataSep))
-            {
-                if (p[0] == (char)k) back = true;
-            }
+            if (doubleFields != "")
+                foreach (var p in doubleFields.Split(dataSep))
+                {
+                    if (p[0] == (char)k) back = true;
+                }
+            if (intFields != "")
+                foreach (var p in intFields.Split(dataSep))
+                {
+                    if (p[0] == (char)k) back = true;
+                }
+            if (stringFields != "")
+                foreach (var p in stringFields.Split(dataSep))
+                {
+                    if (p[0] == (char)k) back = true;
+                }
             return back;
         }
         // Check that a line of entries "out of place" contains doubles or integers.
         // so that it can be added on to the previous line. We assume all doubles, integers or strings on a line.
         // This should handle most mistakes in a data file.
-        double[] readDoubleArray(TextReader more)
+        double[] readDoubleArray(StreamReader more)
         {
             var line = more.ReadLine();
             bool foundDouble = true;
@@ -129,7 +142,7 @@ namespace DataFile
             return back;
         }
 
-        int[] readIntArray(TextReader more)
+        int[] readIntArray(StreamReader more)
         {
             var line = more.ReadLine();
             bool foundInt = true;
@@ -138,8 +151,8 @@ namespace DataFile
             {
                 var ll = more.ReadLine(); try
                 {
-                    if (ll != null && !ll.Contains(dataSep)) double.Parse(ll);
-                    if (ll != null && ll.Contains(dataSep)) double.Parse(ll.Split(dataSep)[0]);
+                    if (ll != null && !ll.Contains(dataSep)) int.Parse(ll);
+                    if (ll != null && ll.Contains(dataSep)) int.Parse(ll.Split(dataSep)[0]);
                 }
                 catch
                 {
@@ -161,7 +174,7 @@ namespace DataFile
             return back;
         }
 
-        string[] readStringArray(TextReader more)
+        string[] readStringArray(StreamReader more)
         {
             var line = more.ReadLine();
             if (line != null) line = line.Trim();
