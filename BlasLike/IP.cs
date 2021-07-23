@@ -976,14 +976,14 @@ namespace InteriorPoint
                             thetaScale(n, zbar, THETA[icone], true, false, cstart);//zbar=(Wtheta)m1.z=xbar
                             Tmulvec(n, xbar, cstart);//Tmulvec does nothing for SOCP, needed for SOCPR
                             Tmulvec(n, zbar, cstart);
-                            /*       if (zcopy)
-                                   {
-                                       BlasLike.dcopyvec(n, xbar, zbar);
-                                   }
-                                   else if (xcopy)
-                                   {
-                                       BlasLike.dcopyvec(n, zbar, xbar);
-                                   }*/
+                            if (zcopy)
+                            {
+                                BlasLike.dcopyvec(n, xbar, zbar);
+                            }
+                            else if (xcopy)
+                            {
+                                BlasLike.dcopyvec(n, zbar, xbar);
+                            }
                             applyX(n, xbar, zbar, rmu, cstart, cstart, cstart);
                             Tmulvec(n, rmu, cstart);
                         }

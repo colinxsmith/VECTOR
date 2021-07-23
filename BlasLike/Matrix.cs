@@ -1323,5 +1323,28 @@ void ddmxmulv(int n, double* d, int incd, double* x, int incx)
                 BlasLike.daxpy(n, BlasLike.ddot(n, Q, nfac, w, 1, Qstart + n + k, wstart), Q, nfac, Qw, 1, Qstart + n + k, Qwstart);
             }
         }
+        public static void Fac2Cov(int n, int nfac, double[] Q, double[] C, int Qstart = 0, int Cstart = 0, char uplow = 'U')
+        {
+            if (uplow == 'U')
+                for (int i = 0, ij = 0; i < n; ++i, ij += i)
+                {
+                    BlasLike.dsccopy(i + 1, Q[n + Qstart + i * nfac], Q, nfac, C, 1, n + Qstart, Cstart + ij);
+                    C[Cstart + ij + i] += Q[Qstart + i];
+                    for (var k = 1; k < nfac; ++k)
+                    {
+                        BlasLike.daxpy(i + 1, Q[n + Qstart + i * nfac + k], Q, nfac, C, 1, n + Qstart + k, Cstart + ij);
+                    }
+                }
+            else if (uplow == 'L')
+                for (int i = 0, ij = 0; i < n; ++i, ij += (n - i))
+                {
+                    BlasLike.dsccopy(n - i, Q[Qstart + n + i * nfac], Q, nfac, C, 1, Qstart + n + i * nfac, Cstart + ij);
+                    C[Cstart + ij] += Q[Qstart + i];
+                    for (var k = 1; k < nfac; ++k)
+                    {
+                        BlasLike.daxpy(n - i, Q[Qstart + n + i * nfac + k], Q, nfac, C, 1, Qstart + n + k + i * nfac, Cstart + ij);
+                    }
+                }
+        }
     }
 }

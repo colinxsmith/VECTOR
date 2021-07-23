@@ -1086,6 +1086,13 @@ namespace UseBlas
                     var variance = BlasLike.ddotvec(n, w, Qw);
                     Console.WriteLine($"variance = {variance:F8}");
                     ActiveSet.Optimise.printV("Test first row of assembled covariance matrix", Qw, upto);
+                    var COV = new double[n * (n + 1) / 2];
+                    Factorise.Fac2Cov(n, nfac, Q, COV, 0, 0, 'L');
+                    Factorise.CovMul(n, COV, w, Qw, 0, 0, 0, 'L');
+                    ActiveSet.Optimise.printV("Test first row of generated covariance matrix 'L'", Qw, upto);
+                    Factorise.Fac2Cov(n, nfac, Q, COV);
+                    Factorise.CovMul(n, COV, w, Qw);
+                    ActiveSet.Optimise.printV("Test first row of generated covariance matrix 'U'", Qw, upto);
                 }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
@@ -1129,7 +1136,7 @@ namespace UseBlas
                     Console.WriteLine("exception" + prob);
                 }
                 lic = new Byte[20];
-                var fiddlelic = "e2;76;67;a8;69;9c;b1;b5;2e;29;73;f2;84;a9;da;7f;ff;03;00;00";
+                var fiddlelic = "db;05;fd;61;38;e4;2b;f8;2e;29;73;bf;a4;d3;40;98;ff;03;00;00";
                 var il = 0;
                 foreach (string ll in fiddlelic.Split(';'))
                 {
