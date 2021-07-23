@@ -771,7 +771,7 @@ namespace BlasLikeTest
             w[0] = 1;
             var Qw = new double[n];
             Factorise.FacMul(n, nfac, Q, w, Qw);
-            result[0] += Q[0];//
+            result[0] += Q[0];
             BlasLike.dsubvec(n, Qw, result, Qw);
             test = BlasLike.ddotvec(n, Qw, Qw);
             Assert.IsTrue(Math.Abs(test) < BlasLike.lm_eps2, $"test={test}");
