@@ -1029,7 +1029,7 @@ namespace UseBlas
                 }
                 using (var TestData = new InputSomeData())
                 {
-                    Console.WriteLine("--------------Test FMP with real data frpm file-------------");
+                    Console.WriteLine("--------------Test FMP with real data from file-------------");
                     TestData.doubleFields = "FC SV FL";
                     TestData.intFields = "n nfac";
                     TestData.stringFields = "names";
@@ -1053,7 +1053,9 @@ namespace UseBlas
                         Console.WriteLine($"{names.Length} names");
                         Array.Resize(ref names, n);
                         Console.WriteLine($"{names.Length} names");
+                        TestData.mapString["names"] = names;
                     }
+                    TestData.Write();
                     var Q = new double[(nfac + 1) * n];
                     var result = (double[])new double[n * n];
                     var back = Factorise.FMP(n, nfac, FCl, SV, FL, Q, 'L');

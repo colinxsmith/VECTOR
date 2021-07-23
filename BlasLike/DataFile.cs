@@ -39,6 +39,45 @@ namespace DataFile
         public string doubleFields = "c alpha";
         public string intFields = "n m";
         public string stringFields = "names";
+        public void Write(string OutFile = "out.log", bool append = false)
+        {//It may be better to live with spaces at the end of each line and use .Write() and avoid using outstring variable
+            using (var outF = new StreamWriter(OutFile, append))
+            {
+                foreach (var name in intFields.Split(dataSep))
+                {
+                    outF.WriteLine(name);
+                    string outstring = "";
+                    foreach (var val in mapInt[name])
+                    {
+                        outstring += val + " ";
+                    }
+                    outstring = outstring.Trim();
+                    outF.WriteLine(outstring);
+                }
+                foreach (var name in doubleFields.Split(dataSep))
+                {
+                    outF.WriteLine(name);
+                    string outstring = "";
+                    foreach (var val in mapDouble[name])
+                    {
+                        outstring += val + " ";
+                    }
+                    outstring = outstring.Trim();
+                    outF.WriteLine(outstring);
+                }
+                foreach (var name in stringFields.Split(dataSep))
+                {
+                    outF.WriteLine(name);
+                    string outstring = "";
+                    foreach (var val in mapString[name])
+                    {
+                        outstring += val + " ";
+                    }
+                    outstring = outstring.Trim();
+                    outF.WriteLine(outstring);
+                }
+            }
+        }
         public void Read(string FileName = "testData")
         {
             using (var inF = new StreamReader(FileName))
@@ -141,7 +180,6 @@ namespace DataFile
             }
             return back;
         }
-
         int[] readIntArray(StreamReader more)
         {
             var line = more.ReadLine();
@@ -173,7 +211,6 @@ namespace DataFile
             }
             return back;
         }
-
         string[] readStringArray(StreamReader more)
         {
             var line = more.ReadLine();
