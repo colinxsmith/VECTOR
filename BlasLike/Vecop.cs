@@ -772,14 +772,14 @@ namespace Blas
                 x[i] = -x[i];
         }
 
-        public unsafe static void dscal(int n, double a, double[] x, int ix, int xstart = 0)
+        public static void dscal(int n, double a, double[] x, int ix, int xstart = 0)
         {
-            if (baseref != 0)
+  /*      if (baseref != 0)
             {
                 fixed (double* xx = x)
                     dscal(n, a, xx + xstart, ix);
                 return;
-            }
+            }*/
             if (a == 0)
             {
                 dzero(n, x, ix, xstart);
