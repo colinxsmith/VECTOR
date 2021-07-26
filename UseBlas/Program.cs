@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Blas;
 using Solver;
 using DataFile;
+using Portfolio;
 using Microsoft.Win32;
 
 namespace UseBlas
@@ -850,7 +851,9 @@ namespace UseBlas
                 foreach (var cc in implied) Console.WriteLine($"Constraint value {cc}");
                 BlasLike.dsetvec(x.Length, 1.0 / n, x);
                 BlasLike.dscalvec(hess.Length, 1e3, hess);
-                back = ActiveSet.Optimise.QPopt(n, m, x, L, U, A, c, hess, ref obj, ref iter);
+                var opt=new ActiveSet.Optimise();
+                if(opt.h==null)opt.h=opt.qphess1;
+                back = opt.QPopt(n, m, x, L, U, A, c, hess, ref obj, ref iter);
                 implied = new double[n];
                 Factorise.dsmxmulv(n, hess, x, implied);
                 Console.WriteLine($"back is {back} {BlasLike.ddotvec(n, x, c) + 0.5 * BlasLike.ddotvec(n, implied, x)} {obj}  {iter} iterations");
@@ -1096,6 +1099,9 @@ namespace UseBlas
                     Factorise.CovMul(n, COV, w, Qw);
                     ActiveSet.Optimise.printV("Test first row of generated covariance matrix 'U'", Qw, upto);
                 }
+            }{
+                Console.WriteLine("-------------------------Portfolio----------------");
+                var port=new Portfolio.FPortfolio("/Users/colin/VECTOR/pylog.log");
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry

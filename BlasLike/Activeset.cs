@@ -4,8 +4,11 @@ using Solver;
 using System.Diagnostics;
 namespace ActiveSet
 {
+    public delegate void hessmull(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx);
     public class Optimise
     {
+
+        public hessmull h = null;
         double[] xnorm;
         int NROWA;
         bool UNITQ;
@@ -4002,6 +4005,10 @@ namespace ActiveSet
         }
         void qphess(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx)
         {
+            h(n, nrowh, ncolh, j, hess, wrk, hx);
+        }
+        public void qphess1(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx)
+        {
             Solver.Factorise.dsmxmulv(n, hess, wrk, hx);
         }
         void dqpcore(int orthog, ref int inform, ref int iter, int itmax, int n, int nclin, int nctotl, int nrowh, int ncolh, int nactiv, int nfree, ref double objqp, double[] xnorm)
@@ -5078,9 +5085,10 @@ namespace ActiveSet
             objective = obj;
             return back;
         }
-        public static short QPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] QQ, ref double objective, ref int iter)
+        public short QPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] QQ, ref double objective, ref int iter)
         {
-            var opt = new Optimise();
+            var opt = this;
+            if(opt.h==null)opt.h=opt.qphess1;
             var lp = 0;
             var itmax = (short)20000;
             var orthog = 1;

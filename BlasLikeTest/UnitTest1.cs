@@ -715,7 +715,8 @@ namespace BlasLikeTest
                 {
                     BlasLike.dsetvec(x.Length, 1.0 / n, x);
                     var budget = 1.0;
-                    back = ActiveSet.Optimise.QPopt(n, m, x, L, U, A, c, hess, ref obj, ref iter);
+                    var opt=new ActiveSet.Optimise();
+                    back = opt.QPopt(n, m, x, L, U, A, c, hess, ref obj, ref iter);
                     Factorise.dsmxmulv(n, hess, x, implied);
                     var constraintVal = new double[m];
                     Factorise.dmxmulv(m, n, A, x, constraintVal);
