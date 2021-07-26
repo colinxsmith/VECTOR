@@ -40,41 +40,38 @@ namespace DataFile
         public string intFields = "n m";
         public string stringFields = "names";
         public void Write(string OutFile = "out.log", bool append = false)
-        {//It may be better to live with spaces at the end of each line and use .Write() and avoid using outstring variable
+        {
             using (var outF = new StreamWriter(OutFile, append))
             {
                 foreach (var name in intFields.Split(dataSep))
                 {
                     outF.WriteLine(name);
-                    string outstring = "";
-                    foreach (var val in mapInt[name])
+                    var n = mapInt[name].Length - 1;
+                    for (var i = 0; i < n; ++i)
                     {
-                        outstring += val + " ";
+                        outF.Write(mapInt[name][i] + " ");
                     }
-                    outstring = outstring.Trim();
-                    outF.WriteLine(outstring);
+                    outF.WriteLine(mapInt[name][n]);
                 }
                 foreach (var name in doubleFields.Split(dataSep))
                 {
                     outF.WriteLine(name);
-                    string outstring = "";
-                    foreach (var val in mapDouble[name])
+                    var n = mapDouble[name].Length - 1;
+                    for (var i = 0; i < n; ++i)
                     {
-                        outstring += val + " ";
+                        outF.Write(mapDouble[name][i] + " ");
                     }
-                    outstring = outstring.Trim();
-                    outF.WriteLine(outstring);
+                    outF.WriteLine(mapDouble[name][n]);
                 }
                 foreach (var name in stringFields.Split(dataSep))
                 {
                     outF.WriteLine(name);
-                    string outstring = "";
-                    foreach (var val in mapString[name])
+                    var n = mapString[name].Length - 1;
+                    for (var i = 0; i < n; ++i)
                     {
-                        outstring += val + " ";
+                        outF.Write(mapString[name][i] + " ");
                     }
-                    outstring = outstring.Trim();
-                    outF.WriteLine(outstring);
+                    outF.WriteLine(mapString[name][n]);
                 }
             }
         }
