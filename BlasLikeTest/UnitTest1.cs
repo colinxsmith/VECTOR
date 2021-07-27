@@ -715,7 +715,7 @@ namespace BlasLikeTest
                 {
                     BlasLike.dsetvec(x.Length, 1.0 / n, x);
                     var budget = 1.0;
-                    var opt=new ActiveSet.Optimise();
+                    var opt = new ActiveSet.Optimise();
                     back = opt.QPopt(n, m, x, L, U, A, c, hess, ref obj, ref iter);
                     Factorise.dsmxmulv(n, hess, x, implied);
                     var constraintVal = new double[m];
@@ -739,7 +739,8 @@ namespace BlasLikeTest
             int[] typecone = { (int)InteriorPoint.conetype.SOCP };
 
             Factorise.dmx_transpose(n, m, A, A);// Does nothing here
-            var back = InteriorPoint.Optimise.Opt(nvar, m, x, A, b, c, 0, null, "SOCP", cone, typecone, true);
+            var opt1 = new InteriorPoint.Optimise(n, m, x, A, b, c);
+            var back = opt1.Opt("SOCP", cone, typecone, true);
             var util = BlasLike.ddotvec(n, c, x);
             Assert.IsTrue(back == 0 && Math.Abs(x[n - 1] - 1) < 1e-8, $"util = {util}");
         }

@@ -4,6 +4,8 @@ using Solver;
 using System.Diagnostics;
 namespace InteriorPoint
 {
+    public delegate void hessmull(int n, double[] hess, double[] wrk, double[] hx);
+
     public enum conetype { QP, SOCP, SOCPR };
     class BestResults
     {
@@ -37,9 +39,10 @@ namespace InteriorPoint
     }
     public class Optimise
     {
+        public hessmull h = null;
         BestResults keep;
         bool copyKept = false;
-        double alphamin = 1e-1;
+        public double alphamin = 1e-1;
         double conv = BlasLike.lm_eps;
         double compConv = BlasLike.lm_eps;
         int badindex = -1;
@@ -72,12 +75,12 @@ namespace InteriorPoint
         double[] dy = null;
         double[] z = null;
         double[] dz = null;
-        double[] H = null;
+        public double[] H = null;
         double[] xbar = null;
         double[] zbar = null;
         double[] dxbar = null;
         double[] dzbar = null;
-        int nh;
+        public int nh;
         char uplo = 'U';
         double[] HCOPY = null;
         double tau = 1;
@@ -118,6 +121,10 @@ namespace InteriorPoint
             }
             return back;
         }
+        public void qphess1(int n, double[] hess, double[] wrk, double[] hx)
+        {
+            Solver.Factorise.dsmxmulv(n, hess, wrk, hx);
+        }
         static double norm(double[] aa) => Math.Sqrt(BlasLike.ddotvec(aa.Length, aa, aa));
         static double square(double a) => a * a;
         double gfunc(double a) => Math.Min(0.5, square(1 - a)) * (1 - a);
@@ -128,7 +135,7 @@ namespace InteriorPoint
             if (fail != 0 && b == 0) back = BlasLike.lm_max;
             return back;
         }
-        Optimise(int n, int m, double[] x, double[] A, double[] b, double[] c, int nh = 0, double[] H = null)
+        public Optimise(int n, int m, double[] x, double[] A, double[] b, double[] c, int nh = 0, double[] H = null)
         {
             keep = new BestResults();
             this.n = n;
@@ -1094,9 +1101,9 @@ namespace InteriorPoint
             return timeaquired;
         }
 
-        public static int Opt(int n, int m, double[] w, double[] A, double[] b, double[] c, int nh = 0, double[] H = null, string mode = "QP", int[] cone = null, int[] typecone = null, bool homogenous = true)
+        public int Opt( string mode = "QP", int[] cone = null, int[] typecone = null, bool homogenous = true)
         {
-            var opt = new Optimise(n, m, w, A, b, c, nh, H);
+            var opt = this;
             var stepReduce = 1;
             opt.optMode = mode;
             if (mode == "SOCP")
@@ -1121,11 +1128,12 @@ namespace InteriorPoint
             opt.homogenous = homogenous;
             opt.tau = 1;
             opt.kappa = 1;
-            opt.usrH = nh > 0 && BlasLike.dsumvec(opt.H.Length, opt.H) != 0.0;
+            opt.usrH = (h == null && nh > 0 && BlasLike.dsumvec(opt.H.Length, opt.H) != 0.0) || opt.h != null;
             if (mode == "QP")
             {
-                BlasLike.dsetvec(n, 1, opt.x);
-                BlasLike.dsetvec(n, 1, opt.z);
+                if (h == null) h = qphess1;
+                BlasLike.dsetvec(n, 1.0, opt.x);
+                BlasLike.dsetvec(n, 1.0, opt.z);
             }
             else if (mode == "SOCP")
             {
@@ -1166,9 +1174,9 @@ namespace InteriorPoint
                     {
                         BlasLike.dcopyvec(opt.c.Length, opt.x, opt.cmod);
                         BlasLike.dscalvec(opt.c.Length, 1.0 / opt.tau, opt.cmod);
-                        Factorise.dsmxmulv(nh, opt.H, opt.cmod, extra);
+                        h(nh, opt.H, opt.cmod, extra);
                     }
-                    else Factorise.dsmxmulv(nh, opt.H, opt.x, extra);
+                    else h(nh, opt.H, opt.x, extra);
                     BlasLike.dzerovec(n - nh, opt.cmod, nh);
                     BlasLike.daddvec(nh, opt.c, extra, opt.cmod);
                 }
@@ -1259,7 +1267,7 @@ namespace InteriorPoint
                     }
                 }
                 opt.SolvePrimaryDual();
-                if (opt.badindex != 0) Console.WriteLine($"Normal matrix is unstable: badindex={opt.badindex}");
+                if (opt.badindex != 0 && m > 1) Console.WriteLine($"Normal matrix is unstable: badindex={opt.badindex}");
                 BlasLike.dcopyvec(n, opt.dx, dxold);
                 BlasLike.dcopyvec(n, opt.dz, dzold);
                 BlasLike.dcopyvec(m, opt.dy, dyold);
@@ -1283,9 +1291,9 @@ namespace InteriorPoint
                     {
                         BlasLike.dcopyvec(opt.c.Length, opt.x, opt.cmod);
                         BlasLike.dscalvec(opt.c.Length, 1.0 / opt.tau, opt.cmod);
-                        Factorise.dsmxmulv(nh, opt.H, opt.cmod, extra);
+                        h(nh, opt.H, opt.cmod, extra);
                     }
-                    else Factorise.dsmxmulv(nh, opt.H, opt.x, extra);
+                    else h(nh, opt.H, opt.x, extra);
                     BlasLike.dzerovec(opt.c.Length - nh, opt.cmod, nh);
                     BlasLike.daddvec(nh, opt.c, extra, opt.cmod);
                 }

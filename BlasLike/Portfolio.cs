@@ -13,13 +13,15 @@ namespace Portfolio
             if (inFile != "")
                 using (var OptData = new DataFile.InputSomeData())
                 {
-                    OptData.intFields = "n m";
-                    OptData.doubleFields = "gamma alpha Q L U A buy sell initial bench";
+                    OptData.intFields = "n m nfac";
+                    OptData.doubleFields = "delta kappa gamma alpha Q L U A buy sell initial bench FC FL SV";
                     OptData.stringFields = "names";
                     OptData.Read(inFile);
                     n = OptData.mapInt["n"][0];
                     m = OptData.mapInt["m"][0];
                     gamma = OptData.mapDouble["gamma"][0];
+                    kappa = OptData.mapDouble["kappa"][0];
+                    delta = OptData.mapDouble["delta"][0];
                     alpha = OptData.mapDouble["alpha"];
                     initial = OptData.mapDouble["initial"];
                     bench = OptData.mapDouble["bench"];
@@ -31,14 +33,20 @@ namespace Portfolio
                     Q = OptData.mapDouble["Q"];
                     names = OptData.mapString["names"];
                     if (names != null) Array.Resize(ref names, n);
-                    var back = makeQ();
                 }
+        }
+        public virtual void Optimise()
+        {
+            var back = makeQ();
+            var ip = InteriorOpt();
+            var ok = ActiveOpt();
         }
         public string inFile = "";
         public int n;
         public int m;
         public double gamma;
         public double kappa;
+        public double delta;
         public double[] w = null;
         public double[] initial = null;
         public double[] bench = null;
@@ -58,42 +66,13 @@ namespace Portfolio
             else
                 return -10;
         }
-    }
-    public class FPortfolio : Portfolio
-    {
-        public FPortfolio(string file) : base("")
+        public virtual void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
         {
-            inFile = file;
-            using (var OptData = new DataFile.InputSomeData())
-            {
-                OptData.intFields = "n m nfac";
-                OptData.doubleFields = "gamma alpha FC FL SV L U A buy sell initial bench";
-                OptData.stringFields = "names";
-                OptData.Read(inFile);
-                n = OptData.mapInt["n"][0];
-                m = OptData.mapInt["m"][0];
-                nfac = OptData.mapInt["nfac"][0];
-                gamma = OptData.mapDouble["gamma"][0];
-                alpha = OptData.mapDouble["alpha"];
-                initial = OptData.mapDouble["initial"];
-                bench = OptData.mapDouble["bench"];
-                L = OptData.mapDouble["L"];
-                U = OptData.mapDouble["U"];
-                A = OptData.mapDouble["A"];
-                buy = OptData.mapDouble["buy"];
-                sell = OptData.mapDouble["sell"];
-                FC = OptData.mapDouble["FC"];
-                FL = OptData.mapDouble["FL"];
-                SV = OptData.mapDouble["SV"];
-                names = OptData.mapString["names"];
-                if (names != null) Array.Resize(ref names, n);
-                var back = makeQ();
-                var ok = ActiveOpt();
-            }
+            Factorise.CovMul(n, Q, x, hx);
         }
-        void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
+        public virtual void hessmull(int nn, double[] QQ, double[] x, double[] hx)
         {
-            Factorise.FacMul(n, nfac, Q, x, hx);
+            Factorise.CovMul(n, Q, x, hx);
         }
         public int ActiveOpt()
         {
@@ -101,17 +80,68 @@ namespace Portfolio
             var iter = 10;
             var c = (double[])alpha.Clone();
             var cextra = new double[n];
+            var opt = new Optimise();
+            opt.h = hessmull;
             if (bench != null)
             {
-                Factorise.FacMul(n, nfac, Q, bench, cextra);
+                hessmull(n, 0, 0, 0, Q, bench, cextra);
                 BlasLike.dnegvec(n, cextra);
             }
             BlasLike.daxpyvec(n, -gamma / (1 - gamma), c, cextra);
             w = new double[n];
             BlasLike.dsetvec(n, 1.0 / n, w);
-            var opt = new Optimise();
-            opt.h = hessmull;
             return opt.QPopt(n, m, w, L, U, A, cextra, Q, ref obj, ref iter);
+        }
+
+        public int InteriorOpt()
+        {
+            var c = (double[])alpha.Clone();
+            var cextra = new double[n];
+            var mm = 1;
+            var b = new double[mm];
+            b[0] = L[n];
+            if (bench != null)
+            {
+                hessmull(n, Q, bench, cextra);
+                BlasLike.dnegvec(n, cextra);
+            }
+            BlasLike.daxpyvec(n, -gamma / (1 - gamma), c, cextra);
+            w = new double[n];
+            BlasLike.dsetvec(n, 1.0 / n, w);
+            var HH = new double[n * (n + 1) / 2];
+            Factorise.Fac2Cov(n, (int)(Q.Length / n) - 1, Q, HH);
+            var IOPT = new InteriorPoint.Optimise(n, m, w, A, b, cextra, n, HH);
+            IOPT.h = hessmull;
+            return IOPT.Opt();
+        }
+
+    }
+    public class FPortfolio : Portfolio
+    {
+        public FPortfolio(string file) : base(file)
+        {
+            inFile = file;
+            using (var OptData = new DataFile.InputSomeData())
+            {
+                OptData.intFields = "n m nfac";
+                OptData.doubleFields = "delta kappa gamma alpha Q L U A buy sell initial bench FC FL SV";
+                OptData.stringFields = "names";
+                OptData.Read(inFile);
+                nfac = OptData.mapInt["nfac"][0];
+                FC = OptData.mapDouble["FC"];
+                FL = OptData.mapDouble["FL"];
+                SV = OptData.mapDouble["SV"];
+                names = OptData.mapString["names"];
+                if (names != null) Array.Resize(ref names, n);
+            }
+        }
+        public override void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
+        {
+            Factorise.FacMul(n, nfac, Q, x, hx);
+        }
+        public override void hessmull(int nn, double[] QQ, double[] x, double[] hx)
+        {
+            Factorise.FacMul(n, nfac, Q, x, hx);
         }
         public int nfac;
         public double[] FL = null;

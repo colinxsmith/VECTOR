@@ -851,8 +851,8 @@ namespace UseBlas
                 foreach (var cc in implied) Console.WriteLine($"Constraint value {cc}");
                 BlasLike.dsetvec(x.Length, 1.0 / n, x);
                 BlasLike.dscalvec(hess.Length, 1e3, hess);
-                var opt=new ActiveSet.Optimise();
-                if(opt.h==null)opt.h=opt.qphess1;
+                var opt = new ActiveSet.Optimise();
+                if (opt.h == null) opt.h = opt.qphess1;
                 back = opt.QPopt(n, m, x, L, U, A, c, hess, ref obj, ref iter);
                 implied = new double[n];
                 Factorise.dsmxmulv(n, hess, x, implied);
@@ -930,7 +930,8 @@ namespace UseBlas
                                0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0,
                                0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, -1};
                 Factorise.dmx_transpose(n, m, A, A);
-                var back = InteriorPoint.Optimise.Opt(n, m, x, A, b, c, nh, H);
+                var opt1 = new InteriorPoint.Optimise(n, m, x, A, b, c, nh, H);
+                var back = opt1.Opt();
                 Console.WriteLine($"{back}");
                 var implied = new double[m];
                 var truex = (double[])x.Clone();
@@ -960,7 +961,8 @@ namespace UseBlas
                 int[] typecone = { (int)InteriorPoint.conetype.SOCP };
 
                 Factorise.dmx_transpose(n, m, A, A);
-                var back = InteriorPoint.Optimise.Opt(nvar, m, x, A, b, c, 0, null, "SOCP", cone, typecone, true);
+                var opt1 = new InteriorPoint.Optimise(n, m, x, A, b, c);
+                var back = opt1.Opt("SOCP", cone, typecone, true);
                 Console.WriteLine($"{back}");
                 var implied = new double[m];
                 var truex = (double[])x.Clone();
@@ -1099,9 +1101,12 @@ namespace UseBlas
                     Factorise.CovMul(n, COV, w, Qw);
                     ActiveSet.Optimise.printV("Test first row of generated covariance matrix 'U'", Qw, upto);
                 }
-            }{
+            }
+            {
                 Console.WriteLine("-------------------------Portfolio----------------");
-                var port=new Portfolio.FPortfolio("/Users/colin/VECTOR/pylog.log");
+                var port = new Portfolio.FPortfolio("/Users/colin/VECTOR/pylog.log");
+                port.Optimise();
+                ActiveSet.Optimise.printV("w", port.w);
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
