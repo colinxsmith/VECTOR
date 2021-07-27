@@ -419,9 +419,11 @@ namespace InteriorPoint
                 dd = 1.0;
                 for (int i = 0; i < n; ++i)
                 {
-                    if (dx[i] < 0) ddx = lowest1 * Math.Min(ddx, -aob(x[i], dx[i]));
-                    if (dz[i] < 0) ddz = lowest1 * Math.Min(ddz, -aob(z[i], dz[i]));
+                    if (dx[i] < 0) ddx = Math.Min(ddx, -aob(x[i], dx[i]));
+                    if (dz[i] < 0) ddz = Math.Min(ddz, -aob(z[i], dz[i]));
                 }
+                ddx *= lowest1;
+                ddz *= lowest1;
                 if (homogenous)
                 {
                     if (dtau < 0) dd = lowest1 * Math.Min(dd, -aob(tau, dtau));
@@ -1101,7 +1103,7 @@ namespace InteriorPoint
             return timeaquired;
         }
 
-        public int Opt( string mode = "QP", int[] cone = null, int[] typecone = null, bool homogenous = true)
+        public int Opt(string mode = "QP", int[] cone = null, int[] typecone = null, bool homogenous = true)
         {
             var opt = this;
             var stepReduce = 1;
@@ -1167,7 +1169,7 @@ namespace InteriorPoint
             var extra = new double[nh];
             if (opt.optMode == "QP")
             {
-                opt.conv = (Math.Floor(1e-15 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.conv = (Math.Floor(1e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
                 if (opt.usrH)
                 {
                     if (opt.homogenous)

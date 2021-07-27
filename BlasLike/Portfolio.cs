@@ -112,6 +112,7 @@ namespace Portfolio
             Factorise.Fac2Cov(n, (int)(Q.Length / n) - 1, Q, HH);
             var IOPT = new InteriorPoint.Optimise(n, m, w, A, b, cextra, n, HH);
             IOPT.h = hessmull;
+            IOPT.alphamin=1e-3;
             return IOPT.Opt();
         }
 
