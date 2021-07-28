@@ -40,6 +40,7 @@ namespace Portfolio
             var back = makeQ();
             var ip = InteriorOpt();
             var ok = ActiveOpt();
+            ActiveSet.Optimise.printV("w from active set", w);
         }
         public string inFile = "";
         public int n;
@@ -111,8 +112,15 @@ namespace Portfolio
             var HH = new double[n * (n + 1) / 2];
             Factorise.Fac2Cov(n, (int)(Q.Length / n) - 1, Q, HH);
             var IOPT = new InteriorPoint.Optimise(n, m, w, A, b, cextra, n, HH);
-            IOPT.h = hessmull;
-            IOPT.alphamin=1e-3;
+            //IOPT.h = hessmull;
+            IOPT.alphamin = 1e-3;
+            IOPT.compConv = 1e-8;
+            var testmul=new double[n];
+            hessmull(n,Q,w,testmul);
+            Console.WriteLine(BlasLike.ddotvec(n,w,testmul));
+            var kk=new Portfolio("");
+            kk.hessmull(n,HH,w,testmul);
+            Console.WriteLine(BlasLike.ddotvec(n,w,testmul));
             return IOPT.Opt();
         }
 

@@ -1106,7 +1106,6 @@ namespace UseBlas
                 Console.WriteLine("-------------------------Portfolio----------------");
                 var port = new Portfolio.FPortfolio("/Users/colin/VECTOR/pylog.log");
                 port.Optimise();
-                ActiveSet.Optimise.printV("w", port.w);
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry

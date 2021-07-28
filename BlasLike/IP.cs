@@ -44,7 +44,7 @@ namespace InteriorPoint
         bool copyKept = false;
         public double alphamin = 1e-1;
         double conv = BlasLike.lm_eps;
-        double compConv = BlasLike.lm_eps;
+        public double compConv = BlasLike.lm_eps;
         int badindex = -1;
         string optMode = "QP";
         int numberOfCones = 0;
@@ -111,7 +111,7 @@ namespace InteriorPoint
         double lastdkappa;
         double condition;
         double regularise;
-        static double denomTest(double x) => x == 0 ? 1 : x;
+        static double denomTest(double x) => x * x <= 1 ? 1 : x;
         public static double lInfinity(double[] x)
         {
             var back = 0.0;
@@ -194,7 +194,7 @@ namespace InteriorPoint
                 if (dXdX <= BlasLike.lm_eps)
                 {
                     if (XdX < -BlasLike.lm_eps)
-                        alpha = Math.Min(alpha, lowest1 * (-XX / (XdX + XdX)));
+                        alpha = Math.Min(alpha, (-XX / (XdX + XdX)));
                 }
                 else
                 {
@@ -205,16 +205,16 @@ namespace InteriorPoint
                         if (Math.Abs(XdX) > BlasLike.lm_eps) desc = Math.Sqrt(desc) * Math.Abs(XdX);
                         else desc = Math.Sqrt(desc);
                         if (XdX + desc < 0)
-                            alpha = Math.Min(alpha, lowest1 * ((-XdX - desc) / dXdX));
+                            alpha = Math.Min(alpha, ((-XdX - desc) / dXdX));
                     }
                     else if ((desc >= -BlasLike.lm_eps) && (XdX < 0))
-                        alpha = Math.Min(alpha, lowest1 * ((-XdX) / dXdX));
+                        alpha = Math.Min(alpha, ((-XdX) / dXdX));
                 }
 
                 if (dSdS <= BlasLike.lm_eps)
                 {
                     if (SdS < -BlasLike.lm_eps)
-                        alpha = Math.Min(alpha, lowest1 * (-SS / (SdS + SdS)));
+                        alpha = Math.Min(alpha, (-SS / (SdS + SdS)));
                 }
                 else
                 {
@@ -225,16 +225,16 @@ namespace InteriorPoint
                         if (Math.Abs(SdS) > BlasLike.lm_eps) desc = Math.Sqrt(desc) * Math.Abs(SdS);
                         else desc = Math.Sqrt(desc);
                         if (SdS + desc < 0)
-                            alpha = Math.Min(alpha, lowest1 * ((-SdS - desc) / dSdS));
+                            alpha = Math.Min(alpha, ((-SdS - desc) / dSdS));
                     }
                     else if ((desc >= -BlasLike.lm_eps * 8) && (SdS < 0))
-                        alpha = Math.Min(alpha, lowest1 * ((-SdS) / dSdS));
+                        alpha = Math.Min(alpha, ((-SdS) / dSdS));
                 }
 
                 if (Math.Abs(dXdS) <= BlasLike.lm_eps)
                 {
                     if (dXS + XdS < -BlasLike.lm_eps)
-                        alpha = Math.Min(alpha, lowest1 * (-XS / (XdS + dXS)));
+                        alpha = Math.Min(alpha, (-XS / (XdS + dXS)));
                 }
                 else
                 {
@@ -245,12 +245,12 @@ namespace InteriorPoint
                         if (Math.Abs(XdS + dXS) > BlasLike.lm_eps) desc = Math.Sqrt(desc) * Math.Abs(XdS + dXS);
                         else desc = Math.Sqrt(desc);
                         if ((XdS + dXS + desc) > 0 && dXdS < 0)
-                            alpha = Math.Min(alpha, lowest1 * ((-XdS - dXS - desc) / 2.0 / dXdS));
+                            alpha = Math.Min(alpha, ((-XdS - dXS - desc) / 2.0 / dXdS));
                         else if ((XdS + dXS + desc) / dXdS < 0)
-                            alpha = Math.Min(alpha, lowest1 * ((-XdS - dXS - desc) / 2.0 / dXdS));
+                            alpha = Math.Min(alpha, ((-XdS - dXS - desc) / 2.0 / dXdS));
                     }
                     else if ((desc >= -BlasLike.lm_eps * 8) && ((XdS + dXS) / dXdS < 0))
-                        alpha = Math.Min(alpha, lowest1 * ((-XdS - dXS) / 2.0 / dXdS));
+                        alpha = Math.Min(alpha, ((-XdS - dXS) / 2.0 / dXdS));
                 }
 
                 ddx = alpha;
@@ -286,8 +286,8 @@ namespace InteriorPoint
                         vz1[icone] = BlasLike.ddotvec(n, z, Qz, cstart, 0);//z.Qz
                         vz2[icone] = 2.0 * BlasLike.ddotvec(n, dz, Qz, cstart, 0);//dz.Qz
                         vz3[icone] = BlasLike.ddotvec(n, dz, Qdz, cstart, 0);//dz.Qdz
-                        if (Qdz[n - 1] < 0) alpha = Math.Min(lowest1 * (-Qz[n - 1]) / Qdz[n - 1], alpha);
-                        if (dz[n - 1 + cstart] < 0) alpha = Math.Min(lowest1 * (-z[n - 1 + cstart]) / dz[n - 1 + cstart], alpha);
+                        if (Qdz[n - 1] < 0) alpha = Math.Min((-Qz[n - 1]) / Qdz[n - 1], alpha);
+                        if (dz[n - 1 + cstart] < 0) alpha = Math.Min((-z[n - 1 + cstart]) / dz[n - 1 + cstart], alpha);
                         BlasLike.dcopyvec(n, x, Qx, cstart, 0);//Qx
                         Qmulvec(n, Qx);
                         BlasLike.dcopyvec(n, dx, Qdx, cstart, 0);//Qdx
@@ -295,10 +295,10 @@ namespace InteriorPoint
                         vx1[icone] = BlasLike.ddotvec(n, x, Qx, cstart, 0);//x.Qx
                         vx2[icone] = 2.0 * BlasLike.ddotvec(n, dx, Qx, cstart, 0);//dx.Qx
                         vx3[icone] = BlasLike.ddotvec(n, dx, Qdx, cstart, 0);//dx.Qdx
-                        if (Qdx[n - 1] < 0) alpha = Math.Min(lowest1 * (-Qx[n - 1]) / Qdx[n - 1], alpha);
-                        if (dx[n - 1 + cstart] < 0) alpha = Math.Min(lowest1 * (-x[n - 1 + cstart]) / dx[n - 1 + cstart], alpha);
-                        if (homogenous && dtau < 0) alpha = Math.Min(lowest1 * -tau / dtau, alpha);
-                        if (homogenous && dkappa < 0) alpha = Math.Min(lowest1 * -kappa / dkappa, alpha);
+                        if (Qdx[n - 1] < 0) alpha = Math.Min((-Qx[n - 1]) / Qdx[n - 1], alpha);
+                        if (dx[n - 1 + cstart] < 0) alpha = Math.Min((-x[n - 1 + cstart]) / dx[n - 1 + cstart], alpha);
+                        if (homogenous && dtau < 0) alpha = Math.Min(-tau / dtau, alpha);
+                        if (homogenous && dkappa < 0) alpha = Math.Min(-kappa / dkappa, alpha);
                         double inner, r1, r2;
                         //      for (var i = icone; i < cone.Length; ++i)
                         {
@@ -308,7 +308,7 @@ namespace InteriorPoint
                                 if (Math.Abs(vz3[i]) <= BlasLike.lm_eps)
                                 {
                                     if (vz2[i] < -BlasLike.lm_eps)
-                                        alpha = Math.Min(lowest1 * -vz1[i] / vz2[i], alpha);
+                                        alpha = Math.Min(-vz1[i] / vz2[i], alpha);
                                 }
                                 else if (Math.Abs(vz2[i]) > BlasLike.lm_eps && (inner = 1.0 - 4.0 * vz3[i] * vz1[i] / vz2[i] / vz2[i]) > -BlasLike.lm_eps)
                                 {
@@ -316,11 +316,11 @@ namespace InteriorPoint
                                     r1 = (-vz2[i] - inner) / 2.0 / vz3[i]; r2 = (-vz2[i] + inner) / 2.0 / vz3[i];
                                     if (vz3[i] < -BlasLike.lm_eps)
                                     {
-                                        alpha = Math.Min(lowest1 * (-vz2[i] - inner) / 2.0 / vz3[i], alpha);
+                                        alpha = Math.Min((-vz2[i] - inner) / 2.0 / vz3[i], alpha);
                                     }
                                     else if (vz3[i] > BlasLike.lm_eps)
                                     {
-                                        alpha = Math.Min(lowest1 * (-vz2[i] - inner) / 2.0 / vz3[i], alpha);
+                                        alpha = Math.Min((-vz2[i] - inner) / 2.0 / vz3[i], alpha);
                                     }
                                 }
                                 else if (Math.Abs(vz2[i]) <= BlasLike.lm_eps && (inner = -4.0 * vz3[i] * vz1[i]) > -BlasLike.lm_eps)
@@ -329,11 +329,11 @@ namespace InteriorPoint
                                     r1 = (-vz2[i] - inner) / 2.0 / vz3[i]; r2 = (-vz2[i] + inner) / 2.0 / vz3[i];
                                     if (vz3[i] < -BlasLike.lm_eps)
                                     {
-                                        alpha = Math.Min(lowest1 * (-vz2[i] - inner) / 2.0 / vz3[i], alpha);
+                                        alpha = Math.Min((-vz2[i] - inner) / 2.0 / vz3[i], alpha);
                                     }
                                     else if (vz3[i] > BlasLike.lm_eps)
                                     {
-                                        alpha = Math.Min(lowest1 * (-vz2[i] - inner) / 2.0 / vz3[i], alpha);
+                                        alpha = Math.Min((-vz2[i] - inner) / 2.0 / vz3[i], alpha);
                                     }
                                 }
                                 else
@@ -349,7 +349,7 @@ namespace InteriorPoint
                                 if (Math.Abs(vx3[i]) <= BlasLike.lm_eps * 8)
                                 {
                                     if (vx2[i] < -BlasLike.lm_eps * 8)
-                                        alpha = Math.Min(lowest1 * -vx1[i] / vx2[i], alpha);
+                                        alpha = Math.Min(-vx1[i] / vx2[i], alpha);
                                 }
                                 else if (Math.Abs(vx2[i]) > BlasLike.lm_eps && (inner = 1.0 - 4 * vx3[i] * vx1[i] / vx2[i] / vx2[i]) > -BlasLike.lm_eps)
                                 {
@@ -357,11 +357,11 @@ namespace InteriorPoint
                                     r1 = (-vx2[i] - inner) / 2.0 / vx3[i]; r2 = (-vx2[i] + inner) / 2.0 / vx3[i];
                                     if (vx3[i] < -BlasLike.lm_eps)
                                     {
-                                        alpha = Math.Min(lowest1 * (-vx2[i] - inner) / 2.0 / vx3[i], alpha);
+                                        alpha = Math.Min((-vx2[i] - inner) / 2.0 / vx3[i], alpha);
                                     }
                                     else if (vx3[i] > BlasLike.lm_eps)
                                     {
-                                        alpha = Math.Min(lowest1 * (-vx2[i] - inner) / 2.0 / vx3[i], alpha);
+                                        alpha = Math.Min((-vx2[i] - inner) / 2.0 / vx3[i], alpha);
                                     }
                                 }
                                 else if (Math.Abs(vx2[i]) <= BlasLike.lm_eps && (inner = -4 * vx3[i] * vx1[i]) > -BlasLike.lm_eps)
@@ -370,11 +370,11 @@ namespace InteriorPoint
                                     r1 = (-vx2[i] - inner) / 2.0 / vx3[i]; r2 = (-vx2[i] + inner) / 2.0 / vx3[i];
                                     if (vx3[i] < -BlasLike.lm_eps)
                                     {
-                                        alpha = Math.Min(lowest1 * (-vx2[i] - inner) / 2.0 / vx3[i], alpha);
+                                        alpha = Math.Min((-vx2[i] - inner) / 2.0 / vx3[i], alpha);
                                     }
                                     else if (vx3[i] > BlasLike.lm_eps)
                                     {
-                                        alpha = Math.Min(lowest1 * (-vx2[i] - inner) / 2.0 / vx3[i], alpha);
+                                        alpha = Math.Min((-vx2[i] - inner) / 2.0 / vx3[i], alpha);
                                     }
                                 }
                                 else
@@ -399,21 +399,20 @@ namespace InteriorPoint
                         alpha *= lowest1;
                     }
 
-                    ddx = ddz = dd = alpha;
 
                 }
                 if (homogenous)
                 {
-                    if (dtau < 0) alpha = Math.Min(alpha, -aob(tau, dtau) * lowest1);
-                    if (dkappa < 0) alpha = Math.Min(alpha, -aob(kappa, dkappa) * lowest1);
+                    if (dtau < 0) alpha = Math.Min(alpha, -aob(tau, dtau));
+                    if (dkappa < 0) alpha = Math.Min(alpha, -aob(kappa, dkappa));
 
-                    ddx = ddz = dd = alpha;
                 }
+                ddx = ddz = dd = alpha * lowest1;
             }
 
             else if (optMode == "QP")
             {
-                double lowest = 5e-2, lowest1 = 1 - lowest;
+                double lowest = 1e-2, lowest1 = 1 - lowest;
                 ddx = 1.0;
                 ddz = 1.0;
                 dd = 1.0;
@@ -422,13 +421,14 @@ namespace InteriorPoint
                     if (dx[i] < 0) ddx = Math.Min(ddx, -aob(x[i], dx[i]));
                     if (dz[i] < 0) ddz = Math.Min(ddz, -aob(z[i], dz[i]));
                 }
-                ddx *= lowest1;
-                ddz *= lowest1;
                 if (homogenous)
                 {
-                    if (dtau < 0) dd = lowest1 * Math.Min(dd, -aob(tau, dtau));
-                    if (dkappa < 0) dd = lowest1 * Math.Min(dd, -aob(kappa, dkappa));
+                    if (dtau < 0) dd = Math.Min(dd, -aob(tau, dtau));
+                    if (dkappa < 0) dd = Math.Min(dd, -aob(kappa, dkappa));
                 }
+                ddx *= lowest1;
+                ddz *= lowest1;
+                dd *= lowest1;
             }
         }
         void CreateNormalMatrix()
