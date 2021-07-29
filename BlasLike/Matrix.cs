@@ -1323,6 +1323,32 @@ void ddmxmulv(int n, double* d, int incd, double* x, int incx)
                 BlasLike.daxpy(n, BlasLike.ddot(n, Q, nfac, w, 1, Qstart + n + k, wstart), Q, nfac, Qw, 1, Qstart + n + k, Qwstart);
             }
         }
+        public static void SolveRefine(int n, double[] Q, double[] Qsol, int[] order, double[] y, int ystart = 0)
+        {
+            var x = (double[])y.Clone();
+            var Qx = new double[n];
+            var keep = new double[n];
+            var diff = Qx;
+            double t = 0.0, t1 = 0.0, tbest = BlasLike.lm_max;
+            Solve('U', n, 1, Qsol, order, x, n);
+            dsmxmulv(n, Q, x, Qx);
+            BlasLike.dsubvec(n, y, Qx, diff, ystart);
+            int i = 0, kap = 4;
+            while ((t = InteriorPoint.Optimise.lInfinity(diff)) > BlasLike.lm_eps * kap)
+            {
+                if (i == 0) { tbest = t; t1 = t; BlasLike.dcopyvec(n, x, keep); }
+                else if (t <= tbest) { tbest = t; BlasLike.dcopyvec(n, x, keep); }
+                if (i++ > 10)
+                {
+                    BlasLike.dcopyvec(n, keep, x); break;
+                }
+                Solve('U', n, 1, Qsol, order, diff, n);
+                BlasLike.daddvec(n, diff, x, x);
+                dsmxmulv(n, Q, x, Qx);
+                BlasLike.dsubvec(n, y, Qx, diff, ystart);
+            }
+            BlasLike.dcopyvec(n, x, y, 0, ystart);
+        }
         public static void Fac2Cov(int n, int nfac, double[] Q, double[] C, int Qstart = 0, int Cstart = 0, char uplow = 'U')
         {
             if (uplow == 'U')

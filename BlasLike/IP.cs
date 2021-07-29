@@ -41,9 +41,9 @@ namespace InteriorPoint
     {
         public hessmull h = null;
         BestResults keep;
-        bool copyKept = false;
+        public bool copyKept = false;
         public double alphamin = 1e-1;
-        double conv = BlasLike.lm_eps;
+        public double conv = BlasLike.lm_eps;
         public double compConv = BlasLike.lm_eps;
         int badindex = -1;
         string optMode = "QP";
@@ -53,8 +53,8 @@ namespace InteriorPoint
         bool usrH = false;
         bool homogenous = false;
         double mu;
-        int maxouter = 1000;
-        int maxinner = 100;
+        public int maxouter = 1000;
+        public int maxinner = 100;
         int n;
         int m;
         double[] A = null;
@@ -83,6 +83,7 @@ namespace InteriorPoint
         public int nh;
         char uplo = 'U';
         double[] HCOPY = null;
+        double[] HHCopy = null;
         double tau = 1;
         double dtau = 1;
         double dtau0 = 1;
@@ -189,7 +190,7 @@ namespace InteriorPoint
                 double dXS = BlasLike.ddotvec(n, dx, z);
                 double dXdS = BlasLike.ddotvec(n, dx, dz);
                 double alpha = 1.0, desc;
-                double lowest = 1e-1, lowest1 = 1 - lowest;
+                double lowest = 1e-2, lowest1 = 1 - lowest;
 
                 if (dXdX <= BlasLike.lm_eps)
                 {
@@ -407,7 +408,7 @@ namespace InteriorPoint
                     if (dkappa < 0) alpha = Math.Min(alpha, -aob(kappa, dkappa));
 
                 }
-                ddx = ddz = dd = alpha * lowest1;
+                ddx = ddz = dd = (alpha * lowest1);
             }
 
             else if (optMode == "QP")
@@ -442,11 +443,13 @@ namespace InteriorPoint
                     var res = dy;
                     HCOPY = (double[])H.Clone();
                     for (int i = 0, ij = 0; i < nh; ++i, ij += i) HCOPY[i + ij] += aob(z[i], x[i]);
+                    HHCopy = (double[])HCOPY.Clone();
                     Factorise.Factor(uplo, nh, HCOPY, horder);
                     for (int con = 0, ij = 0; con < m; ++con, ij += con)
                     {
                         BlasLike.dcopy(n, A, m, lhs, 1, con);
-                        Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh);
+                        //        Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh);
+                        Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, lhs);
                         for (int i = 0; i < (n - nh); ++i) lhs[i + nh] /= aob(z[i + nh], x[i + nh]);
                         Factorise.dmxmulv(m, n, A, lhs, res);
                         BlasLike.dcopyvec(con + 1, res, M, 0, ij);
@@ -540,7 +543,8 @@ namespace InteriorPoint
                 else for (var i = 0; i < n; ++i) w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu - dx0[i] * dz0[i], x[i]);
                 if (usrH)
                 {
-                    Factorise.Solve(uplo, nh, 1, HCOPY, horder, w1, nh);
+                    //Factorise.Solve(uplo, nh, 1, HCOPY, horder, w1, nh);
+                    Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, w1);
                     for (int i = 0; i < (n - nh); ++i) w1[i + nh] /= aob(z[i + nh], x[i + nh]);
                 }
                 else for (int i = 0; i < n; ++i) w1[i] *= aob(x[i], z[i]);
@@ -553,7 +557,8 @@ namespace InteriorPoint
                     BlasLike.dcopyvec(n, cmod, cx);
                     if (usrH)
                     {
-                        Factorise.Solve(uplo, nh, 1, HCOPY, horder, cx, nh);
+                        //    Factorise.Solve(uplo, nh, 1, HCOPY, horder, cx, nh);
+                        Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, cx);
                         for (int i = 0; i < (n - nh); ++i) cx[i + nh] /= aob(z[i + nh], x[i + nh]);
                     }
                     else for (int i = 0; i < n; ++i) cx[i] *= aob(x[i], z[i]);
@@ -564,7 +569,8 @@ namespace InteriorPoint
                     Factorise.dmxmulv(n, m, A, dy, dx, 0, 0, 0, true);
                     if (usrH)
                     {
-                        Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh);
+                        // Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh);
+                        Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, dx);
                         for (int i = 0; i < (n - nh); ++i) dx[i + nh] /= aob(z[i + nh], x[i + nh]);
                     }
                     else for (int i = 0; i < n; ++i) dx[i] *= aob(x[i], z[i]);
@@ -572,7 +578,8 @@ namespace InteriorPoint
                     Factorise.dmxmulv(n, m, A, db, dc, 0, 0, 0, true);
                     if (usrH)
                     {
-                        Factorise.Solve(uplo, nh, 1, HCOPY, horder, dc, nh);
+                        //   Factorise.Solve(uplo, nh, 1, HCOPY, horder, dc, nh);
+                        Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, dc);
                         for (int i = 0; i < (n - nh); ++i) dc[i + nh] /= aob(z[i + nh], x[i + nh]);
                     }
                     else for (int i = 0; i < n; ++i) dc[i] *= aob(x[i], z[i]);
@@ -593,7 +600,8 @@ namespace InteriorPoint
                     Factorise.dmxmulv(n, m, A, dy, dx, 0, 0, 0, true);
                     if (usrH)
                     {
-                        Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh);
+                        //   Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh);
+                        Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, dx);
                         for (int i = 0; i < (n - nh); ++i) dx[i + nh] /= aob(z[i + nh], x[i + nh]);
                     }
                     else for (int i = 0; i < n; ++i) dx[i] *= aob(x[i], z[i]);
@@ -1169,7 +1177,6 @@ namespace InteriorPoint
             var extra = new double[nh];
             if (opt.optMode == "QP")
             {
-                opt.conv = (Math.Floor(1e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
                 if (opt.usrH)
                 {
                     if (opt.homogenous)

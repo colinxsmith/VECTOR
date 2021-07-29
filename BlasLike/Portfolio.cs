@@ -39,8 +39,10 @@ namespace Portfolio
         {
             var back = makeQ();
             var ip = InteriorOpt();
+            Console.WriteLine($"Variance from IP:\t\t{Variance(w)}");
             var ok = ActiveOpt();
-            ActiveSet.Optimise.printV("w from active set", w);
+            ActiveSet.Optimise.printV("w from Active Set", w);
+            Console.WriteLine($"Variance from Active Set:\t\t{Variance(w)}");
         }
         public string inFile = "";
         public int n;
@@ -75,6 +77,12 @@ namespace Portfolio
         {
             Factorise.CovMul(n, Q, x, hx);
         }
+        public double Variance(double[] w)
+        {
+            var Qx = new double[n];
+            hessmull(n, Q, w, Qx);
+            return BlasLike.ddotvec(n, w, Qx);
+        }
         public int ActiveOpt()
         {
             var obj = 0.0;
@@ -91,7 +99,9 @@ namespace Portfolio
             BlasLike.daxpyvec(n, -gamma / (1 - gamma), c, cextra);
             w = new double[n];
             BlasLike.dsetvec(n, 1.0 / n, w);
-            return opt.QPopt(n, m, w, L, U, A, cextra, Q, ref obj, ref iter);
+            var back = opt.QPopt(n, m, w, L, U, A, cextra, Q, ref obj, ref iter);
+            Console.WriteLine($"objective:\t\t{obj:F8}");
+            return back;
         }
 
         public int InteriorOpt()
@@ -112,15 +122,18 @@ namespace Portfolio
             var HH = new double[n * (n + 1) / 2];
             Factorise.Fac2Cov(n, (int)(Q.Length / n) - 1, Q, HH);
             var IOPT = new InteriorPoint.Optimise(n, m, w, A, b, cextra, n, HH);
-            //IOPT.h = hessmull;
+            IOPT.h = hessmull;
             IOPT.alphamin = 1e-3;
-            IOPT.compConv = 1e-8;
-            var testmul=new double[n];
-            hessmull(n,Q,w,testmul);
-            Console.WriteLine(BlasLike.ddotvec(n,w,testmul));
-            var kk=new Portfolio("");
-            kk.hessmull(n,HH,w,testmul);
-            Console.WriteLine(BlasLike.ddotvec(n,w,testmul));
+            IOPT.compConv = (Math.Floor(5e-9 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+            IOPT.maxouter = 10;
+            IOPT.maxinner = 25;
+            IOPT.conv=(Math.Floor(1e-7 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+            var testmul = new double[n];
+            hessmull(n, Q, w, testmul);
+            Console.WriteLine(BlasLike.ddotvec(n, w, testmul));
+            var kk = new Portfolio("");
+            kk.hessmull(n, HH, w, testmul);
+            Console.WriteLine(BlasLike.ddotvec(n, w, testmul));
             return IOPT.Opt();
         }
 
