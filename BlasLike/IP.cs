@@ -128,7 +128,7 @@ namespace InteriorPoint
         }
         static double norm(double[] aa) => Math.Sqrt(BlasLike.ddotvec(aa.Length, aa, aa));
         static double square(double a) => a * a;
-        double gfunc(double a) => Math.Min(0.5, square(1 - a)) * (1 - a);
+        double gfunc(double a) => Math.Min(0.7, square(1 - a)) * (1 - a);//Try 0.7 instead of 0.5
         double aob(double a, double b)
         {
             int fail = 21;
@@ -1138,7 +1138,7 @@ namespace InteriorPoint
             opt.homogenous = homogenous;
             opt.tau = 1;
             opt.kappa = 1;
-            opt.usrH = (h == null && nh > 0 && BlasLike.dsumvec(opt.H.Length, opt.H) != 0.0) || opt.h != null;
+            opt.usrH = (h == null && nh > 0 && (opt.H != null && BlasLike.dsumvec(opt.H.Length, opt.H) != 0.0)) || opt.h != null;
             if (mode == "QP")
             {
                 if (h == null) h = qphess1;
