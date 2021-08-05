@@ -1,7 +1,6 @@
 using System;
 using Blas;
 using Solver;
-using ActiveSet;
 using System.Diagnostics;
 namespace Portfolio
 {
@@ -89,7 +88,7 @@ namespace Portfolio
             var iter = 10;
             var c = (double[])alpha.Clone();
             var cextra = new double[n];
-            var opt = new Optimise();
+            var opt = new ActiveSet.Optimise();
             opt.h = hessmull;
             if (bench != null)
             {
@@ -100,7 +99,7 @@ namespace Portfolio
             w = new double[n];
             BlasLike.dsetvec(n, 1.0 / n, w);
             var back = opt.QPopt(n, m, w, L, U, A, cextra, Q, ref obj, ref iter);
-            Console.WriteLine($"objective:\t\t{obj:F8}");
+            Console.WriteLine($"objective:\t\t{obj:F8}; {iter} iterations");
             return back;
         }
 

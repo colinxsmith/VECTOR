@@ -1406,7 +1406,7 @@ namespace InteriorPoint
             if (opt.homogenous)
             {
                 Console.WriteLine($"tau = {opt.tau} kappa={opt.kappa}");
-                if (opt.tau != 0)
+                if (opt.tau != 0 && opt.tau != 1)
                 {
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
