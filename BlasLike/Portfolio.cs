@@ -110,6 +110,7 @@ namespace Portfolio
             var mm = 1;
             var b = new double[mm];
             b[0] = U[n];
+            L[0] = -1;
             if (bench != null)
             {
                 hessmull(n, Q, bench, cextra);
@@ -124,7 +125,7 @@ namespace Portfolio
             // (homogenous QP only works if we're very lucky)
             var IOPT = new InteriorPoint.Optimise(n, mm, w, A, b, cextra);
             IOPT.alphamin = 1e-4;
-            var back = IOPT.Opt();
+            var back = IOPT.Opt("QP", null, null, true, L);
             if (back == 6) Console.WriteLine("INFEASIBLE");
             else
             {
@@ -136,8 +137,9 @@ namespace Portfolio
                 var kk = new Portfolio("");
                 kk.hessmull(n, HH, w, testmul);
                 Console.WriteLine(BlasLike.ddotvec(n, w, testmul));
-                back = IOPT.Opt("QP", null, null, false);
+                back = IOPT.Opt("QP", null, null, false, L);
             }
+            L[0] = 0;
             return back;
         }
 

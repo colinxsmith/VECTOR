@@ -1111,9 +1111,11 @@ namespace InteriorPoint
             return timeaquired;
         }
 
-        public int Opt(string mode = "QP", int[] cone = null, int[] typecone = null, bool homogenous = true)
+        public int Opt(string mode = "QP", int[] cone = null, int[] typecone = null, bool homogenous = true, double[] L = null)
         {
             var opt = this;
+            double[] bl = null;
+            double[] QL = null;
             var stepReduce = 1;
             opt.optMode = mode;
             if (mode == "SOCP")
@@ -1177,6 +1179,18 @@ namespace InteriorPoint
             var extra = new double[nh];
             if (opt.optMode == "QP")
             {
+                if (L != null)
+                {
+                    bl = new double[m];
+                    Factorise.dmxmulv(m, n, opt.A, L, bl);
+                    if (opt.H != null)
+                    {
+                        QL = new double[n];
+                        h(n, opt.H, L, QL);
+                        BlasLike.daddvec(n, opt.c, QL, opt.c);
+                    }
+                    BlasLike.dsubvec(m, opt.b, bl, opt.b);
+                }
                 if (opt.usrH)
                 {
                     if (opt.homogenous)
@@ -1413,6 +1427,15 @@ namespace InteriorPoint
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                 }
                 if (infease) Console.WriteLine("INFEASIBLE");
+            }
+            if (optMode == "QP")
+            {
+                if (L != null)
+                {
+                    BlasLike.daddvec(n, opt.x, L, opt.x);
+                    if (opt.H != null) BlasLike.dsubvec(n, opt.c, QL, opt.c);
+                    BlasLike.daddvec(m, opt.b, bl, opt.b);
+                }
             }
 
             if (i >= opt.maxinner || ir >= opt.maxouter) return -1;
