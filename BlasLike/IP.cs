@@ -43,8 +43,8 @@ namespace InteriorPoint
         BestResults keep;
         public bool copyKept = false;
         public double alphamin = 1e-1;
-        public double conv = BlasLike.lm_eps;
-        public double compConv = BlasLike.lm_eps;
+        public double conv = BlasLike.lm_eps2;
+        public double compConv = BlasLike.lm_eps2;
         int badindex = -1;
         string optMode = "QP";
         int numberOfCones = 0;
@@ -1414,24 +1414,27 @@ namespace InteriorPoint
                 }
                 if (infease) Console.WriteLine("INFEASIBLE");
             }
-            Console.WriteLine($"{ir} outer iterations out of {opt.maxouter}");
-            Console.WriteLine($"{i} iterations out of {opt.maxinner}");
-            Console.WriteLine($"Relative Primal Residual\t\t {rp1}");
-            Console.WriteLine($"Relative Dual Residual\t\t\t {rd1}");
-            Console.WriteLine($"Relative Complementarity\t\t {comp1}");
-            Console.WriteLine($"Primal Utility:\t\t{opt.Primal()}");
-            ActiveSet.Optimise.printV("x", opt.x);
-            Console.WriteLine($"Dual Utility:\t\t{opt.Dual()}");
-            ActiveSet.Optimise.printV("y", opt.y);
-            ActiveSet.Optimise.printV("z", opt.z);
-            Console.WriteLine($"Complementarity:\t{BlasLike.ddotvec(opt.n, opt.x, opt.z)}");
-            Console.WriteLine($"Gap:\t\t\t{opt.Primal() - opt.Dual()}");
-            Console.WriteLine($"Job took {opt.clocker()} m secs");
-            Console.WriteLine($"Last conv {opt.conv}");
 
             if (i >= opt.maxinner || ir >= opt.maxouter) return -1;
             else if (opt.homogenous && infease) return 6;
-            else return 0;
+            else
+            {
+                Console.WriteLine($"{ir} outer iterations out of {opt.maxouter}");
+                Console.WriteLine($"{i} iterations out of {opt.maxinner}");
+                Console.WriteLine($"Relative Primal Residual\t\t {rp1}");
+                Console.WriteLine($"Relative Dual Residual\t\t\t {rd1}");
+                Console.WriteLine($"Relative Complementarity\t\t {comp1}");
+                Console.WriteLine($"Primal Utility:\t\t{opt.Primal()}");
+                ActiveSet.Optimise.printV("x", opt.x);
+                Console.WriteLine($"Dual Utility:\t\t{opt.Dual()}");
+                ActiveSet.Optimise.printV("y", opt.y);
+                ActiveSet.Optimise.printV("z", opt.z);
+                Console.WriteLine($"Complementarity:\t{BlasLike.ddotvec(opt.n, opt.x, opt.z)}");
+                Console.WriteLine($"Gap:\t\t\t{opt.Primal() - opt.Dual()}");
+                Console.WriteLine($"Job took {opt.clocker()} m secs");
+                Console.WriteLine($"Last conv {opt.conv}");
+                return 0;
+            }
         }
 
         //Methods for Second Order Cone Programming operations

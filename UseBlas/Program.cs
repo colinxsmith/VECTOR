@@ -745,6 +745,7 @@ namespace UseBlas
                 foreach (var p in x) Console.WriteLine(p);
             }
             {
+                Console.WriteLine("--------------------ActiveSet---------------");
                 var n = 10;
                 var m = 2;
                 var x = new double[n];
@@ -863,6 +864,7 @@ namespace UseBlas
                 foreach (var cc in implied) Console.WriteLine($"Constraint value {cc}");
             }
             {
+                Console.WriteLine("----------------------InteriorPoint---------------");
                 int nh = 10;
                 double[] H ={0.07622384475840693,
                                     -0.0016365991417207626,
@@ -931,7 +933,7 @@ namespace UseBlas
                                0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, -1};
                 Factorise.dmx_transpose(n, m, A, A);
                 var opt1 = new InteriorPoint.Optimise(n, m, x, A, b, c, nh, H);
-                var back = opt1.Opt();
+                var back = opt1.Opt("QP", null, null, false);
                 Console.WriteLine($"{back}");
                 var implied = new double[m];
                 var truex = (double[])x.Clone();

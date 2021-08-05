@@ -110,7 +110,7 @@ namespace Portfolio
             var cextra = new double[n];
             var mm = 1;
             var b = new double[mm];
-            b[0] = L[n];
+            b[0] = U[n];
             if (bench != null)
             {
                 hessmull(n, Q, bench, cextra);
@@ -121,20 +121,25 @@ namespace Portfolio
             BlasLike.dsetvec(n, 1.0 / n, w);
             var HH = new double[n * (n + 1) / 2];
             Factorise.Fac2Cov(n, (int)(Q.Length / n) - 1, Q, HH);
-            var IOPT = new InteriorPoint.Optimise(n, m, w, A, b, cextra, n, HH);
-            IOPT.h = hessmull;
-            IOPT.alphamin = 1e-3;
-            IOPT.compConv = (Math.Floor(5e-9 / BlasLike.lm_eps)) * BlasLike.lm_eps;
-            IOPT.maxouter = 10;
-            IOPT.maxinner = 25;
-            IOPT.conv=(Math.Floor(1e-7 / BlasLike.lm_eps)) * BlasLike.lm_eps;
-            var testmul = new double[n];
-            hessmull(n, Q, w, testmul);
-            Console.WriteLine(BlasLike.ddotvec(n, w, testmul));
-            var kk = new Portfolio("");
-            kk.hessmull(n, HH, w, testmul);
-            Console.WriteLine(BlasLike.ddotvec(n, w, testmul));
-            return IOPT.Opt();
+            // First do a homogenous LP do decide if the problem is feasible.
+            // (homogenous QP only works if we're very lucky)
+            var IOPT = new InteriorPoint.Optimise(n, mm, w, A, b, cextra);
+            IOPT.alphamin = 1e-4;
+            var back = IOPT.Opt();
+            if (back == 6) Console.WriteLine("INFEASIBLE");
+            else
+            {
+                IOPT = new InteriorPoint.Optimise(n, mm, w, A, b, cextra, n, HH);
+                IOPT.h = hessmull;
+                var testmul = new double[n];
+                hessmull(n, Q, w, testmul);
+                Console.WriteLine(BlasLike.ddotvec(n, w, testmul));
+                var kk = new Portfolio("");
+                kk.hessmull(n, HH, w, testmul);
+                Console.WriteLine(BlasLike.ddotvec(n, w, testmul));
+                back = IOPT.Opt("QP", null, null, false);
+            }
+            return back;
         }
 
     }

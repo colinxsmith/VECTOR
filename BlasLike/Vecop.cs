@@ -9,7 +9,7 @@ namespace Blas
         public static double lm_rrooteps = 67108864;
         public static int baseref = 0;//Set to an array address for debug output
         public static double lm_eps = Math.Abs((((double)4) / 3 - 1) * 3 - 1);
-        public static double lm_eps2 = lm_eps * lm_eps;
+        public static double lm_eps2 = lm_eps * 2;
         public static double lambdatest = lm_eps;
         public static double lm_min = 2.2250738585072014e-308;
         public const double lm_max = 1.7976931348623157e+308;
@@ -774,12 +774,12 @@ namespace Blas
 
         public static void dscal(int n, double a, double[] x, int ix, int xstart = 0)
         {
-  /*      if (baseref != 0)
-            {
-                fixed (double* xx = x)
-                    dscal(n, a, xx + xstart, ix);
-                return;
-            }*/
+            /*      if (baseref != 0)
+                      {
+                          fixed (double* xx = x)
+                              dscal(n, a, xx + xstart, ix);
+                          return;
+                      }*/
             if (a == 0)
             {
                 dzero(n, x, ix, xstart);
