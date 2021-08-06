@@ -43,8 +43,8 @@ namespace InteriorPoint
         BestResults keep;
         public bool copyKept = false;
         public double alphamin = 1e-1;
-        public double conv = BlasLike.lm_eps2;
-        public double compConv = BlasLike.lm_eps2;
+        public double conv = BlasLike.lm_eps * 4;
+        public double compConv = BlasLike.lm_eps * 4;
         int badindex = -1;
         string optMode = "QP";
         int numberOfCones = 0;
@@ -175,7 +175,7 @@ namespace InteriorPoint
             back = Math.Min(back, ddz);
             return Math.Min(back, dd);
         }
-        void MaximumStep(double gamma = 0)
+        void MaximumStep(double gamma = 0, int[] sign = null)
         {
             if (optMode == "SOCP")
             {
@@ -419,8 +419,16 @@ namespace InteriorPoint
                 dd = 1.0;
                 for (int i = 0; i < n; ++i)
                 {
-                    if (dx[i] < 0) ddx = Math.Min(ddx, -aob(x[i], dx[i]));
-                    if (dz[i] < 0) ddz = Math.Min(ddz, -aob(z[i], dz[i]));
+                    if (sign == null)
+                    {
+                        if (dx[i] < 0) ddx = Math.Min(ddx, -aob(x[i], dx[i]));
+                        if (dz[i] < 0) ddz = Math.Min(ddz, -aob(z[i], dz[i]));
+                    }
+                    else
+                    {
+                        if (dx[i] * sign[i] < 0) ddx = Math.Min(ddx, -aob(x[i] , dx[i]));
+                        if (dz[i] * sign[i] < 0) ddz = Math.Min(ddz, -aob(z[i] , dz[i]));
+                    }
                 }
                 if (homogenous)
                 {
@@ -1111,11 +1119,12 @@ namespace InteriorPoint
             return timeaquired;
         }
 
-        public int Opt(string mode = "QP", int[] cone = null, int[] typecone = null, bool homogenous = true, double[] L = null)
+        public int Opt(string mode = "QP", int[] cone = null, int[] typecone = null, bool homogenous = true, double[] L = null, int[] sign = null)
         {
             var opt = this;
             double[] bl = null;
             double[] QL = null;
+            double zL = 0;
             var stepReduce = 1;
             opt.optMode = mode;
             if (mode == "SOCP")
@@ -1144,8 +1153,18 @@ namespace InteriorPoint
             if (mode == "QP")
             {
                 if (h == null) h = qphess1;
-                BlasLike.dsetvec(n, 1.0, opt.x);
-                BlasLike.dsetvec(n, 1.0, opt.z);
+                if (sign == null)
+                {
+                    BlasLike.dsetvec(n, 1.0, opt.x);
+                    BlasLike.dsetvec(n, 1.0, opt.z);
+                }
+                else
+                {
+                    for (var ii = 0; ii < n; ++ii)
+                    {
+                        opt.z[ii] = opt.x[ii] = (double)sign[ii];
+                    }
+                }
             }
             else if (mode == "SOCP")
             {
@@ -1260,7 +1279,7 @@ namespace InteriorPoint
                 gap1 = gap / denomTest(gap0);
                 comp1 = opt.Complementarity();
                 opt.keep.update(opt.x, opt.y, opt.z, opt.tau, opt.kappa, lInfinity(opt.rp), lInfinity(opt.rd), comp1);
-                if (/*Math.Abs(gap / opt.tau) < opt.conv && */ rp1 < opt.conv && rd1 < opt.conv && comp1 < opt.compConv /* * square(opt.tau)*/)
+                if (/*Math.Abs(gap / opt.tau) < opt.conv && */ rp1 <= opt.conv && rd1 <= opt.conv && comp1 <= opt.compConv)
                     break;
                 if (comp1 < opt.compConv && opt.tau < 1e-5 * opt.kappa) break;
                 if (ir > opt.maxouter) break;
@@ -1296,7 +1315,7 @@ namespace InteriorPoint
                 BlasLike.dcopyvec(m, opt.dy, dyold);
                 dtauold = opt.dtau;
                 dkappaold = opt.dkappa;
-                opt.MaximumStep();
+                opt.MaximumStep(0, sign);
                 alpha1 = stepReduce * opt.Lowest();
                 BlasLike.dsccopyvec(opt.n, 1.0, opt.dx, opt.dx0);//was alpha1
                 BlasLike.dsccopyvec(opt.n, 1.0, opt.dz, opt.dz0);//was alpha1
@@ -1304,7 +1323,7 @@ namespace InteriorPoint
                 opt.dkappa0 = 1.0 * opt.dkappa;//was alpha1
                 gamma = opt.gfunc(alpha1);
                 opt.SolvePrimaryDual(gamma, true);
-                opt.MaximumStep(gamma);
+                opt.MaximumStep(gamma, sign);
                 alpha2 = stepReduce * opt.Lowest();
                 if (alpha1 > alpha2) opt.update(dxold, dyold, dzold, dtauold, dkappaold, alpha1);
                 else opt.update(opt.dx, opt.dy, opt.dz, opt.dtau, opt.dkappa, alpha2);
@@ -1435,6 +1454,7 @@ namespace InteriorPoint
                     BlasLike.daddvec(n, opt.x, L, opt.x);
                     if (opt.H != null) BlasLike.dsubvec(n, opt.c, QL, opt.c);
                     BlasLike.daddvec(m, opt.b, bl, opt.b);
+                    zL = BlasLike.ddotvec(n, L, opt.z);
                 }
             }
 
@@ -1449,11 +1469,11 @@ namespace InteriorPoint
                 Console.WriteLine($"Relative Complementarity\t\t {comp1}");
                 Console.WriteLine($"Primal Utility:\t\t{opt.Primal()}");
                 ActiveSet.Optimise.printV("x", opt.x);
-                Console.WriteLine($"Dual Utility:\t\t{opt.Dual()}");
+                Console.WriteLine($"Dual Utility:\t\t{opt.Dual() + zL}");
                 ActiveSet.Optimise.printV("y", opt.y);
                 ActiveSet.Optimise.printV("z", opt.z);
-                Console.WriteLine($"Complementarity:\t{BlasLike.ddotvec(opt.n, opt.x, opt.z)}");
-                Console.WriteLine($"Gap:\t\t\t{opt.Primal() - opt.Dual()}");
+                Console.WriteLine($"Complementarity:\t{BlasLike.ddotvec(opt.n, opt.x, opt.z) - zL}");
+                Console.WriteLine($"Gap:\t\t\t{opt.Primal() - opt.Dual() - zL}");
                 Console.WriteLine($"Job took {opt.clocker()} m secs");
                 Console.WriteLine($"Last conv {opt.conv}");
                 return 0;

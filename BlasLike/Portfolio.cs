@@ -107,29 +107,47 @@ namespace Portfolio
         {
             var c = (double[])alpha.Clone();
             var cextra = new double[n];
-            var mm = 1;
-            var b = new double[mm];
-            b[0] = U[n];
-            L[0] = -1;
+            var CTEST = new double[n];
+            var b = new double[m];
+            BlasLike.dcopyvec(m, U, b, n);
+            var sign = new int[n];
+            var UL = new double[n];
             if (bench != null)
             {
                 hessmull(n, Q, bench, cextra);
                 BlasLike.dnegvec(n, cextra);
             }
             BlasLike.daxpyvec(n, -gamma / (1 - gamma), c, cextra);
+            var zcount = 0;
+            for (var i = 0; i < n; ++i)
+            {
+                if (L[i] == 0)
+                {
+                    sign[i] = 1;
+                    UL[i] = L[i];
+                }
+                else if (U[i] == 0)
+                {
+                    sign[i] = -1;
+                    UL[i] = U[i];
+                }
+                if (UL[i] == 0) zcount++;
+                CTEST[i] = sign[i] * Math.Abs(cextra[i]);
+            }
+            if (zcount == n) UL = null;
             w = new double[n];
             BlasLike.dsetvec(n, 1.0 / n, w);
             var HH = new double[n * (n + 1) / 2];
             Factorise.Fac2Cov(n, (int)(Q.Length / n) - 1, Q, HH);
             // First do a homogenous LP do decide if the problem is feasible.
             // (homogenous QP only works if we're very lucky)
-            var IOPT = new InteriorPoint.Optimise(n, mm, w, A, b, cextra);
+            var IOPT = new InteriorPoint.Optimise(n, m, w, A, b, CTEST);
             IOPT.alphamin = 1e-4;
-            var back = IOPT.Opt("QP", null, null, true, L);
+            var back = IOPT.Opt("QP", null, null, true, UL, sign);
             if (back == 6) Console.WriteLine("INFEASIBLE");
             else
             {
-                IOPT = new InteriorPoint.Optimise(n, mm, w, A, b, cextra, n, HH);
+                IOPT = new InteriorPoint.Optimise(n, m, w, A, b, cextra, n, HH);
                 IOPT.h = hessmull;
                 var testmul = new double[n];
                 hessmull(n, Q, w, testmul);
@@ -137,9 +155,8 @@ namespace Portfolio
                 var kk = new Portfolio("");
                 kk.hessmull(n, HH, w, testmul);
                 Console.WriteLine(BlasLike.ddotvec(n, w, testmul));
-                back = IOPT.Opt("QP", null, null, false, L);
+                back = IOPT.Opt("QP", null, null, false, UL, sign);
             }
-            L[0] = 0;
             return back;
         }
 
