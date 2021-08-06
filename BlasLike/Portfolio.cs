@@ -119,22 +119,31 @@ namespace Portfolio
             }
             BlasLike.daxpyvec(n, -gamma / (1 - gamma), c, cextra);
             var zcount = 0;
+            var signcount = 0;
             for (var i = 0; i < n; ++i)
             {
+                //We do an LP to test for primal feasibility
+                //but it's possible that c on its own gives an unbounded LP
+                //i.e the dual is infeasible, so it's necessary to mess
+                //about with c to get a dual feasible LP to test the primal
+                //constraints.
                 if (L[i] == 0)
                 {
                     sign[i] = 1;
                     UL[i] = L[i];
+                    signcount++;
                 }
                 else if (U[i] == 0)
                 {
                     sign[i] = -1;
                     UL[i] = U[i];
+                    signcount++;
                 }
                 if (UL[i] == 0) zcount++;
                 CTEST[i] = sign[i] * Math.Abs(cextra[i]);
             }
-            if (zcount == n) UL = null;
+            if (zcount == n) UL = L;
+            if (signcount != n) { CTEST = cextra; sign = null; }
             w = new double[n];
             BlasLike.dsetvec(n, 1.0 / n, w);
             var HH = new double[n * (n + 1) / 2];
@@ -155,6 +164,7 @@ namespace Portfolio
                 var kk = new Portfolio("");
                 kk.hessmull(n, HH, w, testmul);
                 Console.WriteLine(BlasLike.ddotvec(n, w, testmul));
+            IOPT.alphamin = 1e-2;
                 back = IOPT.Opt("QP", null, null, false, UL, sign);
             }
             return back;
