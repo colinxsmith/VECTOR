@@ -1027,7 +1027,14 @@ namespace UseBlas
                 {
                     TestData.stringFields = "names";
                     TestData.intFields = "n m";
-                    TestData.Read("./UseBlas/testData");
+                    try
+                    {
+                        TestData.Read("./UseBlas/testData");
+                    }
+                    catch
+                    {
+                        TestData.Read("testData");
+                    }
                     TestData.PrintField("n");
                     TestData.PrintField("m");
                     TestData.PrintField("c");
@@ -1040,7 +1047,14 @@ namespace UseBlas
                     TestData.doubleFields = "FC SV FL";
                     TestData.intFields = "n nfac";
                     TestData.stringFields = "names";
-                    TestData.Read("./pylog.log");
+                    try
+                    {
+                        TestData.Read("./pylog.log");
+                    }
+                    catch
+                    {
+                        TestData.Read("../pylog.log");
+                    }
                     var n = TestData.mapInt["n"][0];
                     var nfac = TestData.mapInt["nfac"][0];
                     var SV = TestData.mapDouble["SV"];
@@ -1106,7 +1120,15 @@ namespace UseBlas
             }
             {
                 Console.WriteLine("-------------------------Portfolio----------------");
-                var port = new Portfolio.FPortfolio("./pylog.log");
+                Portfolio.FPortfolio port;
+                try
+                {
+                    port = new Portfolio.FPortfolio("./pylog.log");
+                }
+                catch
+                {
+                    port = new Portfolio.FPortfolio("../pylog.log");
+                }
                 port.Optimise();
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
