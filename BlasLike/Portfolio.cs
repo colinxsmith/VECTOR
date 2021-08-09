@@ -110,7 +110,7 @@ namespace Portfolio
             var CTEST = new double[n];
             var b = new double[m];
             BlasLike.dcopyvec(m, U, b, n);
-            var sign = new int[n];
+            var sign = new int[2 * n];
             var UL = new double[n];
             if (bench != null)
             {
@@ -127,6 +127,7 @@ namespace Portfolio
                 //i.e the dual is infeasible, so it's necessary to mess
                 //about with c to get a dual feasible LP to test the primal
                 //constraints.
+                sign[i + n] = 1;
                 if (L[i] == 0)
                 {
                     sign[i] = 1;
@@ -142,30 +143,53 @@ namespace Portfolio
                 if (UL[i] == 0) zcount++;
                 CTEST[i] = sign[i] * Math.Abs(cextra[i]);
             }
-            if (zcount == n) UL = L;
+            Array.Resize(ref CTEST, 2 * n);
+            Array.Resize(ref cextra, 2 * n);
+            var AA = new double[2 * n * (n + m)];
+            for (var con = 0; con < m; ++con)
+            {
+                BlasLike.dcopy(n, A, m, AA, n + m, con, con);
+            }
+            for (int i = 0, astart = m; i < n; ++i, astart++)
+            {
+                AA[astart + i * (n + m)] = 1;
+                AA[astart + (i + n) * (n + m)] = 1;
+            }
+            if (zcount == n) UL = (double[])L.Clone();
+            Array.Resize(ref UL, n);
+            Array.Resize(ref UL, n*2);
+            var bb = (double[])b.Clone();
+            Array.Resize(ref bb, m + n);
+            for (var i = 0; i < n; ++i)
+            {
+                bb[m + i] = U[i];
+            }
             if (signcount != n) { CTEST = cextra; sign = null; }
             w = new double[n];
             BlasLike.dsetvec(n, 1.0 / n, w);
             var HH = new double[n * (n + 1) / 2];
             Factorise.Fac2Cov(n, (int)(Q.Length / n) - 1, Q, HH);
+            var ww = (double[])w.Clone();
+            Array.Resize(ref ww, n * 2);
             // First do a homogenous LP do decide if the problem is feasible.
             // (homogenous QP only works if we're very lucky)
-            var IOPT = new InteriorPoint.Optimise(n, m, w, A, b, CTEST);
+            var IOPT = new InteriorPoint.Optimise(n * 2, m + n, ww, AA, bb, CTEST);
             IOPT.alphamin = 1e-4;
             var back = IOPT.Opt("QP", null, null, true, UL, sign);
             if (back == 6) Console.WriteLine("INFEASIBLE");
             else
             {
-                IOPT = new InteriorPoint.Optimise(n, m, w, A, b, cextra, n, HH);
+                IOPT = new InteriorPoint.Optimise(n * 2, m + n, ww, AA, bb, cextra, n, HH);
                 IOPT.h = hessmull;
                 var testmul = new double[n];
                 hessmull(n, Q, w, testmul);
-                Console.WriteLine(BlasLike.ddotvec(n, w, testmul));
+                Console.WriteLine(BlasLike.ddotvec(n, ww, testmul));
                 var kk = new Portfolio("");
-                kk.hessmull(n, HH, w, testmul);
-                Console.WriteLine(BlasLike.ddotvec(n, w, testmul));
-            IOPT.alphamin = 1e-2;
+                kk.hessmull(n, HH, ww, testmul);
+                Console.WriteLine(BlasLike.ddotvec(n, ww, testmul));
+                IOPT.alphamin = 1e-8;
                 back = IOPT.Opt("QP", null, null, false, UL, sign);
+                BlasLike.dcopyvec(n, ww, w);
             }
             return back;
         }
