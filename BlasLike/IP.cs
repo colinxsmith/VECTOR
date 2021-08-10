@@ -426,8 +426,8 @@ namespace InteriorPoint
                     }
                     else
                     {
-                        if (dx[i] * sign[i] < 0) ddx = Math.Min(ddx, -aob(x[i] , dx[i]));
-                        if (dz[i] * sign[i] < 0) ddz = Math.Min(ddz, -aob(z[i] , dz[i]));
+                        if (dx[i] * sign[i] < 0) ddx = Math.Min(ddx, -aob(x[i], dx[i]));
+                        if (dz[i] * sign[i] < 0) ddz = Math.Min(ddz, -aob(z[i], dz[i]));
                     }
                 }
                 if (homogenous)
@@ -458,7 +458,10 @@ namespace InteriorPoint
                         BlasLike.dcopy(n, A, m, lhs, 1, con);
                         //        Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh);
                         Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, lhs);
-                        for (int i = 0; i < (n - nh); ++i) lhs[i + nh] /= aob(z[i + nh], x[i + nh]);
+                        for (int i = 0; i < (n - nh); ++i)
+                        {
+                            if(lhs[i+nh]!=0)lhs[i + nh] /= aob(z[i + nh], x[i + nh]);
+                        }
                         Factorise.dmxmulv(m, n, A, lhs, res);
                         BlasLike.dcopyvec(con + 1, res, M, 0, ij);
                     }

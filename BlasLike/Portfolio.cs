@@ -105,12 +105,22 @@ namespace Portfolio
 
         public int InteriorOpt()
         {
+            var dolarge = 1;
             var c = (double[])alpha.Clone();
             var cextra = new double[n];
             var CTEST = new double[n];
-            var b = new double[m];
-            BlasLike.dcopyvec(m, U, b, n);
-            var sign = new int[2 * n];
+            var slackb = 0;
+            for (var i = 0; i < m; ++i)
+            {
+                if (U[i + n] != L[i + n]) slackb++;
+            }
+            var b = new double[m + slackb];
+            BlasLike.dcopyvec(m, L, b, n);
+            for (int i = 0, slack = 0; i < m; ++i)
+            {
+                if (U[i + n] != L[i + n]) b[slack++ + m] = U[i + n];
+            }
+            var sign = new int[n * dolarge + n + 2 * slackb];
             var UL = new double[n];
             if (bench != null)
             {
@@ -127,7 +137,7 @@ namespace Portfolio
                 //i.e the dual is infeasible, so it's necessary to mess
                 //about with c to get a dual feasible LP to test the primal
                 //constraints.
-                sign[i + n] = 1;
+                if (dolarge == 1) sign[i + n] = 1;
                 if (L[i] == 0)
                 {
                     sign[i] = 1;
@@ -143,26 +153,35 @@ namespace Portfolio
                 if (UL[i] == 0) zcount++;
                 CTEST[i] = sign[i] * Math.Abs(cextra[i]);
             }
-            Array.Resize(ref CTEST, 2 * n);
-            Array.Resize(ref cextra, 2 * n);
-            var AA = new double[2 * n * (n + m)];
-            for (var con = 0; con < m; ++con)
+            for (var i = 0; i < 2 * slackb; ++i)
+                sign[i + dolarge * n + n] = 1;
+            Array.Resize(ref CTEST, dolarge * n + n + 2 * slackb);
+            Array.Resize(ref cextra, dolarge * n + n + 2 * slackb);
+            var AA = new double[(dolarge * n + n + 2 * slackb) * (dolarge * n + m + slackb)];
+            for (int con = 0, slack = 0; con < m; ++con)
             {
-                BlasLike.dcopy(n, A, m, AA, n + m, con, con);
+                BlasLike.dcopy(n, A, m, AA, dolarge * n + m + slackb, con, con);
+                if (U[con + n] != L[con + n])
+                {
+                    AA[con + (dolarge * n + n + slackb + slack) * (dolarge * n + m + slackb)] = -1;
+                    AA[dolarge * n + m + slack + (dolarge * n + n + slack) * (dolarge * n + m + slackb)] = 1;
+                    BlasLike.dcopy(n, A, m, AA, dolarge * n + m + slackb, con, dolarge * n + m + slack++);
+                }
             }
-            for (int i = 0, astart = m; i < n; ++i, astart++)
+            for (int i = 0, astart = m; i < dolarge * n; ++i, astart++)
             {
-                AA[astart + i * (n + m)] = 1;
-                AA[astart + (i + n) * (n + m)] = 1;
+                AA[astart + i * (dolarge * n + m + slackb)] = 1;
+                AA[astart + (i + n) * (dolarge * n + m + slackb)] = 1;
             }
             if (zcount == n) UL = (double[])L.Clone();
             Array.Resize(ref UL, n);
-            Array.Resize(ref UL, n*2);
+            Array.Resize(ref UL, dolarge * n + n + 2 * slackb);
+            if (InteriorPoint.Optimise.lInfinity(UL) == 0) UL = null;
             var bb = (double[])b.Clone();
-            Array.Resize(ref bb, m + n);
-            for (var i = 0; i < n; ++i)
+            Array.Resize(ref bb, m + dolarge * n + slackb);
+            for (var i = 0; i < dolarge * n; ++i)
             {
-                bb[m + i] = U[i];
+                bb[m + slackb + i] = U[i];
             }
             if (signcount != n) { CTEST = cextra; sign = null; }
             w = new double[n];
@@ -170,16 +189,16 @@ namespace Portfolio
             var HH = new double[n * (n + 1) / 2];
             Factorise.Fac2Cov(n, (int)(Q.Length / n) - 1, Q, HH);
             var ww = (double[])w.Clone();
-            Array.Resize(ref ww, n * 2);
+            Array.Resize(ref ww, dolarge * n + n + 2 * slackb);
             // First do a homogenous LP do decide if the problem is feasible.
             // (homogenous QP only works if we're very lucky)
-            var IOPT = new InteriorPoint.Optimise(n * 2, m + n, ww, AA, bb, CTEST);
+            var IOPT = new InteriorPoint.Optimise(dolarge * n + n + 2 * slackb, m + dolarge * n + slackb, ww, AA, bb, CTEST);
             IOPT.alphamin = 1e-4;
             var back = IOPT.Opt("QP", null, null, true, UL, sign);
             if (back == 6) Console.WriteLine("INFEASIBLE");
             else
             {
-                IOPT = new InteriorPoint.Optimise(n * 2, m + n, ww, AA, bb, cextra, n, HH);
+                IOPT = new InteriorPoint.Optimise(dolarge * n + n + 2 * slackb, m + dolarge * n + slackb, ww, AA, bb, cextra, n, HH);
                 IOPT.h = hessmull;
                 var testmul = new double[n];
                 hessmull(n, Q, w, testmul);
