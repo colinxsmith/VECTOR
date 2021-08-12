@@ -194,12 +194,30 @@ namespace Portfolio
             // (homogenous QP only works if we're very lucky)
             var IOPT = new InteriorPoint.Optimise(dolarge * n + n + 2 * slackb, m + dolarge * n + slackb, ww, AA, bb, CTEST);
             IOPT.alphamin = 1e-4;
+            IOPT.baseA = A;
+            IOPT.basebL = new double[m];
+            BlasLike.dcopyvec(m, L, IOPT.basebL, n);
+            IOPT.basebU = new double[m];
+            BlasLike.dcopyvec(m, U, IOPT.basebU, n);
+            IOPT.basen = n;
+            IOPT.bases = n;
+            IOPT.basesb = m;
+            IOPT.basem = m;
             var back = IOPT.Opt("QP", null, null, true, UL, sign);
             if (back == 6) Console.WriteLine("INFEASIBLE");
             else
             {
                 IOPT = new InteriorPoint.Optimise(dolarge * n + n + 2 * slackb, m + dolarge * n + slackb, ww, AA, bb, cextra, n, HH);
                 IOPT.h = hessmull;
+                IOPT.baseA = A;
+                IOPT.basebL = new double[m];
+                BlasLike.dcopyvec(m, L, IOPT.basebL, n);
+                IOPT.basebU = new double[m];
+                BlasLike.dcopyvec(m, U, IOPT.basebU, n);
+                IOPT.basen = n;
+                IOPT.bases = n;
+                IOPT.basesb = m;
+                IOPT.basem = m;
                 var testmul = new double[n];
                 hessmull(n, Q, w, testmul);
                 Console.WriteLine(BlasLike.ddotvec(n, ww, testmul));

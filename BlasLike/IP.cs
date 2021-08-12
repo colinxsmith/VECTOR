@@ -39,6 +39,13 @@ namespace InteriorPoint
     }
     public class Optimise
     {
+        public double[] baseA = null;
+        public double[] basebL = null;
+        public double[] basebU = null;
+        public int basen = 0;
+        public int basem = 0;
+        public int bases = 0;
+        public int basesb = 0;
         public hessmull h = null;
         BestResults keep;
         public bool copyKept = false;
@@ -147,6 +154,10 @@ namespace InteriorPoint
             this.c = c;
             this.H = H;
             this.nh = nh;
+            basen = n;
+            bases = 0;
+            basesb = 0;
+            basem = m;
 
             z = new double[n];
             dz = new double[n];
@@ -442,6 +453,7 @@ namespace InteriorPoint
         }
         void CreateNormalMatrix()
         {
+            var clock1 = clocker();
             if (optMode == "QP")
             {
                 BlasLike.dzerovec(M.Length, M);
@@ -451,18 +463,69 @@ namespace InteriorPoint
                     var res = dy;
                     HCOPY = (double[])H.Clone();
                     for (int i = 0, ij = 0; i < nh; ++i, ij += i) HCOPY[i + ij] += aob(z[i], x[i]);
-                    HHCopy = (double[])HCOPY.Clone();
+                    //HHCopy = (double[])HCOPY.Clone();
                     Factorise.Factor(uplo, nh, HCOPY, horder);
                     for (int con = 0, ij = 0; con < m; ++con, ij += con)
                     {
                         BlasLike.dcopy(n, A, m, lhs, 1, con);
-                        //        Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh);
-                        Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, lhs);
-                        for (int i = 0; i < (n - nh); ++i)
+                        Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh);
+                        //Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, lhs);
+
+                        if (con < basem && basen != nh)
                         {
-                            if(lhs[i+nh]!=0)lhs[i + nh] /= aob(z[i + nh], x[i + nh]);
+                            for (int i = 0; i < (n - nh); ++i)
+                            {
+                                if (i + nh < basen)
+                                {
+                                    if (lhs[i + nh] != 0)
+                                        lhs[i + nh] /= aob(z[i + nh], x[i + nh]);
+                                }
+
+                            }
                         }
-                        Factorise.dmxmulv(m, n, A, lhs, res);
+                        if (n > basen)
+                        {
+                            if (con < basem)
+                            {
+                                var qq = con + bases + basen + basem;
+                                lhs[qq] /= aob(z[qq], x[qq]);
+                            }
+                            else if (con < bases + basem)
+                            {
+                                var qq = con + basen + -basem;
+                                lhs[qq] /= aob(z[qq], x[qq]);
+                            }
+                            else
+                            {
+                                var qq = (con - basem + basen);
+                                lhs[qq] /= aob(z[qq], x[qq]);
+                            }
+                        }
+                        if (n <= basen)
+                            for (var ii = 0; ii < con + 1; ++ii)
+                            {
+                                res[ii] = BlasLike.ddot(n, A, m, lhs, 1, ii);
+                            }
+                        else
+                        {
+                            for (var ii = 0; ii < con + 1; ++ii)
+                            {
+                                if (ii < basem)
+                                {
+                                    res[ii] = BlasLike.ddot(basen, baseA, basem, lhs, 1, ii);
+                                    res[ii] -= lhs[basen + bases + basem + ii];
+                                }
+                                else if (ii < basem + bases)
+                                {
+                                    res[ii] = lhs[ii - basem] + lhs[ii - basem + basen];
+                                }
+                                else
+                                {
+                                    res[ii] = BlasLike.ddot(basen, baseA, basem, lhs, 1, ii - basem - basen);
+                                    res[ii] += lhs[ii - basem + basen];
+                                }
+                            }
+                        }
                         BlasLike.dcopyvec(con + 1, res, M, 0, ij);
                     }
                 }
@@ -540,6 +603,7 @@ namespace InteriorPoint
                     }
                 }
             }
+            Console.WriteLine($"Time in CreateNormalMatrix {clocker() - clock1} m secs");
         }
         void SolvePrimaryDual(double gamma = 0.0, bool corrector = false)
         {
@@ -554,12 +618,19 @@ namespace InteriorPoint
                 else for (var i = 0; i < n; ++i) w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu - dx0[i] * dz0[i], x[i]);
                 if (usrH)
                 {
-                    //Factorise.Solve(uplo, nh, 1, HCOPY, horder, w1, nh);
-                    Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, w1);
-                    for (int i = 0; i < (n - nh); ++i) w1[i + nh] /= aob(z[i + nh], x[i + nh]);
+                    Factorise.Solve(uplo, nh, 1, HCOPY, horder, w1, nh);
+                    //Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, w1);
+                    for (int i = 0; i < (n - nh); ++i)
+                        if (w1[i + nh] != 0)
+                            w1[i + nh] /= aob(z[i + nh], x[i + nh]);
                 }
                 else for (int i = 0; i < n; ++i) w1[i] *= aob(x[i], z[i]);
-                Factorise.dmxmulv(m, n, A, w1, dy);
+                if (basen >= n)
+                    Factorise.dmxmulv(m, n, A, w1, dy);
+                else
+                {
+                    AmultSparse(w1, dy);
+                }
                 BlasLike.daxpyvec(m, g1, rp, dy);
                 if (m == 1) dy[0] /= M[0];
                 else Factorise.Solve(uplo, m, 1, M, order, dy, m);
@@ -568,20 +639,21 @@ namespace InteriorPoint
                     BlasLike.dcopyvec(n, cmod, cx);
                     if (usrH)
                     {
-                        //    Factorise.Solve(uplo, nh, 1, HCOPY, horder, cx, nh);
-                        Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, cx);
+                        Factorise.Solve(uplo, nh, 1, HCOPY, horder, cx, nh);
+                        //Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, cx);
                         for (int i = 0; i < (n - nh); ++i) cx[i + nh] /= aob(z[i + nh], x[i + nh]);
                     }
                     else for (int i = 0; i < n; ++i) cx[i] *= aob(x[i], z[i]);
-                    Factorise.dmxmulv(m, n, A, cx, db);
+                    if (basen >= n) Factorise.dmxmulv(m, n, A, cx, db);
+                    else AmultSparse(cx, db);
                     BlasLike.daddvec(m, db, b, db);
                     if (m == 1) db[0] /= M[0];
                     else Factorise.Solve(uplo, m, 1, M, order, db, m);
                     Factorise.dmxmulv(n, m, A, dy, dx, 0, 0, 0, true);
                     if (usrH)
                     {
-                        // Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh);
-                        Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, dx);
+                        Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh);
+                        //Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, dx);
                         for (int i = 0; i < (n - nh); ++i) dx[i + nh] /= aob(z[i + nh], x[i + nh]);
                     }
                     else for (int i = 0; i < n; ++i) dx[i] *= aob(x[i], z[i]);
@@ -589,8 +661,8 @@ namespace InteriorPoint
                     Factorise.dmxmulv(n, m, A, db, dc, 0, 0, 0, true);
                     if (usrH)
                     {
-                        //   Factorise.Solve(uplo, nh, 1, HCOPY, horder, dc, nh);
-                        Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, dc);
+                        Factorise.Solve(uplo, nh, 1, HCOPY, horder, dc, nh);
+                        //Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, dc);
                         for (int i = 0; i < (n - nh); ++i) dc[i + nh] /= aob(z[i + nh], x[i + nh]);
                     }
                     else for (int i = 0; i < n; ++i) dc[i] *= aob(x[i], z[i]);
@@ -611,8 +683,8 @@ namespace InteriorPoint
                     Factorise.dmxmulv(n, m, A, dy, dx, 0, 0, 0, true);
                     if (usrH)
                     {
-                        //   Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh);
-                        Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, dx);
+                        Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh);
+                        //Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, dx);
                         for (int i = 0; i < (n - nh); ++i) dx[i + nh] /= aob(z[i + nh], x[i + nh]);
                     }
                     else for (int i = 0; i < n; ++i) dx[i] *= aob(x[i], z[i]);
@@ -700,7 +772,8 @@ namespace InteriorPoint
                         thetaScale(n, w1, THETA[icone], true, true, cstart);
                     }
                 }
-                Factorise.dmxmulv(m, n, A, w1, dy);
+                if (basen >= n) Factorise.dmxmulv(m, n, A, w1, dy);
+                else AmultSparse(w1, dy);
                 BlasLike.daxpyvec(m, g1, rp, dy);
                 if (m == 1) dy[0] /= M[0];
                 else Factorise.Solve(uplo, m, 1, M, order, dy, m);
@@ -729,7 +802,8 @@ namespace InteriorPoint
                             thetaScale(n, cx, THETA[icone], true, true, cstart);
                         }
                     }
-                    Factorise.dmxmulv(m, n, A, cx, db);
+                    if (basen >= n) Factorise.dmxmulv(m, n, A, cx, db);
+                    else AmultSparse(cx, db);
                     BlasLike.daddvec(m, db, b, db);
                     if (m == 1) db[0] /= M[0];
                     else Factorise.Solve(uplo, m, 1, M, order, db, m);
@@ -876,7 +950,8 @@ namespace InteriorPoint
         }
         void PrimalResidual()
         {
-            Factorise.dmxmulv(m, n, A, x, Ax);
+            if (basen >= n) Factorise.dmxmulv(m, n, A, x, Ax);
+            else AmultSparse(x, Ax);
             BlasLike.dcopyvec(m, Ax, rp);
             BlasLike.dnegvec(m, rp);
             BlasLike.daxpyvec(m, homogenous ? tau : 1, b, rp);
@@ -1027,6 +1102,18 @@ namespace InteriorPoint
                 rkxy = kappa + BlasLike.ddotvec(x.Length, cmod, x) - BlasLike.ddotvec(y.Length, b, y);
             }
             CreateNormalMatrix();
+        }
+        void AmultSparse(double[] x, double[] y)
+        {
+            Factorise.dmxmulv(basem, basen, baseA, x, y);
+            BlasLike.dcopyvec(basem, y, y, 0, basem + bases);
+            for (var k = 0; k < basem; ++k)
+            {
+                y[k] -= x[k + basen + bases + basem];
+                y[k + basem + bases] += x[k + basen + bases];
+            }
+            for (var k = 0; k < basen; ++k)
+                y[k + basem] = x[k] + x[k + basen];
         }
         void ConditionEstimate()
         {
