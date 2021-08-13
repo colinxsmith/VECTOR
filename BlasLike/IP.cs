@@ -565,7 +565,7 @@ namespace InteriorPoint
                                 BlasLike.dcopy(n, A, m, lhs, 1, con + cstart * m, cstart);
                                 Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh, 0, 0, cstart);
                                 for (int i = nh + cstart; i < n + cstart; ++i) lhs[i] /= W2[i];
-                                Factorise.dmxmulv(m, n, A, lhs, res, cstart * m, cstart, cstart);
+                                AmultSparse(lhs, res, cstart * m, cstart, cstart);
                                 BlasLike.dcopyvec(con + 1, res, M, cstart, ij);
                             }
                         }
@@ -625,12 +625,8 @@ namespace InteriorPoint
                             w1[i + nh] /= aob(z[i + nh], x[i + nh]);
                 }
                 else for (int i = 0; i < n; ++i) w1[i] *= aob(x[i], z[i]);
-                if (basen >= n)
-                    Factorise.dmxmulv(m, n, A, w1, dy);
-                else
-                {
-                    AmultSparse(w1, dy);
-                }
+                AmultSparse(w1, dy);
+
                 BlasLike.daxpyvec(m, g1, rp, dy);
                 if (m == 1) dy[0] /= M[0];
                 else Factorise.Solve(uplo, m, 1, M, order, dy, m);
@@ -644,12 +640,11 @@ namespace InteriorPoint
                         for (int i = 0; i < (n - nh); ++i) cx[i + nh] /= aob(z[i + nh], x[i + nh]);
                     }
                     else for (int i = 0; i < n; ++i) cx[i] *= aob(x[i], z[i]);
-                    if (basen >= n) Factorise.dmxmulv(m, n, A, cx, db);
-                    else AmultSparse(cx, db);
+                    AmultSparse(cx, db);
                     BlasLike.daddvec(m, db, b, db);
                     if (m == 1) db[0] /= M[0];
                     else Factorise.Solve(uplo, m, 1, M, order, db, m);
-                    Factorise.dmxmulv(n, m, A, dy, dx, 0, 0, 0, true);
+                    AmultSparseT(dy, dx);
                     if (usrH)
                     {
                         Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh);
@@ -658,7 +653,7 @@ namespace InteriorPoint
                     }
                     else for (int i = 0; i < n; ++i) dx[i] *= aob(x[i], z[i]);
                     BlasLike.dsubvec(n, dx, w1, dx);
-                    Factorise.dmxmulv(n, m, A, db, dc, 0, 0, 0, true);
+                    AmultSparseT(db, dc);
                     if (usrH)
                     {
                         Factorise.Solve(uplo, nh, 1, HCOPY, horder, dc, nh);
@@ -680,7 +675,7 @@ namespace InteriorPoint
                 }
                 else
                 {
-                    Factorise.dmxmulv(n, m, A, dy, dx, 0, 0, 0, true);
+                    AmultSparseT(dy, dx);
                     if (usrH)
                     {
                         Factorise.Solve(uplo, nh, 1, HCOPY, horder, dx, nh);
@@ -772,8 +767,7 @@ namespace InteriorPoint
                         thetaScale(n, w1, THETA[icone], true, true, cstart);
                     }
                 }
-                if (basen >= n) Factorise.dmxmulv(m, n, A, w1, dy);
-                else AmultSparse(w1, dy);
+                AmultSparse(w1, dy);
                 BlasLike.daxpyvec(m, g1, rp, dy);
                 if (m == 1) dy[0] /= M[0];
                 else Factorise.Solve(uplo, m, 1, M, order, dy, m);
@@ -802,12 +796,11 @@ namespace InteriorPoint
                             thetaScale(n, cx, THETA[icone], true, true, cstart);
                         }
                     }
-                    if (basen >= n) Factorise.dmxmulv(m, n, A, cx, db);
-                    else AmultSparse(cx, db);
+                    AmultSparse(cx, db);
                     BlasLike.daddvec(m, db, b, db);
                     if (m == 1) db[0] /= M[0];
                     else Factorise.Solve(uplo, m, 1, M, order, db, m);
-                    Factorise.dmxmulv(n, m, A, dy, dx, 0, 0, 0, true);
+                    AmultSparseT(dy, dx);
                     for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
                     {
                         var n = cone[icone];
@@ -831,7 +824,7 @@ namespace InteriorPoint
                         }
                     }
                     BlasLike.dsubvec(n, dx, w1, dx);
-                    Factorise.dmxmulv(n, m, A, db, dc, 0, 0, 0, true);
+                    AmultSparseT(db, dc);
                     for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
                     {
                         var n = cone[icone];
@@ -894,7 +887,7 @@ namespace InteriorPoint
                 }
                 else
                 {
-                    Factorise.dmxmulv(n, m, A, dy, dx, 0, 0, 0, true);
+                    AmultSparseT(dy, dx);
                     for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
                     {
                         var n = cone[icone];
@@ -950,15 +943,14 @@ namespace InteriorPoint
         }
         void PrimalResidual()
         {
-            if (basen >= n) Factorise.dmxmulv(m, n, A, x, Ax);
-            else AmultSparse(x, Ax);
+            AmultSparse(x, Ax);
             BlasLike.dcopyvec(m, Ax, rp);
             BlasLike.dnegvec(m, rp);
             BlasLike.daxpyvec(m, homogenous ? tau : 1, b, rp);
         }
         void DualResudual()
         {
-            Factorise.dmxmulv(n, m, A, y, Ay, 0, 0, 0, true);
+            AmultSparseT(y, Ay);
             BlasLike.dcopyvec(n, Ay, rd);
             BlasLike.dnegvec(n, rd);
             BlasLike.daxpyvec(n, homogenous ? tau : 1, cmod, rd);
@@ -1103,17 +1095,40 @@ namespace InteriorPoint
             }
             CreateNormalMatrix();
         }
-        void AmultSparse(double[] x, double[] y)
+        void AmultSparseT(double[] y, double[] x, int astart = 0, int ystart = 0, int xstart = 0)
         {
-            Factorise.dmxmulv(basem, basen, baseA, x, y);
-            BlasLike.dcopyvec(basem, y, y, 0, basem + bases);
-            for (var k = 0; k < basem; ++k)
+            if (basen >= n)
+                Factorise.dmxmulv(n, m, A, y, x, astart, ystart, xstart, true);
+            else
             {
-                y[k] -= x[k + basen + bases + basem];
-                y[k + basem + bases] += x[k + basen + bases];
+                BlasLike.daddvec(basem, y, y, y, ystart, ystart + basem + bases, ystart);
+                Factorise.dmxmulv(basen, basem, baseA, y, x, astart, ystart, xstart, true);
+                BlasLike.dsubvec(basem, y, y, y, ystart, ystart + basem + bases, ystart);
+
+                BlasLike.dcopyvec(bases, y, x, ystart + basem, xstart + basen);
+                BlasLike.daddvec(bases, x, x, x, xstart, xstart + basen, xstart);
+
+                BlasLike.dcopyvec(basem, y, x, ystart + basem + bases, xstart + basen + bases);
+                BlasLike.dcopyvec(basem, y, x, ystart, xstart + basen + bases + basem);
+                BlasLike.dnegvec(basem, x, xstart + basen + bases + basem);
             }
-            for (var k = 0; k < basen; ++k)
-                y[k + basem] = x[k] + x[k + basen];
+        }
+        void AmultSparse(double[] x, double[] y, int astart = 0, int xstart = 0, int ystart = 0)
+        {
+            if (basen >= n)
+                Factorise.dmxmulv(m, n, A, x, y, astart, xstart, ystart);
+            else
+            {
+                Factorise.dmxmulv(basem, basen, baseA, x, y, astart, xstart, ystart);
+                BlasLike.dcopyvec(basem, y, y, 0, basem + bases);
+                for (var k = 0; k < basem; ++k)
+                {
+                    y[k] -= x[k + basen + bases + basem];
+                    y[k + basem + bases] += x[k + basen + bases];
+                }
+                for (var k = 0; k < basen; ++k)
+                    y[k + basem] = x[k] + x[k + basen];
+            }
         }
         void ConditionEstimate()
         {
@@ -1291,7 +1306,7 @@ namespace InteriorPoint
                 if (L != null)
                 {
                     bl = new double[m];
-                    Factorise.dmxmulv(m, n, opt.A, L, bl);
+                    opt.AmultSparse(L, bl);
                     if (opt.H != null)
                     {
                         QL = new double[n];
