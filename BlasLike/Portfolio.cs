@@ -200,9 +200,11 @@ namespace Portfolio
             IOPT.basebU = new double[m];
             BlasLike.dcopyvec(m, U, IOPT.basebU, n);
             IOPT.basen = n;
-            IOPT.bases = n;
+            IOPT.bases = dolarge * n;
             IOPT.basesb = m;
             IOPT.basem = m;
+            IOPT.conv=1e-9;
+            IOPT.compConv=1e-9;
             var back = IOPT.Opt("QP", null, null, true, UL, sign);
             if (back == 6) Console.WriteLine("INFEASIBLE");
             else
@@ -215,7 +217,7 @@ namespace Portfolio
                 IOPT.basebU = new double[m];
                 BlasLike.dcopyvec(m, U, IOPT.basebU, n);
                 IOPT.basen = n;
-                IOPT.bases = n;
+                IOPT.bases = n * dolarge;
                 IOPT.basesb = m;
                 IOPT.basem = m;
                 var testmul = new double[n];

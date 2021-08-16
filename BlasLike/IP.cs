@@ -50,8 +50,8 @@ namespace InteriorPoint
         BestResults keep;
         public bool copyKept = false;
         public double alphamin = 1e-1;
-        public double conv = BlasLike.lm_eps * 4;
-        public double compConv = BlasLike.lm_eps * 4;
+        public double conv = BlasLike.lm_eps * 8;
+        public double compConv = BlasLike.lm_eps * 8;
         int badindex = -1;
         string optMode = "QP";
         int numberOfCones = 0;
@@ -90,7 +90,7 @@ namespace InteriorPoint
         public int nh;
         char uplo = 'U';
         double[] HCOPY = null;
-        double[] HHCopy = null;
+        //    double[] HHCopy = null;
         double tau = 1;
         double dtau = 1;
         double dtau0 = 1;
@@ -492,12 +492,12 @@ namespace InteriorPoint
                             }
                             else if (con < bases + basem)
                             {
-                                var qq = con + basen + -basem;
+                                var qq = con - basem + bases;
                                 lhs[qq] /= aob(z[qq], x[qq]);
                             }
                             else
                             {
-                                var qq = (con - basem + basen);
+                                var qq = (con - basem /*- bases*/ + basen /*+ bases*/);
                                 lhs[qq] /= aob(z[qq], x[qq]);
                             }
                         }
@@ -517,11 +517,11 @@ namespace InteriorPoint
                                 }
                                 else if (ii < basem + bases)
                                 {
-                                    res[ii] = lhs[ii - basem] + lhs[ii - basem + basen];
+                                    res[ii] = lhs[ii - basem - bases + basen] + lhs[ii - basem + basen];
                                 }
                                 else
                                 {
-                                    res[ii] = BlasLike.ddot(basen, baseA, basem, lhs, 1, ii - basem - basen);
+                                    res[ii] = BlasLike.ddot(basen, baseA, basem, lhs, 1, ii - basem - bases);
                                     res[ii] += lhs[ii - basem + basen];
                                 }
                             }
@@ -1126,7 +1126,7 @@ namespace InteriorPoint
                     y[k] -= x[k + basen + bases + basem];
                     y[k + basem + bases] += x[k + basen + bases];
                 }
-                for (var k = 0; k < basen; ++k)
+                for (var k = 0; k < bases; ++k)
                     y[k + basem] = x[k] + x[k + basen];
             }
         }
