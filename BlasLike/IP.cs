@@ -15,26 +15,25 @@ namespace InteriorPoint
         public double tau;
         public double kappa;
         public double norm;
-        public BestResults(double[] x = null, double[] y = null, double[] z = null, double tau = -1, double kappa = -1, double rp = BlasLike.lm_max, double rd = BlasLike.lm_max, double comp = BlasLike.lm_max)
+        public BestResults(double[] x = null, double[] y = null, double[] z = null, double tau = -1, double kappa = -1, double rp = BlasLike.lm_max, double rd = BlasLike.lm_max, double comp = BlasLike.lm_max, double norm = BlasLike.lm_max)
         {
-            set(x, y, z, tau, kappa, rp, rd, comp);
+            set(x, y, z, tau, kappa, rp, rd, comp, norm);
         }
-        public void set(double[] x, double[] y, double[] z, double tau, double kappa, double rp, double rd, double comp)
+        public void set(double[] x, double[] y, double[] z, double tau, double kappa, double rp, double rd, double comp, double norm)
         {
             this.x = x != null ? (double[])x.Clone() : null;
             this.y = y == null ? null : (double[])y.Clone();
             this.z = z == null ? null : (double[])z.Clone();
             this.tau = tau;
             this.kappa = kappa;
-            double[] pass = { rp, rd, 1e4 * comp };
-            this.norm = Optimise.lInfinity(pass);
+            this.norm = norm;
         }
         public void update(double[] x, double[] y, double[] z, double tau, double kappa, double rp, double rd, double comp)
         {
-            double[] pass = { rp, rd, 1e4 * comp };
+            double[] pass = { rp, rd, comp };
             double norm = Optimise.lInfinity(pass);
             if (norm < this.norm)
-                set(x, y, z, tau, kappa, rp, rd, comp);
+                set(x, y, z, tau, kappa, rp, rd, comp, norm);
         }
     }
     public class Optimise
@@ -48,7 +47,7 @@ namespace InteriorPoint
         public int basesb = 0;
         public hessmull h = null;
         BestResults keep;
-        public bool copyKept = false;
+        public bool copyKept = true;
         public double alphamin = 1e-1;
         public double conv = BlasLike.lm_eps * 16;
         public double compConv = BlasLike.lm_eps * 16;
@@ -470,10 +469,34 @@ namespace InteriorPoint
                     Factorise.Factor(uplo, nh, HCOPY, horder);
                     for (int con = 0, ij = 0; con < m; ++con, ij += con)
                     {
-                        BlasLike.dcopy(n, A, m, lhs, 1, con);
+                        if (n <= basen)
+                            BlasLike.dcopy(n, A, m, lhs, 1, con);
+                        else
+                        {
+                            if (con < basem)
+                            {
+                                BlasLike.dcopy(basen, baseA, basem, lhs, 1, con);
+                                BlasLike.dzerovec(bases + 2 * basem, lhs, basen);
+                                var qq = basen + bases + basem + con;
+                                lhs[qq] = -aob(x[qq], z[qq]);
+                            }
+                            else if (con < basem + bases)
+                            {
+                                BlasLike.dzerovec(n, lhs);
+                                var qq = con - basem;
+                                lhs[qq] = 1;
+                                lhs[qq + basen] = aob(x[qq + basen], z[qq + basen]);
+                            }
+                            else
+                            {
+                                BlasLike.dcopy(basen, baseA, basem, lhs, 1, con - basem - bases);
+                                BlasLike.dzerovec(bases + 2 * basem, lhs, basen);
+                                var qq = con - basem + basen;
+                                lhs[qq] = aob(x[qq], z[qq]);
+                            }
+                        }
                         Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh);
                         //Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, lhs);
-
                         if (con < basem && basen != nh)
                         {
                             for (int i = 0; i < (n - nh); ++i)
@@ -483,25 +506,6 @@ namespace InteriorPoint
                                     if (lhs[i + nh] != 0)
                                         lhs[i + nh] /= aob(z[i + nh], x[i + nh]);
                                 }
-
-                            }
-                        }
-                        if (n > basen)
-                        {
-                            if (con < basem)
-                            {
-                                var qq = con + bases + basen + basem;
-                                lhs[qq] /= aob(z[qq], x[qq]);
-                            }
-                            else if (con < bases + basem)
-                            {
-                                var qq = con - basem + bases;
-                                lhs[qq] /= aob(z[qq], x[qq]);
-                            }
-                            else
-                            {
-                                var qq = (con - basem /*- bases*/ + basen /*+ bases*/);
-                                lhs[qq] /= aob(z[qq], x[qq]);
                             }
                         }
                         if (n <= basen)
@@ -1372,7 +1376,7 @@ namespace InteriorPoint
             var rd1 = rd0;
             var gap1 = gap0;
             var comp0 = opt.Complementarity();
-            opt.keep.set(opt.x, opt.y, opt.z, opt.tau, opt.kappa, rp0, rd0, comp0);
+            opt.keep.set(opt.x, opt.y, opt.z, opt.tau, opt.kappa, rp0, rd0, comp0, Math.Max(Math.Max(rp0, rd0), comp0));
             var compnow = comp0;
             var comp1 = comp0;
             var alpha1 = 0.0;
@@ -1380,6 +1384,7 @@ namespace InteriorPoint
             var gamma = 0.0;
             var diff = new double[n];
             var gap = 1.0;
+            var iup = 0;
             while (true)
             {
                 rp1 = lInfinity(opt.rp) / denomTest(rp0);
@@ -1387,9 +1392,18 @@ namespace InteriorPoint
                 gap = opt.Gap();
                 gap1 = gap / denomTest(gap0);
                 comp1 = opt.Complementarity();
-                opt.keep.update(opt.x, opt.y, opt.z, opt.tau, opt.kappa, lInfinity(opt.rp), lInfinity(opt.rd), comp1);
-                if (/*Math.Abs(gap / opt.tau) < opt.conv && */ rp1 <= opt.conv && rd1 <= opt.conv && comp1 <= opt.compConv)
+                opt.keep.update(opt.x, opt.y, opt.z, opt.tau, opt.kappa, rp1, rd1, comp1);
+                if (rp1 <= opt.conv && rd1 <= opt.conv && comp1 <= opt.compConv)
                     break;
+                if (condition > BlasLike.lm_reps)
+                {
+                    double[] pass = { rp1, rd1, comp1 };
+                    if (lInfinity(pass) > opt.keep.norm)
+                    {
+                        iup++;
+                    }
+                    if (iup > 5) break;
+                }
                 if (comp1 < opt.compConv && opt.tau < 1e-5 * opt.kappa) break;
                 if (ir > opt.maxouter) break;
                 if (i > opt.maxinner)
@@ -1489,14 +1503,16 @@ namespace InteriorPoint
                 opt.ConditionEstimate();
                 if (opt.condition > BlasLike.lm_reps)
                 {
+                    var mult = rp1 / rd1;
+                    if (mult < 1) mult = 1.0 / mult;
                     for (int ii = 0, id = 0; ii < m; ++ii, id += ii)
                     {
-                        if (opt.M[id + ii] < opt.regularise)
-                            opt.M[id + ii] += opt.regularise;
+                        //if (opt.M[id + ii] < opt.regularise)
+                        opt.M[id + ii] += opt.regularise;
                     }
                 }
                 gap = opt.Primal() - opt.Dual();
-                if (opt.tau < 1e-5 && opt.kappa < 1e-5)
+                if (homogenous && opt.tau < 1e-5 && opt.kappa < 1e-5)
                 {
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
@@ -1547,7 +1563,7 @@ namespace InteriorPoint
                 }
             }
 
-            if (i >= opt.maxinner || ir >= opt.maxouter) return -1;
+            if (i >= opt.maxinner || ir >= opt.maxouter) return -100;
             else if (opt.homogenous && infease) return 6;
             else
             {
@@ -1565,7 +1581,7 @@ namespace InteriorPoint
                 Console.WriteLine($"Gap:\t\t\t{opt.Primal() - opt.Dual() - zL}");
                 Console.WriteLine($"Job took {opt.clocker()} m secs");
                 Console.WriteLine($"Last conv {opt.conv}");
-                return 0;
+                return -iup;
             }
         }
 

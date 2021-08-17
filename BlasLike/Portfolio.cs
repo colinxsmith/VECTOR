@@ -114,11 +114,16 @@ namespace Portfolio
             {
                 if (U[i + n] != L[i + n]) slackb++;
             }
+            var mup = new int[slackb];
             var b = new double[m + slackb];
             BlasLike.dcopyvec(m, L, b, n);
             for (int i = 0, slack = 0; i < m; ++i)
             {
-                if (U[i + n] != L[i + n]) b[slack++ + m] = U[i + n];
+                if (U[i + n] != L[i + n])
+                {
+                    mup[slack] = i;
+                    b[slack++ + m] = U[i + n];
+                }
             }
             var sign = new int[n * dolarge + n + 2 * slackb];
             var UL = new double[n];
@@ -140,17 +145,18 @@ namespace Portfolio
                 if (L[i] >= 0)
                 {
                     sign[i] = 1;
-                if (dolarge == 1) sign[i + n] = 1;
+                    if (dolarge == 1) sign[i + n] = 1;
                     UL[i] = L[i];
                     signcount++;
                 }
                 else if (U[i] <= 0)
                 {
                     sign[i] = -1;
-                if (dolarge == 1) sign[i + n] = -1;
+                    if (dolarge == 1) sign[i + n] = -1;
                     UL[i] = U[i];
                     signcount++;
                 }
+                else sign[i] = 1;
                 if (UL[i] == 0) zcount++;
                 CTEST[i] = sign[i] * Math.Abs(cextra[i]);
             }
@@ -210,6 +216,8 @@ namespace Portfolio
             IOPT.basesb = slackb;
             IOPT.basem = m;
             var back = IOPT.Opt("QP", null, null, true, UL, sign);
+            if (back < -10) Console.WriteLine($"Failed -- too many iterations");
+            if (back < 0) Console.WriteLine($"Convergence not met due to unstable equations");
             if (back == 6) Console.WriteLine("INFEASIBLE");
             else
             {
@@ -233,6 +241,8 @@ namespace Portfolio
                 IOPT.alphamin = 1e-8;
                 back = IOPT.Opt("QP", null, null, false, UL, sign);
                 BlasLike.dcopyvec(n, ww, w);
+                if (back < -10) Console.WriteLine($"Failed -- too many iterations");
+                if (back < 0) Console.WriteLine($"Convergence not met due to unstable equations");
             }
             return back;
         }
