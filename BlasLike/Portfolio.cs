@@ -137,16 +137,17 @@ namespace Portfolio
                 //i.e the dual is infeasible, so it's necessary to mess
                 //about with c to get a dual feasible LP to test the primal
                 //constraints.
-                if (dolarge == 1) sign[i + n] = 1;
-                if (L[i] == 0)
+                if (L[i] >= 0)
                 {
                     sign[i] = 1;
+                if (dolarge == 1) sign[i + n] = 1;
                     UL[i] = L[i];
                     signcount++;
                 }
-                else if (U[i] == 0)
+                else if (U[i] <= 0)
                 {
                     sign[i] = -1;
+                if (dolarge == 1) sign[i + n] = -1;
                     UL[i] = U[i];
                     signcount++;
                 }
@@ -163,7 +164,7 @@ namespace Portfolio
                 BlasLike.dcopy(n, A, m, AA, dolarge * n + m + slackb, con, con);
                 if (U[con + n] != L[con + n])
                 {
-                    AA[con + (dolarge * n + n + slackb + slack) * (dolarge * n + m + slackb)] = -1;
+                    AA[con + (dolarge * n + n + slack + slackb) * (dolarge * n + m + slackb)] = -1;
                     AA[dolarge * n + m + slack + (dolarge * n + n + slack) * (dolarge * n + m + slackb)] = 1;
                     BlasLike.dcopy(n, A, m, AA, dolarge * n + m + slackb, con, dolarge * n + m + slack++);
                 }
@@ -174,14 +175,19 @@ namespace Portfolio
                 AA[astart + (i + n) * (dolarge * n + m + slackb)] = 1;
             }
             if (zcount == n) UL = (double[])L.Clone();
+            for (var i = 0; i < n; ++i) if (sign[i] == -1) UL[i] = U[i];
             Array.Resize(ref UL, n);
-            Array.Resize(ref UL, dolarge * n + n + 2 * slackb);
+            Array.Resize(ref UL, dolarge * n + n + m + slackb);
             if (InteriorPoint.Optimise.lInfinity(UL) == 0) UL = null;
             var bb = (double[])b.Clone();
             Array.Resize(ref bb, m + dolarge * n + slackb);
             for (var i = 0; i < dolarge * n; ++i)
             {
-                bb[m + slackb + i] = U[i];
+                bb[m + i] = sign[i] == 1 ? U[i] : L[i];
+            }
+            for (var i = 0; i < slackb; ++i)
+            {
+                bb[m + i + dolarge * n] = b[m + i];
             }
             if (signcount != n) { CTEST = cextra; sign = null; }
             w = new double[n];
@@ -193,7 +199,7 @@ namespace Portfolio
             // First do a homogenous LP do decide if the problem is feasible.
             // (homogenous QP only works if we're very lucky)
             var IOPT = new InteriorPoint.Optimise(dolarge * n + n + 2 * slackb, m + dolarge * n + slackb, ww, AA, bb, CTEST);
-            IOPT.alphamin = 1e-4;
+            IOPT.alphamin = 1e-10;
             IOPT.baseA = A;
             IOPT.basebL = new double[m];
             BlasLike.dcopyvec(m, L, IOPT.basebL, n);
@@ -201,10 +207,8 @@ namespace Portfolio
             BlasLike.dcopyvec(m, U, IOPT.basebU, n);
             IOPT.basen = n;
             IOPT.bases = dolarge * n;
-            IOPT.basesb = m;
+            IOPT.basesb = slackb;
             IOPT.basem = m;
-            IOPT.conv=1e-9;
-            IOPT.compConv=1e-9;
             var back = IOPT.Opt("QP", null, null, true, UL, sign);
             if (back == 6) Console.WriteLine("INFEASIBLE");
             else
