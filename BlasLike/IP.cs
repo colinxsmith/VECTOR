@@ -538,15 +538,66 @@ namespace InteriorPoint
                 }
                 else
                 {
-                    for (int i = 0, ij = 0; i < m; ++i, ij += i)
-                    {
-                        for (var k = 0; k < n; ++k)
+                    if (n <= basen)
+                        for (int i = 0, ij = 0; i < m; ++i, ij += i)
                         {
-                            if (A[k * m + i] != 0.0)
+                            for (var k = 0; k < n; ++k)
                             {
-                                var xoz = aob(x[k], z[k]);
-                                xoz *= A[k * m + i];
-                                BlasLike.daxpyvec(i + 1, xoz, A, M, k * m, ij);
+                                if (A[k * m + i] != 0.0)
+                                {
+                                    var xoz = aob(x[k], z[k]);
+                                    xoz *= A[k * m + i];
+                                    BlasLike.daxpyvec(i + 1, xoz, A, M, k * m, ij);
+                                }
+                            }
+                        }
+                    else
+                    {
+                        for (int i = 0, ij = 0; i < m; ++i, ij += i)
+                        {
+                            if (i < basem)
+                            {
+                                for (var k = 0; k < basen; ++k)
+                                {
+                                    if (baseA[k * basem + i] != 0.0)
+                                    {
+                                        var xoz = aob(x[k], z[k]);
+                                        xoz *= baseA[k * basem + i];
+                                        BlasLike.daxpyvec(i + 1, xoz, baseA, M, k * basem, ij);
+                                    }
+                                }
+                                var kk = i + basen + bases + basem;
+                                var xozz = -aob(x[kk], z[kk]);
+                                M[ij + i] += -xozz;
+                            }
+                            else if (i < basem + bases)
+                            {
+                                for (var k = i - basem; k <= i - basem + basen; k += basen)
+                                {
+                                    var xoz = aob(x[k], z[k]);
+                                    for (var j = 0; j < basem && k < basen; ++j)
+                                    {
+                                        if (baseA[k * basem + j] != 0)
+                                            M[ij + j] += baseA[k * basem + j] * xoz;
+                                    }
+                                    M[ij + i] += xoz;
+                                }
+                            }
+                            else if (i < basem + bases + basem)
+                            {
+                                for (var k = 0; k < basen; ++k)
+                                {
+                                    if (baseA[k * basem + i - basem - bases] != 0.0)
+                                    {
+                                        var xoz = aob(x[k], z[k]);
+                                        xoz *= baseA[k * basem + i - basem - bases];
+                                        BlasLike.daxpyvec(i + 1 - basem - bases, xoz, baseA, M, k * basem, ij);
+                                        M[ij + k + basem] += xoz;
+                                        BlasLike.daxpyvec(i + 1 - basem - bases, xoz, baseA, M, k * basem, ij + basem + bases);
+                                    }
+                                }
+                                var kk = i - basem - bases + basen + bases;
+                                M[ij + i] += aob(x[kk], z[kk]);
                             }
                         }
                     }

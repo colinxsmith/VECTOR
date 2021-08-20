@@ -204,9 +204,9 @@ namespace Portfolio
             Array.Resize(ref ww, dolarge * n + n + 2 * slackb);
             // First do a homogenous LP do decide if the problem is feasible.
             // (homogenous QP only works if we're very lucky)
-            var IOPT = new InteriorPoint.Optimise(dolarge * n + n + 2 * slackb, m + dolarge * n + slackb, ww, AA, bb, CTEST);
+            var IOPT = new InteriorPoint.Optimise(dolarge * n + n + 2 * slackb, m + dolarge * n + slackb, ww, null, bb, CTEST);
             IOPT.alphamin = 1e-10;
-            IOPT.baseA = A;
+            IOPT.baseA = A;//We only need to pass the constraints without slack variables AA just use for testing
             IOPT.basebL = new double[m];
             BlasLike.dcopyvec(m, L, IOPT.basebL, n);
             IOPT.basebU = new double[m];
@@ -221,7 +221,7 @@ namespace Portfolio
             if (back == 6) Console.WriteLine("INFEASIBLE");
             else
             {
-                IOPT = new InteriorPoint.Optimise(dolarge * n + n + 2 * slackb, m + dolarge * n + slackb, ww, AA, bb, cextra, n, HH);
+                IOPT = new InteriorPoint.Optimise(dolarge * n + n + 2 * slackb, m + dolarge * n + slackb, ww, null, bb, cextra, n, HH);
                 IOPT.h = hessmull;
                 IOPT.baseA = A;
                 IOPT.basebL = new double[m];
