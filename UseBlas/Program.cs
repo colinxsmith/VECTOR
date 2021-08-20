@@ -1172,7 +1172,11 @@ namespace UseBlas
                     Console.WriteLine("exception" + prob);
                 }
                 lic = new Byte[20];
-                var fiddlelic = "db;05;fd;61;38;e4;2b;f8;2e;29;73;bf;a4;d3;40;98;ff;03;00;00";
+                var fiddlelic = "70;ab;74;ba;e6;c0;f7;77;7c;e7;9c;29;2c;f5;51;e7;ff;03;00;00;";
+                if (fiddlelic.EndsWith(';'))
+                {
+                    fiddlelic = fiddlelic.Remove(fiddlelic.Length - 1, 1);
+                }
                 var il = 0;
                 foreach (string ll in fiddlelic.Split(';'))
                 {

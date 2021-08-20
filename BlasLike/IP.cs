@@ -592,7 +592,7 @@ namespace InteriorPoint
                                         var xoz = aob(x[k], z[k]);
                                         xoz *= baseA[k * basem + i - basem - bases];
                                         BlasLike.daxpyvec(i + 1 - basem - bases, xoz, baseA, M, k * basem, ij);
-                                        M[ij + k + basem] += xoz;
+                                        if (bases > 0) M[ij + k + basem] += xoz;
                                         BlasLike.daxpyvec(i + 1 - basem - bases, xoz, baseA, M, k * basem, ij + basem + bases);
                                     }
                                 }
