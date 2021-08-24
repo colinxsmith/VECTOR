@@ -476,23 +476,23 @@ namespace InteriorPoint
                             if (con < basem)
                             {
                                 BlasLike.dcopy(basen, baseA, basem, lhs, 1, con);
-                                BlasLike.dzerovec(bases + 2 * basem, lhs, basen);
-                                var qq = basen + bases + basem + con;
-                                lhs[qq] = -aob(x[qq], z[qq]);
+                                //   BlasLike.dzerovec(bases + 2 * basem, lhs, basen);
+                                //   var qq = basen + bases + basem + con;
+                                //   lhs[qq] = -aob(x[qq], z[qq]);
                             }
                             else if (con < basem + bases)
                             {
                                 BlasLike.dzerovec(n, lhs);
                                 var qq = con - basem;
                                 lhs[qq] = 1;
-                                lhs[qq + basen] = aob(x[qq + basen], z[qq + basen]);
+                                // lhs[qq + basen] = aob(x[qq + basen], z[qq + basen]);
                             }
                             else
                             {
                                 BlasLike.dcopy(basen, baseA, basem, lhs, 1, con - basem - bases);
-                                BlasLike.dzerovec(bases + 2 * basem, lhs, basen);
-                                var qq = con - basem + basen;
-                                lhs[qq] = aob(x[qq], z[qq]);
+                                //    BlasLike.dzerovec(bases + 2 * basem, lhs, basen);
+                                //      var qq = con - basem + basen;
+                                //      lhs[qq] = aob(x[qq], z[qq]);
                             }
                         }
                         Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh);
@@ -520,16 +520,22 @@ namespace InteriorPoint
                                 if (ii < basem)
                                 {
                                     res[ii] = BlasLike.ddot(basen, baseA, basem, lhs, 1, ii);
-                                    res[ii] -= lhs[basen + bases + basem + ii];
+                                    var qq = basen + bases + basem + ii;
+                                    if (ii == con)
+                                        res[ii] += aob(x[qq], z[qq]);//lhs[basen + bases + basem + ii];
                                 }
                                 else if (ii < basem + bases)
                                 {
-                                    res[ii] = lhs[ii - basem - bases + basen] + lhs[ii - basem + basen];
+                                    var qq = ii - basem;
+                                    res[ii] = lhs[qq];
+                                    if (ii == con) res[ii] += aob(x[qq + basen], z[qq + basen]);
                                 }
                                 else
                                 {
                                     res[ii] = BlasLike.ddot(basen, baseA, basem, lhs, 1, ii - basem - bases);
-                                    res[ii] += lhs[ii - basem + basen];
+                                    var qq = ii - basem + basen;
+                                    if (ii == con)
+                                        res[ii] += aob(x[qq], z[qq]);//lhs[ii - basem + basen];
                                 }
                             }
                         }
