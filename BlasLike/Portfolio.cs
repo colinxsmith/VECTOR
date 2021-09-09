@@ -49,9 +49,11 @@ namespace Portfolio
                         AA[i * (m + 1)] = 1;
                         AA[i * (m + 1) + 1] = alpha[i];
                     }
-                    LL[i] = 1;//L[i];
-                    UU[i] = 1;//U[i];
-                }
+                    LL[i] = L[i];
+                    UU[i] = U[i];
+               } 
+LL[n] =1;
+UU[n]=1;
                 LL[n + 1] = 0;
                 UU[n + 1] = 0.05;
                 m++;
