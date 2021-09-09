@@ -39,8 +39,6 @@ namespace InteriorPoint
     public class Optimise
     {
         public double[] baseA = null;
-        public double[] basebL = null;
-        public double[] basebU = null;
         public int basen = 0;
         public int basem = 0;
         public int bases = 0;
@@ -119,6 +117,8 @@ namespace InteriorPoint
         double lastdkappa;
         double condition;
         double regularise;
+        public int[] mup = null;
+        public int[] mup_inverse = null;
         static double denomTest(double x) => x * x <= 1 ? 1 : x;
         public static double lInfinity(double[] x)
         {
@@ -484,7 +484,11 @@ namespace InteriorPoint
                             }
                             else
                             {
-                                BlasLike.dcopy(basen, baseA, basem, lhs, 1, con - basem - bases);
+                                if (basesb > 0)
+                                {
+                                    var conn = mup[con - basem - bases];
+                                    BlasLike.dcopy(basen, baseA, basem, lhs, 1, conn);
+                                }
                             }
                         }
                         Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh);
@@ -514,9 +518,16 @@ namespace InteriorPoint
                                 if (ii < basem)
                                 {
                                     M[ij + ii] = BlasLike.ddot(basen, baseA, basem, lhs, 1, ii);
-                                    var qq = basen + bases + basem + ii;
-                                    if (ii == con)
-                                        M[ij + ii] += aob(x[qq], z[qq]);
+                                    if (basesb > 0)
+                                    {
+                                        var iii = mup_inverse[ii];
+                                        if (iii != -1)
+                                        {
+                                            var qq = basen + bases + basesb + iii;
+                                            if (ii == con)
+                                                M[ij + ii] += aob(x[qq], z[qq]);
+                                        }
+                                    }
                                 }
                                 else if (ii < basem + bases)
                                 {
@@ -527,10 +538,14 @@ namespace InteriorPoint
                                 }
                                 else
                                 {
-                                    M[ij + ii] = BlasLike.ddot(basen, baseA, basem, lhs, 1, ii - basem - bases);
-                                    var qq = ii - basem + basen;
-                                    if (ii == con)
-                                        M[ij + ii] += aob(x[qq], z[qq]);
+                                    if (basesb > 0)
+                                    {
+                                        var iii = mup[ii - basem - bases];
+                                        M[ij + ii] = BlasLike.ddot(basen, baseA, basem, lhs, 1, iii);
+                                        var qq = iii + basen + bases;
+                                        if (ii == con)
+                                            M[ij + ii] += aob(x[qq], z[qq]);
+                                    }
                                 }
                             }
                         }
@@ -568,9 +583,16 @@ namespace InteriorPoint
                                         BlasLike.daxpyvec(i + 1, xoz, baseA, M, k * basem, ij);
                                     }
                                 }
-                                var kk = i + basen + bases + basem;
-                                var xozz = -aob(x[kk], z[kk]);
-                                M[ij + i] += -xozz;
+                                if (basesb > 0)
+                                {
+                                    var ii = mup_inverse[i];
+                                    if (ii != -1)
+                                    {
+                                        var kk = ii + basen + bases + basesb;
+                                        var xozz = -aob(x[kk], z[kk]);
+                                        M[ij + i] += -xozz;
+                                    }
+                                }
                             }
                             else if (i < basem + bases)
                             {
@@ -585,20 +607,21 @@ namespace InteriorPoint
                                     M[ij + i] += xoz;
                                 }
                             }
-                            else if (i < basem + bases + basem)
+                            else if (i < basem + bases + basesb)
                             {
+                                var ii = mup[i - basem - bases];
                                 for (var k = 0; k < basen; ++k)
                                 {
-                                    if (baseA[k * basem + i - basem - bases] != 0.0)
+                                    if (baseA[k * basem + ii] != 0.0)
                                     {
                                         var xoz = aob(x[k], z[k]);
-                                        xoz *= baseA[k * basem + i - basem - bases];
-                                        BlasLike.daxpyvec(i + 1 - basem - bases, xoz, baseA, M, k * basem, ij);
+                                        xoz *= baseA[k * basem + ii];
+                                        BlasLike.daxpyvec(basem, xoz, baseA, M, k * basem, ij);
                                         if (bases > 0) M[ij + k + basem] += xoz;
                                         BlasLike.daxpyvec(i + 1 - basem - bases, xoz, baseA, M, k * basem, ij + basem + bases);
                                     }
                                 }
-                                var kk = i - basem - bases + basen + bases;
+                                var kk = ii + basen + bases;
                                 M[ij + i] += aob(x[kk], z[kk]);
                             }
                         }
@@ -1161,16 +1184,38 @@ namespace InteriorPoint
                 Factorise.dmxmulv(n, m, A, y, x, astart, ystart, xstart, true);
             else
             {
-                BlasLike.daddvec(basem, y, y, y, ystart, ystart + basem + bases, ystart);
+                if (basesb > 0)//BlasLike.daddvec(basem, y, y, y, ystart, ystart + basem + bases, ystart);
+                {
+                    for (var k = 0; k < basesb; ++k)
+                    {
+                        var km = mup[k];
+                        y[ystart + km] += y[ystart + basem + bases + k];
+                    }
+                }
                 Factorise.dmxmulv(basen, basem, baseA, y, x, astart, ystart, xstart, true);
-                BlasLike.dsubvec(basem, y, y, y, ystart, ystart + basem + bases, ystart);
-
+                if (basesb > 0)//BlasLike.dsubvec(basem, y, y, y, ystart, ystart + basem + bases, ystart);
+                {
+                    for (var k = 0; k < basesb; ++k)
+                    {
+                        var km = mup[k];
+                        y[ystart + km] -= y[ystart + basem + bases + k];
+                    }
+                }
                 BlasLike.dcopyvec(bases, y, x, ystart + basem, xstart + basen);
                 BlasLike.daddvec(bases, x, x, x, xstart, xstart + basen, xstart);
 
-                BlasLike.dcopyvec(basem, y, x, ystart + basem + bases, xstart + basen + bases);
-                BlasLike.dcopyvec(basem, y, x, ystart, xstart + basen + bases + basem);
-                BlasLike.dnegvec(basem, x, xstart + basen + bases + basem);
+                //BlasLike.dcopyvec(basem, y, x, ystart + basem + bases, xstart + basen + bases);
+                //BlasLike.dcopyvec(basem, y, x, ystart, xstart + basen + bases + basem);
+                //BlasLike.dnegvec(basem, x, xstart + basen + bases + basem);
+                if (basesb > 0)
+                {
+                    for (var k = 0; k < basesb; ++k)
+                    {
+                        var km = mup[k];
+                        x[xstart + basen + bases + k] = y[ystart + basem + bases + k];
+                        x[xstart + basen + bases + basesb + k] = -y[km];
+                    }
+                }
             }
         }
         void AmultSparse(double[] x, double[] y, int astart = 0, int xstart = 0, int ystart = 0)
@@ -1180,10 +1225,11 @@ namespace InteriorPoint
             else
             {
                 Factorise.dmxmulv(basem, basen, baseA, x, y, astart, xstart, ystart);
-                BlasLike.dcopyvec(basem, y, y, ystart, ystart + basem + bases);
-                for (var k = 0; k < basem; ++k)
+                for (int km, k = 0; k < basesb; ++k)
                 {
-                    y[ystart + k] -= x[xstart + k + basen + bases + basem];
+                    km = mup[k];
+                    y[k + ystart + basem + bases] = y[km + ystart];
+                    y[ystart + km] -= x[xstart + k + basen + bases + basesb];
                     y[ystart + k + basem + bases] += x[xstart + k + basen + bases];
                 }
                 for (var k = 0; k < bases; ++k)
@@ -1318,6 +1364,15 @@ namespace InteriorPoint
             opt.usrH = (h == null && nh > 0 && (opt.H != null && BlasLike.dsumvec(opt.H.Length, opt.H) != 0.0)) || opt.h != null;
             if (mode == "QP")
             {
+                if (mup != null)
+                {
+                    mup_inverse = new int[basem];
+                    for (var ib = 0; ib < basem; ++ib) mup_inverse[ib] = -1;
+                    for (var ib = 0; ib < basesb; ++ib)
+                    {
+                        mup_inverse[mup[ib]] = ib;
+                    }
+                }
                 if (h == null) h = qphess1;
                 if (sign == null)
                 {

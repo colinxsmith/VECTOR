@@ -37,11 +37,38 @@ namespace Portfolio
         public virtual void Optimise()
         {
             var back = makeQ();
-            var ip = InteriorOpt();
-            Console.WriteLine($"Variance from IP:\t\t{Variance(w)}");
+            if (true)
+            {
+                var AA = new double[n * (m + 1)];
+                var LL = new double[n + m + 1];
+                var UU = new double[n + m + 1];
+                for (var i = 0; i < n + m; i++)
+                {
+                    if (i < n)
+                    {
+                        AA[i * (m + 1)] = 1;
+                        AA[i * (m + 1) + 1] = alpha[i];
+                    }
+                    LL[i] = 1;//L[i];
+                    UU[i] = 1;//U[i];
+                }
+                LL[n + 1] = 0;
+                UU[n + 1] = 0.05;
+                m++;
+                L = LL;
+                U = UU;
+                A = AA;
+            }
+            var Aw = new double[m];
             var ok = ActiveOpt();
             ActiveSet.Optimise.printV("w from Active Set", w);
             Console.WriteLine($"Variance from Active Set:\t\t{Variance(w)}");
+            Factorise.dmxmulv(m, n, A, w, Aw);
+            ActiveSet.Optimise.printV("Constraints", Aw);
+            var ip = InteriorOpt();
+            Console.WriteLine($"Variance from IP:\t\t{Variance(w)}");
+            Factorise.dmxmulv(m, n, A, w, Aw);
+            ActiveSet.Optimise.printV("Constraints", Aw);
         }
         public string inFile = "";
         public int n;
@@ -105,7 +132,7 @@ namespace Portfolio
 
         public int InteriorOpt()
         {
-            var dolarge = 1;
+            var dolarge = 0;
             var c = (double[])alpha.Clone();
             var cextra = new double[n];
             var CTEST = new double[n];
@@ -114,7 +141,7 @@ namespace Portfolio
             {
                 if (U[i + n] != L[i + n]) slackb++;
             }
-            var mup = new int[slackb];
+            var mup = slackb > 0 ? new int[slackb] : null;
             var b = new double[m + slackb];
             BlasLike.dcopyvec(m, L, b, n);
             for (int i = 0, slack = 0; i < m; ++i)
@@ -164,22 +191,22 @@ namespace Portfolio
                 sign[i + dolarge * n + n] = 1;
             Array.Resize(ref CTEST, dolarge * n + n + 2 * slackb);
             Array.Resize(ref cextra, dolarge * n + n + 2 * slackb);
-            var AA = new double[(dolarge * n + n + 2 * slackb) * (dolarge * n + m + slackb)];
-            for (int con = 0, slack = 0; con < m; ++con)
-            {
-                BlasLike.dcopy(n, A, m, AA, dolarge * n + m + slackb, con, con);
-                if (U[con + n] != L[con + n])
-                {
-                    AA[con + (dolarge * n + n + slack + slackb) * (dolarge * n + m + slackb)] = -1;
-                    AA[dolarge * n + m + slack + (dolarge * n + n + slack) * (dolarge * n + m + slackb)] = 1;
-                    BlasLike.dcopy(n, A, m, AA, dolarge * n + m + slackb, con, dolarge * n + m + slack++);
-                }
-            }
-            for (int i = 0, astart = m; i < dolarge * n; ++i, astart++)
-            {
-                AA[astart + i * (dolarge * n + m + slackb)] = 1;
-                AA[astart + (i + n) * (dolarge * n + m + slackb)] = 1;
-            }
+            /*           var AA = new double[(dolarge * n + n + 2 * slackb) * (dolarge * n + m + slackb)];
+                       for (int con = 0, slack = 0; con < m; ++con)
+                       {
+                           BlasLike.dcopy(n, A, m, AA, dolarge * n + m + slackb, con, con);
+                           if (U[con + n] != L[con + n])
+                           {
+                               AA[con + (dolarge * n + n + slack + slackb) * (dolarge * n + m + slackb)] = -1;
+                               AA[dolarge * n + m + slack + (dolarge * n + n + slack) * (dolarge * n + m + slackb)] = 1;
+                               BlasLike.dcopy(n, A, m, AA, dolarge * n + m + slackb, con, dolarge * n + m + slack++);
+                           }
+                       }
+                       for (int i = 0, astart = m; i < dolarge * n; ++i, astart++)
+                       {
+                           AA[astart + i * (dolarge * n + m + slackb)] = 1;
+                           AA[astart + (i + n) * (dolarge * n + m + slackb)] = 1;
+                       }*/
             if (zcount == n) UL = (double[])L.Clone();
             for (var i = 0; i < n; ++i) if (sign[i] == -1) UL[i] = U[i];
             Array.Resize(ref UL, n);
@@ -207,15 +234,13 @@ namespace Portfolio
             var IOPT = new InteriorPoint.Optimise(dolarge * n + n + 2 * slackb, m + dolarge * n + slackb, ww, null, bb, CTEST);
             IOPT.alphamin = 1e-10;
             IOPT.baseA = A;//We only need to pass the constraints without slack variables AA just use for testing
-            IOPT.basebL = new double[m];
-            BlasLike.dcopyvec(m, L, IOPT.basebL, n);
-            IOPT.basebU = new double[m];
-            BlasLike.dcopyvec(m, U, IOPT.basebU, n);
             IOPT.basen = n;
             IOPT.bases = dolarge * n;
             IOPT.basesb = slackb;
             IOPT.basem = m;
-            var back = IOPT.Opt("QP", null, null, true, UL, sign);
+            IOPT.mup = mup;
+            var back = 
+            IOPT.Opt("QP", null, null, true, UL, sign);
             if (back < -10) Console.WriteLine($"Failed -- too many iterations");
             if (back < 0) Console.WriteLine($"Convergence not met due to unstable equations");
             if (back == 6) Console.WriteLine("INFEASIBLE");
@@ -224,14 +249,11 @@ namespace Portfolio
                 IOPT = new InteriorPoint.Optimise(dolarge * n + n + 2 * slackb, m + dolarge * n + slackb, ww, null, bb, cextra, n, HH);
                 IOPT.h = hessmull;
                 IOPT.baseA = A;
-                IOPT.basebL = new double[m];
-                BlasLike.dcopyvec(m, L, IOPT.basebL, n);
-                IOPT.basebU = new double[m];
-                BlasLike.dcopyvec(m, U, IOPT.basebU, n);
                 IOPT.basen = n;
                 IOPT.bases = n * dolarge;
-                IOPT.basesb = m;
+                IOPT.basesb = slackb;
                 IOPT.basem = m;
+                IOPT.mup = mup;
                 var testmul = new double[n];
                 hessmull(n, Q, w, testmul);
                 Console.WriteLine(BlasLike.ddotvec(n, ww, testmul));
