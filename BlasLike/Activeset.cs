@@ -3098,8 +3098,12 @@ namespace ActiveSet
                     if (ifail != 0) { Console.WriteLine("Hard failure"); return -50; }
                 }
                 //#if 0
-                else    /*Soft failure*/
+                else
+                {   /*Soft failure*/
+                    Console.WriteLine($"Mathematics routine {srname}: exited with ifail={ierror}",
+                    srname, ierror);
                     Console.WriteLine(" ** Soft failure - control returned");
+                }
                 //#endif
             }
             return ierror;
@@ -5088,7 +5092,7 @@ namespace ActiveSet
         public short QPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] QQ, ref double objective, ref int iter)
         {
             var opt = this;
-            if(opt.h==null)opt.h=opt.qphess1;
+            if (opt.h == null) opt.h = opt.qphess1;
             var lp = 0;
             var itmax = (short)20000;
             var orthog = 1;
