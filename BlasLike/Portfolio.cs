@@ -51,11 +51,11 @@ namespace Portfolio
                     }
                     LL[i] = L[i];
                     UU[i] = U[i];
-               } 
-LL[n] =1;
-UU[n]=1;
-                LL[n + 1] = 0;
-                UU[n + 1] = 0.05;
+                }
+                LL[n] = 1;
+                UU[n] = 1;
+                LL[n + 1] = 0-1e-2;
+                UU[n + 1] = 0;
                 m++;
                 L = LL;
                 U = UU;
@@ -241,7 +241,7 @@ UU[n]=1;
             IOPT.basesb = slackb;
             IOPT.basem = m;
             IOPT.mup = mup;
-            var back = 
+            var back =
             IOPT.Opt("QP", null, null, true, UL, sign);
             if (back < -10) Console.WriteLine($"Failed -- too many iterations");
             if (back < 0) Console.WriteLine($"Convergence not met due to unstable equations");

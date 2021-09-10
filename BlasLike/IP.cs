@@ -424,7 +424,7 @@ namespace InteriorPoint
 
             else if (optMode == "QP")
             {
-                double lowest = 1e-2, lowest1 = 1 - lowest;
+                double lowest = 1e-3, lowest1 = 1 - lowest;
                 ddx = 1.0;
                 ddz = 1.0;
                 dd = 1.0;
@@ -468,7 +468,7 @@ namespace InteriorPoint
                     Factorise.Factor(uplo, nh, HCOPY, horder);
                     for (int con = 0, ij = 0; con < m; ++con, ij += con)
                     {
-                        if (n <= basen)
+                        if (A!=null)
                             BlasLike.dcopy(n, A, m, lhs, 1, con);
                         else
                         {
@@ -504,7 +504,7 @@ namespace InteriorPoint
                                 }
                             }
                         }
-                        if (n <= basen)
+                        if (A!=null)
                         {
                             for (var ii = 0; ii < con + 1; ++ii)
                             {
@@ -553,7 +553,7 @@ namespace InteriorPoint
                 }
                 else
                 {
-                    if (n <= basen)
+                    if (A!=null)
                     {
                         for (int i = 0, ij = 0; i < m; ++i, ij += i)
                         {
@@ -1180,7 +1180,7 @@ namespace InteriorPoint
         }
         void AmultSparseT(double[] y, double[] x, int astart = 0, int ystart = 0, int xstart = 0)
         {
-            if (basen >= n)
+            if (A!=null)
                 Factorise.dmxmulv(n, m, A, y, x, astart, ystart, xstart, true);
             else
             {
@@ -1220,7 +1220,7 @@ namespace InteriorPoint
         }
         void AmultSparse(double[] x, double[] y, int astart = 0, int xstart = 0, int ystart = 0)
         {
-            if (basen >= n)
+            if (A!=null)
                 Factorise.dmxmulv(m, n, A, x, y, astart, xstart, ystart);
             else
             {
@@ -1228,9 +1228,8 @@ namespace InteriorPoint
                 for (int km, k = 0; k < basesb; ++k)
                 {
                     km = mup[k];
-                    y[k + ystart + basem + bases] = y[km + ystart];
+                    y[k + ystart + basem + bases] = y[km + ystart] + x[xstart + k + basen + bases];
                     y[ystart + km] -= x[xstart + k + basen + bases + basesb];
-                    y[ystart + k + basem + bases] += x[xstart + k + basen + bases];
                 }
                 for (var k = 0; k < bases; ++k)
                     y[ystart + k + basem] = x[xstart + k] + x[xstart + k + basen];
