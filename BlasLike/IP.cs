@@ -468,7 +468,7 @@ namespace InteriorPoint
                     Factorise.Factor(uplo, nh, HCOPY, horder);
                     for (int con = 0, ij = 0; con < m; ++con, ij += con)
                     {
-                        if (A!=null)
+                        if (A != null)
                             BlasLike.dcopy(n, A, m, lhs, 1, con);
                         else
                         {
@@ -504,7 +504,7 @@ namespace InteriorPoint
                                 }
                             }
                         }
-                        if (A!=null)
+                        if (A != null)
                         {
                             for (var ii = 0; ii < con + 1; ++ii)
                             {
@@ -542,7 +542,7 @@ namespace InteriorPoint
                                     {
                                         var iii = mup[ii - basem - bases];
                                         M[ij + ii] = BlasLike.ddot(basen, baseA, basem, lhs, 1, iii);
-                                        var qq = iii + basen + bases;
+                                        var qq = mup_inverse[iii] + basen + bases;
                                         if (ii == con)
                                             M[ij + ii] += aob(x[qq], z[qq]);
                                     }
@@ -553,7 +553,7 @@ namespace InteriorPoint
                 }
                 else
                 {
-                    if (A!=null)
+                    if (A != null)
                     {
                         for (int i = 0, ij = 0; i < m; ++i, ij += i)
                         {
@@ -621,7 +621,7 @@ namespace InteriorPoint
                                         BlasLike.daxpyvec(i + 1 - basem - bases, xoz, baseA, M, k * basem, ij + basem + bases);
                                     }
                                 }
-                                var kk = ii + basen + bases;
+                                var kk = mup_inverse[ii] + basen + bases;
                                 M[ij + i] += aob(x[kk], z[kk]);
                             }
                         }
@@ -1180,7 +1180,7 @@ namespace InteriorPoint
         }
         void AmultSparseT(double[] y, double[] x, int astart = 0, int ystart = 0, int xstart = 0)
         {
-            if (A!=null)
+            if (A != null)
                 Factorise.dmxmulv(n, m, A, y, x, astart, ystart, xstart, true);
             else
             {
@@ -1220,7 +1220,7 @@ namespace InteriorPoint
         }
         void AmultSparse(double[] x, double[] y, int astart = 0, int xstart = 0, int ystart = 0)
         {
-            if (A!=null)
+            if (A != null)
                 Factorise.dmxmulv(m, n, A, x, y, astart, xstart, ystart);
             else
             {
