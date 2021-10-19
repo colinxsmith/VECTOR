@@ -134,7 +134,7 @@ namespace Portfolio
 
         public int InteriorOpt()
         {
-            var dolarge = 0;
+            var dolarge = 1;
             var c = (double[])alpha.Clone();
             var cextra = new double[n];
             var CTEST = new double[n];
@@ -143,14 +143,14 @@ namespace Portfolio
             {
                 if (U[i + n] != L[i + n]) slackb++;
             }
-            var mup = slackb > 0 ? new int[slackb] : null;
+            var slackToConstraint = slackb > 0 ? new int[slackb] : null;
             var b = new double[m + slackb];
             BlasLike.dcopyvec(m, L, b, n);
             for (int i = 0, slack = 0; i < m; ++i)
             {
                 if (U[i + n] != L[i + n])
                 {
-                    mup[slack] = i;
+                    slackToConstraint[slack] = i;
                     b[slack++ + m] = U[i + n];
                 }
             }
@@ -233,18 +233,18 @@ namespace Portfolio
             Array.Resize(ref ww, dolarge * n + n + 2 * slackb);
             // First do a homogenous LP do decide if the problem is feasible.
             // (homogenous QP only works if we're very lucky)
-            var IOPT = new InteriorPoint.Optimise(dolarge * n + n + 2 * slackb, m + dolarge * n + slackb, ww, null, bb, CTEST);
+            var IOPT = new InteriorPoint.Optimise(dolarge * n + n + 2 * slackb, m + dolarge * n + slackb, ww, null, bb, cextra);
             IOPT.alphamin = 1e-10;
             IOPT.baseA = A;//We only need to pass the constraints without slack variables AA just use for testing
             IOPT.basen = n;
             IOPT.bases = dolarge * n;
             IOPT.basesb = slackb;
             IOPT.basem = m;
-            IOPT.mup = mup;
+            IOPT.slackToConstraint = slackToConstraint;
             var back =
             IOPT.Opt("QP", null, null, true, UL, sign);
             if (back < -10) Console.WriteLine($"Failed -- too many iterations");
-            if (back < 0) Console.WriteLine($"Convergence not met due to unstable equations");
+            if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
             if (back == 6) Console.WriteLine("INFEASIBLE");
             else
             {
@@ -255,7 +255,7 @@ namespace Portfolio
                 IOPT.bases = n * dolarge;
                 IOPT.basesb = slackb;
                 IOPT.basem = m;
-                IOPT.mup = mup;
+                IOPT.slackToConstraint = slackToConstraint;
                 var testmul = new double[n];
                 hessmull(n, Q, w, testmul);
                 Console.WriteLine(BlasLike.ddotvec(n, ww, testmul));
@@ -266,7 +266,7 @@ namespace Portfolio
                 back = IOPT.Opt("QP", null, null, false, UL, sign);
                 BlasLike.dcopyvec(n, ww, w);
                 if (back < -10) Console.WriteLine($"Failed -- too many iterations");
-                if (back < 0) Console.WriteLine($"Convergence not met due to unstable equations");
+                if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
             }
             return back;
         }

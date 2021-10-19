@@ -117,8 +117,8 @@ namespace InteriorPoint
         double lastdkappa;
         double condition;
         double regularise;
-        public int[] mup = null;
-        public int[] mup_inverse = null;
+        public int[] slackToConstraint = null;
+        public int[] slackToConstraint_inverse = null;
         static double denomTest(double x) => x * x <= 1 ? 1 : x;
         public static double lInfinity(double[] x)
         {
@@ -486,7 +486,7 @@ namespace InteriorPoint
                             {
                                 if (basesb > 0)
                                 {
-                                    var conn = mup[con - basem - bases];
+                                    var conn = slackToConstraint[con - basem - bases];
                                     BlasLike.dcopy(basen, baseA, basem, lhs, 1, conn);
                                 }
                             }
@@ -520,7 +520,7 @@ namespace InteriorPoint
                                     M[ij + ii] = BlasLike.ddot(basen, baseA, basem, lhs, 1, ii);
                                     if (basesb > 0)
                                     {
-                                        var iii = mup_inverse[ii];
+                                        var iii = slackToConstraint_inverse[ii];
                                         if (iii != -1)
                                         {
                                             var qq = basen + bases + basesb + iii;
@@ -540,9 +540,9 @@ namespace InteriorPoint
                                 {
                                     if (basesb > 0)
                                     {
-                                        var iii = mup[ii - basem - bases];
+                                        var iii = slackToConstraint[ii - basem - bases];
                                         M[ij + ii] = BlasLike.ddot(basen, baseA, basem, lhs, 1, iii);
-                                        var qq = mup_inverse[iii] + basen + bases;
+                                        var qq = slackToConstraint_inverse[iii] + basen + bases;
                                         if (ii == con)
                                             M[ij + ii] += aob(x[qq], z[qq]);
                                     }
@@ -585,7 +585,7 @@ namespace InteriorPoint
                                 }
                                 if (basesb > 0)
                                 {
-                                    var ii = mup_inverse[i];
+                                    var ii = slackToConstraint_inverse[i];
                                     if (ii != -1)
                                     {
                                         var kk = ii + basen + bases + basesb;
@@ -609,7 +609,7 @@ namespace InteriorPoint
                             }
                             else if (i < basem + bases + basesb)
                             {
-                                var ii = mup[i - basem - bases];
+                                var ii = slackToConstraint[i - basem - bases];
                                 for (var k = 0; k < basen; ++k)
                                 {
                                     if (baseA[k * basem + ii] != 0.0)
@@ -618,10 +618,14 @@ namespace InteriorPoint
                                         xoz *= baseA[k * basem + ii];
                                         BlasLike.daxpyvec(basem, xoz, baseA, M, k * basem, ij);
                                         if (bases > 0) M[ij + k + basem] += xoz;
-                                        BlasLike.daxpyvec(i + 1 - basem - bases, xoz, baseA, M, k * basem, ij + basem + bases);
+                                        for (var j = 0; j < basesb; j++)
+                                        {
+                                            var jj = slackToConstraint[j];
+                                            M[ij + basem + bases + j] += xoz * baseA[k * basem + jj];
+                                        }
                                     }
                                 }
-                                var kk = mup_inverse[ii] + basen + bases;
+                                var kk = slackToConstraint_inverse[ii] + basen + bases;
                                 M[ij + i] += aob(x[kk], z[kk]);
                             }
                         }
@@ -1188,7 +1192,7 @@ namespace InteriorPoint
                 {
                     for (var k = 0; k < basesb; ++k)
                     {
-                        var km = mup[k];
+                        var km = slackToConstraint[k];
                         y[ystart + km] += y[ystart + basem + bases + k];
                     }
                 }
@@ -1197,7 +1201,7 @@ namespace InteriorPoint
                 {
                     for (var k = 0; k < basesb; ++k)
                     {
-                        var km = mup[k];
+                        var km = slackToConstraint[k];
                         y[ystart + km] -= y[ystart + basem + bases + k];
                     }
                 }
@@ -1211,7 +1215,7 @@ namespace InteriorPoint
                 {
                     for (var k = 0; k < basesb; ++k)
                     {
-                        var km = mup[k];
+                        var km = slackToConstraint[k];
                         x[xstart + basen + bases + k] = y[ystart + basem + bases + k];
                         x[xstart + basen + bases + basesb + k] = -y[km];
                     }
@@ -1227,7 +1231,7 @@ namespace InteriorPoint
                 Factorise.dmxmulv(basem, basen, baseA, x, y, astart, xstart, ystart);
                 for (int km, k = 0; k < basesb; ++k)
                 {
-                    km = mup[k];
+                    km = slackToConstraint[k];
                     y[k + ystart + basem + bases] = y[km + ystart] + x[xstart + k + basen + bases];
                     y[ystart + km] -= x[xstart + k + basen + bases + basesb];
                 }
@@ -1363,13 +1367,13 @@ namespace InteriorPoint
             opt.usrH = (h == null && nh > 0 && (opt.H != null && BlasLike.dsumvec(opt.H.Length, opt.H) != 0.0)) || opt.h != null;
             if (mode == "QP")
             {
-                if (mup != null)
+                if (slackToConstraint != null)
                 {
-                    mup_inverse = new int[basem];
-                    for (var ib = 0; ib < basem; ++ib) mup_inverse[ib] = -1;
+                    slackToConstraint_inverse = new int[basem];
+                    for (var ib = 0; ib < basem; ++ib) slackToConstraint_inverse[ib] = -1;
                     for (var ib = 0; ib < basesb; ++ib)
                     {
-                        mup_inverse[mup[ib]] = ib;
+                        slackToConstraint_inverse[slackToConstraint[ib]] = ib;
                     }
                 }
                 if (h == null) h = qphess1;
