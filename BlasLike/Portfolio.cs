@@ -244,8 +244,8 @@ namespace Portfolio
             var back =
             IOPT.Opt("QP", null, null, true, UL, sign);
             if (back < -10) Console.WriteLine($"Failed -- too many iterations");
-            if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
-            if (back == 6) Console.WriteLine("INFEASIBLE");
+            else if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
+            else if (back == 6) Console.WriteLine("INFEASIBLE");
             else
             {
                 IOPT = new InteriorPoint.Optimise(dolarge * n + n + 2 * slackb, m + dolarge * n + slackb, ww, null, bb, cextra, n, HH);
@@ -266,7 +266,7 @@ namespace Portfolio
                 back = IOPT.Opt("QP", null, null, false, UL, sign);
                 BlasLike.dcopyvec(n, ww, w);
                 if (back < -10) Console.WriteLine($"Failed -- too many iterations");
-                if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
+                else if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
             }
             return back;
         }
