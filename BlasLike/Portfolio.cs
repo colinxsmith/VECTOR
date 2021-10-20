@@ -54,7 +54,7 @@ namespace Portfolio
                 }
                 LL[n] = 1;
                 UU[n] = 1;
-                LL[n + 1] = -1e5;
+                LL[n + 1] = -1e-2;//BlasLike.lm_max;
                 UU[n + 1] = 0;
                 m++;
                 L = LL;
@@ -139,22 +139,41 @@ namespace Portfolio
             var cextra = new double[n];
             var CTEST = new double[n];
             var slackb = 0;
+            var slackL = 0;
+            var slackU = 0;
             for (var i = 0; i < m; ++i)
             {
-                if (U[i + n] != L[i + n]) slackb++;
+                if (L[i + n] == -BlasLike.lm_max) slackU++;
+                else if (U[i + n] == BlasLike.lm_max) slackL++;
+                else if (U[i + n] != L[i + n]) slackb++;
             }
-            var slackToConstraint = slackb > 0 ? new int[slackb] : null;
+            var totalConstraintslack = slackU + slackL + 2 * slackb;
+            var slackToConstraintL = slackL > 0 ? new int[slackL] : null;
+            var slackToConstraintU = slackU > 0 ? new int[slackU] : null;
+            var slackToConstraintBOTH = slackb > 0 ? new int[slackb] : null;
             var b = new double[m + slackb];
             BlasLike.dcopyvec(m, L, b, n);
-            for (int i = 0, slack = 0; i < m; ++i)
+            for (int i = 0, slack = 0, slackLL = 0, slackUU = 0; i < m; ++i)
             {
                 if (U[i + n] != L[i + n])
                 {
-                    slackToConstraint[slack] = i;
-                    b[slack++ + m] = U[i + n];
+                    if (L[i + n] == -BlasLike.lm_max)
+                    {
+                        slackToConstraintU[slackUU++] = i;
+                        b[i] = U[i + n];
+                    }
+                    else if (U[i + n] == BlasLike.lm_max)
+                    {
+                        slackToConstraintL[slackLL++] = i;
+                    }
+                    else
+                    {
+                        slackToConstraintBOTH[slack] = i;
+                        b[slack++ + m] = U[i + n];
+                    }
                 }
             }
-            var sign = new int[n * dolarge + n + 2 * slackb];
+            var sign = new int[n * dolarge + n + totalConstraintslack];
             var UL = new double[n];
             if (bench != null)
             {
@@ -189,10 +208,10 @@ namespace Portfolio
                 if (UL[i] == 0) zcount++;
                 CTEST[i] = sign[i] * Math.Abs(cextra[i]);
             }
-            for (var i = 0; i < 2 * slackb; ++i)
+            for (var i = 0; i < totalConstraintslack; ++i)
                 sign[i + dolarge * n + n] = 1;
-            Array.Resize(ref CTEST, dolarge * n + n + 2 * slackb);
-            Array.Resize(ref cextra, dolarge * n + n + 2 * slackb);
+            Array.Resize(ref CTEST, dolarge * n + n + totalConstraintslack);
+            Array.Resize(ref cextra, dolarge * n + n + totalConstraintslack);
             /*           var AA = new double[(dolarge * n + n + 2 * slackb) * (dolarge * n + m + slackb)];
                        for (int con = 0, slack = 0; con < m; ++con)
                        {
@@ -230,17 +249,17 @@ namespace Portfolio
             var HH = new double[n * (n + 1) / 2];
             Factorise.Fac2Cov(n, (int)(Q.Length / n) - 1, Q, HH);
             var ww = (double[])w.Clone();
-            Array.Resize(ref ww, dolarge * n + n + 2 * slackb);
+            Array.Resize(ref ww, dolarge * n + n + totalConstraintslack);
             // First do a homogenous LP do decide if the problem is feasible.
             // (homogenous QP only works if we're very lucky)
-            var IOPT = new InteriorPoint.Optimise(dolarge * n + n + 2 * slackb, m + dolarge * n + slackb, ww, null, bb, cextra);
+            var IOPT = new InteriorPoint.Optimise(dolarge * n + n + totalConstraintslack, m + dolarge * n + slackb, ww, null, bb, cextra);
             IOPT.alphamin = 1e-10;
             IOPT.baseA = A;//We only need to pass the constraints without slack variables AA just use for testing
             IOPT.basen = n;
             IOPT.bases = dolarge * n;
             IOPT.basesb = slackb;
             IOPT.basem = m;
-            IOPT.slackToConstraint = slackToConstraint;
+            IOPT.slackToConstraintBOTH = slackToConstraintBOTH;
             var back =
             IOPT.Opt("QP", null, null, true, UL, sign);
             if (back < -10) Console.WriteLine($"Failed -- too many iterations");
@@ -248,14 +267,14 @@ namespace Portfolio
             if (back == 6) Console.WriteLine("INFEASIBLE");
             else
             {
-                IOPT = new InteriorPoint.Optimise(dolarge * n + n + 2 * slackb, m + dolarge * n + slackb, ww, null, bb, cextra, n, HH);
+                IOPT = new InteriorPoint.Optimise(dolarge * n + n + totalConstraintslack, m + dolarge * n + slackb, ww, null, bb, cextra, n, HH);
                 IOPT.h = hessmull;
                 IOPT.baseA = A;
                 IOPT.basen = n;
                 IOPT.bases = n * dolarge;
                 IOPT.basesb = slackb;
                 IOPT.basem = m;
-                IOPT.slackToConstraint = slackToConstraint;
+                IOPT.slackToConstraintBOTH = slackToConstraintBOTH;
                 var testmul = new double[n];
                 hessmull(n, Q, w, testmul);
                 Console.WriteLine(BlasLike.ddotvec(n, ww, testmul));
