@@ -54,7 +54,7 @@ namespace Portfolio
                 }
                 LL[n] = 1;
                 UU[n] = 1;
-                LL[n + 1] = 0-1e-2;
+                LL[n + 1] = -1e5;
                 UU[n + 1] = 0;
                 m++;
                 L = LL;
@@ -134,7 +134,7 @@ namespace Portfolio
 
         public int InteriorOpt()
         {
-            var dolarge = 1;
+            var dolarge = 0;
             var c = (double[])alpha.Clone();
             var cextra = new double[n];
             var CTEST = new double[n];
@@ -244,8 +244,8 @@ namespace Portfolio
             var back =
             IOPT.Opt("QP", null, null, true, UL, sign);
             if (back < -10) Console.WriteLine($"Failed -- too many iterations");
-            else if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
-            else if (back == 6) Console.WriteLine("INFEASIBLE");
+            if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
+            if (back == 6) Console.WriteLine("INFEASIBLE");
             else
             {
                 IOPT = new InteriorPoint.Optimise(dolarge * n + n + 2 * slackb, m + dolarge * n + slackb, ww, null, bb, cextra, n, HH);
