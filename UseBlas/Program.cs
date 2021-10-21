@@ -1211,7 +1211,7 @@ namespace UseBlas
                     if (lic == null)
                     {
                         safekey.Dispose();
-                        throw new Exception("No lic");
+                        throw new Exception("No licence!");
                     }
                     safekey.Dispose();
                     licence = "";
