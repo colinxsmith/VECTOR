@@ -147,7 +147,7 @@ namespace Portfolio
                 else if (U[i + n] == BlasLike.lm_max) slackL++;
                 else if (U[i + n] != L[i + n]) slackb++;
             }
-            var totalConstraintslack = slackU + slackL + 2 * slackb;
+            var totalConstraintslack = slackU + slackL + 2 * slackb + slackL + slackU;
             var slackToConstraintL = slackL > 0 ? new int[slackL] : null;
             var slackToConstraintU = slackU > 0 ? new int[slackU] : null;
             var slackToConstraintBOTH = slackb > 0 ? new int[slackb] : null;
@@ -257,9 +257,10 @@ namespace Portfolio
             IOPT.baseA = A;//We only need to pass the constraints without slack variables AA just use for testing
             IOPT.basen = n;
             IOPT.bases = dolarge * n;
-            IOPT.basesb = slackb;
             IOPT.basem = m;
             IOPT.slackToConstraintBOTH = slackToConstraintBOTH;
+            IOPT.slackToConstraintL = slackToConstraintL;
+            IOPT.slackToConstraintU = slackToConstraintU;
             var back =
             IOPT.Opt("QP", null, null, true, UL, sign);
             if (back < -10) Console.WriteLine($"Failed -- too many iterations");
@@ -272,9 +273,10 @@ namespace Portfolio
                 IOPT.baseA = A;
                 IOPT.basen = n;
                 IOPT.bases = n * dolarge;
-                IOPT.basesb = slackb;
                 IOPT.basem = m;
                 IOPT.slackToConstraintBOTH = slackToConstraintBOTH;
+                IOPT.slackToConstraintL = slackToConstraintL;
+                IOPT.slackToConstraintU = slackToConstraintU;
                 var testmul = new double[n];
                 hessmull(n, Q, w, testmul);
                 Console.WriteLine(BlasLike.ddotvec(n, ww, testmul));
