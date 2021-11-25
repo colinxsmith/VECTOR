@@ -118,6 +118,9 @@ namespace InteriorPoint
         double regularise;
         public int[] slackToConstraintBOTH = null;
         public int[] slackToConstraintBOTH_inverse = null;
+        int slackmboth = 0;
+        int slackmL = 0;
+        int slackmU = 0;
         public int[] slackToConstraintL = null;
         public int[] slackToConstraintL_inverse = null;
         public int[] slackToConstraintU = null;
@@ -486,9 +489,19 @@ namespace InteriorPoint
                             }
                             else
                             {
-                                if (slackToConstraintBOTH.Length > 0)
+                                if (slackmboth > 0)
                                 {
                                     var conn = slackToConstraintBOTH[con - basem - bases];
+                                    BlasLike.dcopy(basen, baseA, basem, lhs, 1, conn);
+                                }
+                                if (slackmL > 0)
+                                {
+                                    var conn = slackToConstraintL[con - basem - bases];
+                                    BlasLike.dcopy(basen, baseA, basem, lhs, 1, conn);
+                                }
+                                if (slackmU > 0)
+                                {
+                                    var conn = slackToConstraintU[con - basem - bases];
                                     BlasLike.dcopy(basen, baseA, basem, lhs, 1, conn);
                                 }
                             }
@@ -520,12 +533,32 @@ namespace InteriorPoint
                                 if (ii < basem)
                                 {
                                     M[ij + ii] = BlasLike.ddot(basen, baseA, basem, lhs, 1, ii);
-                                    if (slackToConstraintBOTH.Length > 0)
+                                    if (slackmboth > 0)
                                     {
                                         var iii = slackToConstraintBOTH_inverse[ii];
                                         if (iii != -1)
                                         {
-                                            var qq = basen + bases + slackToConstraintBOTH.Length + iii;
+                                            var qq = basen + bases + slackmboth + iii;
+                                            if (ii == con)
+                                                M[ij + ii] += aob(x[qq], z[qq]);
+                                        }
+                                    }
+                                    if (slackmL > 0)
+                                    {
+                                        var iii = slackToConstraintL_inverse[ii];
+                                        if (iii != -1)
+                                        {
+                                            var qq = basen + bases + slackmboth * 2 + iii;
+                                            if (ii == con)
+                                                M[ij + ii] += aob(x[qq], z[qq]);
+                                        }
+                                    }
+                                    if (slackmU > 0)
+                                    {
+                                        var iii = slackToConstraintU_inverse[ii];
+                                        if (iii != -1)
+                                        {
+                                            var qq = basen + bases + slackmboth * 2 + slackmL + iii;
                                             if (ii == con)
                                                 M[ij + ii] += aob(x[qq], z[qq]);
                                         }
@@ -585,12 +618,32 @@ namespace InteriorPoint
                                         BlasLike.daxpyvec(i + 1, xoz, baseA, M, k * basem, ij);
                                     }
                                 }
-                                if (slackToConstraintBOTH.Length > 0)
+                                if (slackmboth > 0)
                                 {
                                     var ii = slackToConstraintBOTH_inverse[i];
                                     if (ii != -1)
                                     {
-                                        var kk = ii + basen + bases + slackToConstraintBOTH.Length;
+                                        var kk = ii + basen + bases + slackmboth;
+                                        var xozz = -aob(x[kk], z[kk]);
+                                        M[ij + i] += -xozz;
+                                    }
+                                }
+                                if (slackmL > 0)
+                                {
+                                    var ii = slackToConstraintL_inverse[i];
+                                    if (ii != -1)
+                                    {
+                                        var kk = ii + basen + bases + slackmboth * 2;
+                                        var xozz = -aob(x[kk], z[kk]);
+                                        M[ij + i] += -xozz;
+                                    }
+                                }
+                                if (slackmU > 0)
+                                {
+                                    var ii = slackToConstraintU_inverse[i];
+                                    if (ii != -1)
+                                    {
+                                        var kk = ii + basen + bases + slackmboth * 2 + slackmL;
                                         var xozz = -aob(x[kk], z[kk]);
                                         M[ij + i] += -xozz;
                                     }
@@ -609,7 +662,7 @@ namespace InteriorPoint
                                     M[ij + i] += xoz;
                                 }
                             }
-                            else if (i < basem + bases + slackToConstraintBOTH.Length)
+                            else if (i < basem + bases + slackmboth)
                             {
                                 var ii = slackToConstraintBOTH[i - basem - bases];
                                 for (var k = 0; k < basen; ++k)
@@ -620,7 +673,7 @@ namespace InteriorPoint
                                         xoz *= baseA[k * basem + ii];
                                         BlasLike.daxpyvec(basem, xoz, baseA, M, k * basem, ij);
                                         if (bases > 0) M[ij + k + basem] += xoz;
-                                        for (var j = 0; j < slackToConstraintBOTH.Length; j++)
+                                        for (var j = 0; j < slackmboth; j++)
                                         {
                                             var jj = slackToConstraintBOTH[j];
                                             M[ij + basem + bases + j] += xoz * baseA[k * basem + jj];
@@ -1190,24 +1243,34 @@ namespace InteriorPoint
                 Factorise.dmxmulv(n, m, A, y, x, astart, ystart, xstart, true);
             else
             {
-                for (var k = 0; k < slackToConstraintBOTH.Length; ++k)
+                for (var k = 0; k < slackmboth; ++k)
                 {
                     var km = slackToConstraintBOTH[k];
                     y[ystart + km] += y[ystart + basem + bases + k];
                 }
                 Factorise.dmxmulv(basen, basem, baseA, y, x, astart, ystart, xstart, true);
-                for (var k = 0; k < slackToConstraintBOTH.Length; ++k)
+                for (var k = 0; k < slackmboth; ++k)
                 {
                     var km = slackToConstraintBOTH[k];
                     y[ystart + km] -= y[ystart + basem + bases + k];
                 }
                 BlasLike.dcopyvec(bases, y, x, ystart + basem, xstart + basen);
                 BlasLike.daddvec(bases, x, x, x, xstart, xstart + basen, xstart);
-                for (var k = 0; k < slackToConstraintBOTH.Length; ++k)
+                for (var k = 0; k < slackmboth; ++k)
                 {
                     var km = slackToConstraintBOTH[k];
                     x[xstart + basen + bases + k] = y[ystart + basem + bases + k];
-                    x[xstart + basen + bases + slackToConstraintBOTH.Length + k] = -y[km];
+                    x[xstart + basen + bases + slackmboth + k] = -y[ystart + km];
+                }
+                for (var k = 0; k < slackmL; ++k)
+                {
+                    var km = slackToConstraintL[k];
+                    x[xstart + basen + bases + slackmboth * 2 + k] = -y[ystart + km];
+                }
+                for (var k = 0; k < slackmU; ++k)
+                {
+                    var km = slackToConstraintU[k];
+                    x[xstart + basen + bases + slackmboth * 2 + slackmL + k] = y[ystart + km];
                 }
             }
         }
@@ -1218,11 +1281,21 @@ namespace InteriorPoint
             else
             {
                 Factorise.dmxmulv(basem, basen, baseA, x, y, astart, xstart, ystart);
-                for (int km, k = 0; k < slackToConstraintBOTH.Length; ++k)
+                for (int km, k = 0; k < slackmboth; ++k)
                 {
                     km = slackToConstraintBOTH[k];
                     y[k + ystart + basem + bases] = y[km + ystart] + x[xstart + k + basen + bases];
-                    y[ystart + km] -= x[xstart + k + basen + bases + slackToConstraintBOTH.Length];
+                    y[ystart + km] -= x[xstart + k + basen + bases + slackmboth];
+                }
+                for (int km, k = 0; k < slackmL; ++k)
+                {
+                    km = slackToConstraintL[k];
+                    y[ystart + km] -= x[xstart + k + basen + bases + slackmboth * 2];
+                }
+                for (int km, k = 0; k < slackmU; ++k)
+                {
+                    km = slackToConstraintU[k];
+                    y[ystart + km] += x[xstart + k + basen + bases + slackmboth * 2 + slackmL];
                 }
                 for (var k = 0; k < bases; ++k)
                     y[ystart + k + basem] = x[xstart + k] + x[xstart + k + basen];
@@ -1358,6 +1431,7 @@ namespace InteriorPoint
             {
                 if (slackToConstraintL != null)
                 {
+                    slackmL = slackToConstraintL.Length;
                     slackToConstraintL_inverse = new int[basem];
                     for (var ib = 0; ib < basem; ++ib) slackToConstraintL_inverse[ib] = -1;
                     for (var ib = 0; ib < slackToConstraintL.Length; ++ib)
@@ -1367,6 +1441,7 @@ namespace InteriorPoint
                 }
                 if (slackToConstraintU != null)
                 {
+                    slackmU = slackToConstraintU.Length;
                     slackToConstraintU_inverse = new int[basem];
                     for (var ib = 0; ib < basem; ++ib) slackToConstraintU_inverse[ib] = -1;
                     for (var ib = 0; ib < slackToConstraintU.Length; ++ib)
@@ -1376,6 +1451,7 @@ namespace InteriorPoint
                 }
                 if (slackToConstraintBOTH != null)
                 {
+                    slackmboth = slackToConstraintBOTH.Length;
                     slackToConstraintBOTH_inverse = new int[basem];
                     for (var ib = 0; ib < basem; ++ib) slackToConstraintBOTH_inverse[ib] = -1;
                     for (var ib = 0; ib < slackToConstraintBOTH.Length; ++ib)

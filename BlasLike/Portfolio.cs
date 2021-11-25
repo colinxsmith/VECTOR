@@ -147,7 +147,7 @@ namespace Portfolio
                 else if (U[i + n] == BlasLike.lm_max) slackL++;
                 else if (U[i + n] != L[i + n]) slackb++;
             }
-            var totalConstraintslack = slackU + slackL + 2 * slackb + slackL + slackU;
+            var totalConstraintslack = slackU + slackL + 2 * slackb; // + slackL + slackU;
             var slackToConstraintL = slackL > 0 ? new int[slackL] : null;
             var slackToConstraintU = slackU > 0 ? new int[slackU] : null;
             var slackToConstraintBOTH = slackb > 0 ? new int[slackb] : null;
