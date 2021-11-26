@@ -491,18 +491,12 @@ namespace InteriorPoint
                             {
                                 if (slackmboth > 0)
                                 {
-                                    var conn = slackToConstraintBOTH[con - basem - bases];
-                                    BlasLike.dcopy(basen, baseA, basem, lhs, 1, conn);
-                                }
-                                if (slackmL > 0)
-                                {
-                                    var conn = slackToConstraintL[con - basem - bases];
-                                    BlasLike.dcopy(basen, baseA, basem, lhs, 1, conn);
-                                }
-                                if (slackmU > 0)
-                                {
-                                    var conn = slackToConstraintU[con - basem - bases];
-                                    BlasLike.dcopy(basen, baseA, basem, lhs, 1, conn);
+                                    var it = slackToConstraintBOTH_inverse[con - basem - bases];
+                                    if (it != -1)
+                                    {
+                                        var conn = slackToConstraintBOTH[it];
+                                        BlasLike.dcopy(basen, baseA, basem, lhs, 1, conn);
+                                    }
                                 }
                             }
                         }

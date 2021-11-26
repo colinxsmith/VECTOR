@@ -52,10 +52,10 @@ namespace Portfolio
                     LL[i] = L[i];
                     UU[i] = U[i];
                 }
-                LL[n] = 1;
+                LL[n] = 0.9;
                 UU[n] = 1;
-                LL[n + 1] = -1e-2;//BlasLike.lm_max;
-                UU[n + 1] = 0;
+                LL[n + 1] = 0;
+                UU[n + 1] = BlasLike.lm_max;
                 m++;
                 L = LL;
                 U = UU;
