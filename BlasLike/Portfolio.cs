@@ -136,8 +136,8 @@ namespace Portfolio
         {
             for (var i = 0; i < n; ++i)
             {
-                    if (U[i] == 1) U[i] = BlasLike.lm_max;
-                    if (L[i] == -1) L[i] = -BlasLike.lm_max;
+                if (U[i] == 1 && L[i] == 0) U[i] = BlasLike.lm_max;
+                if (L[i] == -1 && U[i] == 0) L[i] = -BlasLike.lm_max;
             }
             var slacklarge = 0;
             var c = (double[])alpha.Clone();
@@ -148,8 +148,8 @@ namespace Portfolio
             var slackU = 0;
             for (var i = 0; i < n; ++i)
             {
-                if (U[i] != BlasLike.lm_max && U[i]!=0) slacklarge++;
-                if (L[i] != -BlasLike.lm_max &&L[i]!=0) slacklarge++;
+                if (U[i] != BlasLike.lm_max && U[i] != 0) slacklarge++;
+                else if (L[i] != -BlasLike.lm_max && L[i] != 0) slacklarge++;
             }
             for (var i = 0; i < m; ++i)
             {
@@ -166,11 +166,11 @@ namespace Portfolio
             BlasLike.dcopyvec(m, L, b, n);
             for (int i = 0, slack = 0; i < n; i++)
             {
-                if (U[i] != BlasLike.lm_max&&U[i]!=0)
+                if (U[i] != BlasLike.lm_max && U[i] != 0)
                 {
                     slacklargeConstraint[slack++] = i;
                 }
-                if (L[i] != -BlasLike.lm_max&&L[i]!=0)
+                else if (L[i] != -BlasLike.lm_max && L[i] != 0)
                 {
                     slacklargeConstraint[slack++] = i;
                 }
@@ -215,18 +215,18 @@ namespace Portfolio
                 if (L[i] >= 0)
                 {
                     sign[i] = 1;
-                    if (slacklarge > 0 && slack<slacklarge&& slacklargeConstraint[slack] == i) sign[slack++ + n] = 1;
+                    if (U[i] != BlasLike.lm_max && slacklarge > 0 && slack < slacklarge && slacklargeConstraint[slack] == i) sign[slack++ + n] = 1;
                     UL[i] = L[i];
                     signcount++;
                 }
                 else if (U[i] <= 0)
                 {
                     sign[i] = -1;
-                    if (slacklarge > 0 && slack<slacklarge&&slacklargeConstraint[slack] == i) sign[slack++ + n] = -1;
+                    if (L[i] != -BlasLike.lm_max && slacklarge > 0 && slack < slacklarge && slacklargeConstraint[slack] == i) sign[slack++ + n] = -1;
                     UL[i] = U[i];
                     signcount++;
                 }
-                else sign[i] = 1;
+                else { sign[i] = 1; UL[i] = L[i]; sign[slack++ + n] = 1; }
                 if (UL[i] == 0) zcount++;
                 CTEST[i] = sign[i] * Math.Abs(cextra[i]);
             }
@@ -242,7 +242,8 @@ namespace Portfolio
             var bb = (double[])b.Clone();
             Array.Resize(ref bb, m + slacklarge + slackb);
             for (int i = 0; i < slacklarge; ++i)
-            {var ii=slacklargeConstraint[i];
+            {
+                var ii = slacklargeConstraint[i];
                 bb[m + i] = sign[ii] == 1 ? U[ii] : L[ii];
             }
             for (var i = 0; i < slackb; ++i)
@@ -258,7 +259,7 @@ namespace Portfolio
             Array.Resize(ref ww, slacklarge + n + totalConstraintslack);
             // First do a homogenous LP do decide if the problem is feasible.
             // (homogenous QP only works if we're very lucky)
-            var IOPT = new InteriorPoint.Optimise(slacklarge + n + totalConstraintslack, m + slacklarge + slackb, ww, null, bb, cextra);
+            var IOPT = new InteriorPoint.Optimise(slacklarge + n + totalConstraintslack, m + slacklarge + slackb, ww, null, bb, CTEST);
             IOPT.alphamin = 1e-10;
             IOPT.baseA = A;//We only need to pass the constraints without slack variables AA just use for testing
             IOPT.basen = n;
