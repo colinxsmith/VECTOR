@@ -136,8 +136,8 @@ namespace Portfolio
         {
             for (var i = 0; i < n; ++i)
             {
-            //    if (U[i] == 1) U[i] = BlasLike.lm_max;
-            //    if (L[i] == -1) L[i] = -BlasLike.lm_max;
+                    if (U[i] == 1) U[i] = BlasLike.lm_max;
+                    if (L[i] == -1) L[i] = -BlasLike.lm_max;
             }
             var slacklarge = 0;
             var c = (double[])alpha.Clone();
@@ -148,7 +148,8 @@ namespace Portfolio
             var slackU = 0;
             for (var i = 0; i < n; ++i)
             {
-                if (U[i] != BlasLike.lm_max || L[i] != -BlasLike.lm_max) slacklarge++;
+                if (U[i] != BlasLike.lm_max && U[i]!=0) slacklarge++;
+                if (L[i] != -BlasLike.lm_max &&L[i]!=0) slacklarge++;
             }
             for (var i = 0; i < m; ++i)
             {
@@ -165,9 +166,13 @@ namespace Portfolio
             BlasLike.dcopyvec(m, L, b, n);
             for (int i = 0, slack = 0; i < n; i++)
             {
-                if (U[i] != BlasLike.lm_max || L[i] != -BlasLike.lm_max)
+                if (U[i] != BlasLike.lm_max&&U[i]!=0)
                 {
-                    slacklargeConstraint[i] = slack++;
+                    slacklargeConstraint[slack++] = i;
+                }
+                if (L[i] != -BlasLike.lm_max&&L[i]!=0)
+                {
+                    slacklargeConstraint[slack++] = i;
                 }
             }
             for (int i = 0, slack = 0, slackLL = 0, slackUU = 0; i < m; ++i)
@@ -200,7 +205,7 @@ namespace Portfolio
             BlasLike.daxpyvec(n, -gamma / (1 - gamma), c, cextra);
             var zcount = 0;
             var signcount = 0;
-            for (int i = 0,slack=0; i < n; ++i)
+            for (int i = 0, slack = 0; i < n; ++i)
             {
                 //We do an LP to test for primal feasibility
                 //but it's possible that c on its own gives an unbounded LP
@@ -210,14 +215,14 @@ namespace Portfolio
                 if (L[i] >= 0)
                 {
                     sign[i] = 1;
-                    if (slacklarge>0 &&slacklargeConstraint[slack]==i) sign[slack++ + n] = 1;
+                    if (slacklarge > 0 && slack<slacklarge&& slacklargeConstraint[slack] == i) sign[slack++ + n] = 1;
                     UL[i] = L[i];
                     signcount++;
                 }
                 else if (U[i] <= 0)
                 {
                     sign[i] = -1;
-                    if (slacklarge>0 &&slacklargeConstraint[slack]==i) sign[slack++ + n] = -1;
+                    if (slacklarge > 0 && slack<slacklarge&&slacklargeConstraint[slack] == i) sign[slack++ + n] = -1;
                     UL[i] = U[i];
                     signcount++;
                 }
@@ -236,9 +241,9 @@ namespace Portfolio
             if (InteriorPoint.Optimise.lInfinity(UL) == 0) UL = null;
             var bb = (double[])b.Clone();
             Array.Resize(ref bb, m + slacklarge + slackb);
-            for (var i = 0; i < slacklarge; ++i)
-            {
-                bb[m + i] = sign[i] == 1 ? U[i] : L[i];
+            for (int i = 0; i < slacklarge; ++i)
+            {var ii=slacklargeConstraint[i];
+                bb[m + i] = sign[ii] == 1 ? U[ii] : L[ii];
             }
             for (var i = 0; i < slackb; ++i)
             {
@@ -259,7 +264,7 @@ namespace Portfolio
             IOPT.basen = n;
             IOPT.bases = slacklarge;
             IOPT.basem = m;
-            IOPT.slacklargeToConstraint=slacklargeConstraint;
+            IOPT.slacklargeConstraintToStock = slacklargeConstraint;
             IOPT.slackToConstraintBOTH = slackToConstraintBOTH;
             IOPT.slackToConstraintL = slackToConstraintL;
             IOPT.slackToConstraintU = slackToConstraintU;
@@ -276,7 +281,7 @@ namespace Portfolio
                 IOPT.basen = n;
                 IOPT.bases = slacklarge;
                 IOPT.basem = m;
-            IOPT.slacklargeToConstraint=slacklargeConstraint;
+                IOPT.slacklargeConstraintToStock = slacklargeConstraint;
                 IOPT.slackToConstraintBOTH = slackToConstraintBOTH;
                 IOPT.slackToConstraintL = slackToConstraintL;
                 IOPT.slackToConstraintU = slackToConstraintU;

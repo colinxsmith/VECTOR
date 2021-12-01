@@ -122,8 +122,8 @@ namespace InteriorPoint
         int slackmL = 0;
         int slackmU = 0;
         int slacklarge;
-        public int[] slacklargeToConstraint = null;
-        public int[] slacklargeToConstraint_inverse = null;
+        public int[] slacklargeConstraintToStock = null;
+        public int[] slacklargeConstraintToStock_inverse = null;
         public int[] slackToConstraintL = null;
         public int[] slackToConstraintL_inverse = null;
         public int[] slackToConstraintU = null;
@@ -487,7 +487,7 @@ namespace InteriorPoint
                             else if (con < basem + bases)
                             {
                                 BlasLike.dzerovec(basen, lhs);
-                                var qq =slacklargeToConstraint [con - basem];
+                                var qq = slacklargeConstraintToStock[con - basem];
                                 lhs[qq] = 1;
                             }
                             else
@@ -563,9 +563,9 @@ namespace InteriorPoint
                                 }
                                 else if (ii < basem + bases)
                                 {
-                                    var qq = slacklargeToConstraint[ii - basem];
+                                    var qq = slacklargeConstraintToStock[ii - basem];
                                     M[ij + ii] = lhs[qq];
-                                    qq += basen;
+                                    qq = basen + ii - basem;
                                     if (ii == con) M[ij + ii] += aob(x[qq], z[qq]);
                                 }
                                 else
@@ -648,10 +648,11 @@ namespace InteriorPoint
                             }
                             else if (i < basem + bases)
                             {
-                                for (var k = (slacklarge>0?slacklargeToConstraint[i - basem]:(i-basem)); k <= i - basem + basen; k += basen)
+                                for (var ik = 0; ik < 2; ik++)
                                 {
+                                    var k = (ik == 0 ? slacklargeConstraintToStock[i - basem] : (i - basem + basen));
                                     var xoz = aob(x[k], z[k]);
-                                    for (var j = 0; j < basem && k < basen; ++j)
+                                    for (var j = 0; j < basem && ik == 0; ++j)
                                     {
                                         if (baseA[k * basem + j] != 0)
                                             M[ij + j] += baseA[k * basem + j] * xoz;
@@ -669,7 +670,8 @@ namespace InteriorPoint
                                         var xoz = aob(x[k], z[k]);
                                         xoz *= baseA[k * basem + ii];
                                         BlasLike.daxpyvec(basem, xoz, baseA, M, k * basem, ij);
-                                        if (bases > 0) M[ij + (slacklarge>0?slacklargeToConstraint[k ]:k)+ basem] += xoz;
+                                        if (bases > 0 && slacklargeConstraintToStock_inverse[k] != -1)
+                                            M[ij + slacklargeConstraintToStock_inverse[k] + basem] += xoz;
                                         for (var j = 0; j < slackmboth; j++)
                                         {
                                             var jj = slackToConstraintBOTH[j];
@@ -1251,16 +1253,11 @@ namespace InteriorPoint
                     var km = slackToConstraintBOTH[k];
                     y[ystart + km] -= y[ystart + basem + bases + k];
                 }
-                if(false&&(bases==basen)){
-                BlasLike.dcopyvec(bases, y, x, ystart + basem, xstart + basen);
-                BlasLike.daddvec(bases, x, x, x, xstart, xstart + basen, xstart);
-                }
-                else{
-                    for(var ik=0;ik<bases;++ik){
-                        var k=slacklargeToConstraint[ik];
-                        x[xstart+basen+k]=y[ystart+basem+k];
-                        x[xstart+k]+=x[xstart+basen+k];
-                    }
+                for (var ik = 0; ik < bases; ++ik)
+                {
+                    var k = slacklargeConstraintToStock[ik];
+                    x[xstart + basen + ik] = y[ystart + basem + ik];
+                    x[xstart + k] += x[xstart + basen + ik];
                 }
                 for (var k = 0; k < slackmboth; ++k)
                 {
@@ -1305,8 +1302,8 @@ namespace InteriorPoint
                 }
                 for (var ik = 0; ik < bases; ++ik)
                 {
-                    var k = slacklargeToConstraint[ik];
-                    y[ystart + k + basem] = x[xstart + k] + x[xstart + k + basen];
+                    var k = slacklargeConstraintToStock[ik];
+                    y[ystart + ik + basem] = x[xstart + k] + x[xstart + ik + basen];
                 }
             }
         }
@@ -1438,14 +1435,15 @@ namespace InteriorPoint
             opt.usrH = (h == null && nh > 0 && (opt.H != null && BlasLike.dsumvec(opt.H.Length, opt.H) != 0.0)) || opt.h != null;
             if (mode == "QP")
             {
-                if (slacklargeToConstraint != null)
+                if (slacklargeConstraintToStock != null)
                 {
-                    slacklarge = slacklargeToConstraint.Length;
-                    slacklargeToConstraint_inverse = new int[basen];
-                    for (var ib = 0; ib < basen; ++ib) slacklargeToConstraint_inverse[ib] = -1;
+                    slacklarge = slacklargeConstraintToStock.Length;
+                    Debug.Assert(slacklarge == bases);
+                    slacklargeConstraintToStock_inverse = new int[basen];
+                    for (var ib = 0; ib < basen; ++ib) slacklargeConstraintToStock_inverse[ib] = -1;
                     for (var ib = 0; ib < slacklarge; ++ib)
                     {
-                        slacklargeToConstraint_inverse[slacklargeToConstraint[ib]] = ib;
+                        slacklargeConstraintToStock_inverse[slacklargeConstraintToStock[ib]] = ib;
                     }
                 }
                 if (slackToConstraintL != null)
