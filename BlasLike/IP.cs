@@ -641,8 +641,8 @@ namespace InteriorPoint
                                     if (ii != -1)
                                     {
                                         var kk = ii + basen + bases + slackmboth * 2 + slackmL;
-                                        var xozz = -aob(x[kk], z[kk]);
-                                        M[ij + i] += -xozz;
+                                        var xozz = aob(x[kk], z[kk]);
+                                        M[ij + i] += xozz;
                                     }
                                 }
                             }

@@ -4867,7 +4867,7 @@ namespace ActiveSet
             the rotations used to update  r  when the constraint was added to
             the working set
             */
-            rdlast = RT[+ncolr * rt_dim1 - rt_offset];
+            rdlast = RT[ncolr+ncolr * rt_dim1 - rt_offset];
             s = Math.Abs(snlast);
             rdsq = (cslast - s) * rdlast * ((cslast + s) * rdlast);
             goto L120;

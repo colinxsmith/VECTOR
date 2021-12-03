@@ -37,6 +37,7 @@ namespace Portfolio
         public virtual void Optimise()
         {
             var back = makeQ();
+            BlasLike.dscalvec(Q.Length,1e5,Q);
             if (true)
             {
                 var AA = new double[n * (m + 1)];
@@ -128,7 +129,7 @@ namespace Portfolio
             w = new double[n];
             BlasLike.dsetvec(n, 1.0 / n, w);
             var back = opt.QPopt(n, m, w, L, U, A, cextra, Q, ref obj, ref iter);
-            Console.WriteLine($"objective:\t\t{obj:F8}; {iter} iterations");
+            Console.WriteLine($"objective:\t\t{obj}; {iter} iterations");
             return back;
         }
 
@@ -204,7 +205,7 @@ namespace Portfolio
             }
             BlasLike.daxpyvec(n, -gamma / (1 - gamma), c, cextra);
             var zcount = 0;
-            var signcount = 0;
+            var signfix = false;
             for (int i = 0, slack = 0; i < n; ++i)
             {
                 //We do an LP to test for primal feasibility
@@ -217,14 +218,13 @@ namespace Portfolio
                     sign[i] = 1;
                     if (U[i] != BlasLike.lm_max && slacklarge > 0 && slack < slacklarge && slacklargeConstraint[slack] == i) sign[slack++ + n] = 1;
                     UL[i] = L[i];
-                    signcount++;
                 }
                 else if (U[i] <= 0)
                 {
                     sign[i] = -1;
                     if (L[i] != -BlasLike.lm_max && slacklarge > 0 && slack < slacklarge && slacklargeConstraint[slack] == i) sign[slack++ + n] = -1;
                     UL[i] = U[i];
-                    signcount++;
+                    signfix = true;
                 }
                 else { sign[i] = 1; UL[i] = L[i]; sign[slack++ + n] = 1; }
                 if (UL[i] == 0) zcount++;
@@ -250,7 +250,7 @@ namespace Portfolio
             {
                 bb[m + i + slacklarge] = b[m + i];
             }
-            if (signcount != n) { CTEST = cextra; sign = null; }
+            if (!signfix) { CTEST = cextra; sign = null; }
             w = new double[n];
             BlasLike.dsetvec(n, 1.0 / n, w);
             var HH = new double[n * (n + 1) / 2];
