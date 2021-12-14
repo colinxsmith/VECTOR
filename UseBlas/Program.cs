@@ -1131,6 +1131,26 @@ namespace UseBlas
                 }
                 port.Optimise();
             }
+            {
+                Console.WriteLine("GAIN/LOSS");
+                Portfolio.Portfolio opt = new Portfolio.Portfolio("");
+                double[] DATA;
+                string[] names;
+                int n, tlen;
+                using (var GainLossData = new DataFile.InputSomeData())
+                {
+                    GainLossData.doubleFields = "DATA";
+                    GainLossData.intFields = "n tlen";
+                    GainLossData.stringFields = "names";
+                    GainLossData.Read("C:\\Users\\colin\\safeqp64\\METIN\\GLconstrained.log");
+                    DATA = GainLossData.mapDouble["DATA"];
+                    names = GainLossData.mapString["names"];
+                    n = GainLossData.mapInt["n"][0];
+                    tlen = GainLossData.mapInt["tlen"][0];
+                }
+                bool useIP = true;
+                opt.GainLossSetUp(n, tlen, DATA, 1e-2, 1e-6, useIP);
+            }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
             {

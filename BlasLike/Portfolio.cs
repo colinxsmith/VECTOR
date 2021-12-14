@@ -34,10 +34,84 @@ namespace Portfolio
                     if (names != null) Array.Resize(ref names, n);
                 }
         }
+        public void GainLossSetUp(int n, int tlen, double[] DATA, double R, double lambda, bool useIP = true)
+        {
+            var m = 1;
+            var N = n + tlen;
+            var M = m + tlen;
+            double[] ww = new double[n+tlen];
+            double[] cc = new double[N];
+            double[] LL = new double[N + M];
+            double[] UU = new double[N + M];
+            double[] AA = new double[N * M];
+            double[] bb = new double[M];
+
+
+            double[] alpha = new double[n];
+            for (var i = 0; i < n; i++)
+            {
+                alpha[i] = BlasLike.dsumvec(tlen, DATA, i * tlen) / tlen;
+            }
+            double maxret = BlasLike.lm_max, minret = 0.0;
+            if (!useIP) BlasLike.dxminmax(n, alpha, 0, ref maxret, ref minret);
+
+            BlasLike.dsccopyvec(n, -1, alpha, cc);
+            BlasLike.dsetvec(tlen, lambda, cc, n);
+
+            BlasLike.dzerovec(n, LL);
+            BlasLike.dzerovec(tlen, LL, n);
+            BlasLike.dsetvec(m, 1, LL, N);
+            BlasLike.dsetvec(tlen, R, LL, N + m);
+
+            BlasLike.dsetvec(n, useIP ? BlasLike.lm_max : 1, UU);
+            BlasLike.dsetvec(tlen, useIP ? BlasLike.lm_max : maxret, UU, n);
+            BlasLike.dsetvec(m, 1, UU, N);
+            BlasLike.dsetvec(tlen, useIP ? BlasLike.lm_max : maxret, UU, N + m);
+
+            for (var i = 0; i < m; ++i)
+            {
+                BlasLike.dset(n, 1, AA, M);
+            }
+            for (var i = m; i < M; ++i)
+            {
+                BlasLike.dset(1, 1, AA, M, i + M * (n + i - m));
+                BlasLike.dcopy(n, DATA, tlen, AA, M, i - m, i);
+            }
+            this.L = LL;
+            this.U = UU;
+            this.A = AA;
+            this.n = N;
+            this.m = M;
+            this.gamma = 0.5;
+            BlasLike.dnegvec(cc.Length, cc);
+            this.alpha = cc;
+            if (useIP)
+            {
+                var back = InteriorOpt(1e-12, ww);
+                var GL = new double[tlen];
+                var loss = 0.0;
+                var gain=0.0;
+                for (var i = 0; i < tlen; ++i)
+                {
+                    GL[i] = BlasLike.ddot(n, DATA, tlen, ww, 1, i) - R;
+                    gain += Math.Max(0, GL[i]);
+                    loss += -Math.Min(0, GL[i]);
+                }
+                var lossV=BlasLike.dsumvec(tlen,ww,n);
+                Console.WriteLine($"Total GAIN = {gain:F8}");
+                Console.WriteLine($"Total LOSS = \t\t\t\t{loss:F8}");
+                Console.WriteLine($"Total LOSS (check from opt variables) = {lossV:F8}");
+            }
+            else
+            {
+                var back = ActiveOpt();
+            }
+
+        }
         public virtual void Optimise()
         {
             var back = makeQ();
-            BlasLike.dscalvec(Q.Length,1e5,Q);
+            BlasLike.dscalvec(Q.Length, 1e5, Q);
             if (true)
             {
                 var AA = new double[n * (m + 1)];
@@ -133,7 +207,7 @@ namespace Portfolio
             return back;
         }
 
-        public int InteriorOpt()
+        public int InteriorOpt(double conv = 1e-16, double[] wback = null)
         {
             for (var i = 0; i < n; ++i)
             {
@@ -254,7 +328,7 @@ namespace Portfolio
             w = new double[n];
             BlasLike.dsetvec(n, 1.0 / n, w);
             var HH = new double[n * (n + 1) / 2];
-            Factorise.Fac2Cov(n, (int)(Q.Length / n) - 1, Q, HH);
+            if (Q != null) Factorise.Fac2Cov(n, (int)(Q.Length / n) - 1, Q, HH);
             var ww = (double[])w.Clone();
             Array.Resize(ref ww, slacklarge + n + totalConstraintslack);
             // First do a homogenous LP do decide if the problem is feasible.
@@ -265,6 +339,7 @@ namespace Portfolio
             IOPT.basen = n;
             IOPT.bases = slacklarge;
             IOPT.basem = m;
+            IOPT.conv = conv;
             IOPT.slacklargeConstraintToStock = slacklargeConstraint;
             IOPT.slackToConstraintBOTH = slackToConstraintBOTH;
             IOPT.slackToConstraintL = slackToConstraintL;
@@ -274,7 +349,7 @@ namespace Portfolio
             if (back < -10) Console.WriteLine($"Failed -- too many iterations");
             if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
             if (back == 6) Console.WriteLine("INFEASIBLE");
-            else
+            else if (Q != null)
             {
                 IOPT = new InteriorPoint.Optimise(slacklarge + n + totalConstraintslack, m + slacklarge + slackb, ww, null, bb, cextra, n, HH);
                 IOPT.h = hessmull;
@@ -298,6 +373,7 @@ namespace Portfolio
                 if (back < -10) Console.WriteLine($"Failed -- too many iterations");
                 else if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
             }
+            if (wback != null) BlasLike.dcopyvec(wback.Length, ww, wback);
             return back;
         }
 
