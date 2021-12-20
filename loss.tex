@@ -1,0 +1,87 @@
+\documentclass{article}
+\usepackage{setspace}
+\usepackage{amsmath}
+\title{Setting Up An Optimisation To Minimise Loss}
+%\date{16-12-2021}
+\author{Colin M. Smith BITA Risk}
+\begin{document}
+\maketitle
+\tableofcontents
+\pagebreak
+%\doublespacing
+\section{Introduction}
+This document is for internal use only. It describes exactly how portfolio loss may be minimised
+using linear programming. This is something that was developed at BITA; you can't look it up on the internet!
+\section{Definition of Portfolio Gain and Loss}
+Portfolio gain, $G$ and loss, $L$ are defined with respect to a target return $R$. Suppose the portfolio return
+series at time $t$ is $r(t)$ then
+\begin{eqnarray}
+    G = \sum_t max(r(t) - R,0)
+\end{eqnarray}
+\begin{eqnarray}
+    L = \sum_t max(R-r(t),0)
+\end{eqnarray}
+This means that in period $t$, if $R-r(t) > 0$ there is a loss, and if $R-r(t) < 0$ there is a gain.
+If we define a loss period as one for which $R-r(t) > 0$,
+\begin{eqnarray}
+  {\rm Total\ Loss},\ L= \sum_{t\ \in\ \rm loss\ periods} R-r(t)
+\end{eqnarray}
+$G$ and $L$ are both non-negative and
+\begin{eqnarray}
+ {\rm   total\ portfolio\ return}= G - L + R
+\end{eqnarray}
+
+If there are $n$ assets in the portfolio and each asset $i$
+has a weight $w_i$ and a return series $s_i (t)$ then
+\begin{eqnarray}
+    r(t) = \sum_i w_i s_i(t)
+\end{eqnarray}
+The expected return for asset $i$, $\alpha_i$ may be calculated from the arithmetic
+mean of $s_i(t)$.
+\begin{eqnarray}
+    \alpha_i = \frac{\sum_t s_i(t)} {T} 
+\end{eqnarray}
+where $T$ is the number of periods.
+\section{Portfolio Optimisation}
+We wish to maximise portfolio gain and minimise portfolio loss. The simplest way to achieve this is to try to
+find the set of portfolio weights which maximise $G$-$\lambda L$ for unit wealth. Choosing a value for
+$\lambda \ge 1$ and varying $w_i$
+but keeping $\sum_i w_i = 1$ we try to maximise $G$-$\lambda L$. We can then assert that, for this loss tolerance $\lambda$, we have found the 
+portfolio which has the largest gain for a loss of $L$ (or equivalently, the smallest loss for a gain of $G$).
+There will be a unique set of portfolio weights for this maximisation as long as $\lambda\ge1$. ($G$-$\lambda L$
+can be shown to be concave if $\lambda\ge1$). Note that because total return is $G-L+R$ we have;
+\begin{eqnarray}
+    \sum_i \alpha_i w_i = G-L+R
+\end{eqnarray}
+The portfolio problem we wish to solve is to maximise $G$-$\lambda L$ over portfolio weights $w_i$ for unit wealth.
+This is equivalent to minimising the utility $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T)$ (because $R$ is constant). Our optimisation problem is;
+\begin{align}
+    {\rm Minimise}\ & U(w_1,w_2,...w_n,t_1,t_2,...t_T)=\quad\cr \quad  & -\sum_i \alpha_i w_i + \lambda \left( \sum_{t_j\ \in\ \rm loss\ periods}( R-\sum_i w_i s_i(t_j) )\right)\cr
+    {\rm Subject\ to}\cr & \sum_i w_i  = 1
+\end{align}
+The loss periods depend on the portfolio weights, therefore $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T)$ is a non-linear function of portfolio weights.
+\section{Solve an Equivalent Linear Problem}
+The loss part of our utility function $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T)$ depends on $T$ time intervals. Some of these
+are loss periods, the others are gain periods. If we could replace each loss period in $U$ by a non-negative variable and each gain period by
+zero we would have that the total loss is given by the sum of these variables. The problem is that at each step in the optimisation,
+we don't know which periods have losses and which have gains. To avoid this we set up a linear relaxation, which contains an extra $T$ non-negative variables. Each of these relaxation variables
+refers either to a loss period or a gain period. If it refers to a gain period its optimal value will be zero, but if it refers to a loss period,
+its optimimal value will be equal to the loss of that period. For this to work, the extra variables must satisfy
+linking constraints to make $\sum s_i( t_j )w_i +t_j \ge R$. For a loss period this expresses that $t_j \ge$ period loss and for a gain period
+$t_j \ge$ minus period gain. Since the optimisation is trying to minimise each relaxation variable (because $\lambda > 0$), the optimal value 
+for $t_j$ in a loss period will be the period loss and the optimal value for $t_j$ in a gain period will be the lower bound, zero (this is $\ge$ - period gain).
+It is by setting this lower bound to 0 that we make the optimisation process choose to constrain gain period 
+$t_j$ to zero, so that that the sum of optimised $t_j$ variables is equal to total loss.
+\begin{align}
+    {\rm Minimise}\ & \sum_{i=0,1,...(n+T)} c_i x_i\cr
+    & c_i=-\alpha_i &0\le i < n\cr
+    &c_i =\lambda &n\le i < (n+T)\cr
+    {\rm Subject\ to}\ &\cr& 0 \le x_i \le 1\ &0\le i < n\cr
+    & 0 \le x_i \le \infty\ &n\le i < n+T\cr
+    & \sum_{i=0}^n w_i = 1\cr
+    & R\ \le\sum_{i=0}^n w_i A_{ij} + w_j \le\infty &0\le j < T\cr
+    & A_{ij} = s_i(j)\cr
+\end{align}
+At convergence, the constraint $R\ \le\sum_{i=0}^n w_i A_{ij} + w_j \le\infty$ will take the lower value $R$ in a loss period or the value $R+$ gain in a gain period.
+
+\end{document}
