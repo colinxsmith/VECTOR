@@ -34,12 +34,12 @@ namespace Portfolio
                     if (names != null) Array.Resize(ref names, n);
                 }
         }
-        public void GainLossSetUp(int n, int tlen, double[] DATA, double R, double lambda, bool useIP = true)
+        public void GainLossSetUp(int n, int tlen, double[] DATA, string[] names, double R, double lambda, bool useIP = true)
         {
             var m = 1;
             var N = n + tlen;
             var M = m + tlen;
-            double[] ww = new double[n+tlen];
+            double[] ww = new double[n + tlen];
             double[] cc = new double[N];
             double[] LL = new double[N + M];
             double[] UU = new double[N + M];
@@ -88,19 +88,22 @@ namespace Portfolio
             if (useIP)
             {
                 var back = InteriorOpt(1e-12, ww);
-                var GL = new double[tlen];
                 var loss = 0.0;
-                var gain=0.0;
+                var gain = 0.0;
                 for (var i = 0; i < tlen; ++i)
                 {
-                    GL[i] = BlasLike.ddot(n, DATA, tlen, ww, 1, i) - R;
-                    gain += Math.Max(0, GL[i]);
-                    loss += -Math.Min(0, GL[i]);
+                    var GL = BlasLike.ddot(n, DATA, tlen, ww, 1, i) - R;
+                    gain += Math.Max(0, GL);
+                    loss += -Math.Min(0, GL);
                 }
-                var lossV=BlasLike.dsumvec(tlen,ww,n);
+                var lossV = BlasLike.dsumvec(tlen, ww, n);
                 Console.WriteLine($"Total GAIN = {gain:F8}");
                 Console.WriteLine($"Total LOSS = \t\t\t\t{loss:F8}");
                 Console.WriteLine($"Total LOSS (check from opt variables) = {lossV:F8}");
+                for (var i = 0; i < n; ++i)
+                {
+                    Console.WriteLine($"{names[i]}\t{ww[i]:F8}");
+                }
             }
             else
             {

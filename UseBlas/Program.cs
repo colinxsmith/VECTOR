@@ -1148,8 +1148,8 @@ namespace UseBlas
                     n = GainLossData.mapInt["n"][0];
                     tlen = GainLossData.mapInt["tlen"][0];
                 }
-                bool useIP = true;
-                opt.GainLossSetUp(n, tlen, DATA, 1e-2, 1e-6, useIP);
+                bool useIP = false;
+                opt.GainLossSetUp(n, tlen, DATA,names, 1e-2, 1e6, useIP);
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
