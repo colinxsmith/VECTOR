@@ -45,7 +45,7 @@ has a weight $w_i$ and a return series $s_i (t)$ then
 The expected return for asset $i$, $\alpha_i$ may be calculated from the arithmetic
 mean of $s_i(t)$.
 \begin{eqnarray}
-    \alpha_i = \frac{\sum_t s_i(t)} {T} 
+    \alpha_i = \frac{1} {T} \sum_t s_i(t)
 \end{eqnarray}
 where $T$ is the number of periods.
 \section{Portfolio Optimisation}
@@ -79,7 +79,7 @@ for $t_j$ in a loss period will be the period loss and the optimal value for $t_
 It is by setting this lower bound to 0 that we make the optimisation process choose to constrain gain period 
 $t_j$ to zero, so that the sum of optimised $t_j$ variables is equal to total loss.
 \begin{align}
-    {\rm Minimise}\ & \sum_{i=0,1,...(n+T)} c_i x_i\cr
+    {\rm Minimise}\ & \sum_{i=0}^{n+T-1} c_i x_i\cr
     & c_i=-\alpha_i &0\le i < n\cr
     &c_i =\lambda &n\le i < (n+T)\cr
     {\rm Subject\ to}\ &\cr& 0 \le x_i \le 1\ &0\le i < n\cr
