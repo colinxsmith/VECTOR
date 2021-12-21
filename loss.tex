@@ -40,12 +40,12 @@ $G$ and $L$ are both non-negative and
 If there are $n$ assets in the portfolio and each asset $i$
 has a weight $w_i$ and a return series $s_i (t)$ then
 \begin{eqnarray}
-    r(t) = \sum_i w_i s_i(t)
+    r(t) = \sum_{i=0}^{n-1} w_i s_i(t)
 \end{eqnarray}
-The expected return for asset $i$, $\alpha_i$ may be calculated from the arithmetic
-mean of $s_i(t)$.
+The expected return for asset $i$, $\alpha_i$ may be calculated from total\footnote{It's probably more traditional to define $\alpha$ as arithmetic mean, but if we do that here we should talk about average gain and loss rather than total.} 
+return of $s_i(t)$.
 \begin{eqnarray}
-    \alpha_i = \frac{1} {T} \sum_t s_i(t)
+    \alpha_i =  \sum_{t=0}^{T-1} s_i(t)
 \end{eqnarray}
 where $T$ is the number of periods.
 \section{Portfolio Optimisation}
@@ -67,29 +67,27 @@ This is equivalent to minimising the utility $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T
 \end{align*}
 The loss periods depend on the portfolio weights, therefore $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T)$ is a non-linear function of portfolio weights.
 \section{Solve an Equivalent Linear Problem}
-The loss part of our utility function $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T)$ depends on $T$ time intervals. Some of these
-are loss periods, the others are gain periods. If we could replace each loss period in $U$ by a non-negative variable and each gain period by
-zero we would have that the total loss is given by the sum of these variables. The problem is that at each step in the optimisation,
-we don't know which periods have losses and which have gains. To avoid this we set up a linear relaxation, which contains an extra $T$ non-negative variables. Each of these relaxation variables
-refers either to a loss period or a gain period. If it refers to a gain period its optimal value will be zero, but if it refers to a loss period,
-its optimimal value will be equal to the loss of that period. For this to work, the extra variables must satisfy
+The loss part of our utility function $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T)$ is made up of $T$ time intervals. Some of these
+are loss periods, the others are gain periods and we have a variable $t_j$ for each time interval. If each loss period in $U$ had $t_j = {\rm loss}$ and each gain period had
+$t_j=0$, we would have that the total loss is given by the sum of these variables $\Sigma_j t_j$. The problem is that at each step in the optimisation,
+we don't know which periods have losses and which have gains. To overcome this we set up a linear relaxation, which puts constraints on the $t_j$ to make those in a gain period optimise to zero.
+For this to work, the $t_j$ must satisfy
 linking constraints to make $\sum s_i( t_j )w_i +t_j \ge R$. For a loss period this expresses that $t_j \ge$ period loss and for a gain period
-$t_j \ge$ minus period gain. Since the optimisation is trying to minimise each relaxation variable (because $\lambda > 0$), the optimal value 
-for $t_j$ in a loss period will be the period loss and the optimal value for $t_j$ in a gain period will be the lower bound, zero (this is $\ge$ - period gain).
-It is by setting this lower bound to 0 that we make the optimisation process choose to constrain gain period 
-$t_j$ to zero, so that the sum of optimised $t_j$ variables is equal to total loss.
+$t_j \ge$ minus period gain. Since the optimisation is trying to minimise loss (because loss tolerance $\lambda > 0$), changing each $t_j$ relaxation variable, the optimal value 
+for each $t_j$ in a loss period will be the period loss and the optimal value for $t_j$ in a gain period will be the lower bound, zero (this is $\ge$ - period gain).
+By constraining each $t_j$ to be non-negative, we force the optimisation process to choose to constrain gain period 
+$t_j$ to zero, so that the sum of all optimised $t_j$ variables is equal to total loss.
 
-The relaxed linear program is;
+The relaxed linear program is (we denote the optimisation variables by $x_i$);
 \begin{align*}
     {\rm Minimise}\ & \sum_{i=0}^{n+T-1} c_i x_i\cr
-    & c_i=-\alpha_i &0\le i < n\cr
+    &c_i=-\alpha_i &0\le i < n\cr
     &c_i =\lambda &n\le i < (n+T)\cr
     {\rm Subject\ to}\ &\cr& 0 \le x_i \le 1\ &0\le i < n\cr
     & 0 \le x_i \ &n\le i < n+T\cr
-    & \sum_{i=0}^{n-1} w_i = 1\cr
-    & R\ \le\sum_{i=0}^{n-1} w_i A_{ij} + w_j  &0\le j < T\cr
+    & \sum_{i=0}^{n-1} x_i = 1\cr
+    & R\ \le\sum_{i=0}^{n-1} x_i A_{ij} + x_j  &n\le j < n+T\cr
     & A_{ij} = s_i(t_j )\cr
 \end{align*}
-At convergence, the constraint $R\ \le\sum_{i=0}^{n-1} w_i A_{ij} + w_j$ will take the lower value $R$ in a loss period or the value $(R+{\rm gain})$ in a gain period.
-
+At convergence, the constraint $\sum_{i=0}^{n-1} w_i A_{ij} + w_j$ (total return for period $j$ plus its loss or gain) will take the lowest allowed value $R$ in a loss period or $(R+{\rm gain})$ in a gain period.
 \end{document}
