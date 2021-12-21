@@ -1,6 +1,12 @@
-\documentclass{article}
+\documentclass[12pt]{article}
 \usepackage{setspace}
 \usepackage{amsmath}
+\oddsidemargin=0.0in
+\evensidemargin=0.0in
+\textwidth=6.5in
+\headheight=0.0in
+\topmargin=0.0in
+\textheight=9.5in
 \title{Setting Up An Optimisation To Minimise Loss}
 %\date{16-12-2021}
 \author{Colin M. Smith BITA Risk}
@@ -8,7 +14,7 @@
 \maketitle
 \tableofcontents
 \pagebreak
-%\doublespacing
+\doublespacing
 \section{Introduction}
 This document is for internal use only. It describes exactly how portfolio loss may be minimised
 using linear programming. This is something that was developed at BITA; you can't look it up on the internet!
@@ -71,17 +77,17 @@ linking constraints to make $\sum s_i( t_j )w_i +t_j \ge R$. For a loss period t
 $t_j \ge$ minus period gain. Since the optimisation is trying to minimise each relaxation variable (because $\lambda > 0$), the optimal value 
 for $t_j$ in a loss period will be the period loss and the optimal value for $t_j$ in a gain period will be the lower bound, zero (this is $\ge$ - period gain).
 It is by setting this lower bound to 0 that we make the optimisation process choose to constrain gain period 
-$t_j$ to zero, so that that the sum of optimised $t_j$ variables is equal to total loss.
+$t_j$ to zero, so that the sum of optimised $t_j$ variables is equal to total loss.
 \begin{align}
     {\rm Minimise}\ & \sum_{i=0,1,...(n+T)} c_i x_i\cr
     & c_i=-\alpha_i &0\le i < n\cr
     &c_i =\lambda &n\le i < (n+T)\cr
     {\rm Subject\ to}\ &\cr& 0 \le x_i \le 1\ &0\le i < n\cr
     & 0 \le x_i \le \infty\ &n\le i < n+T\cr
-    & \sum_{i=0}^n w_i = 1\cr
-    & R\ \le\sum_{i=0}^n w_i A_{ij} + w_j \le\infty &0\le j < T\cr
+    & \sum_{i=0}^{n-1} w_i = 1\cr
+    & R\ \le\sum_{i=0}^{n-1} w_i A_{ij} + w_j \le\infty &0\le j < T\cr
     & A_{ij} = s_i(j)\cr
 \end{align}
-At convergence, the constraint $R\ \le\sum_{i=0}^n w_i A_{ij} + w_j \le\infty$ will take the lower value $R$ in a loss period or the value $R+$ gain in a gain period.
+At convergence, the constraint $R\ \le\sum_{i=0}^{n-1} w_i A_{ij} + w_j \le\infty$ will take the lower value $R$ in a loss period or the value $(R+{\rm gain})$ in a gain period.
 
 \end{document}
