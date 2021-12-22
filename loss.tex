@@ -61,12 +61,13 @@ can be shown to be concave if $C\ge1$). Note that because total return is $G-L+R
     T\sum_i \alpha_i w_i = G-L+RT
 \end{eqnarray}
 The portfolio problem we wish to solve is to maximise $G$-$C L$ over portfolio weights $w_i$ for unit wealth.
-This is equivalent to minimising the utility $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T)$ (because $R$ and $T$ are constant). Our optimisation problem is;
+This is the same as minimising the utility $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T;\lambda)$
+\footnote{The multiplier $\lambda$ for the loss term in $U$ corresponds to $C-\frac{1}{T}$ in $G$-$CL$} because $R$ and $T$ are constant.
 \begin{align*}
-    {\rm Minimise}\ & U(w_1,w_2,...w_n,t_1,t_2,...t_T)=\quad\cr \quad  & -\sum_i \alpha_i w_i + \lambda \left( \sum_{t_j\ \in\ \rm loss\ periods}( R-\sum_i w_i s_i(t_j) )\right)\cr
+    {\rm Minimise}\ & U(w_1,w_2,...w_n,t_1,t_2,...t_T;\lambda)=\quad\cr \quad  & -\sum_i \alpha_i w_i + \lambda \left( \sum_{t_j\ \in\ \rm loss\ periods}( R-\sum_i w_i s_i(t_j) )\right)\cr
     {\rm Subject\ to}\cr & \sum_i w_i  = 1
 \end{align*}
-\footnote{The multiplier $\lambda$ for the loss term corresponds to $C-\frac{1}{T}$}The
+The
 loss periods depend on the portfolio weights, therefore $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T)$ is a non-linear function of portfolio weights.
 \section{Embed the Portfolio Optimisation into a Linear Program}
 The loss part of our utility function $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T)$ is made up of $T$ time intervals. Some of these
