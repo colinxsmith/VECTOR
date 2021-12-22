@@ -19,7 +19,7 @@
 This document is for internal use only. It describes exactly how portfolio loss may be minimised
 using linear programming. This is something that was developed at BITA; you can't look it up on the internet!
 \section{Definition of Portfolio Gain and Loss}
-Portfolio gain, $G$ and loss, $L$ are defined with respect to a target return $R$. Suppose the portfolio return
+Portfolio gain, $G$ and loss, $L$ are defined with respect to a per-period target return $R$. Suppose the portfolio return
 series at time $t$ is $r(t)$ then
 \begin{eqnarray}
     G = \sum_t {\textbf{ max} }(r(t) - R,0)
@@ -34,7 +34,7 @@ If we define a loss period as one for which $R-r(t) > 0$,
 \end{eqnarray}
 $G$ and $L$ are both non-negative and
 \begin{eqnarray}
- {\rm   total\ portfolio\ return}= G - L + R
+ {\rm   total\ portfolio\ return}= G - L + RT
 \end{eqnarray}
 
 If there are $n$ assets in the portfolio and each asset $i$
@@ -42,31 +42,33 @@ has a weight $w_i$ and a return series $s_i (t)$ then
 \begin{eqnarray}
     r(t) = \sum_{i=0}^{n-1} w_i s_i(t)
 \end{eqnarray}
-The expected return for asset $i$, $\alpha_i$ may be calculated from total\footnote{It's probably more traditional to define $\alpha$ as arithmetic mean, but if we do that here we should talk about average gain and loss rather than total.} 
+The expected return for asset $i$, $\alpha_i$ may be calculated from
+mean\footnote{We calculate $\alpha$ using arithmetic mean. $\alpha_i$ and target rate are values per-period.} 
 return of $s_i(t)$.
 \begin{eqnarray}
-    \alpha_i =  \sum_{t=0}^{T-1} s_i(t)
+    \alpha_i =  \frac{1}{T}\sum_{t=0}^{T-1} s_i(t)
 \end{eqnarray}
 where $T$ is the number of periods.
-\section{Portfolio Optimisation}
+\section{Define Portfolio Optimisation Problem}
 We wish to maximise portfolio gain and minimise portfolio loss. The simplest way to achieve this is to try to
-find the set of portfolio weights which maximise $G$-$\lambda L$ for unit wealth. Choosing a value for
-$\lambda \ge 1$ and varying $w_i$
-but keeping $\sum_i w_i = 1$ we try to maximise $G$-$\lambda L$. We can then assert that, for this loss tolerance $\lambda$, we have found the 
+find the set of portfolio weights which maximise $G$-$C L$ for unit wealth. Choosing a value for
+$C \ge 1$ and varying $w_i$
+but keeping $\sum_i w_i = 1$ we try to maximise $G$-$C L$. We can then assert that, for this loss tolerance $C$, we have found the 
 portfolio which has the largest gain for a loss of $L$ (or equivalently, the smallest loss for a gain of $G$).
-There will be a unique set of portfolio weights for this maximisation as long as $\lambda\ge1$. ($G$-$\lambda L$
-can be shown to be concave if $\lambda\ge1$). Note that because total return is $G-L+R$ we have;
+There will be a unique set of portfolio weights for this maximisation as long as $C\ge1$. ($G$-$C L$
+can be shown to be concave if $C\ge1$). Note that because total return is $G-L+RT$ we have;
 \begin{eqnarray}
-    \sum_i \alpha_i w_i = G-L+R
+    T\sum_i \alpha_i w_i = G-L+RT
 \end{eqnarray}
-The portfolio problem we wish to solve is to maximise $G$-$\lambda L$ over portfolio weights $w_i$ for unit wealth.
-This is equivalent to minimising the utility $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T)$ (because $R$ is constant). Our optimisation problem is;
+The portfolio problem we wish to solve is to maximise $G$-$C L$ over portfolio weights $w_i$ for unit wealth.
+This is equivalent to minimising the utility $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T)$ (because $R$ and $T$ are constant). Our optimisation problem is;
 \begin{align*}
     {\rm Minimise}\ & U(w_1,w_2,...w_n,t_1,t_2,...t_T)=\quad\cr \quad  & -\sum_i \alpha_i w_i + \lambda \left( \sum_{t_j\ \in\ \rm loss\ periods}( R-\sum_i w_i s_i(t_j) )\right)\cr
     {\rm Subject\ to}\cr & \sum_i w_i  = 1
 \end{align*}
-The loss periods depend on the portfolio weights, therefore $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T)$ is a non-linear function of portfolio weights.
-\section{Solve an Equivalent Linear Problem}
+\footnote{The multiplier $\lambda$ for the loss term corresponds to $C-\frac{1}{T}$}The
+loss periods depend on the portfolio weights, therefore $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T)$ is a non-linear function of portfolio weights.
+\section{Embed the Portfolio Optimisation into a Linear Program}
 The loss part of our utility function $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T)$ is made up of $T$ time intervals. Some of these
 are loss periods, the others are gain periods and we have a variable $t_j$ for each time interval. If each loss period in $U$ had $t_j = {\rm loss}$ and each gain period had
 $t_j=0$, we would have that the total loss is given by the sum of these variables $\Sigma_j t_j$. The problem is that at each step in the optimisation,
@@ -89,5 +91,5 @@ The relaxed linear program is (we denote the optimisation variables by $x_i$);
     & R\ \le\sum_{i=0}^{n-1} x_i A_{ij} + x_j  &n\le j < n+T\cr
     & A_{ij} = s_i(t_j )\cr
 \end{align*}
-At convergence, the constraint $\sum_{i=0}^{n-1} w_i A_{ij} + w_j$ (total return for period $j$ plus its loss or gain) will take the lowest allowed value $R$ in a loss period or $(R+{\rm gain})$ in a gain period.
+The optimal value of $\sum_{i=0}^{n-1} w_i A_{ij} + w_j$ (total return for period $j$ plus its loss or gain) will take its lowest allowed value, $R$ in a loss period or $(R+{\rm gain})$ in a gain period.
 \end{document}
