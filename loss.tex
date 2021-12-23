@@ -61,10 +61,9 @@ can be shown to be concave if $C\ge1$). Note that because total return is $G-L+R
     T\sum_i \alpha_i w_i = G-L+RT
 \end{eqnarray}
 The portfolio problem we wish to solve is to maximise $G$-$C L$ over portfolio weights $w_i$ for unit wealth.
-This is the same as minimising the utility $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T;\lambda)$
-\footnote{The multiplier $\lambda$ for the loss term in $U$ corresponds to $C-\frac{1}{T}$ in $G$-$CL$} because $R$ and $T$ are constant.
+This is the same as minimising the utility $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T;\lambda , R)$\footnote{The multiplier $\lambda$ for the loss term in $U$ corresponds to $\frac{1}{T}(C-1)$ in $G$-$CL$} because $R$ and $T$ are constant.
 \begin{align*}
-    {\rm Minimise}\ & U(w_1,w_2,...w_n,t_1,t_2,...t_T;\lambda)=\quad\cr \quad  & -\sum_i \alpha_i w_i + \lambda \left( \sum_{t_j\ \in\ \rm loss\ periods}( R-\sum_i w_i s_i(t_j) )\right)\cr
+    {\rm Minimise}\ & U(w_1,w_2,...w_n,t_1,t_2,...t_T;\lambda ,R)=\quad\cr \quad  & -\sum_i \alpha_i w_i + \lambda \left( \sum_{t_j\ \in\ \rm loss\ periods}( R-\sum_i w_i s_i(t_j) )\right)\cr
     {\rm Subject\ to}\cr & \sum_i w_i  = 1
 \end{align*}
 The
