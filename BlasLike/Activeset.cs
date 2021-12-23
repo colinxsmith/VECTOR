@@ -3654,7 +3654,7 @@ namespace ActiveSet
                 }
             }
         }
-        short dqpsol(short itmax, short msglvl, int n, int nclin, int nctotl, int nrowa, int nrowh, int ncolh, int cold, int lp, int orthog, ref int iter, ref double obj, int leniw, int lenw, short ifail)
+        short dqpsol(int itmax, short msglvl, int n, int nclin, int nctotl, int nrowa, int nrowh, int ncolh, int cold, int lp, int orthog, ref int iter, ref double obj, int leniw, int lenw, short ifail)
         {
             parm[0] = 1e10;
             parm[1] = 1e20;
@@ -5057,7 +5057,7 @@ namespace ActiveSet
         {
             var opt = new Optimise();
             var lp = 1;
-            var itmax = (short)20000;
+            var itmax = 20000;
             var orthog = 1;
             var nclin = m;
             var nctotl = n + m;
@@ -5089,11 +5089,10 @@ namespace ActiveSet
             objective = obj;
             return back;
         }
-        public short QPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] QQ, ref double objective, ref int iter)
+        public short QPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] QQ, ref double objective, ref int iter,int lp=0)
         {
             var opt = this;
             if (opt.h == null) opt.h = opt.qphess1;
-            var lp = 0;
             var itmax = (short)20000;
             var orthog = 1;
             var nclin = m;

@@ -54,7 +54,7 @@ namespace Portfolio
             }
             double maxret = BlasLike.lm_max, minret = 0.0;
             if (!useIP) BlasLike.dxminmax(n, alpha, 0, ref maxret, ref minret);
-
+            maxret *= 1000.0;
             BlasLike.dsccopyvec(n, -1, alpha, cc);
             BlasLike.dsetvec(tlen, lambda, cc, n);
 
@@ -104,10 +104,33 @@ namespace Portfolio
                 {
                     Console.WriteLine($"{names[i]}\t{ww[i]:F8}");
                 }
+                var budget = BlasLike.ddot(N, AA, M, ww, 1);
+                Console.WriteLine($"Budget = {budget:F8}");
             }
             else
             {
-                var back = ActiveOpt();
+                BlasLike.dsetvec(n, 1.0 / n, ww);
+                BlasLike.dsetvec(tlen, 1, ww, n);
+                var back = ActiveOpt(1, ww);
+                var gain = 0.0;
+                var loss = 0.0;
+                for (var i = 0; i < tlen; ++i)
+                {
+                    var GL = BlasLike.ddot(n, DATA, tlen, ww, 1, i) - R;
+                    gain += Math.Max(0, GL);
+                    loss += -Math.Min(0, GL);
+                }
+                var lossV = BlasLike.dsumvec(tlen, ww, n);
+                Console.WriteLine($"Total GAIN = {gain:F8}");
+                Console.WriteLine($"Total LOSS = \t\t\t\t{loss:F8}");
+                Console.WriteLine($"Total LOSS (check from opt variables) = {lossV:F8}");
+                for (var i = 0; i < n; ++i)
+                {
+                    Console.WriteLine($"{names[i]}\t{ww[i]:F8}");
+                }
+
+                var budget = BlasLike.ddot(N, AA, M, ww, 1);
+                Console.WriteLine($"Budget = {budget:F8}");
             }
 
         }
@@ -189,23 +212,28 @@ namespace Portfolio
             hessmull(n, Q, w, Qx);
             return BlasLike.ddotvec(n, w, Qx);
         }
-        public int ActiveOpt()
+        public int ActiveOpt(int lp = 0, double[] www = null)
         {
             var obj = 0.0;
             var iter = 10;
             var c = (double[])alpha.Clone();
             var cextra = new double[n];
             var opt = new ActiveSet.Optimise();
-            opt.h = hessmull;
+            if (lp == 0) opt.h = hessmull;
             if (bench != null)
             {
                 hessmull(n, 0, 0, 0, Q, bench, cextra);
                 BlasLike.dnegvec(n, cextra);
             }
             BlasLike.daxpyvec(n, -gamma / (1 - gamma), c, cextra);
-            w = new double[n];
-            BlasLike.dsetvec(n, 1.0 / n, w);
-            var back = opt.QPopt(n, m, w, L, U, A, cextra, Q, ref obj, ref iter);
+            if (www == null)
+            {
+                w = new double[n];
+                BlasLike.dsetvec(n, 1.0 / n, w);
+            }
+            else
+                w = www;
+            var back = opt.QPopt(n, m, w, L, U, A, cextra, Q, ref obj, ref iter, lp);
             Console.WriteLine($"objective:\t\t{obj}; {iter} iterations");
             return back;
         }
