@@ -63,15 +63,15 @@ can be shown to be concave if $C\ge1$). Note that because total return is $G-L+R
 The portfolio problem we wish to solve is to maximise $G$-$C L$ over portfolio weights $w_i$ for unit wealth.
 This is the same as minimising the utility $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T;\lambda , R)$\footnote{The multiplier $\lambda$ for the loss term in $U$ corresponds to $\frac{1}{T}(C-1)$ in $G$-$CL$} because $R$ and $T$ are constant.
 \begin{align*}
-    {\rm Minimise}\ & U(w_1,w_2,...w_n,t_1,t_2,...t_T;\lambda ,R)=\quad\cr \quad  & -\sum_i \alpha_i w_i + \lambda \left( \sum_{t_j\ \in\ \rm loss\ periods}( R-\sum_i w_i s_i(t_j) )\right)\cr
+    {\rm Minimise}\ & U(w_1,w_2,...w_n,t_1,t_2,...t_T;\lambda ,R)=\quad\cr \quad  & -\sum_i \alpha_i w_i + \lambda \left( \sum_{t_j (w)\ \in\ \rm loss\ periods}( R-\sum_i w_i s_i(t_j (w)) )\right)\cr
     {\rm Subject\ to}\cr & \sum_i w_i  = 1
 \end{align*}
 The
 loss periods depend on the portfolio weights, therefore $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T)$ is a non-linear function of portfolio weights.
 \section{Embed the Portfolio Optimisation into a Linear Program}
 The loss part of our utility function $U(w_1,w_2,$ $...w_n,t_1,t_2,...t_T)$ is made up of $T$ time intervals. Some of these
-are loss periods, the others are gain periods and we have a variable $t_j$ for each time interval. If each loss period in $U$ had $t_j = {\rm loss}$ and each gain period had
-$t_j=0$, we would have that the total loss is given by the sum of these variables $\Sigma_j t_j$. The problem is that at each step in the optimisation,
+are loss periods, the others are gain periods and we have a variable $t_j$ for each time interval. If each loss period had $t_j = {\rm loss}$ in period $j$ and each gain period had
+$t_j=0$, we would have that the total loss is given by the sum of these variables, $\Sigma_j t_j$. The problem is that at each step in the optimisation,
 we don't know which periods have losses and which have gains. To overcome this we set up a linear relaxation, which puts constraints on the $t_j$ to make those in a gain period optimise to zero.
 For this to work, the $t_j$ must satisfy
 linking constraints to make $\sum s_i( t_j )w_i +t_j \ge R$. For a loss period this expresses that $t_j \ge$ period loss and for a gain period
@@ -91,5 +91,5 @@ The relaxed linear program is (we denote the optimisation variables by $x_i$);
     & R\ \le\sum_{i=0}^{n-1} x_i A_{ij} + x_j  &n\le j < n+T\cr
     & A_{ij} = s_i(t_j )\cr
 \end{align*}
-The optimal value of $\sum_{i=0}^{n-1} w_i A_{ij} + w_j$ (total return for period $j$ plus its loss or gain) will take its lowest allowed value, $R$ in a loss period or $(R+{\rm gain})$ in a gain period.
+The optimal value of $\sum_{i=0}^{n-1} x_i A_{ij} + x_j$ (total return for period $j$ plus its loss or gain) will take its lowest allowed value, $R$ in a loss period or $(R+{\rm gain})$ in a gain period.
 \end{document}
