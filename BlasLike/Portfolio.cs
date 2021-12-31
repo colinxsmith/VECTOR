@@ -45,6 +45,14 @@ namespace Portfolio
             double[] UU = new double[N + M];
             double[] AA = new double[N * M];
             double[] bb = new double[M];
+            if (!useIP)
+            {
+                Q = new double[N * (N + 1) / 2];
+                for (int i = 0, ij = 0; i < N; ++i, ij += i)
+                {
+                    Q[ij + i] = 1e-5;
+                }
+            }
 
 
             double[] alpha = new double[n];
@@ -54,7 +62,8 @@ namespace Portfolio
             }
             double maxret = BlasLike.lm_max, minret = 0.0;
             if (!useIP) BlasLike.dxminmax(n, alpha, 0, ref maxret, ref minret);
-            maxret *= 1000.0;
+            maxret *= N;
+            maxret += R;
             BlasLike.dsccopyvec(n, -1, alpha, cc);
             BlasLike.dsetvec(tlen, lambda, cc, n);
 
@@ -104,14 +113,18 @@ namespace Portfolio
                 {
                     Console.WriteLine($"{names[i]}\t{ww[i]:F8}");
                 }
-                var budget = BlasLike.ddot(N, AA, M, ww, 1);
-                Console.WriteLine($"Budget = {budget:F8}");
+                for (var i = 0; i < M; ++i)
+                {
+                    var constraint = BlasLike.ddot(N, AA, M, ww, 1, i);
+                    if (i == 0) Console.WriteLine($"Constraint {i} = {constraint:F8}");
+                    else Console.WriteLine($"Constraint {i} = {constraint:F8} G/L var {ww[n + i - 1]:F8}");
+                }
             }
             else
             {
                 BlasLike.dsetvec(n, 1.0 / n, ww);
-                BlasLike.dsetvec(tlen, 1, ww, n);
-                var back = ActiveOpt(1, ww);
+                BlasLike.dsetvec(tlen, maxret / n, ww, n);
+                var back = ActiveOpt(0, ww);
                 var gain = 0.0;
                 var loss = 0.0;
                 for (var i = 0; i < tlen; ++i)
@@ -128,9 +141,12 @@ namespace Portfolio
                 {
                     Console.WriteLine($"{names[i]}\t{ww[i]:F8}");
                 }
-
-                var budget = BlasLike.ddot(N, AA, M, ww, 1);
-                Console.WriteLine($"Budget = {budget:F8}");
+                for (var i = 0; i < M; ++i)
+                {
+                    var constraint = BlasLike.ddot(N, AA, M, ww, 1, i);
+                    if (i == 0) Console.WriteLine($"Constraint {i} = {constraint:F8}");
+                    else Console.WriteLine($"Constraint {i} = {constraint:F8}  {UU[N + i]} G/L var {ww[n + i - 1]:F8}  {UU[n + i - 1]}");
+                }
             }
 
         }
