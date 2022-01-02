@@ -1135,21 +1135,30 @@ namespace UseBlas
                 Console.WriteLine("GAIN/LOSS");
                 Portfolio.Portfolio opt = new Portfolio.Portfolio("");
                 double[] DATA;
+                double lambda, R;
                 string[] names;
                 int n, tlen;
                 using (var GainLossData = new DataFile.InputSomeData())
                 {
-                    GainLossData.doubleFields = "DATA";
+                    GainLossData.doubleFields = "DATA lambda R";
                     GainLossData.intFields = "n tlen";
                     GainLossData.stringFields = "names";
-                    GainLossData.Read("C:\\Users\\colin\\safeqp64\\METIN\\GLconstrained.log");
+                    try
+                    {
+                        GainLossData.Read("./GL");
+                    }
+                    catch{
+                        GainLossData.Read("../GL");
+                    }
                     DATA = GainLossData.mapDouble["DATA"];
                     names = GainLossData.mapString["names"];
                     n = GainLossData.mapInt["n"][0];
+                    lambda = GainLossData.mapDouble["lambda"][0];
+                    R = GainLossData.mapDouble["R"][0];
                     tlen = GainLossData.mapInt["tlen"][0];
                 }
                 bool useIP = false;
-                opt.GainLossSetUp(n, tlen, DATA,names, 1e-2, 1e3, useIP);
+                opt.GainLossSetUp(n, tlen, DATA, names, R, lambda, useIP);
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
