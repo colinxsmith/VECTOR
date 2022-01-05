@@ -50,7 +50,7 @@ namespace Portfolio
                 Q = new double[N * (N + 1) / 2];
                 for (int i = 0, ij = 0; i < N; ++i, ij += i)
                 {
-                    Q[ij + i] = 1e-5;
+                    Q[ij + i] = 0;
                 }
             }
 
@@ -60,12 +60,14 @@ namespace Portfolio
             {
                 alpha[i] = BlasLike.dsumvec(tlen, DATA, i * tlen) / tlen;
             }
-            double maxret = BlasLike.lm_max, minret = 0.0;
-            if (!useIP) BlasLike.dxminmax(n, alpha, 0, ref maxret, ref minret);
-            maxret *= N;
-            maxret += R;
+            double maxret = BlasLike.lm_max;
+            if (!useIP)
+            {
+                maxret = InteriorPoint.Optimise.lInfinity(DATA);
+                maxret = Math.Max(maxret, R);
+            }
             BlasLike.dsccopyvec(n, -1, alpha, cc);
-            BlasLike.dsetvec(tlen, lambda, cc, n);
+            BlasLike.dsetvec(tlen, lambda/tlen, cc, n);
 
             BlasLike.dzerovec(n, LL);
             BlasLike.dzerovec(tlen, LL, n);
@@ -123,7 +125,7 @@ namespace Portfolio
             else
             {
                 BlasLike.dsetvec(n, 1.0 / n, ww);
-                BlasLike.dsetvec(tlen, maxret / n, ww, n);
+                BlasLike.dsetvec(tlen, 1.0 / tlen, ww, n);
                 var back = ActiveOpt(0, ww);
                 var gain = 0.0;
                 var loss = 0.0;

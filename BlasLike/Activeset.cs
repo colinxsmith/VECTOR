@@ -4143,13 +4143,14 @@ namespace ActiveSet
             (4)	the vector  g(fixed).
                 use the array  rlam  as temporary work space.
             */
-            ncolr = dqpcrsh(n, ncolz, nfree, ref nhess,
+            int nhess_conv = nhess;
+            ncolr = dqpcrsh(n, ncolz, nfree, ref nhess_conv,
                 nq, nrowh, ncolh, NROWRT, ref hsize,
                 LWRK);
-            dqpgrad(1, n, nactiv, nfree, ref nhess, nq,
+            dqpgrad(1, n, nactiv, nfree, ref nhess_conv, nq,
                 nrowh, ncolh, jadd, alfa, ref objqp, ref gfixed,
                 gtp, RLAM);
-
+            nhess = nhess_conv;
 
             /*
             during the main loop, one of three things will happen
@@ -4384,18 +4385,19 @@ namespace ActiveSet
                     tiny multipliers. use the array	 rlam  as temporary storage
                     */
 
-                    if (dqpgrad(2, n, nactiv, nfree, ref nhess, nq,
+                    if (dqpgrad(2, n, nactiv, nfree, ref nhess_conv, nq,
                         nrowh, ncolh, jadd, alfa, ref objqp, ref
                         gfixed, gtp,
                            RLAM) < -BlasLike.lm_eps)
                     {
-
+                        nhess = nhess_conv;
                         /*weak local minimum*/
                         //		AddLog("PLACE 2\n");
                         i = 1;
                         break;
                     }
 
+                    nhess = nhess_conv;
                     /*
                     change	x  to  x + alfa*p.  update  ax	also
                     we no longer need to remember jdsave, the last constraint deleted
@@ -4465,9 +4467,10 @@ namespace ActiveSet
                     if (orthog == 0)
                     {
 
-                        dqpgrad(3, n, nactiv, nfree, ref nhess, nq,
+                        dqpgrad(3, n, nactiv, nfree, ref nhess_conv, nq,
                             nrowh, ncolh, jadd, alfa, ref objqp,
                             ref QTG[nfree], gtp, PX);
+                        nhess = nhess_conv;
                     }
                 }
                 else
@@ -4867,7 +4870,7 @@ namespace ActiveSet
             the rotations used to update  r  when the constraint was added to
             the working set
             */
-            rdlast = RT[ncolr+ncolr * rt_dim1 - rt_offset];
+            rdlast = RT[ncolr + ncolr * rt_dim1 - rt_offset];
             s = Math.Abs(snlast);
             rdsq = (cslast - s) * rdlast * ((cslast + s) * rdlast);
             goto L120;
@@ -5089,7 +5092,7 @@ namespace ActiveSet
             objective = obj;
             return back;
         }
-        public short QPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] QQ, ref double objective, ref int iter,int lp=0)
+        public short QPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] QQ, ref double objective, ref int iter, int lp = 0)
         {
             var opt = this;
             if (opt.h == null) opt.h = opt.qphess1;
