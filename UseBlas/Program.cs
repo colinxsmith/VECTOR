@@ -1147,7 +1147,8 @@ namespace UseBlas
                     {
                         GainLossData.Read("./GL");
                     }
-                    catch{
+                    catch
+                    {
                         GainLossData.Read("../GL");
                     }
                     DATA = GainLossData.mapDouble["DATA"];
@@ -1157,7 +1158,7 @@ namespace UseBlas
                     R = GainLossData.mapDouble["R"][0];
                     tlen = GainLossData.mapInt["tlen"][0];
                 }
-                bool useIP = false;
+                bool useIP = true;
                 opt.GainLossSetUp(n, tlen, DATA, names, R, lambda, useIP);
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);

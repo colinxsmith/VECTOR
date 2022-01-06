@@ -1803,7 +1803,7 @@ namespace ActiveSet
                 }
 
                 /*COPY THE INCOMING COLUMN OF A INTO THE END OF  T. */
-                if (UNITQ)
+                if (!UNITQ)
                 {
                     for (ka = 1; ka <= nactiv; ++ka)
                     {

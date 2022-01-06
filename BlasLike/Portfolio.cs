@@ -39,18 +39,19 @@ namespace Portfolio
             var m = 1;
             var N = n + tlen;
             var M = m + tlen;
+            var activeLp = 0;
             double[] ww = new double[n + tlen];
             double[] cc = new double[N];
             double[] LL = new double[N + M];
             double[] UU = new double[N + M];
             double[] AA = new double[N * M];
             double[] bb = new double[M];
-            if (!useIP)
+            if ((activeLp == 0))
             {
                 Q = new double[N * (N + 1) / 2];
-                for (int i = 0, ij = 0; i < N; ++i, ij += i)
+                for (int i = 0, ij = 0; i < n; ++i, ij += i)
                 {
-                    Q[ij + i] = 0;
+                    Q[ij + i] = BlasLike.lm_rooteps;
                 }
             }
 
@@ -67,7 +68,7 @@ namespace Portfolio
                 maxret = Math.Max(maxret, R);
             }
             BlasLike.dsccopyvec(n, -1, alpha, cc);
-            BlasLike.dsetvec(tlen, lambda/tlen, cc, n);
+            BlasLike.dsetvec(tlen, lambda / tlen, cc, n);
 
             BlasLike.dzerovec(n, LL);
             BlasLike.dzerovec(tlen, LL, n);
@@ -98,7 +99,7 @@ namespace Portfolio
             this.alpha = cc;
             if (useIP)
             {
-                var back = InteriorOpt(1e-12, ww);
+                var back = InteriorOpt(5e-11, ww);
                 var loss = 0.0;
                 var gain = 0.0;
                 for (var i = 0; i < tlen; ++i)
@@ -126,7 +127,7 @@ namespace Portfolio
             {
                 BlasLike.dsetvec(n, 1.0 / n, ww);
                 BlasLike.dsetvec(tlen, 1.0 / tlen, ww, n);
-                var back = ActiveOpt(0, ww);
+                var back = ActiveOpt(activeLp, ww);
                 var gain = 0.0;
                 var loss = 0.0;
                 for (var i = 0; i < tlen; ++i)
@@ -377,7 +378,8 @@ namespace Portfolio
             w = new double[n];
             BlasLike.dsetvec(n, 1.0 / n, w);
             var HH = new double[n * (n + 1) / 2];
-            if (Q != null) Factorise.Fac2Cov(n, (int)(Q.Length / n) - 1, Q, HH);
+            if (Q != null && Q.Length == (n * (n + 1) / 2)) HH = Q;
+            else if (Q != null) Factorise.Fac2Cov(n, (int)(Q.Length / n) - 1, Q, HH);
             var ww = (double[])w.Clone();
             Array.Resize(ref ww, slacklarge + n + totalConstraintslack);
             // First do a homogenous LP do decide if the problem is feasible.
@@ -389,6 +391,7 @@ namespace Portfolio
             IOPT.bases = slacklarge;
             IOPT.basem = m;
             IOPT.conv = conv;
+            IOPT.compConv = Math.Max(conv, IOPT.compConv);
             IOPT.slacklargeConstraintToStock = slacklargeConstraint;
             IOPT.slackToConstraintBOTH = slackToConstraintBOTH;
             IOPT.slackToConstraintL = slackToConstraintL;
