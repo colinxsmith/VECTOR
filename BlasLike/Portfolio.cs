@@ -119,7 +119,7 @@ namespace Portfolio
                 for (var i = 0; i < M; ++i)
                 {
                     var constraint = BlasLike.ddot(N, AA, M, ww, 1, i);
-                    if (i == 0) Console.WriteLine($"Constraint {i} = {constraint:F8}");
+                    if (i < m) Console.WriteLine($"Constraint {i} = {constraint:F8}");
                     else Console.WriteLine($"Constraint {i} = {constraint:F8} G/L var {ww[n + i - 1]:F8}");
                 }
             }
@@ -147,7 +147,7 @@ namespace Portfolio
                 for (var i = 0; i < M; ++i)
                 {
                     var constraint = BlasLike.ddot(N, AA, M, ww, 1, i);
-                    if (i == 0) Console.WriteLine($"Constraint {i} = {constraint:F8}");
+                    if (i < m) Console.WriteLine($"Constraint {i} = {constraint:F8}");
                     else Console.WriteLine($"Constraint {i} = {constraint:F8}  {UU[N + i]} G/L var {ww[n + i - 1]:F8}  {UU[n + i - 1]}");
                 }
             }
