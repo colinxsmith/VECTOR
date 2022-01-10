@@ -51,7 +51,7 @@ namespace Portfolio
                 Q = new double[N * (N + 1) / 2];
                 for (int i = 0, ij = 0; i < n; ++i, ij += i)
                 {
-                    Q[ij + i] = BlasLike.lm_rooteps;
+                    Q[ij + i] = 0;
                 }
             }
 
