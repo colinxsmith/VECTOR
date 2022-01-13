@@ -36,9 +36,15 @@ namespace Portfolio
         }
         public void BuySellSetup(int n, int m, double[] A, double[] L, double[] U, double[] c, double[] Q, double[] initial, string[] names, bool useIP = true)
         {
-            var delta = 0.9;
+            var delta = 0.98;
+            var twoside = true; //twoside = false means treat sell side only
             var N = n + n;
             var M = m + n + (delta < 1.0 ? 1 : 0);
+            if (twoside)
+            {
+                N += n;
+                M += n;
+            }
             var CC = new double[N];
             var AA = new double[N * M];
             var LL = new double[N + M];
@@ -49,6 +55,11 @@ namespace Portfolio
             BlasLike.dcopyvec(n, U, UU);
             BlasLike.dsetvec(n, 0, LL, n);
             BlasLike.dsetvec(n, BlasLike.lm_max, UU, n);
+            if (twoside)
+            {
+                BlasLike.dsetvec(n, 0, LL, n + n);
+                BlasLike.dsetvec(n, BlasLike.lm_max, UU, n + n);
+            }
             //Constraints
             BlasLike.dcopyvec(m, L, LL, n, N);
             BlasLike.dcopyvec(m, U, UU, n, N);
@@ -56,19 +67,34 @@ namespace Portfolio
             {
                 BlasLike.dcopy(n, A, m, AA, M, i, i);
             }
-            BlasLike.dcopyvec(n, initial, LL, 0, N + m);
+            BlasLike.dsccopyvec(n, 1.0, initial, LL, 0, N + m);
             BlasLike.dsetvec(n, BlasLike.lm_max, UU, N + m);
             for (var i = m; i < m + n; ++i)
             {
                 BlasLike.dset(1, 1.0, AA, M, i + M * (i - m));
                 BlasLike.dset(1, 1.0, AA, M, i + M * (n + i - m));
             }
-            BlasLike.dsccopyvec(n, -1, c, CC);
+            if (twoside)
+            {
+                BlasLike.dsccopyvec(n, 1.0, initial, UU, 0, N + m + n);
+                BlasLike.dsetvec(n, -BlasLike.lm_max, LL, N + m + n);
+                for (var i = m + n; i < m + n + n; ++i)
+                {
+                    BlasLike.dset(1, 1.0, AA, M, i + M * (i - m - n));
+                    BlasLike.dset(1, -1.0, AA, M, i + M * (n + n + i - m - n));
+                }
+            }
+            BlasLike.dsccopyvec(n, 1, c, CC);
             if (delta < 1.0)
             {
-                BlasLike.dset(n, 1.0, AA, M, n + m + M * n);
+                if (!twoside) BlasLike.dset(n, 1.0, AA, M, n + m + M * n);
                 LL[N + M - 1] = 0;
                 UU[N + M - 1] = delta;
+                if (twoside)
+                {
+                    BlasLike.dset(n + n, 1.0, AA, M, n + n + m + M * n);
+                    UU[N + M - 1] = delta * 2;
+                }
             }
             this.L = LL;
             this.U = UU;
@@ -78,15 +104,25 @@ namespace Portfolio
             this.gamma = 0.5;
             BlasLike.dnegvec(CC.Length, CC);
             BlasLike.dsetvec(n, 0, CC, n);
+            if (twoside) BlasLike.dsetvec(n, 0, CC, n + n);
             this.alpha = CC;
             var back = InteriorOpt(1e-10, WW);
             var turnover = 0.0;
             for (var i = 0; i < n; ++i)
             {
                 turnover += Math.Abs(WW[i] - initial[i]);
-                var c1 = BlasLike.ddot(N, AA, M, WW, 1, i + 1) - initial[i];
-                if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t {(WW[i] - initial[i]):F8} {WW[i + n]:F8} {c1:F8} {initial[i]:F8}");
-                else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]):F8} {WW[i + n]:F8} {c1:F8} {initial[i]:F8}");
+                var c1 = BlasLike.ddot(N, AA, M, WW, 1, i + m);
+                if (twoside)
+                {
+                    var c2 = BlasLike.ddot(N, AA, M, WW, 1, n + i + m);
+                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {c1:F8} {WW[i + n + n]:F8} {c2:F8} {initial[i]:F8}");
+                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {c1:F8} {WW[i + n + n]:F8} {c2:F8} {initial[i]:F8}");
+                }
+                else
+                {
+                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {c1:F8}  {initial[i]:F8}");
+                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {c1:F8}  {initial[i]:F8}");
+                }
             }
             Console.WriteLine($"Turnover: {turnover * 0.5}");
         }
