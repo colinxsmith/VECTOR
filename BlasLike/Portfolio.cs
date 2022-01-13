@@ -34,6 +34,62 @@ namespace Portfolio
                     if (names != null) Array.Resize(ref names, n);
                 }
         }
+        public void BuySellSetup(int n, int m, double[] A, double[] L, double[] U, double[] c, double[] Q, double[] initial, string[] names, bool useIP = true)
+        {
+            var delta = 0.9;
+            var N = n + n;
+            var M = m + n + (delta < 1.0 ? 1 : 0);
+            var CC = new double[N];
+            var AA = new double[N * M];
+            var LL = new double[N + M];
+            var UU = new double[N + M];
+            var WW = new double[N];
+            //Variables
+            BlasLike.dcopyvec(n, L, LL);
+            BlasLike.dcopyvec(n, U, UU);
+            BlasLike.dsetvec(n, 0, LL, n);
+            BlasLike.dsetvec(n, BlasLike.lm_max, UU, n);
+            //Constraints
+            BlasLike.dcopyvec(m, L, LL, n, N);
+            BlasLike.dcopyvec(m, U, UU, n, N);
+            for (var i = 0; i < m; i++)
+            {
+                BlasLike.dcopy(n, A, m, AA, M, i, i);
+            }
+            BlasLike.dcopyvec(n, initial, LL, 0, N + m);
+            BlasLike.dsetvec(n, BlasLike.lm_max, UU, N + m);
+            for (var i = m; i < m + n; ++i)
+            {
+                BlasLike.dset(1, 1.0, AA, M, i + M * (i - m));
+                BlasLike.dset(1, 1.0, AA, M, i + M * (n + i - m));
+            }
+            BlasLike.dsccopyvec(n, -1, c, CC);
+            if (delta < 1.0)
+            {
+                BlasLike.dset(n, 1.0, AA, M, n + m + M * n);
+                LL[N + M - 1] = 0;
+                UU[N + M - 1] = delta;
+            }
+            this.L = LL;
+            this.U = UU;
+            this.A = AA;
+            this.n = N;
+            this.m = M;
+            this.gamma = 0.5;
+            BlasLike.dnegvec(CC.Length, CC);
+            BlasLike.dsetvec(n, 0, CC, n);
+            this.alpha = CC;
+            var back = InteriorOpt(1e-10, WW);
+            var turnover = 0.0;
+            for (var i = 0; i < n; ++i)
+            {
+                turnover += Math.Abs(WW[i] - initial[i]);
+                var c1 = BlasLike.ddot(N, AA, M, WW, 1, i + 1) - initial[i];
+                if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t {(WW[i] - initial[i]):F8} {WW[i + n]:F8} {c1:F8} {initial[i]:F8}");
+                else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]):F8} {WW[i + n]:F8} {c1:F8} {initial[i]:F8}");
+            }
+            Console.WriteLine($"Turnover: {turnover * 0.5}");
+        }
         public void GainLossSetUp(int n, int tlen, double[] DATA, string[] names, double R, double lambda, bool useIP = true)
         {
             var m = 1;
@@ -82,7 +138,7 @@ namespace Portfolio
 
             for (var i = 0; i < m; ++i)
             {
-                BlasLike.dset(n, 1, AA, M);
+                BlasLike.dset(n, 1, AA, M, i);
             }
             for (var i = m; i < M; ++i)
             {
@@ -97,6 +153,9 @@ namespace Portfolio
             this.gamma = 0.5;
             BlasLike.dnegvec(cc.Length, cc);
             this.alpha = cc;
+            double alphamax = 0, alphamin = 0;
+            BlasLike.dxminmax(this.alpha.Length, this.alpha, 1, ref alphamax, ref alphamin);
+            Console.WriteLine($"c range ({alphamax},{alphamin}) ratio {(alphamin / alphamax):E8}");
             if (useIP)
             {
                 var back = InteriorOpt(5e-11, ww);
@@ -435,19 +494,20 @@ namespace Portfolio
         public FPortfolio(string file) : base(file)
         {
             inFile = file;
-            using (var OptData = new DataFile.InputSomeData())
-            {
-                OptData.intFields = "n m nfac";
-                OptData.doubleFields = "delta kappa gamma alpha Q L U A buy sell initial bench FC FL SV";
-                OptData.stringFields = "names";
-                OptData.Read(inFile);
-                nfac = OptData.mapInt["nfac"][0];
-                FC = OptData.mapDouble["FC"];
-                FL = OptData.mapDouble["FL"];
-                SV = OptData.mapDouble["SV"];
-                names = OptData.mapString["names"];
-                if (names != null) Array.Resize(ref names, n);
-            }
+            if (inFile != "")
+                using (var OptData = new DataFile.InputSomeData())
+                {
+                    OptData.intFields = "n m nfac";
+                    OptData.doubleFields = "delta kappa gamma alpha Q L U A buy sell initial bench FC FL SV";
+                    OptData.stringFields = "names";
+                    OptData.Read(inFile);
+                    nfac = OptData.mapInt["nfac"][0];
+                    FC = OptData.mapDouble["FC"];
+                    FL = OptData.mapDouble["FL"];
+                    SV = OptData.mapDouble["SV"];
+                    names = OptData.mapString["names"];
+                    if (names != null) Array.Resize(ref names, n);
+                }
         }
         public override void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
         {

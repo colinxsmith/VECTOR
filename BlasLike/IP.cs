@@ -751,12 +751,13 @@ namespace InteriorPoint
         }
         void adaptedResiduals(double[] rp, double[] rd, double[] rm, double delta, double[] rpnew, double[] rdnew, double[] rmnew)
         {
+            //Try to use approximate residuals when step length is small
             var rpr = lInfinity(rp);
             var rdr = lInfinity(rd);
             var rmr = lInfinity(rm);
-            if(rpr==0)rpr=1;
-            if(rdr==0)rdr=1;
-            if(rmr==0)rmr=1;
+            if (rpr == 0) rpr = 1;
+            if (rdr == 0) rdr = 1;
+            if (rmr == 0) rmr = 1;
             BlasLike.dscalvec(rp.Length, -delta, rpnew);
             BlasLike.dscalvec(rd.Length, -delta, rdnew);
             BlasLike.dscalvec(rm.Length, -delta, rmnew);
@@ -768,20 +769,13 @@ namespace InteriorPoint
         {
             if (optMode == "QP")
             {
-                var rpn = (double[])rp.Clone();
-                var rdn = (double[])rd.Clone();
-                var rmn = (double[])rmu.Clone();
-                if (alpha1 < 1e-2 && alpha2 < 1e-2 && innerIteration < 10)
-                {
-                    adaptedResiduals(rp, rd, rmu, 5e-1, rpn, rdn, rmn);
-                }
                 var g1 = 1.0 - gamma;
                 if (!corrector)
                 {
                     if (m != 1) badindex = Factorise.Factor(uplo, m, M, order);
-                    for (var i = 0; i < n; ++i) w1[i] = rdn[i] * g1 - aob(rmn[i] - g1 * mu, x[i]);
+                    for (var i = 0; i < n; ++i) w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu, x[i]);
                 }
-                else for (var i = 0; i < n; ++i) w1[i] = rdn[i] * g1 - aob(rmn[i] - g1 * mu - dx0[i] * dz0[i], x[i]);
+                else for (var i = 0; i < n; ++i) w1[i] = rd[i] * g1 - aob(rmu[i] - g1 * mu - dx0[i] * dz0[i], x[i]);
                 if (usrH)
                 {
                     Factorise.Solve(uplo, nh, 1, HCOPY, horder, w1, nh);
@@ -793,7 +787,7 @@ namespace InteriorPoint
                 else for (int i = 0; i < n; ++i) w1[i] *= aob(x[i], z[i]);
                 AmultSparse(w1, dy);
 
-                BlasLike.daxpyvec(m, g1, rpn, dy);
+                BlasLike.daxpyvec(m, g1, rp, dy);
                 if (m == 1) dy[0] /= M[0];
                 else Factorise.Solve(uplo, m, 1, M, order, dy, m);
                 if (homogenous)
@@ -1342,11 +1336,22 @@ namespace InteriorPoint
                 {
                     diags[i] = M[i * (i + 3) / 2];
                 }
-                Ordering.Order.getorder(m, diags, order, null, 0, 1);
-                int o1 = Math.Max(order[0], order[1]), o2 = Math.Min(order[0], order[1]);
-                double a1 = Math.Max(diags[o1], diags[o2]), a2 = Math.Min(diags[o2], diags[o1]), a12 = M[o1 * (o1 + 1) / 2 + o2];
-                condition = a1 * (a1 - a12 * a12 / a2);//cond is a quick estimate of condition number using only 2 pivots.
-                regularise = a1 * BlasLike.lm_eps;
+                try
+                {
+                    Ordering.Order.getorder(m, diags, order, null, 0.0, 1);
+                    int o1 = Math.Max(order[0], order[1]), o2 = Math.Min(order[0], order[1]);
+                    double a1 = Math.Max(diags[o1], diags[o2]), a2 = Math.Min(diags[o2], diags[o1]), a12 = M[o1 * (o1 + 1) / 2 + o2];
+                    condition = a1 * (a1 - a12 * a12 / a2);//cond is a quick estimate of condition number using only 2 pivots.
+                    regularise = a1 * BlasLike.lm_eps;
+                }
+                catch
+                {
+                    double a1 = 0, a2 = 0;
+                    BlasLike.dxminmax(m, M, 1, ref a1, ref a2);
+                    condition = a1 / a2;
+                    regularise = a1 / a2 * BlasLike.lm_eps;
+
+                }
             }
             else
             {

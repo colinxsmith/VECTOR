@@ -1161,6 +1161,41 @@ namespace UseBlas
                 bool useIP = true;
                 opt.GainLossSetUp(n, tlen, DATA, names, R, lambda, useIP);
             }
+            {
+                Console.WriteLine("BUY/SELL");
+                Portfolio.FPortfolio opt = new FPortfolio("");
+                double[] SV = null, FC = null, FL = null, L = null, U = null, alpha = null, initial = null, A = null;
+                int n, nfac, m;
+                string[] names;
+
+                using (var buysell = new DataFile.InputSomeData())
+                {
+                    buysell.doubleFields = "SV FC FL L U alpha initial A";
+                    buysell.intFields = "n nfac m";
+                    buysell.stringFields = "names";
+                    try
+                    {
+                        buysell.Read("./costlog");
+                    }
+                    catch
+                    {
+                        buysell.Read("../costlog");
+                    }
+                    SV = buysell.mapDouble["SV"];
+                    FC = buysell.mapDouble["FC"];
+                    FL = buysell.mapDouble["FL"];
+                    L = buysell.mapDouble["L"];
+                    U = buysell.mapDouble["U"];
+                    alpha = buysell.mapDouble["alpha"];
+                    initial = buysell.mapDouble["initial"];
+                    A = buysell.mapDouble["A"];
+                    n = buysell.mapInt["n"][0];
+                    m = buysell.mapInt["m"][0];
+                    nfac = buysell.mapInt["nfac"][0];
+                    names = buysell.mapString["names"];
+                    opt.BuySellSetup(n, m, A, L, U, alpha, null, initial, names);
+                }
+            }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows) //Show how to read and write to Windows registry
             {
