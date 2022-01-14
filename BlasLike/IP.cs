@@ -1339,7 +1339,7 @@ namespace InteriorPoint
                 try
                 {
                     Ordering.Order.getorder(m, diags, order, null, 0.0, 1);
-                    int o1 = Math.Max(order[0], order[1]), o2 = Math.Min(order[0], order[1]);
+                    int o1 = Math.Max(order[0], order[m-1]), o2 = Math.Min(order[0], order[m-1]);
                     double a1 = Math.Max(diags[o1], diags[o2]), a2 = Math.Min(diags[o2], diags[o1]), a12 = M[o1 * (o1 + 1) / 2 + o2];
                     condition = a1 * (a1 - a12 * a12 / a2);//cond is a quick estimate of condition number using only 2 pivots.
                     regularise = a1 * BlasLike.lm_eps;
@@ -1347,10 +1347,9 @@ namespace InteriorPoint
                 catch
                 {
                     double a1 = 0, a2 = 0;
-                    BlasLike.dxminmax(m, M, 1, ref a1, ref a2);
+                    BlasLike.dxminmax(m, diags, 1, ref a1, ref a2);
                     condition = a1 / a2;
-                    regularise = a1 / a2 * BlasLike.lm_eps;
-
+                    regularise = a1  * BlasLike.lm_eps;
                 }
             }
             else

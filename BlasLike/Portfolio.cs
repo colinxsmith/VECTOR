@@ -87,13 +87,16 @@ namespace Portfolio
             BlasLike.dsccopyvec(n, 1, c, CC);
             if (delta < 1.0)
             {
-                if (!twoside) BlasLike.dset(n, 1.0, AA, M, n + m + M * n);
                 LL[N + M - 1] = 0;
-                UU[N + M - 1] = delta;
                 if (twoside)
                 {
                     BlasLike.dset(n + n, 1.0, AA, M, n + n + m + M * n);
                     UU[N + M - 1] = delta * 2;
+                }
+                else
+                {
+                    BlasLike.dset(n, 1.0, AA, M, n + m + M * n);
+                    UU[N + M - 1] = delta;
                 }
             }
             this.L = LL;
@@ -102,7 +105,6 @@ namespace Portfolio
             this.n = N;
             this.m = M;
             this.gamma = 0.5;
-            BlasLike.dnegvec(CC.Length, CC);
             BlasLike.dsetvec(n, 0, CC, n);
             if (twoside) BlasLike.dsetvec(n, 0, CC, n + n);
             this.alpha = CC;
