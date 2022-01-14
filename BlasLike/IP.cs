@@ -1346,6 +1346,7 @@ namespace InteriorPoint
                 }
                 catch
                 {
+                    Console.WriteLine("######################################### Fix-up for getorder exception in condition estimate ###################################");
                     double a1 = 0, a2 = 0;
                     BlasLike.dxminmax(m, diags, 1, ref a1, ref a2);
                     condition = a1 / a2;

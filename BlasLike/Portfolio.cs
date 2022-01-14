@@ -34,7 +34,7 @@ namespace Portfolio
                     if (names != null) Array.Resize(ref names, n);
                 }
         }
-        public void BuySellSetup(int n, int m, double[] A, double[] L, double[] U, double[] c, double[] Q, double[] initial, string[] names, bool useIP = true)
+        public void BuySellSetup(int n, int m, int nfac, double[] A, double[] L, double[] U, double[] c, double[] initial, string[] names, bool useIP = true)
         {
             var delta = 0.98;
             var twoside = true; //twoside = false means treat sell side only
@@ -561,9 +561,10 @@ namespace Portfolio
         public double[] FC = null;
         public override int makeQ()
         {
-            var nn = (nfac + 1) * n;
+            var ntrue = SV.Length;
+            var nn = (nfac + 1) * ntrue;
             Q = new double[nn];
-            return Factorise.FMP(n, nfac, FC, SV, FL, Q);
+            return Factorise.FMP(ntrue, nfac, FC, SV, FL, Q);
         }
     }
 }

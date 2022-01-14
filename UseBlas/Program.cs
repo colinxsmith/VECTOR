@@ -1193,7 +1193,10 @@ namespace UseBlas
                     m = buysell.mapInt["m"][0];
                     nfac = buysell.mapInt["nfac"][0];
                     names = buysell.mapString["names"];
-                    opt.BuySellSetup(n, m, A, L, U, alpha, null, initial, names);
+                    opt.SV=SV;
+                    opt.FL=FL;
+                    opt.FC=FC;
+                    opt.BuySellSetup(n, m, nfac, A, L, U, alpha, initial, names);
                 }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);

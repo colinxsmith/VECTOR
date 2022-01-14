@@ -17,20 +17,22 @@ namespace Ordering
         }
     }
     class compare : IComparer<compareitem>
-    {// I used to think return 0 was correct but got some wrong answers so changed to return 1
+    {
         public int Compare(compareitem x, compareitem y)
         {
             if ((y.x - x.x) > 0 && (y.bad == x.bad)) return 1;//smallest have largest index
+            else if ((y.x - x.x) == 0 && (y.bad == x.bad)) return 0;//Should it be 1 or 0?
             else if ((y.bad == x.bad)) return -1;
             else if (y.bad > 0) return 1;
             else return -1;
         }
     }
     class compareAbs : IComparer<compareitem>
-    {// I used to think return 0 was correct but got some wrong answers so changed to return 1
+    {
         public int Compare(compareitem x, compareitem y)
         {
             if ((Math.Abs(y.x) - Math.Abs(x.x)) > 0 && (y.bad == x.bad)) return 1;//smallest have largest index
+            else if ((Math.Abs(y.x) - Math.Abs(x.x)) == 0 && (y.bad == x.bad)) return 0;//Should it be 1 or 0?
             else if ((y.bad == x.bad)) return -1;
             else if (y.bad > 0) return 1;
             else return -1;
