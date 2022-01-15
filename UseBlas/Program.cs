@@ -1145,7 +1145,7 @@ namespace UseBlas
                     GainLossData.stringFields = "names";
                     try
                     {
-                        GainLossData.Read("./GL");
+                        GainLossData.Read("/home/colin/ISA/GLdist");
                     }
                     catch
                     {
