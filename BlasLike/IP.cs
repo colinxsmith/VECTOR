@@ -39,6 +39,9 @@ namespace InteriorPoint
     public class Optimise
     {
         public double[] baseA = null;
+        double alpha1;
+        double alpha2;
+        int innerIteration;
         public int basen = 0;
         public int basem = 0;
         public int bases = 0;
@@ -746,6 +749,22 @@ namespace InteriorPoint
             }
             Console.WriteLine($"Time in CreateNormalMatrix {clocker() - clock1} m secs");
         }
+        void adaptedResiduals(double[] rp, double[] rd, double[] rm, double delta, double[] rpnew, double[] rdnew, double[] rmnew)
+        {
+            //Try to use approximate residuals when step length is small
+            var rpr = lInfinity(rp);
+            var rdr = lInfinity(rd);
+            var rmr = lInfinity(rm);
+            if (rpr == 0) rpr = 1;
+            if (rdr == 0) rdr = 1;
+            if (rmr == 0) rmr = 1;
+            BlasLike.dscalvec(rp.Length, -delta, rpnew);
+            BlasLike.dscalvec(rd.Length, -delta, rdnew);
+            BlasLike.dscalvec(rm.Length, -delta, rmnew);
+            BlasLike.daddvec(rp.Length, rp, rpnew, rpnew);
+            BlasLike.daddvec(rd.Length, rd, rdnew, rdnew);
+            BlasLike.daddvec(rm.Length, rm, rmnew, rmnew);
+        }
         void SolvePrimaryDual(double gamma = 0.0, bool corrector = false)
         {
             if (optMode == "QP")
@@ -1317,11 +1336,22 @@ namespace InteriorPoint
                 {
                     diags[i] = M[i * (i + 3) / 2];
                 }
-                Ordering.Order.getorder(m, diags, order, null, 0, 1);
-                int o1 = Math.Max(order[0], order[1]), o2 = Math.Min(order[0], order[1]);
-                double a1 = Math.Max(diags[o1], diags[o2]), a2 = Math.Min(diags[o2], diags[o1]), a12 = M[o1 * (o1 + 1) / 2 + o2];
-                condition = a1 * (a1 - a12 * a12 / a2);//cond is a quick estimate of condition number using only 2 pivots.
-                regularise = a1 * BlasLike.lm_eps;
+                try
+                {
+                    Ordering.Order.getorder(m, diags, order, null, 0.0, 1);
+                    int o1 = Math.Max(order[0], order[m-1]), o2 = Math.Min(order[0], order[m-1]);
+                    double a1 = Math.Max(diags[o1], diags[o2]), a2 = Math.Min(diags[o2], diags[o1]), a12 = M[o1 * (o1 + 1) / 2 + o2];
+                    condition = a1 * (a1 - a12 * a12 / a2);//cond is a quick estimate of condition number using only 2 pivots.
+                    regularise = a1 * BlasLike.lm_eps;
+                }
+                catch
+                {
+                    Console.WriteLine("######################################### Fix-up for getorder exception in condition estimate ###################################");
+                    double a1 = 0, a2 = 0;
+                    BlasLike.dxminmax(m, diags, 1, ref a1, ref a2);
+                    condition = a1 / a2;
+                    regularise = a1  * BlasLike.lm_eps;
+                }
             }
             else
             {
@@ -1517,7 +1547,7 @@ namespace InteriorPoint
             var dkappaold = opt.kappa;
             opt.Mu();
             var mu0 = opt.mu;
-            var i = 0;
+            innerIteration = 0;
             var ir = 1;
             var extra = new double[nh];
             if (opt.optMode == "QP")
@@ -1590,8 +1620,8 @@ namespace InteriorPoint
             opt.keep.set(opt.x, opt.y, opt.z, opt.tau, opt.kappa, rp0, rd0, comp0, Math.Max(Math.Max(rp0, rd0), comp0));
             var compnow = comp0;
             var comp1 = comp0;
-            var alpha1 = 0.0;
-            var alpha2 = 0.0;
+            alpha1 = 1.0;
+            alpha2 = 1.0;
             var gamma = 0.0;
             var diff = new double[n];
             var gap = 1.0;
@@ -1617,9 +1647,9 @@ namespace InteriorPoint
                 }
                 if (comp1 < opt.compConv && opt.tau < 1e-5 * opt.kappa) break;
                 if (ir > opt.maxouter) break;
-                if (i > opt.maxinner)
+                if (innerIteration > opt.maxinner)
                 {
-                    ir++; i = 0;
+                    ir++; innerIteration = 0;
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
@@ -1629,7 +1659,7 @@ namespace InteriorPoint
                     rd0 = denomTest(lInfinity(opt.rd));
                     gap0 = denomTest(opt.Gap());
                 };
-                if (i > 2 && opt.optMode == "SOCP")
+                if (innerIteration > 2 && opt.optMode == "SOCP")
                 {
                     BlasLike.dsubvec(n, opt.xbar, opt.zbar, diff);
                     double test = BlasLike.ddotvec(n, diff, diff);
@@ -1700,7 +1730,7 @@ namespace InteriorPoint
                     opt.ConditionEstimate();
                     opt.kappa = opt.mu; //*=  scl / opt.tau;
                     opt.tau = scl;
-                    i = 0; ir++;
+                    innerIteration = 0; ir++;
                     //    opt.conv *= 1.01;
                     rp0 = denomTest(lInfinity(opt.rp));
                     rd0 = denomTest(lInfinity(opt.rd));
@@ -1730,7 +1760,7 @@ namespace InteriorPoint
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
                     opt.kappa /= opt.tau;
                     opt.tau = 1;
-                    ir++; i = 0;
+                    ir++; innerIteration = 0;
                     opt.Mu();
                     mu0 = opt.mu;
                     opt.PrimalResidual();
@@ -1741,7 +1771,7 @@ namespace InteriorPoint
                     rd0 = denomTest(lInfinity(opt.rd));
                     gap0 = denomTest(opt.Gap());
                 }
-                i++;
+                innerIteration++;
             }
             if (opt.copyKept)
             {
@@ -1774,12 +1804,12 @@ namespace InteriorPoint
                 }
             }
 
-            if (i >= opt.maxinner || ir >= opt.maxouter) return -100;
+            if (innerIteration >= opt.maxinner || ir >= opt.maxouter) return -100;
             else if (opt.homogenous && infease) return 6;
             else
             {
                 Console.WriteLine($"{ir} outer iterations out of {opt.maxouter}");
-                Console.WriteLine($"{i} iterations out of {opt.maxinner}");
+                Console.WriteLine($"{innerIteration} iterations out of {opt.maxinner}");
                 Console.WriteLine($"Relative Primal Residual\t\t {rp1}");
                 Console.WriteLine($"Relative Dual Residual\t\t\t {rd1}");
                 Console.WriteLine($"Relative Complementarity\t\t {comp1}");

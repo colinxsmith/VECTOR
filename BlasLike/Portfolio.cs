@@ -34,6 +34,100 @@ namespace Portfolio
                     if (names != null) Array.Resize(ref names, n);
                 }
         }
+        public void BuySellSetup(int n, int m, int nfac, double[] A, double[] L, double[] U, double[] c, double[] initial, string[] names, bool useIP = true)
+        {
+            var delta = 0.98;
+            var twoside = true; //twoside = false means treat sell side only
+            var N = n + n;
+            var M = m + n + (delta < 1.0 ? 1 : 0);
+            if (twoside)
+            {
+                N += n;
+                M += n;
+            }
+            var CC = new double[N];
+            var AA = new double[N * M];
+            var LL = new double[N + M];
+            var UU = new double[N + M];
+            var WW = new double[N];
+            //Variables
+            BlasLike.dcopyvec(n, L, LL);
+            BlasLike.dcopyvec(n, U, UU);
+            BlasLike.dsetvec(n, 0, LL, n);
+            BlasLike.dsetvec(n, BlasLike.lm_max, UU, n);
+            if (twoside)
+            {
+                BlasLike.dsetvec(n, 0, LL, n + n);
+                BlasLike.dsetvec(n, BlasLike.lm_max, UU, n + n);
+            }
+            //Constraints
+            BlasLike.dcopyvec(m, L, LL, n, N);
+            BlasLike.dcopyvec(m, U, UU, n, N);
+            for (var i = 0; i < m; i++)
+            {
+                BlasLike.dcopy(n, A, m, AA, M, i, i);
+            }
+            BlasLike.dsccopyvec(n, 1.0, initial, LL, 0, N + m);
+            BlasLike.dsetvec(n, BlasLike.lm_max, UU, N + m);
+            for (var i = m; i < m + n; ++i)
+            {
+                BlasLike.dset(1, 1.0, AA, M, i + M * (i - m));
+                BlasLike.dset(1, 1.0, AA, M, i + M * (n + i - m));
+            }
+            if (twoside)
+            {
+                BlasLike.dsccopyvec(n, 1.0, initial, UU, 0, N + m + n);
+                BlasLike.dsetvec(n, -BlasLike.lm_max, LL, N + m + n);
+                for (var i = m + n; i < m + n + n; ++i)
+                {
+                    BlasLike.dset(1, 1.0, AA, M, i + M * (i - m - n));
+                    BlasLike.dset(1, -1.0, AA, M, i + M * (n + n + i - m - n));
+                }
+            }
+            BlasLike.dsccopyvec(n, 1, c, CC);
+            if (delta < 1.0)
+            {
+                LL[N + M - 1] = 0;
+                if (twoside)
+                {
+                    BlasLike.dset(n + n, 1.0, AA, M, n + n + m + M * n);
+                    UU[N + M - 1] = delta * 2;
+                }
+                else
+                {
+                    BlasLike.dset(n, 1.0, AA, M, n + m + M * n);
+                    UU[N + M - 1] = delta;
+                }
+            }
+            this.L = LL;
+            this.U = UU;
+            this.A = AA;
+            this.n = N;
+            this.m = M;
+            this.gamma = 0.5;
+            BlasLike.dsetvec(n, 0, CC, n);
+            if (twoside) BlasLike.dsetvec(n, 0, CC, n + n);
+            this.alpha = CC;
+            var back = InteriorOpt(1e-10, WW);
+            var turnover = 0.0;
+            for (var i = 0; i < n; ++i)
+            {
+                turnover += Math.Abs(WW[i] - initial[i]);
+                var c1 = BlasLike.ddot(N, AA, M, WW, 1, i + m);
+                if (twoside)
+                {
+                    var c2 = BlasLike.ddot(N, AA, M, WW, 1, n + i + m);
+                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {c1:F8} {WW[i + n + n]:F8} {c2:F8} {initial[i]:F8}");
+                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {c1:F8} {WW[i + n + n]:F8} {c2:F8} {initial[i]:F8}");
+                }
+                else
+                {
+                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {c1:F8}  {initial[i]:F8}");
+                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {c1:F8}  {initial[i]:F8}");
+                }
+            }
+            Console.WriteLine($"Turnover: {turnover * 0.5}");
+        }
         public void GainLossSetUp(int n, int tlen, double[] DATA, string[] names, double R, double lambda, bool useIP = true)
         {
             var m = 1;
@@ -51,7 +145,7 @@ namespace Portfolio
                 Q = new double[N * (N + 1) / 2];
                 for (int i = 0, ij = 0; i < n; ++i, ij += i)
                 {
-                    Q[ij + i] = BlasLike.lm_rooteps;
+                    Q[ij + i] = 0;
                 }
             }
 
@@ -82,7 +176,7 @@ namespace Portfolio
 
             for (var i = 0; i < m; ++i)
             {
-                BlasLike.dset(n, 1, AA, M);
+                BlasLike.dset(n, 1, AA, M, i);
             }
             for (var i = m; i < M; ++i)
             {
@@ -97,6 +191,9 @@ namespace Portfolio
             this.gamma = 0.5;
             BlasLike.dnegvec(cc.Length, cc);
             this.alpha = cc;
+            double alphamax = 0, alphamin = 0;
+            BlasLike.dxminmax(this.alpha.Length, this.alpha, 1, ref alphamax, ref alphamin);
+            Console.WriteLine($"c range ({alphamax},{alphamin}) ratio {(alphamin / alphamax):E8}");
             if (useIP)
             {
                 var back = InteriorOpt(5e-11, ww);
@@ -435,19 +532,20 @@ namespace Portfolio
         public FPortfolio(string file) : base(file)
         {
             inFile = file;
-            using (var OptData = new DataFile.InputSomeData())
-            {
-                OptData.intFields = "n m nfac";
-                OptData.doubleFields = "delta kappa gamma alpha Q L U A buy sell initial bench FC FL SV";
-                OptData.stringFields = "names";
-                OptData.Read(inFile);
-                nfac = OptData.mapInt["nfac"][0];
-                FC = OptData.mapDouble["FC"];
-                FL = OptData.mapDouble["FL"];
-                SV = OptData.mapDouble["SV"];
-                names = OptData.mapString["names"];
-                if (names != null) Array.Resize(ref names, n);
-            }
+            if (inFile != "")
+                using (var OptData = new DataFile.InputSomeData())
+                {
+                    OptData.intFields = "n m nfac";
+                    OptData.doubleFields = "delta kappa gamma alpha Q L U A buy sell initial bench FC FL SV";
+                    OptData.stringFields = "names";
+                    OptData.Read(inFile);
+                    nfac = OptData.mapInt["nfac"][0];
+                    FC = OptData.mapDouble["FC"];
+                    FL = OptData.mapDouble["FL"];
+                    SV = OptData.mapDouble["SV"];
+                    names = OptData.mapString["names"];
+                    if (names != null) Array.Resize(ref names, n);
+                }
         }
         public override void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
         {
@@ -463,9 +561,10 @@ namespace Portfolio
         public double[] FC = null;
         public override int makeQ()
         {
-            var nn = (nfac + 1) * n;
+            var ntrue = SV.Length;
+            var nn = (nfac + 1) * ntrue;
             Q = new double[nn];
-            return Factorise.FMP(n, nfac, FC, SV, FL, Q);
+            return Factorise.FMP(ntrue, nfac, FC, SV, FL, Q);
         }
     }
 }
