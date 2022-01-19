@@ -505,7 +505,7 @@ namespace InteriorPoint
                         {
                             for (int i = 0; i < (n - nh); ++i)
                             {
-                                if (i + nh < basen)
+                                if (i + nh < n)
                                 {
                                     if (lhs[i + nh] != 0)
                                         lhs[i + nh] /= aob(z[i + nh], x[i + nh]);
