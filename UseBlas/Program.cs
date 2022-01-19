@@ -1196,6 +1196,7 @@ namespace UseBlas
                     opt.SV=SV;
                     opt.FL=FL;
                     opt.FC=FC;
+                    opt.nfac=nfac;
                     opt.BuySellSetup(n, m, nfac, A, L, U, alpha, initial, names);
                 }
             }
