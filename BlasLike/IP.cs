@@ -57,6 +57,7 @@ namespace InteriorPoint
         int[] cone = null;
         int[] typecone = null;
         bool usrH = false;
+        bool specialDebug = false;
         bool homogenous = false;
         double mu;
         public int maxouter = 1000;
@@ -470,6 +471,18 @@ namespace InteriorPoint
             if (optMode == "QP")
             {
                 BlasLike.dzerovec(M.Length, M);
+                /*    for (var k = 0; k < Math.Min(20, x.Length); ++k)
+                    {
+                        Console.Write(x[k]);
+                        Console.Write(",");
+                    }
+                    Console.Write("\n");
+                    for (var k = 0; k < Math.Min(20, z.Length); ++k)
+                    {
+                        Console.Write(z[k]);
+                        Console.Write(",");
+                    }
+                    Console.Write("\n");*/
                 if (usrH)
                 {
                     var lhs = w1;//Highjack w1 to save reallocation
@@ -503,13 +516,10 @@ namespace InteriorPoint
                         //Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, lhs);
                         if (con < basem && basen != nh)
                         {
-                            for (int i = 0; i < (n - nh); ++i)
+                            for (int i = nh; i < n; ++i)
                             {
-                                if (i + nh < n)
-                                {
-                                    if (lhs[i + nh] != 0)
-                                        lhs[i + nh] /= aob(z[i + nh], x[i + nh]);
-                                }
+                                if (lhs[i] != 0)
+                                    lhs[i] /= aob(z[i], x[i]);
                             }
                         }
                         if (A != null)
@@ -680,6 +690,18 @@ namespace InteriorPoint
                         }
                     }
                 }
+                if (specialDebug)
+                {
+                    Console.WriteLine($"usrH {usrH} NORMAL MATRIX");
+                    for (var k = 0; k < M.Length; ++k)
+                    {
+                        Console.Write($"{M[k]:F10}");
+                        Console.Write(",");
+                        if (k % 20 == 19)
+                            Console.Write("\n");
+                    }
+                    Console.Write("\n");
+                }
             }
             else if (optMode == "SOCP")
             {
@@ -772,14 +794,70 @@ namespace InteriorPoint
                 {
                     Factorise.Solve(uplo, nh, 1, HCOPY, horder, w1, nh);
                     //Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, w1);
-                    for (int i = 0; i < (n - nh); ++i)
-                        if (w1[i + nh] != 0)
-                            w1[i + nh] /= aob(z[i + nh], x[i + nh]);
+                    for (int i = nh; i < n; ++i)
+                        if (w1[i] != 0)
+                            w1[i] /= aob(z[i], x[i]);
                 }
                 else for (int i = 0; i < n; ++i) w1[i] *= aob(x[i], z[i]);
+                if (specialDebug)
+                {
+                    Console.WriteLine($"{usrH} w1");
+                    for (var k = 0; k < n; ++k)
+                    {
+                        Console.Write($"{w1[k]:F10}");
+                        Console.Write(",");
+                        if (k % 20 == 19)
+                            Console.Write("\n");
+                    }
+                    Console.Write("\n");
+                    Console.WriteLine($"{usrH} x");
+                    for (var k = 0; k < n; ++k)
+                    {
+                        Console.Write($"{x[k]:F10}");
+                        Console.Write(",");
+                        if (k % 20 == 19)
+                            Console.Write("\n");
+                    }
+                    Console.Write("\n");
+                    Console.WriteLine($"{usrH} z");
+                    for (var k = 0; k < n; ++k)
+                    {
+                        Console.Write($"{z[k]:F10}");
+                        Console.Write(",");
+                        if (k % 20 == 19)
+                            Console.Write("\n");
+                    }
+                    Console.Write("\n");
+                    Console.WriteLine($"{usrH} dy");
+                    for (var k = 0; k < Math.Min(20, dy.Length); ++k)
+                    {
+                        Console.Write($"{dy[k]:F10}");
+                        Console.Write(",");
+                    }
+                    Console.Write("\n");
+                }
                 AmultSparse(w1, dy);
-
+                if (specialDebug)
+                {
+                    Console.WriteLine($"{usrH} dy after Amult");
+                    for (var k = 0; k < Math.Min(20, dy.Length); ++k)
+                    {
+                        Console.Write($"{dy[k]:F10}");
+                        Console.Write(",");
+                    }
+                    Console.Write("\n");
+                }
                 BlasLike.daxpyvec(m, g1, rp, dy);
+                if (specialDebug)
+                {
+                    Console.WriteLine($"{usrH} dy After axpy");
+                    for (var k = 0; k < Math.Min(20, dy.Length); ++k)
+                    {
+                        Console.Write($"{dy[k]:F10}");
+                        Console.Write(",");
+                    }
+                    Console.Write("\n");
+                }
                 if (m == 1) dy[0] /= M[0];
                 else Factorise.Solve(uplo, m, 1, M, order, dy, m);
                 if (homogenous)
@@ -827,6 +905,16 @@ namespace InteriorPoint
                 }
                 else
                 {
+                    if (specialDebug)
+                    {
+                        Console.WriteLine($"{usrH} dy after Solve");
+                        for (var k = 0; k < Math.Min(20, dy.Length); ++k)
+                        {
+                            Console.Write($"{dy[k]:F10}");
+                            Console.Write(",");
+                        }
+                        Console.Write("\n");
+                    }
                     AmultSparseT(dy, dx);
                     if (usrH)
                     {
@@ -835,6 +923,13 @@ namespace InteriorPoint
                         for (int i = 0; i < (n - nh); ++i) dx[i + nh] /= aob(z[i + nh], x[i + nh]);
                     }
                     else for (int i = 0; i < n; ++i) dx[i] *= aob(x[i], z[i]);
+                    /* Console.WriteLine($"{usrH} dx");
+                     for (var k = 0; k < Math.Min(20, dx.Length); ++k)
+                     {
+                         Console.Write(dx[k]);
+                         Console.Write(",");
+                     }
+                     Console.Write("\n");*/
                     BlasLike.dsubvec(n, dx, w1, dx);
                     for (var i = 0; i < n; ++i) dz[i] = aob(rmu[i] - g1 * mu - dx[i] * z[i] - ((corrector) ? dx0[i] * dz0[i] : 0), x[i]);
                 }
@@ -911,6 +1006,13 @@ namespace InteriorPoint
                         {
                             for (int i = cstart; i < n + cstart; ++i) w1[i] /= W2[i];
                         }
+                        /*   Console.WriteLine($"{usrH} w1");
+                           for (var k = 0; k < Math.Min(20, w1.Length); ++k)
+                           {
+                               Console.Write(w1[k]);
+                               Console.Write(",");
+                           }
+                           Console.Write("\n");*/
                     }
                     else if (typecone[icone] == (int)conetype.SOCP)
                     {
@@ -1054,6 +1156,13 @@ namespace InteriorPoint
                             {
                                 for (int i = cstart; i < n + cstart; ++i) dx[i] /= W2[i];
                             }
+                            /*   Console.WriteLine($"{usrH} dx");
+                               for (var k = 0; k < Math.Min(20, dx.Length); ++k)
+                               {
+                                   Console.Write(dx[k]);
+                                   Console.Write(",");
+                               }
+                               Console.Write("\n");*/
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {

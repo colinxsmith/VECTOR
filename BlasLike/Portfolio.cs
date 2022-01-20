@@ -36,7 +36,7 @@ namespace Portfolio
         }
         public void BuySellSetup(int n, int m, int nfac, double[] A, double[] L, double[] U, double[] c, double[] initial, string[] names, bool useIP = true)
         {
-            var delta = 0.98;
+            var delta = 0.9;
             this.ntrue = n;
             //           makeQ();
             Q = new double[n * (nfac + 1)];
@@ -116,7 +116,7 @@ namespace Portfolio
                 {
                     BlasLike.dset(n, 1.0, AA, M, m + n);
                     BlasLike.dset(n, 2.0, AA, M, m + n + M * n);
-                    UU[N + M - 1] = 2.0 * delta + BlasLike.dsumvec(n, initial);
+                    LL[N + M - 1] = UU[N + M - 1] = 2.0 * delta + BlasLike.dsumvec(n, initial);
                 }
             }
             this.L = LL;
