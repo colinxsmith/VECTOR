@@ -516,7 +516,7 @@ namespace InteriorPoint
                         //Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, lhs);
                         if (n != nh)
                         {
-                            for (int i = nh; i < n; ++i)
+                            for (int i = nh; i < basen; ++i)
                             {
                                 if (lhs[i] != 0)
                                     lhs[i] /= aob(z[i], x[i]);
