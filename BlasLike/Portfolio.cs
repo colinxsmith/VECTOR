@@ -552,7 +552,7 @@ namespace Portfolio
             IOPT.slackToConstraintL = slackToConstraintL;
             IOPT.slackToConstraintU = slackToConstraintU;
             var back =
-            IOPT.Opt("QP", null, null, false, UL, sign);
+            IOPT.Opt("QP", null, null, true, UL, sign);
             if (back < -10) Console.WriteLine($"Failed -- too many iterations");
             if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
             if (back == 6) Console.WriteLine("INFEASIBLE");
