@@ -57,7 +57,7 @@ namespace InteriorPoint
         int[] cone = null;
         int[] typecone = null;
         bool usrH = false;
-        bool specialDebug = true;
+        bool specialDebug = false;
         bool homogenous = false;
         double mu;
         public int maxouter = 1000;
