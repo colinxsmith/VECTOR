@@ -514,7 +514,7 @@ namespace InteriorPoint
                         }
                         Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh);
                         //Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, lhs);
-                        if (con < basem && basen != nh)
+                        if (n != nh)
                         {
                             for (int i = nh; i < n; ++i)
                             {
