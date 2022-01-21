@@ -57,7 +57,7 @@ namespace InteriorPoint
         int[] cone = null;
         int[] typecone = null;
         bool usrH = false;
-        bool specialDebug = false;
+        bool specialDebug = true;
         bool homogenous = false;
         double mu;
         public int maxouter = 1000;
@@ -1539,7 +1539,7 @@ namespace InteriorPoint
             double[] bl = null;
             double[] QL = null;
             double zL = 0;
-            var stepReduce = 0.95;
+            var stepReduce = 1.0;
             opt.optMode = mode;
             if (mode == "SOCP")
             {

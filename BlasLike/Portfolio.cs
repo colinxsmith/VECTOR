@@ -34,9 +34,10 @@ namespace Portfolio
                     if (names != null) Array.Resize(ref names, n);
                 }
         }
-        public void BuySellSetup(int n, int m, int nfac, double[] A, double[] L, double[] U, double[] c, double[] initial, string[] names, bool useIP = true)
+        public void BuySellSetup(int n, int m, int nfac, double[] A, double[] L, double[] U, double gamma, double kappa, double delta, double[] alpha, double[] initial, double[] buy, double[] sell, string[] names, bool useIP = true)
         {
-            var delta = 0.9;
+            if (delta < 0) delta = 2;
+            var useCosts = kappa > 0.0;
             this.ntrue = n;
             //           makeQ();
             Q = new double[n * (nfac + 1)];
@@ -103,10 +104,31 @@ namespace Portfolio
                     BlasLike.dset(1, -1.0, AA, M, i + M * (n + n + i - m - n));
                 }
             }
-            BlasLike.dsccopyvec(n, 1, c, CC);
+            BlasLike.dsccopyvec(n, -gamma / (1 - gamma), alpha, CC);
+            if (useCosts)
+            {
+                var mult = kappa / (1.0 - kappa);
+                if (!bothsellbuy)
+                {
+                    BlasLike.daxpyvec(n, mult, buy, CC);
+                    BlasLike.dsccopyvec(n, mult, buy, CC, 0, n);
+                    BlasLike.daxpyvec(n, mult, sell, CC, 0, n);
+                }
+                else
+                {
+                    BlasLike.dsccopyvec(n, mult, sell, CC, 0, n);
+                    BlasLike.dsccopyvec(n, mult, buy, CC, 0, 2 * n);
+                }
+
+            }
+            else
+            {
+                BlasLike.dsetvec(n, 0, CC, n);
+                if (bothsellbuy) BlasLike.dsetvec(n, 0, CC, n + n);
+            }
             if (delta < 1.0)
             {
-                LL[N + M - 1] = -BlasLike.lm_max * 0;
+                LL[N + M - 1] = -BlasLike.lm_max;// Proper lower bound is redundant, leads to ill conditioned normal matrix in IP QP
                 if (bothsellbuy)
                 {
                     BlasLike.dset(n + n, 1.0, AA, M, n + n + m + M * n);
@@ -116,7 +138,8 @@ namespace Portfolio
                 {
                     BlasLike.dset(n, 1.0, AA, M, m + n);
                     BlasLike.dset(n, 2.0, AA, M, m + n + M * n);
-                    LL[N + M - 1] = UU[N + M - 1] = 2.0 * delta + BlasLike.dsumvec(n, initial);
+                    /*LL[N + M - 1] = */
+                    UU[N + M - 1] = 2.0 * delta + BlasLike.dsumvec(n, initial);
                 }
             }
             this.L = LL;
@@ -125,17 +148,25 @@ namespace Portfolio
             this.n = N;
             this.m = M;
             this.gamma = 0.5;
-            BlasLike.dsetvec(n, 0, CC, n);
-            if (bothsellbuy) BlasLike.dsetvec(n, 0, CC, n + n);
+            BlasLike.dnegvec(CC.Length, CC);
             this.alpha = CC;
             if (useIP)
             {
                 var back = InteriorOpt(1e-10, WW);
             }
             var turnover = 0.0;
+            var cost = 0.0;
+            var costA = 0.0;
             for (var i = 0; i < n; ++i)
             {
                 turnover += Math.Abs(WW[i] - initial[i]);
+                if ((buy != null) && (sell != null))
+                {
+                    var diff = (WW[i] - initial[i]);
+                    cost += diff > 0 ? diff * buy[i] : -diff * sell[i];
+                    if (bothsellbuy) costA += WW[i + n] * sell[i] + WW[i + 2 * n] * buy[i];
+                    else costA += diff * buy[i] + WW[i + n] * (sell[i] + buy[i]);
+                }
                 var c1 = BlasLike.ddot(N, AA, M, WW, 1, i + m);
                 if (bothsellbuy)
                 {
@@ -150,6 +181,7 @@ namespace Portfolio
                 }
             }
             Console.WriteLine($"Turnover: {turnover * 0.5}");
+            Console.WriteLine($"Cost: {cost}:  {costA}");
         }
         public void GainLossSetUp(int n, int tlen, double[] DATA, string[] names, double R, double lambda, bool useIP = true)
         {
@@ -308,7 +340,7 @@ namespace Portfolio
             Console.WriteLine($"Variance from Active Set:\t\t{Variance(w)}");
             Factorise.dmxmulv(m, n, A, w, Aw);
             ActiveSet.Optimise.printV("Constraints", Aw);
-            var ip = InteriorOpt();
+            var ip = InteriorOpt(5e-10);
             Console.WriteLine($"Variance from IP:\t\t{Variance(w)}");
             Factorise.dmxmulv(m, n, A, w, Aw);
             ActiveSet.Optimise.printV("Constraints", Aw);
@@ -447,10 +479,10 @@ namespace Portfolio
             var UL = new double[n];
             if (bench != null)
             {
-                hessmull(n, Q, bench, cextra);
-                BlasLike.dnegvec(n, cextra);
+                hessmull(ntrue, Q, bench, cextra);
+                BlasLike.dnegvec(ntrue, cextra);
             }
-            BlasLike.daxpyvec(n, -gamma / (1 - gamma), c, cextra);
+            BlasLike.daxpyvec(n, -1.0, c, cextra);
             var zcount = 0;
             var signfix = false;
             for (int i = 0, slack = 0; i < n; ++i)
@@ -520,7 +552,7 @@ namespace Portfolio
             IOPT.slackToConstraintL = slackToConstraintL;
             IOPT.slackToConstraintU = slackToConstraintU;
             var back =
-            IOPT.Opt("QP", null, null, true, UL, sign);
+            IOPT.Opt("QP", null, null, false, UL, sign);
             if (back < -10) Console.WriteLine($"Failed -- too many iterations");
             if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
             if (back == 6) Console.WriteLine("INFEASIBLE");

@@ -1165,12 +1165,14 @@ namespace UseBlas
                 Console.WriteLine("BUY/SELL");
                 Portfolio.FPortfolio opt = new FPortfolio("");
                 double[] SV = null, FC = null, FL = null, L = null, U = null, alpha = null, initial = null, A = null;
+                double[] buy = null, sell = null;
+                double gamma, delta, kappa;
                 int n, nfac, m;
                 string[] names;
 
                 using (var buysell = new DataFile.InputSomeData())
                 {
-                    buysell.doubleFields = "SV FC FL L U alpha initial A";
+                    buysell.doubleFields = "SV FC FL L U alpha initial A buy sell gamma delta kappa";
                     buysell.intFields = "n nfac m";
                     buysell.stringFields = "names";
                     try
@@ -1189,15 +1191,20 @@ namespace UseBlas
                     alpha = buysell.mapDouble["alpha"];
                     initial = buysell.mapDouble["initial"];
                     A = buysell.mapDouble["A"];
+                    buy = buysell.mapDouble["buy"];
+                    sell = buysell.mapDouble["sell"];
                     n = buysell.mapInt["n"][0];
                     m = buysell.mapInt["m"][0];
+                    delta = buysell.mapDouble["delta"][0];
+                    kappa = buysell.mapDouble["kappa"][0];
+                    gamma = buysell.mapDouble["gamma"][0];
                     nfac = buysell.mapInt["nfac"][0];
                     names = buysell.mapString["names"];
-                    opt.SV=SV;
-                    opt.FL=FL;
-                    opt.FC=FC;
-                    opt.nfac=nfac;
-                    opt.BuySellSetup(n, m, nfac, A, L, U, alpha, initial, names);
+                    opt.SV = SV;
+                    opt.FL = FL;
+                    opt.FC = FC;
+                    opt.nfac = nfac;
+                    opt.BuySellSetup(n, m, nfac, A, L, U, gamma, kappa, delta, alpha, initial, buy, sell, names);
                 }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
