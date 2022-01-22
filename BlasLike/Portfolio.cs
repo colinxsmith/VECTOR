@@ -185,7 +185,7 @@ namespace Portfolio
             Console.WriteLine($"Return: {eret}: {eretA}");
             Console.WriteLine($"Turnover: {turnover * 0.5}");
             Console.WriteLine($"Cost: {cost}:  {costA}");
-            var utility = -gamma / (1 - gamma) * eret + kappa / (1 - kappa) * cost;
+            var utility = -gamma / (1 - gamma) * eret + kappa / (1 - kappa) *( cost+BlasLike.ddotvec(n,initial,WW)) ;
             var utilityA = -BlasLike.ddotvec(N, CC, WW);
             Console.WriteLine($"Utility: {utility}: {utilityA}");
         }
