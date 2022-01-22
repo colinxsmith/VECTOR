@@ -57,6 +57,7 @@ namespace InteriorPoint
         int[] cone = null;
         int[] typecone = null;
         bool usrH = false;
+        bool specialDebug = false;
         bool homogenous = false;
         double mu;
         public int maxouter = 1000;
@@ -470,6 +471,18 @@ namespace InteriorPoint
             if (optMode == "QP")
             {
                 BlasLike.dzerovec(M.Length, M);
+                /*    for (var k = 0; k < Math.Min(20, x.Length); ++k)
+                    {
+                        Console.Write(x[k]);
+                        Console.Write(",");
+                    }
+                    Console.Write("\n");
+                    for (var k = 0; k < Math.Min(20, z.Length); ++k)
+                    {
+                        Console.Write(z[k]);
+                        Console.Write(",");
+                    }
+                    Console.Write("\n");*/
                 if (usrH)
                 {
                     var lhs = w1;//Highjack w1 to save reallocation
@@ -493,30 +506,20 @@ namespace InteriorPoint
                                 var qq = slacklargeConstraintToStock[con - basem];
                                 lhs[qq] = 1;
                             }
-                            else
+                            else if (con < basem + bases + slackmboth)
                             {
-                                if (slackmboth > 0)
-                                {
-                                    var it = slackToConstraintBOTH_inverse[con - basem - bases];
-                                    if (it != -1)
-                                    {
-                                        var conn = slackToConstraintBOTH[it];
-                                        BlasLike.dcopy(basen, baseA, basem, lhs, 1, conn);
-                                    }
-                                }
+                                var conn = slackToConstraintBOTH[con - basem - bases];
+                                BlasLike.dcopy(basen, baseA, basem, lhs, 1, conn);
                             }
                         }
                         Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh);
                         //Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, lhs);
-                        if (con < basem && basen != nh)
+                        if (n != nh)
                         {
-                            for (int i = 0; i < (n - nh); ++i)
+                            for (int i = nh; i < basen; ++i)
                             {
-                                if (i + nh < basen)
-                                {
-                                    if (lhs[i + nh] != 0)
-                                        lhs[i + nh] /= aob(z[i + nh], x[i + nh]);
-                                }
+                                if (lhs[i] != 0)
+                                    lhs[i] /= aob(z[i], x[i]);
                             }
                         }
                         if (A != null)
@@ -528,39 +531,36 @@ namespace InteriorPoint
                         }
                         else
                         {
-                            for (var ii = 0; ii < con + 1; ++ii)
+                            for (var ii = 0; ii <= con; ++ii)
                             {
                                 if (ii < basem)
                                 {
                                     M[ij + ii] = BlasLike.ddot(basen, baseA, basem, lhs, 1, ii);
-                                    if (slackmboth > 0)
+                                    if (ii == con && slackmboth > 0)
                                     {
                                         var iii = slackToConstraintBOTH_inverse[ii];
                                         if (iii != -1)
                                         {
                                             var qq = basen + bases + slackmboth + iii;
-                                            if (ii == con)
-                                                M[ij + ii] += aob(x[qq], z[qq]);
+                                            M[ij + ii] += aob(x[qq], z[qq]);
                                         }
                                     }
-                                    if (slackmL > 0)
+                                    if (ii == con && slackmL > 0)
                                     {
                                         var iii = slackToConstraintL_inverse[ii];
                                         if (iii != -1)
                                         {
                                             var qq = basen + bases + slackmboth * 2 + iii;
-                                            if (ii == con)
-                                                M[ij + ii] += aob(x[qq], z[qq]);
+                                            M[ij + ii] += aob(x[qq], z[qq]);
                                         }
                                     }
-                                    if (slackmU > 0)
+                                    if (ii == con && slackmU > 0)
                                     {
                                         var iii = slackToConstraintU_inverse[ii];
                                         if (iii != -1)
                                         {
                                             var qq = basen + bases + slackmboth * 2 + slackmL + iii;
-                                            if (ii == con)
-                                                M[ij + ii] += aob(x[qq], z[qq]);
+                                            M[ij + ii] += aob(x[qq], z[qq]);
                                         }
                                     }
                                 }
@@ -568,18 +568,20 @@ namespace InteriorPoint
                                 {
                                     var qq = slacklargeConstraintToStock[ii - basem];
                                     M[ij + ii] = lhs[qq];
-                                    qq = basen + ii - basem;
-                                    if (ii == con) M[ij + ii] += aob(x[qq], z[qq]);
-                                }
-                                else
-                                {
-                                    if (slackToConstraintBOTH.Length > 0)
+                                    if (ii == con)
                                     {
-                                        var iii = slackToConstraintBOTH[ii - basem - bases];
-                                        M[ij + ii] = BlasLike.ddot(basen, baseA, basem, lhs, 1, iii);
-                                        var qq = slackToConstraintBOTH_inverse[iii] + basen + bases;
-                                        if (ii == con)
-                                            M[ij + ii] += aob(x[qq], z[qq]);
+                                        qq = basen + ii - basem;
+                                        M[ij + ii] += aob(x[qq], z[qq]);
+                                    }
+                                }
+                                else if (ii < basem + bases + slackmboth)
+                                {
+                                    var iii = slackToConstraintBOTH[ii - basem - bases];
+                                    M[ij + ii] = BlasLike.ddot(basen, baseA, basem, lhs, 1, iii);
+                                    if (ii == con)
+                                    {
+                                        var qq = (ii - basem - bases) + basen + bases;
+                                        M[ij + ii] += aob(x[qq], z[qq]);
                                     }
                                 }
                             }
@@ -688,6 +690,18 @@ namespace InteriorPoint
                         }
                     }
                 }
+                if (specialDebug)
+                {
+                    Console.WriteLine($"usrH {usrH} NORMAL MATRIX");
+                    for (var k = 0; k < M.Length; ++k)
+                    {
+                        Console.Write($"{M[k]:F10}");
+                        Console.Write(",");
+                        if (k % 20 == 19)
+                            Console.Write("\n");
+                    }
+                    Console.Write("\n");
+                }
             }
             else if (optMode == "SOCP")
             {
@@ -780,14 +794,70 @@ namespace InteriorPoint
                 {
                     Factorise.Solve(uplo, nh, 1, HCOPY, horder, w1, nh);
                     //Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, w1);
-                    for (int i = 0; i < (n - nh); ++i)
-                        if (w1[i + nh] != 0)
-                            w1[i + nh] /= aob(z[i + nh], x[i + nh]);
+                    for (int i = nh; i < n; ++i)
+                        if (w1[i] != 0)
+                            w1[i] /= aob(z[i], x[i]);
                 }
                 else for (int i = 0; i < n; ++i) w1[i] *= aob(x[i], z[i]);
+                if (specialDebug)
+                {
+                    Console.WriteLine($"{usrH} w1");
+                    for (var k = 0; k < n; ++k)
+                    {
+                        Console.Write($"{w1[k]:F10}");
+                        Console.Write(",");
+                        if (k % 20 == 19)
+                            Console.Write("\n");
+                    }
+                    Console.Write("\n");
+                    Console.WriteLine($"{usrH} x");
+                    for (var k = 0; k < n; ++k)
+                    {
+                        Console.Write($"{x[k]:F10}");
+                        Console.Write(",");
+                        if (k % 20 == 19)
+                            Console.Write("\n");
+                    }
+                    Console.Write("\n");
+                    Console.WriteLine($"{usrH} z");
+                    for (var k = 0; k < n; ++k)
+                    {
+                        Console.Write($"{z[k]:F10}");
+                        Console.Write(",");
+                        if (k % 20 == 19)
+                            Console.Write("\n");
+                    }
+                    Console.Write("\n");
+                    Console.WriteLine($"{usrH} dy");
+                    for (var k = 0; k < Math.Min(20, dy.Length); ++k)
+                    {
+                        Console.Write($"{dy[k]:F10}");
+                        Console.Write(",");
+                    }
+                    Console.Write("\n");
+                }
                 AmultSparse(w1, dy);
-
+                if (specialDebug)
+                {
+                    Console.WriteLine($"{usrH} dy after Amult");
+                    for (var k = 0; k < Math.Min(20, dy.Length); ++k)
+                    {
+                        Console.Write($"{dy[k]:F10}");
+                        Console.Write(",");
+                    }
+                    Console.Write("\n");
+                }
                 BlasLike.daxpyvec(m, g1, rp, dy);
+                if (specialDebug)
+                {
+                    Console.WriteLine($"{usrH} dy After axpy");
+                    for (var k = 0; k < Math.Min(20, dy.Length); ++k)
+                    {
+                        Console.Write($"{dy[k]:F10}");
+                        Console.Write(",");
+                    }
+                    Console.Write("\n");
+                }
                 if (m == 1) dy[0] /= M[0];
                 else Factorise.Solve(uplo, m, 1, M, order, dy, m);
                 if (homogenous)
@@ -835,6 +905,16 @@ namespace InteriorPoint
                 }
                 else
                 {
+                    if (specialDebug)
+                    {
+                        Console.WriteLine($"{usrH} dy after Solve");
+                        for (var k = 0; k < Math.Min(20, dy.Length); ++k)
+                        {
+                            Console.Write($"{dy[k]:F10}");
+                            Console.Write(",");
+                        }
+                        Console.Write("\n");
+                    }
                     AmultSparseT(dy, dx);
                     if (usrH)
                     {
@@ -843,6 +923,13 @@ namespace InteriorPoint
                         for (int i = 0; i < (n - nh); ++i) dx[i + nh] /= aob(z[i + nh], x[i + nh]);
                     }
                     else for (int i = 0; i < n; ++i) dx[i] *= aob(x[i], z[i]);
+                    /* Console.WriteLine($"{usrH} dx");
+                     for (var k = 0; k < Math.Min(20, dx.Length); ++k)
+                     {
+                         Console.Write(dx[k]);
+                         Console.Write(",");
+                     }
+                     Console.Write("\n");*/
                     BlasLike.dsubvec(n, dx, w1, dx);
                     for (var i = 0; i < n; ++i) dz[i] = aob(rmu[i] - g1 * mu - dx[i] * z[i] - ((corrector) ? dx0[i] * dz0[i] : 0), x[i]);
                 }
@@ -919,6 +1006,13 @@ namespace InteriorPoint
                         {
                             for (int i = cstart; i < n + cstart; ++i) w1[i] /= W2[i];
                         }
+                        /*   Console.WriteLine($"{usrH} w1");
+                           for (var k = 0; k < Math.Min(20, w1.Length); ++k)
+                           {
+                               Console.Write(w1[k]);
+                               Console.Write(",");
+                           }
+                           Console.Write("\n");*/
                     }
                     else if (typecone[icone] == (int)conetype.SOCP)
                     {
@@ -1062,6 +1156,13 @@ namespace InteriorPoint
                             {
                                 for (int i = cstart; i < n + cstart; ++i) dx[i] /= W2[i];
                             }
+                            /*   Console.WriteLine($"{usrH} dx");
+                               for (var k = 0; k < Math.Min(20, dx.Length); ++k)
+                               {
+                                   Console.Write(dx[k]);
+                                   Console.Write(",");
+                               }
+                               Console.Write("\n");*/
                         }
                         else if (typecone[icone] == (int)conetype.SOCP)
                         {
@@ -1339,7 +1440,7 @@ namespace InteriorPoint
                 try
                 {
                     Ordering.Order.getorder(m, diags, order, null, 0.0, 1);
-                    int o1 = Math.Max(order[0], order[m-1]), o2 = Math.Min(order[0], order[m-1]);
+                    int o1 = Math.Max(order[0], order[m - 1]), o2 = Math.Min(order[0], order[m - 1]);
                     double a1 = Math.Max(diags[o1], diags[o2]), a2 = Math.Min(diags[o2], diags[o1]), a12 = M[o1 * (o1 + 1) / 2 + o2];
                     condition = a1 * (a1 - a12 * a12 / a2);//cond is a quick estimate of condition number using only 2 pivots.
                     regularise = a1 * BlasLike.lm_eps;
@@ -1350,7 +1451,7 @@ namespace InteriorPoint
                     double a1 = 0, a2 = 0;
                     BlasLike.dxminmax(m, diags, 1, ref a1, ref a2);
                     condition = a1 / a2;
-                    regularise = a1  * BlasLike.lm_eps;
+                    regularise = a1 * BlasLike.lm_eps;
                 }
             }
             else
@@ -1438,7 +1539,7 @@ namespace InteriorPoint
             double[] bl = null;
             double[] QL = null;
             double zL = 0;
-            var stepReduce = 1;
+            var stepReduce = 1.0;
             opt.optMode = mode;
             if (mode == "SOCP")
             {
