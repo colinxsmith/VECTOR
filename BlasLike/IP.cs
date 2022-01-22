@@ -514,7 +514,7 @@ namespace InteriorPoint
                         }
                         Factorise.Solve(uplo, nh, 1, HCOPY, horder, lhs, nh);
                         //Factorise.SolveRefine(nh, HHCopy, HCOPY, horder, lhs);
-                        if (n != nh)
+                        if (basen != nh)
                         {
                             for (int i = nh; i < basen; ++i)
                             {
@@ -1676,6 +1676,7 @@ namespace InteriorPoint
                     else h(nh, opt.H, opt.x, extra);
                     BlasLike.dzerovec(n - nh, opt.cmod, nh);
                     BlasLike.daddvec(nh, opt.c, extra, opt.cmod);
+                    BlasLike.dcopyvec(n - nh, opt.c, opt.cmod, nh, nh);
                 }
                 else BlasLike.dcopyvec(opt.c.Length, opt.c, opt.cmod);
             }
@@ -1697,6 +1698,7 @@ namespace InteriorPoint
                             else Factorise.dsmxmulv(nh, opt.H, opt.x, extra, istart);
                             BlasLike.dzerovec(nn - nh, opt.cmod, istart + nh);
                             BlasLike.daddvec(nh, opt.c, extra, opt.cmod, istart, 0, istart);
+                            BlasLike.dcopyvec(nn - nh, opt.c, opt.cmod, istart + nh, istart + nh);
                         }
                         else BlasLike.dcopyvec(nn, opt.c, opt.cmod, istart, istart);
                     }
@@ -1803,6 +1805,7 @@ namespace InteriorPoint
                     else h(nh, opt.H, opt.x, extra);
                     BlasLike.dzerovec(opt.c.Length - nh, opt.cmod, nh);
                     BlasLike.daddvec(nh, opt.c, extra, opt.cmod);
+                    BlasLike.dcopyvec(n - nh, opt.c, opt.cmod, nh, nh);
                 }
                 var t1 = 0.0;
                 if ((homogenous && (t1 = Math.Max(alpha1, alpha2)) < opt.alphamin))

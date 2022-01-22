@@ -40,7 +40,7 @@ namespace Portfolio
             var useCosts = kappa > 0.0;
             this.ntrue = n;
             //           makeQ();
-            Q = new double[n * (nfac + 1)];
+            Q = null;//new double[n * (nfac + 1)];
             var bothsellbuy = false; //bothsellbuy = false means treat sell side only
             var N = n + n;
             var M = m + n + (delta < 1.0 ? 1 : 0);
@@ -147,7 +147,7 @@ namespace Portfolio
             this.A = AA;
             this.n = N;
             this.m = M;
-            this.gamma = 0.5;
+            this.gamma = gamma;
             BlasLike.dnegvec(CC.Length, CC);
             this.alpha = CC;
             if (useIP)
@@ -180,8 +180,14 @@ namespace Portfolio
                     else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}");
                 }
             }
+            var eret = BlasLike.ddotvec(n, alpha, WW);
+            var eretA = -BlasLike.ddotvec(n, CC, WW) - kappa / (1 - kappa) * BlasLike.ddotvec(n, buy, WW);
+            Console.WriteLine($"Return: {eret}: {eretA}");
             Console.WriteLine($"Turnover: {turnover * 0.5}");
             Console.WriteLine($"Cost: {cost}:  {costA}");
+            var utility = -gamma / (1 - gamma) * eret + kappa / (1 - kappa) * cost;
+            var utilityA = -BlasLike.ddotvec(N, CC, WW);
+            Console.WriteLine($"Utility: {utility}: {utilityA}");
         }
         public void GainLossSetUp(int n, int tlen, double[] DATA, string[] names, double R, double lambda, bool useIP = true)
         {
