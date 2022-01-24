@@ -1145,7 +1145,7 @@ namespace UseBlas
                     GainLossData.stringFields = "names";
                     try
                     {
-                        GainLossData.Read("/home/colin/ISA/GLdist");
+                        GainLossData.Read("./GL");
                     }
                     catch
                     {
@@ -1158,7 +1158,7 @@ namespace UseBlas
                     R = GainLossData.mapDouble["R"][0];
                     tlen = GainLossData.mapInt["tlen"][0];
                 }
-                bool useIP = true;
+                bool useIP = false;
                 opt.GainLossSetUp(n, tlen, DATA, names, R, lambda, useIP);
             }
             {
@@ -1204,7 +1204,8 @@ namespace UseBlas
                     opt.FL = FL;
                     opt.FC = FC;
                     opt.nfac = nfac;
-                    opt.BuySellSetup(n, m, nfac, A, L, U, gamma, kappa, delta, alpha, initial, buy, sell, names);
+                    bool useIp = true;
+                    opt.BuySellSetup(n, m, nfac, A, L, U, gamma, kappa, delta, alpha, initial, buy, sell, names, useIp);
                 }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
