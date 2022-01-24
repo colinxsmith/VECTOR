@@ -40,7 +40,7 @@ namespace Portfolio
             if (delta < 0) delta = 2;
             var useCosts = kappa > 0.0;
             this.ntrue = n;
-           // makeQ();
+            makeQ();
             //   Q = new double[n * (nfac + 1)];
             var bothsellbuy = false; //bothsellbuy = false means treat sell side only
             var N = n + n;
@@ -139,7 +139,7 @@ namespace Portfolio
                 {
                     BlasLike.dset(n, 1.0, AA, M, m + n);
                     BlasLike.dset(n, 2.0, AA, M, m + n + M * n);
-                    /*LL[N + M - 1] = */
+                    /*    LL[N + M - 1] = */
                     UU[N + M - 1] = 2.0 * delta + BlasLike.dsumvec(n, initial);
                 }
             }
