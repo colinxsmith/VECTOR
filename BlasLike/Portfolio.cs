@@ -42,7 +42,7 @@ namespace Portfolio
             this.ntrue = n;
             makeQ();
             //   Q = new double[n * (nfac + 1)];
-            var bothsellbuy = false; //bothsellbuy = false means treat sell side only
+            var bothsellbuy = true; //bothsellbuy = false means treat sell side only
             var N = n + n;
             var M = m + n + (delta < 1.0 ? 1 : 0);
             if (bothsellbuy)
@@ -62,7 +62,9 @@ namespace Portfolio
             if (useIP) BlasLike.dsetvec(n, BlasLike.lm_max, UU, n);
             else
             {
-                BlasLike.dsccopyvec(n, 2.0, U, UU, 0, n);
+                BlasLike.dcopyvec(n, U, UU, 0, n);
+                BlasLike.dsubvec(n, UU, initial, UU, n, 0, n);
+                // BlasLike.dsccopyvec(n, 2.0, U, UU, 0, n);
             }
             if (bothsellbuy)
             {
@@ -70,6 +72,8 @@ namespace Portfolio
                 if (useIP) BlasLike.dsetvec(n, BlasLike.lm_max, UU, n + n);
                 else
                 {
+                    //    BlasLike.dcopyvec(n, U, UU, 0, n+n);
+                    //    BlasLike.dsubvec(n, UU, initial, UU, n, 0, n);
                     BlasLike.dsccopyvec(n, 2.0, U, UU, 0, n + n);
                 }
             }
@@ -84,7 +88,9 @@ namespace Portfolio
             if (useIP) BlasLike.dsetvec(n, BlasLike.lm_max, UU, N + m);
             else
             {
-                BlasLike.dsccopyvec(n, 2, U, UU, 0, N + m);
+                BlasLike.dcopyvec(n, U, UU, 0, N + m);
+                BlasLike.dsubvec(n, UU, initial, UU, N + m, 0, N + m);
+                //   BlasLike.dsccopyvec(n, 1, U, UU, 0, N + m);
             }
             for (var i = m; i < m + n; ++i)
             {
@@ -96,7 +102,7 @@ namespace Portfolio
                 BlasLike.dsccopyvec(n, 1.0, initial, UU, 0, N + m + n);
                 if (useIP) BlasLike.dsetvec(n, -BlasLike.lm_max, LL, N + m + n);
                 else
-                {
+                {//BlasLike.dsccopyvec(n, -1.0, initial, LL, 0, N + m + n);
                     BlasLike.dsccopyvec(n, -2.0, L, LL, 0, N + m + n);
                 }
                 for (var i = m + n; i < m + n + n; ++i)
@@ -139,7 +145,7 @@ namespace Portfolio
                 {
                     BlasLike.dset(n, 1.0, AA, M, m + n);
                     BlasLike.dset(n, 2.0, AA, M, m + n + M * n);
-                    /*    LL[N + M - 1] = */
+                    /*   LL[N + M - 1] = */
                     UU[N + M - 1] = 2.0 * delta + BlasLike.dsumvec(n, initial);
                 }
             }
@@ -157,7 +163,8 @@ namespace Portfolio
             else
             {
                 BlasLike.dsetvec(n, 1.0 / n, WW);
-                BlasLike.dsetvec(n, 1.0 / n, WW, n);
+                BlasLike.dsccopyvec(n, 1.0, initial, WW, 0, n);
+                if (bothsellbuy) BlasLike.dsccopyvec(n, 1.0, initial, WW, 0, n + n);
                 var back = ActiveOpt(0, WW);
             }
             var turnover = 0.0;
@@ -190,12 +197,19 @@ namespace Portfolio
             var implied = new double[n];
             var variance = Variance(WW);
             var eretA = -BlasLike.ddotvec(n, CC, WW) + (bothsellbuy ? 0 : (kappa / (1 - kappa) * BlasLike.ddotvec(n, buy, WW)));
+            var turn2 = BlasLike.dsumvec(n, WW, n) + (BlasLike.dsumvec(n, WW) - BlasLike.dsumvec(n, initial)) * 0.5;
+            Console.WriteLine($"Variance: {variance}");
             Console.WriteLine($"Return: {eret}: {eretA}");
-            Console.WriteLine($"Turnover: {turnover * 0.5}");
+            Console.WriteLine($"Turnover: {turnover * 0.5}: {turn2}");
             Console.WriteLine($"Cost: {cost}:  {costA}");
             var utility = -gamma / (1 - gamma) * eret + kappa / (1 - kappa) * (cost + (bothsellbuy ? 0 : BlasLike.ddotvec(n, initial, buy))) + 0.5 * variance;
             var utilityA = BlasLike.ddotvec(N, CC, WW) + 0.5 * variance;
             Console.WriteLine($"Utility: {utility}: {utilityA}");
+            for (var i = 0; i < m; ++i)
+            {
+                var ccval = BlasLike.ddot(n, A, m, WW, 1, i);
+                Console.WriteLine($"Portfolio constraint {i}: {ccval}");
+            }
         }
         public void GainLossSetUp(int n, int tlen, double[] DATA, string[] names, double R, double lambda, bool useIP = true)
         {
@@ -214,7 +228,7 @@ namespace Portfolio
                 Q = new double[N * (N + 1) / 2];
                 for (int i = 0, ij = 0; i < n; ++i, ij += i)
                 {
-                    Q[ij + i] = 0;
+                    Q[ij + i] = 10;
                 }
             }
 
@@ -277,6 +291,11 @@ namespace Portfolio
                 Console.WriteLine($"Total GAIN = {gain:F8}");
                 Console.WriteLine($"Total LOSS = \t\t\t\t{loss:F8}");
                 Console.WriteLine($"Total LOSS (check from opt variables) = {lossV:F8}");
+                var variance = this.Variance(ww);
+                var expret = BlasLike.ddotvec(n, ww, alpha);
+                Console.WriteLine($"Return {expret:F8}");
+                Console.WriteLine($"Variance {variance:F8}");
+                Console.WriteLine($"Utility {-expret + lossV * lambda / tlen + 0.5 * variance}");
                 for (var i = 0; i < n; ++i)
                 {
                     Console.WriteLine($"{names[i]}\t{ww[i]:F8}");
@@ -305,6 +324,11 @@ namespace Portfolio
                 Console.WriteLine($"Total GAIN = {gain:F8}");
                 Console.WriteLine($"Total LOSS = \t\t\t\t{loss:F8}");
                 Console.WriteLine($"Total LOSS (check from opt variables) = {lossV:F8}");
+                var variance = this.Variance(ww);
+                var expret = BlasLike.ddotvec(n, ww, alpha);
+                Console.WriteLine($"Return {expret:F8}");
+                Console.WriteLine($"Variance {variance:F8}");
+                Console.WriteLine($"Utility {-expret + lossV * lambda / tlen + 0.5 * variance}");
                 for (var i = 0; i < n; ++i)
                 {
                     Console.WriteLine($"{names[i]}\t{ww[i]:F8}");
@@ -314,6 +338,11 @@ namespace Portfolio
                     var constraint = BlasLike.ddot(N, AA, M, ww, 1, i);
                     if (i < m) Console.WriteLine($"Constraint {i} = {constraint:F8}");
                     else Console.WriteLine($"Constraint {i} = {constraint:F8}  {UU[N + i]} G/L var {ww[n + i - 1]:F8}  {UU[n + i - 1]}");
+                }
+                for (var i = 0; i < m; ++i)
+                {
+                    var ccval = BlasLike.dsumvec(n, ww);
+                    Console.WriteLine($"Portfolio constraint {i}: {ccval}");
                 }
             }
 
@@ -325,8 +354,6 @@ namespace Portfolio
             BlasLike.dscalvec(Q.Length, 1e5, Q);
             if (true)
             {
-                var gfact = gamma / (1.0 - gamma);
-                gfact = gamma == 0 ? 0 : 1.0 / gfact;
                 var AA = new double[n * (m + 1)];
                 var LL = new double[n + m + 1];
                 var UU = new double[n + m + 1];
@@ -335,7 +362,7 @@ namespace Portfolio
                     if (i < n)
                     {
                         AA[i * (m + 1)] = 1;
-                        AA[i * (m + 1) + 1] = -CCCCCC[i] * gfact;
+                        AA[i * (m + 1) + 1] = -CCCCCC[i];
                     }
                     LL[i] = L[i];
                     UU[i] = U[i];
@@ -389,10 +416,12 @@ namespace Portfolio
         public virtual void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
         {
             if (Q != null) Factorise.CovMul(ntrue, Q, x, hx);
+            else BlasLike.dzerovec(nn, hx);
         }
         public virtual void hessmull(int nn, double[] QQ, double[] x, double[] hx)
         {
             if (Q != null) Factorise.CovMul(ntrue, Q, x, hx);
+            else BlasLike.dzerovec(nn, hx);
         }
         public double Variance(double[] w)
         {
@@ -402,6 +431,7 @@ namespace Portfolio
         }
         public int ActiveOpt(int lp = 0, double[] www = null)
         {
+            if (ntrue == 0) ntrue = n;
             var obj = 0.0;
             var iter = 10;
             var c = (double[])CCCCCC.Clone();
@@ -585,10 +615,12 @@ namespace Portfolio
                 IOPT.slackToConstraintU = slackToConstraintU;
                 var testmul = new double[n];
                 hessmull(n, Q, w, testmul);
-                Console.WriteLine(BlasLike.ddotvec(n, ww, testmul));
+                Console.WriteLine(BlasLike.ddotvec(n, w, testmul));
                 var kk = new Portfolio("");
-                kk.hessmull(n, HH, ww, testmul);
-                Console.WriteLine(BlasLike.ddotvec(n, ww, testmul));
+                kk.ntrue = ntrue;
+                kk.Q=HH;
+                kk.hessmull(n, HH, w, testmul);
+                Console.WriteLine(BlasLike.ddotvec(n, w, testmul));
                 IOPT.alphamin = 1e-8;
                 IOPT.conv = conv;
                 IOPT.compConv = Math.Max(conv, IOPT.compConv);
@@ -625,10 +657,12 @@ namespace Portfolio
         public override void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
         {
             if (Q != null) Factorise.FacMul(ntrue, nfac, Q, x, hx);
+            else BlasLike.dzerovec(nn, hx);
         }
         public override void hessmull(int nn, double[] QQ, double[] x, double[] hx)
         {
             if (Q != null) Factorise.FacMul(ntrue, nfac, Q, x, hx);
+            else BlasLike.dzerovec(nn, hx);
         }
         public int nfac;
         public double[] FL = null;
