@@ -38,7 +38,9 @@ namespace Portfolio
         public void BuySellSetup(int n, int m, int nfac, double[] A, double[] L, double[] U, double gamma, double kappa, double delta, double[] alpha, double[] initial, double[] buy, double[] sell, string[] names, bool useIP = true)
         {
             if (delta < 0) delta = 2;
+            // kappa = -1;
             var useCosts = kappa > 0.0;
+            if (!useCosts) kappa = 0;
             this.ntrue = n;
             makeQ();
             var bothsellbuy = true; //bothsellbuy = false means treat sell side only
@@ -62,8 +64,7 @@ namespace Portfolio
             else
             {
                 BlasLike.dcopyvec(n, U, UU, 0, n);
-                BlasLike.dsubvec(n, UU, initial, UU, n, 0, n);
-                // BlasLike.dsccopyvec(n, 2.0, U, UU, 0, n);
+                //   BlasLike.dsubvec(n, UU, initial, UU, n, 0, n);
             }
             if (bothsellbuy)
             {
@@ -72,8 +73,7 @@ namespace Portfolio
                 else
                 {
                     BlasLike.dcopyvec(n, U, UU, 0, n + n);
-                    BlasLike.dsubvec(n, UU, initial, UU, n, 0, n + n);
-                    //BlasLike.dsccopyvec(n, 2.0, U, UU, 0, n + n);
+                    // BlasLike.dsubvec(n, UU, initial, UU, n, 0, n + n);
                 }
             }
             //Constraints
@@ -87,9 +87,7 @@ namespace Portfolio
             if (useIP) BlasLike.dsetvec(n, BlasLike.lm_max, UU, N + m);
             else
             {
-                BlasLike.dcopyvec(n, U, UU, 0, N + m);
-                BlasLike.dsubvec(n, UU, initial, UU, N + m, 0, N + m);
-                //   BlasLike.dsccopyvec(n, 1, U, UU, 0, N + m);
+                BlasLike.dsetvec(n, 1.0, UU, N + m);
             }
             for (var i = m; i < m + n; ++i)
             {
@@ -102,7 +100,7 @@ namespace Portfolio
                 if (useIP) BlasLike.dsetvec(n, -BlasLike.lm_max, LL, N + m + n);
                 else
                 {
-                    BlasLike.dsccopyvec(n, -2.0, L, LL, 0, N + m + n);
+                    BlasLike.dsetvec(n, -1.0, LL, N + m + n);
                 }
                 for (var i = m + n; i < m + n + n; ++i)
                 {
@@ -125,7 +123,6 @@ namespace Portfolio
                     BlasLike.dsccopyvec(n, mult, sell, CC, 0, n);
                     BlasLike.dsccopyvec(n, mult, buy, CC, 0, 2 * n);
                 }
-
             }
             else
             {
@@ -137,7 +134,8 @@ namespace Portfolio
                 LL[N + M - 1] = -BlasLike.lm_max * 0;// Proper lower bound <=0 is redundant
                 if (bothsellbuy)
                 {
-                    BlasLike.dset(n + n, 1.0, AA, M, m + n + M * n);
+                    BlasLike.dset(n * 2, 1.0, AA, M, m + n + n + M * n);
+                    /* LL[N + M - 1] =*/
                     UU[N + M - 1] = delta * 2;
                 }
                 else
@@ -162,13 +160,12 @@ namespace Portfolio
             else
             {
                 BlasLike.dsetvec(n, 1.0 / n, WW);
-                BlasLike.dsccopyvec(n, 1.0, initial, WW, 0, n);
-                if (bothsellbuy) BlasLike.dsccopyvec(n, 1.0, initial, WW, 0, n + n);
+                BlasLike.dcopyvec(n, initial, WW, 0, n);
+                if (bothsellbuy) BlasLike.dcopyvec(n, initial, WW, 0, n + n);
                 var back = ActiveOpt(0, WW);
             }
             var turnover = 0.0;
             var cost = 0.0;
-            var costA = 0.0;
             for (var i = 0; i < n; ++i)
             {
                 turnover += Math.Abs(WW[i] - initial[i]);
@@ -176,8 +173,6 @@ namespace Portfolio
                 {
                     var diff = (WW[i] - initial[i]);
                     cost += diff > 0 ? diff * buy[i] : -diff * sell[i];
-                    if (bothsellbuy) costA += WW[i + n] * sell[i] + WW[i + 2 * n] * buy[i];
-                    else costA += diff * buy[i] + WW[i + n] * (sell[i] + buy[i]);
                 }
                 var c1 = BlasLike.ddot(N, AA, M, WW, 1, i + m);
                 if (bothsellbuy)
@@ -197,6 +192,9 @@ namespace Portfolio
             var variance = Variance(WW);
             var eretA = -BlasLike.ddotvec(n, CC, WW) + (bothsellbuy ? 0 : (kappa / (1 - kappa) * BlasLike.ddotvec(n, buy, WW)));
             var turn2 = BlasLike.dsumvec(n, WW, n) + (BlasLike.dsumvec(n, WW) - BlasLike.dsumvec(n, initial)) * 0.5;
+            var costA = 0.0;
+            if (!bothsellbuy) costA = BlasLike.ddotvec(n, WW, sell, n) + BlasLike.ddotvec(n, WW, buy, n) + BlasLike.ddotvec(n, WW, buy) - BlasLike.ddotvec(n, initial, buy);
+            else costA = BlasLike.ddotvec(n, WW, sell, n) + BlasLike.ddotvec(n, WW, buy, n + n);
             Console.WriteLine($"Variance: {variance}");
             Console.WriteLine($"Return: {eret}: {eretA}");
             Console.WriteLine($"Turnover: {turnover * 0.5}: {turn2}");
@@ -209,6 +207,7 @@ namespace Portfolio
                 var ccval = BlasLike.ddot(n, A, m, WW, 1, i);
                 Console.WriteLine($"Portfolio constraint {i}: {ccval}");
             }
+            //            ActiveSet.Optimise.printV("optimal weights", WW, n);
         }
         public void GainLossSetUp(int n, int tlen, double[] DATA, string[] names, double R, double lambda, bool useIP = true)
         {
