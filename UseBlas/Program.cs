@@ -1204,7 +1204,7 @@ namespace UseBlas
                     opt.FL = FL;
                     opt.FC = FC;
                     opt.nfac = nfac;
-                    bool useIp = true;
+                    bool useIp = false;
                     opt.BuySellSetup(n, m, nfac, A, L, U, gamma, kappa, delta, alpha, initial, buy, sell, names, useIp);
                 }
             }

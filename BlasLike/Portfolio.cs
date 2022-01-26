@@ -41,7 +41,6 @@ namespace Portfolio
             var useCosts = kappa > 0.0;
             this.ntrue = n;
             makeQ();
-            //   Q = new double[n * (nfac + 1)];
             var bothsellbuy = true; //bothsellbuy = false means treat sell side only
             var N = n + n;
             var M = m + n + (delta < 1.0 ? 1 : 0);
@@ -72,9 +71,9 @@ namespace Portfolio
                 if (useIP) BlasLike.dsetvec(n, BlasLike.lm_max, UU, n + n);
                 else
                 {
-                    //    BlasLike.dcopyvec(n, U, UU, 0, n+n);
-                    //    BlasLike.dsubvec(n, UU, initial, UU, n, 0, n);
-                    BlasLike.dsccopyvec(n, 2.0, U, UU, 0, n + n);
+                    BlasLike.dcopyvec(n, U, UU, 0, n + n);
+                    BlasLike.dsubvec(n, UU, initial, UU, n, 0, n + n);
+                    //BlasLike.dsccopyvec(n, 2.0, U, UU, 0, n + n);
                 }
             }
             //Constraints
@@ -102,7 +101,7 @@ namespace Portfolio
                 BlasLike.dsccopyvec(n, 1.0, initial, UU, 0, N + m + n);
                 if (useIP) BlasLike.dsetvec(n, -BlasLike.lm_max, LL, N + m + n);
                 else
-                {//BlasLike.dsccopyvec(n, -1.0, initial, LL, 0, N + m + n);
+                {
                     BlasLike.dsccopyvec(n, -2.0, L, LL, 0, N + m + n);
                 }
                 for (var i = m + n; i < m + n + n; ++i)
@@ -138,7 +137,7 @@ namespace Portfolio
                 LL[N + M - 1] = -BlasLike.lm_max * 0;// Proper lower bound <=0 is redundant
                 if (bothsellbuy)
                 {
-                    BlasLike.dset(n + n, 1.0, AA, M, n + n + m + M * n);
+                    BlasLike.dset(n + n, 1.0, AA, M, m + n + M * n);
                     UU[N + M - 1] = delta * 2;
                 }
                 else
@@ -618,7 +617,7 @@ namespace Portfolio
                 Console.WriteLine(BlasLike.ddotvec(n, w, testmul));
                 var kk = new Portfolio("");
                 kk.ntrue = ntrue;
-                kk.Q=HH;
+                kk.Q = HH;
                 kk.hessmull(n, HH, w, testmul);
                 Console.WriteLine(BlasLike.ddotvec(n, w, testmul));
                 IOPT.alphamin = 1e-8;
