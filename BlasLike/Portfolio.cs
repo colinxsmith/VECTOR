@@ -43,13 +43,13 @@ namespace Portfolio
             if (!useCosts) kappa = 0;
             this.ntrue = n;
             makeQ();
-            var bothsellbuy = true; //bothsellbuy = false means treat sell side only
+            var bothsellbuy = false; //bothsellbuy = false means treat sell side only
             var N = n + n;
             var M = m + n + (delta < 1.0 ? 1 : 0);
             if (bothsellbuy)
             {
                 N += n;
-                M += n;
+                M += 2 * n;
             }
             var CC = new double[N];
             var AA = new double[N * M];
@@ -64,7 +64,6 @@ namespace Portfolio
             else
             {
                 BlasLike.dcopyvec(n, U, UU, 0, n);
-                //   BlasLike.dsubvec(n, UU, initial, UU, n, 0, n);
             }
             if (bothsellbuy)
             {
@@ -73,7 +72,6 @@ namespace Portfolio
                 else
                 {
                     BlasLike.dcopyvec(n, U, UU, 0, n + n);
-                    // BlasLike.dsubvec(n, UU, initial, UU, n, 0, n + n);
                 }
             }
             //Constraints
@@ -83,11 +81,11 @@ namespace Portfolio
             {
                 BlasLike.dcopy(n, A, m, AA, M, i, i);
             }
-            BlasLike.dsccopyvec(n, 1.0, initial, LL, 0, N + m);
+            BlasLike.dcopyvec(n, initial, LL, 0, N + m);
             if (useIP) BlasLike.dsetvec(n, BlasLike.lm_max, UU, N + m);
             else
             {
-                BlasLike.dsetvec(n, 1.0, UU, N + m);
+                BlasLike.dsetvec(n, 1, UU, N + m);
             }
             for (var i = m; i < m + n; ++i)
             {
@@ -106,6 +104,16 @@ namespace Portfolio
                 {
                     BlasLike.dset(1, 1.0, AA, M, i + M * (i - m - n));
                     BlasLike.dset(1, -1.0, AA, M, i + M * (n + n + i - m - n));
+                }
+
+
+                BlasLike.dcopyvec(n, initial, UU, 0, N + m + n * 2);
+                BlasLike.dcopyvec(n, initial, LL, 0, N + m + n * 2);
+                for (var i = m + n * 2; i < m + n * 2 + n; ++i)
+                {
+                    BlasLike.dset(1, 1.0, AA, M, i + M * (i - m - n * 2));
+                    BlasLike.dset(1, 1.0, AA, M, i + M * (n + i - m - n * 2));
+                    BlasLike.dset(1, -1.0, AA, M, i + M * (n + n + i - m - n * 2));
                 }
             }
             BlasLike.dsccopyvec(n, -gamma / (1 - gamma), alpha, CC);
@@ -134,14 +142,14 @@ namespace Portfolio
                 LL[N + M - 1] = -BlasLike.lm_max * 0;// Proper lower bound <=0 is redundant
                 if (bothsellbuy)
                 {
-                    BlasLike.dset(n * 2, 1.0, AA, M, m + n + n + M * n);
+                    BlasLike.dset(n * 2, 1.0, AA, M, M - 1 + M * n);
                     /* LL[N + M - 1] =*/
                     UU[N + M - 1] = delta * 2;
                 }
                 else
                 {
-                    BlasLike.dset(n, 1.0, AA, M, m + n);
-                    BlasLike.dset(n, 2.0, AA, M, m + n + M * n);
+                    BlasLike.dset(n, 1.0, AA, M, M - 1);
+                    BlasLike.dset(n, 2.0, AA, M, M - 1 + M * n);
                     /*   LL[N + M - 1] = */
                     UU[N + M - 1] = 2.0 * delta + BlasLike.dsumvec(n, initial);
                 }
@@ -160,9 +168,17 @@ namespace Portfolio
             else
             {
                 BlasLike.dsetvec(n, 1.0 / n, WW);
-                BlasLike.dcopyvec(n, initial, WW, 0, n);
+                Q = null;
+                for (var i = 0; i < n; ++i)
+                {
+                    WW[i + n] = initial[i] == 0 ? 0 : Math.Max(0, (initial[i] - 1.0 / n));
+                }
                 if (bothsellbuy) BlasLike.dcopyvec(n, initial, WW, 0, n + n);
                 var back = ActiveOpt(0, WW);
+                Console.WriteLine($"back = {back}");
+                makeQ();
+                back = ActiveOpt(0, WW);
+                Console.WriteLine($"back = {back}");
             }
             var turnover = 0.0;
             var cost = 0.0;
@@ -183,8 +199,8 @@ namespace Portfolio
                 }
                 else
                 {
-                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}");
-                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}");
+                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(UU[i + N + m] - c1):f2}");
+                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(UU[i + N + m] - c1):f2}");
                 }
             }
             var eret = BlasLike.ddotvec(n, alpha, WW);
@@ -410,6 +426,10 @@ namespace Portfolio
                 return 0;
             else
                 return -10;
+        }
+        public void hessmulltest(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
+        {
+            BlasLike.dzerovec(nn,hx);
         }
         public virtual void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
         {
