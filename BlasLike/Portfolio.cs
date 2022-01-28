@@ -1,11 +1,28 @@
 using System;
 using Blas;
 using Solver;
+using System.IO;
 using System.Diagnostics;
 namespace Portfolio
 {
     public class Portfolio
     {
+        public virtual void WriteInputs(string filename)
+        {
+            using (StreamWriter writer = new StreamWriter(filename))
+            {
+                writer.WriteLine("n");
+                writer.WriteLine(n);
+                writer.WriteLine("ntrue");
+                writer.WriteLine(ntrue);
+                writer.WriteLine("m");
+                printVector("LL", L, writer);
+                printVector("UU", U, writer);
+                printVector("CC", CCCCCC, writer);
+                printVector("AA", A, writer);
+                printVector("QQ", Q, writer);
+            }
+        }
         public Portfolio(string file)
         {
             inFile = file;
@@ -35,6 +52,7 @@ namespace Portfolio
                     if (names != null) Array.Resize(ref names, n);
                 }
         }
+
         public void BuySellSetup(int n, int m, int nfac, double[] A, double[] L, double[] U, double gamma, double kappa, double delta, double[] alpha, double[] initial, double[] buy, double[] sell, string[] names, bool useIP = true)
         {
             if (delta < 0) delta = 2;
@@ -43,7 +61,7 @@ namespace Portfolio
             if (!useCosts) kappa = 0;
             this.ntrue = n;
             makeQ();
-            var bothsellbuy = false; //bothsellbuy = false means treat sell side only
+            var bothsellbuy = true; //bothsellbuy = false means treat sell side only
             var N = n + n;
             var M = m + n + (delta < 1.0 ? 1 : 0);
             if (bothsellbuy)
@@ -177,6 +195,7 @@ namespace Portfolio
                 var back = ActiveOpt(0, WW);
                 Console.WriteLine($"back = {back}");
                 makeQ();
+                WriteInputs("./optinput");
                 back = ActiveOpt(0, WW);
                 Console.WriteLine($"back = {back}");
             }
@@ -429,7 +448,7 @@ namespace Portfolio
         }
         public void hessmulltest(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
         {
-            BlasLike.dzerovec(nn,hx);
+            BlasLike.dzerovec(nn, hx);
         }
         public virtual void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
         {
@@ -650,10 +669,49 @@ namespace Portfolio
             if (wback != null) BlasLike.dcopyvec(wback.Length, ww, wback);
             return back;
         }
-
+        public static void printVector<T>(string name, T[] a, StreamWriter dave, int upto = -1)
+        {
+            dave.WriteLine(name);
+            if (upto == -1) upto = a.Length;
+            for (int i = 0; i < upto; ++i)
+            {
+                var p = a[i].GetType();
+                if (p.FullName == "System.Double")
+                    dave.Write($"{a[i]:F8} ");
+                else
+                    dave.Write($"{a[i]} ");
+            }
+            dave.Write("\n");
+        }
     }
     public class FPortfolio : Portfolio
     {
+        public override void WriteInputs(string filename)
+        {
+            double[] HH = null;
+            if (Q != null)
+            {
+                HH = new double[ntrue * (ntrue + 1) / 2];
+                Factorise.Fac2Cov(ntrue, nfac, Q, HH);
+            }
+            using (StreamWriter writer = new StreamWriter(filename))
+            {
+                writer.WriteLine("n");
+                writer.WriteLine(n);
+                writer.WriteLine("ntrue");
+                writer.WriteLine(ntrue);
+                writer.WriteLine("m");
+                writer.WriteLine(m);
+                printVector("LL", L, writer);
+                printVector("UU", U, writer);
+                printVector("CC", CCCCCC, writer);
+                printVector("AA", A, writer);
+                if (HH != null)
+                {
+                    printVector("QQ", HH, writer);
+                }
+            }
+        }
         public FPortfolio(string file) : base(file)
         {
             inFile = file;
