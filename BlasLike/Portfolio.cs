@@ -16,6 +16,8 @@ namespace Portfolio
                 writer.WriteLine("ntrue");
                 writer.WriteLine(ntrue);
                 writer.WriteLine("m");
+                printVector("initial", initial, writer);
+                printVector("WW", w, writer);
                 printVector("LL", L, writer);
                 printVector("UU", U, writer);
                 printVector("CC", CCCCCC, writer);
@@ -195,6 +197,8 @@ namespace Portfolio
                 var back = ActiveOpt(0, WW);
                 Console.WriteLine($"back = {back}");
                 makeQ();
+                this.initial = initial;
+                this.w = WW;
                 WriteInputs("./optinput");
                 back = ActiveOpt(0, WW);
                 Console.WriteLine($"back = {back}");
@@ -702,6 +706,8 @@ namespace Portfolio
                 writer.WriteLine(ntrue);
                 writer.WriteLine("m");
                 writer.WriteLine(m);
+                printVector("initial", initial, writer);
+                printVector("WW", w, writer);
                 printVector("LL", L, writer);
                 printVector("UU", U, writer);
                 printVector("CC", CCCCCC, writer);
