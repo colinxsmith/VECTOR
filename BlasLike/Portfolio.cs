@@ -16,6 +16,7 @@ namespace Portfolio
                 writer.WriteLine("ntrue");
                 writer.WriteLine(ntrue);
                 writer.WriteLine("m");
+                writer.WriteLine(m);
                 printVector("initial", initial, writer);
                 printVector("WW", w, writer);
                 printVector("LL", L, writer);
@@ -63,7 +64,7 @@ namespace Portfolio
             if (!useCosts) kappa = 0;
             this.ntrue = n;
             makeQ();
-            var bothsellbuy = true; //bothsellbuy = false means treat sell side only
+            var bothsellbuy = false; //bothsellbuy = false means treat sell side only
             var N = n + n;
             var M = m + n + (delta < 1.0 ? 1 : 0);
             if (bothsellbuy)
@@ -187,19 +188,26 @@ namespace Portfolio
             }
             else
             {
-                BlasLike.dsetvec(n, 1.0 / n, WW);
                 Q = null;
+                BlasLike.dsetvec(WW.Length, 1.0 / n, WW);
+             /*   for (var i = 0; i < n; ++i)
+                {
+                    WW[i + n] = initial[i] == 0 ? 0 : Math.Max(0, (initial[i] - 1.0 / n));
+                }*/
+                this.initial = initial;
+                this.w = WW;
+                if (bothsellbuy) BlasLike.dcopyvec(n, initial, WW, 0, n + n);
+                WriteInputs("./optinput1");
+                var back = ActiveOpt(0, WW);
+                Console.WriteLine($"back = {back}");
+                makeQ();
+                BlasLike.dsetvec(WW.Length, 1.0 / n, WW);
                 for (var i = 0; i < n; ++i)
                 {
                     WW[i + n] = initial[i] == 0 ? 0 : Math.Max(0, (initial[i] - 1.0 / n));
                 }
-                if (bothsellbuy) BlasLike.dcopyvec(n, initial, WW, 0, n + n);
-                var back = ActiveOpt(0, WW);
-                Console.WriteLine($"back = {back}");
-                makeQ();
-                this.initial = initial;
                 this.w = WW;
-                WriteInputs("./optinput");
+                WriteInputs("./optinput2");
                 back = ActiveOpt(0, WW);
                 Console.WriteLine($"back = {back}");
             }
@@ -222,8 +230,8 @@ namespace Portfolio
                 }
                 else
                 {
-                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(UU[i + N + m] - c1):f2}");
-                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(UU[i + N + m] - c1):f2}");
+                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(!useIP?(UU[i + N + m] - c1):10):f2}");
+                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(!useIP?(UU[i + N + m] - c1):10):f2}");
                 }
             }
             var eret = BlasLike.ddotvec(n, alpha, WW);
@@ -456,12 +464,20 @@ namespace Portfolio
         }
         public virtual void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
         {
-            if (Q != null) Factorise.CovMul(ntrue, Q, x, hx);
+            if (Q != null)
+            {
+                Factorise.CovMul(ntrue, Q, x, hx);
+                BlasLike.dzerovec(nn - ntrue, hx, ntrue);
+            }
             else BlasLike.dzerovec(nn, hx);
         }
         public virtual void hessmull(int nn, double[] QQ, double[] x, double[] hx)
         {
-            if (Q != null) Factorise.CovMul(ntrue, Q, x, hx);
+            if (Q != null)
+            {
+                Factorise.CovMul(ntrue, Q, x, hx);
+                BlasLike.dzerovec(nn - ntrue, hx, ntrue);
+            }
             else BlasLike.dzerovec(nn, hx);
         }
         public double Variance(double[] w)
@@ -684,6 +700,7 @@ namespace Portfolio
                     dave.Write($"{a[i]:F8} ");
                 else
                     dave.Write($"{a[i]} ");
+                if(i%500==499)dave.Write("\n");
             }
             dave.Write("\n");
         }
@@ -738,12 +755,20 @@ namespace Portfolio
         }
         public override void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
         {
-            if (Q != null) Factorise.FacMul(ntrue, nfac, Q, x, hx);
+            if (Q != null)
+            {
+                Factorise.FacMul(ntrue, nfac, Q, x, hx);
+                BlasLike.dzerovec(nn - ntrue, hx, ntrue);
+            }
             else BlasLike.dzerovec(nn, hx);
         }
         public override void hessmull(int nn, double[] QQ, double[] x, double[] hx)
         {
-            if (Q != null) Factorise.FacMul(ntrue, nfac, Q, x, hx);
+            if (Q != null)
+            {
+                Factorise.FacMul(ntrue, nfac, Q, x, hx);
+                BlasLike.dzerovec(nn - ntrue, hx, ntrue);
+            }
             else BlasLike.dzerovec(nn, hx);
         }
         public int nfac;
