@@ -4306,7 +4306,7 @@ namespace ActiveSet
 
                 ++iter;
                 if (iter >= istart) msg = msglvl;
-
+//Console.WriteLine($"iter {iter} objective {objqp:E16}");
                 dfindp(nullr, unitpg, n, nclin,
                     NROWRT, ncolr, ncolz, ref nfree,
                     negligible != 0, ref gtp, ref pnorm, ref rdlast);

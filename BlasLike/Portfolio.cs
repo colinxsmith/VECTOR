@@ -190,21 +190,23 @@ namespace Portfolio
             {
                 Q = null;
                 BlasLike.dsetvec(WW.Length, 1.0 / n, WW);
-             /*   for (var i = 0; i < n; ++i)
+                for (var i = 0; i < n; ++i)
                 {
                     WW[i + n] = initial[i] == 0 ? 0 : Math.Max(0, (initial[i] - 1.0 / n));
-                }*/
+                    if (bothsellbuy) WW[i + 2 * n] = initial[i] == 0 ? 0 : Math.Max(0, -(initial[i] - 1.0 / n));
+                }
                 this.initial = initial;
                 this.w = WW;
                 if (bothsellbuy) BlasLike.dcopyvec(n, initial, WW, 0, n + n);
                 WriteInputs("./optinput1");
-                var back = ActiveOpt(0, WW);
+                var back = ActiveOpt(1, WW);
                 Console.WriteLine($"back = {back}");
                 makeQ();
                 BlasLike.dsetvec(WW.Length, 1.0 / n, WW);
                 for (var i = 0; i < n; ++i)
                 {
                     WW[i + n] = initial[i] == 0 ? 0 : Math.Max(0, (initial[i] - 1.0 / n));
+                    if (bothsellbuy) WW[i + 2 * n] = initial[i] == 0 ? 0 : Math.Max(0, -(initial[i] - 1.0 / n));
                 }
                 this.w = WW;
                 WriteInputs("./optinput2");
@@ -230,8 +232,8 @@ namespace Portfolio
                 }
                 else
                 {
-                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(!useIP?(UU[i + N + m] - c1):10):f2}");
-                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(!useIP?(UU[i + N + m] - c1):10):f2}");
+                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(!useIP ? (UU[i + N + m] - c1) : 10):f2}");
+                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(!useIP ? (UU[i + N + m] - c1) : 10):f2}");
                 }
             }
             var eret = BlasLike.ddotvec(n, alpha, WW);
@@ -689,7 +691,7 @@ namespace Portfolio
             if (wback != null) BlasLike.dcopyvec(wback.Length, ww, wback);
             return back;
         }
-        public static void printVector<T>(string name, T[] a, StreamWriter dave, int upto = -1)
+        public static void printVector<T>(string name, T[] a, StreamWriter dave, int linelimit = 500, int upto = -1)
         {
             dave.WriteLine(name);
             if (upto == -1) upto = a.Length;
@@ -700,7 +702,7 @@ namespace Portfolio
                     dave.Write($"{a[i]:F8} ");
                 else
                     dave.Write($"{a[i]} ");
-                if(i%500==499)dave.Write("\n");
+                if (i % linelimit == (linelimit - 1)) dave.Write("\n");
             }
             dave.Write("\n");
         }
