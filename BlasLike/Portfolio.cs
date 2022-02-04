@@ -22,6 +22,7 @@ namespace Portfolio
                 printVector("LL", L, writer);
                 printVector("UU", U, writer);
                 printVector("CC", c, writer);
+                printVector("bench", bench, writer);
                 printVector("AA", A, writer);
                 printVector("QQ", Q, writer);
             }
@@ -237,7 +238,6 @@ namespace Portfolio
                 }
             }
             var eret = BlasLike.ddotvec(n, alpha, WW);
-            var implied = new double[n];
             var variance = Variance(WW);
             var eretA = -BlasLike.ddotvec(n, CC, WW) + (bothsellbuy ? 0 : (kappa / (1 - kappa) * BlasLike.ddotvec(n, buy, WW)));
             var turn2 = BlasLike.dsumvec(n, WW, n) + (BlasLike.dsumvec(n, WW) - BlasLike.dsumvec(n, initial)) * 0.5;
@@ -248,8 +248,15 @@ namespace Portfolio
             Console.WriteLine($"Return: {eret}: {eretA}");
             Console.WriteLine($"Turnover: {turnover * 0.5}: {turn2}");
             Console.WriteLine($"Cost: {cost}:  {costA}");
-            var utility = -gamma / (1 - gamma) * eret + kappa / (1 - kappa) * (cost + (bothsellbuy ? 0 : BlasLike.ddotvec(n, initial, buy))) + 0.5 * variance;
-            var utilityA = BlasLike.ddotvec(N, CC, WW) + 0.5 * variance;
+            var extra = 0.0;
+            if (bench != null)
+            {
+                var implied = new double[ntrue];
+                hessmull(n, 1, 1, 1, Q, bench, implied);
+                extra = -BlasLike.ddotvec(ntrue, WW, implied);
+            }
+            var utility = -gamma / (1 - gamma) * eret + kappa / (1 - kappa) * (cost + (bothsellbuy ? 0 : BlasLike.ddotvec(n, initial, buy))) + 0.5 * variance + extra;
+            var utilityA = BlasLike.ddotvec(N, CC, WW) + 0.5 * variance + extra;
             Console.WriteLine($"Utility: {utility}: {utilityA}");
             for (var i = 0; i < m; ++i)
             {
@@ -326,71 +333,58 @@ namespace Portfolio
             if (useIP)
             {
                 var back = InteriorOpt(5e-11, ww);
-                var loss = 0.0;
-                var gain = 0.0;
-                for (var i = 0; i < tlen; ++i)
-                {
-                    var GL = BlasLike.ddot(n, DATA, tlen, ww, 1, i) - R;
-                    gain += Math.Max(0, GL);
-                    loss += -Math.Min(0, GL);
-                }
-                var lossV = BlasLike.dsumvec(tlen, ww, n);
-                Console.WriteLine($"Total GAIN = {gain:F8}");
-                Console.WriteLine($"Total LOSS = \t\t\t\t{loss:F8}");
-                Console.WriteLine($"Total LOSS (check from opt variables) = {lossV:F8}");
-                var variance = this.Variance(ww);
-                var expret = BlasLike.ddotvec(n, ww, alpha);
-                Console.WriteLine($"Return {expret:F8}");
-                Console.WriteLine($"Variance {variance:F8}");
-                Console.WriteLine($"Utility {-expret + lossV * lambda / tlen + 0.5 * variance}");
-                for (var i = 0; i < n; ++i)
-                {
-                    Console.WriteLine($"{names[i]}\t{ww[i]:F8}");
-                }
-                for (var i = 0; i < M; ++i)
-                {
-                    var constraint = BlasLike.ddot(N, AA, M, ww, 1, i);
-                    if (i < m) Console.WriteLine($"Constraint {i} = {constraint:F8}");
-                    else Console.WriteLine($"Constraint {i} = {constraint:F8} G/L var {ww[n + i - 1]:F8}");
-                }
             }
             else
             {
                 BlasLike.dsetvec(n, 1.0 / n, ww);
-                BlasLike.dsetvec(tlen, 1.0 / tlen, ww, n);
-                var back = ActiveOpt(activeLp, ww);
-                var gain = 0.0;
-                var loss = 0.0;
                 for (var i = 0; i < tlen; ++i)
                 {
-                    var GL = BlasLike.ddot(n, DATA, tlen, ww, 1, i) - R;
-                    gain += Math.Max(0, GL);
-                    loss += -Math.Min(0, GL);
+                    var LOSS = R - BlasLike.ddot(n, DATA, tlen, ww, 1, i);
+                    ww[i + n] = Math.Max(0, LOSS);
                 }
-                var lossV = BlasLike.dsumvec(tlen, ww, n);
-                Console.WriteLine($"Total GAIN = {gain:F8}");
-                Console.WriteLine($"Total LOSS = \t\t\t\t{loss:F8}");
-                Console.WriteLine($"Total LOSS (check from opt variables) = {lossV:F8}");
-                var variance = this.Variance(ww);
-                var expret = BlasLike.ddotvec(n, ww, alpha);
-                Console.WriteLine($"Return {expret:F8}");
-                Console.WriteLine($"Variance {variance:F8}");
-                Console.WriteLine($"Utility {-expret + lossV * lambda / tlen + 0.5 * variance}");
-                for (var i = 0; i < n; ++i)
-                {
-                    Console.WriteLine($"{names[i]}\t{ww[i]:F8}");
-                }
-                for (var i = 0; i < M; ++i)
-                {
-                    var constraint = BlasLike.ddot(N, AA, M, ww, 1, i);
-                    if (i < m) Console.WriteLine($"Constraint {i} = {constraint:F8}");
-                    else Console.WriteLine($"Constraint {i} = {constraint:F8}  {UU[N + i]} G/L var {ww[n + i - 1]:F8}  {UU[n + i - 1]}");
-                }
-                for (var i = 0; i < m; ++i)
-                {
-                    var ccval = BlasLike.dsumvec(n, ww);
-                    Console.WriteLine($"Portfolio constraint {i}: {ccval}");
-                }
+                this.w = ww;
+                ntrue = n;
+                WriteInputs("./gainloss");
+                var back = ActiveOpt(activeLp, ww);
+            }
+            var gain = 0.0;
+            var loss = 0.0;
+            for (var i = 0; i < tlen; ++i)
+            {
+                var GL = BlasLike.ddot(n, DATA, tlen, ww, 1, i) - R;
+                gain += Math.Max(0, GL);
+                loss += -Math.Min(0, GL);
+            }
+            var lossV = BlasLike.dsumvec(tlen, ww, n);
+            var gainV = 0.0;
+            for (var i = 0; i < tlen; ++i)
+            {
+                gainV += BlasLike.ddot(N, AA, M, ww, 1, i + m) - R;
+            }
+            Console.WriteLine($"Total GAIN = \t\t\t\t{gain:F8}");
+            Console.WriteLine($"Total GAIN (check from opt variables) = {gainV:F8}");
+            Console.WriteLine($"Total LOSS = \t\t\t\t{loss:F8}");
+            Console.WriteLine($"Total LOSS (check from opt variables) = {lossV:F8}");
+            var variance = this.Variance(ww);
+            var expret = BlasLike.ddotvec(n, ww, alpha);
+            Console.WriteLine($"Return {expret:F8}");
+            Console.WriteLine($"Variance {variance:F8}");
+            Console.WriteLine($"Utility {-expret + lossV * lambda / tlen + 0.5 * variance}");
+            for (var i = 0; i < n; ++i)
+            {
+                Console.WriteLine($"{names[i]}\t{ww[i]:F8}");
+            }
+            for (var i = 0; i < M; ++i)
+            {
+                var constraint = BlasLike.ddot(N, AA, M, ww, 1, i);
+                if (i < m) Console.WriteLine($"Constraint {i} = {constraint:F8}");
+                else if (useIP) Console.WriteLine($"Constraint {i} = {constraint:F8}  LOSS var {ww[n + i - 1]:F8}");
+                else Console.WriteLine($"Constraint {i} = {constraint:F8}  {UU[N + i]} LOSS var {ww[n + i - 1]:F8}  {UU[n + i - 1]}");
+            }
+            for (var i = 0; i < m; ++i)
+            {
+                var ccval = BlasLike.dsumvec(n, ww);
+                Console.WriteLine($"Portfolio constraint {i}: {ccval}");
             }
 
         }
@@ -424,6 +418,9 @@ namespace Portfolio
                 A = AA;
             }
             var Aw = new double[m];
+            w = new double[n];
+            BlasLike.dsetvec(n, 1.0 / n, w);
+            WriteInputs("./basic");
             var ok = ActiveOpt();
             ActiveSet.Optimise.printV("w from Active Set", w);
             Console.WriteLine($"Variance from Active Set:\t\t{Variance(w)}");
@@ -496,7 +493,7 @@ namespace Portfolio
             var cextra = new double[n];
             var opt = new ActiveSet.Optimise();
             if (lp == 0) opt.h = hessmull;
-            if (bench != null)
+            if (bench != null && lp == 0)
             {
                 opt.h(n, 0, 0, 0, Q, bench, cextra);
                 BlasLike.dnegvec(n, cextra);
@@ -579,7 +576,7 @@ namespace Portfolio
             }
             var sign = new int[slacklarge + n + totalConstraintslack];
             var UL = new double[n];
-            if (bench != null)
+            if (bench != null && Q != null)
             {
                 hessmull(ntrue, Q, bench, cextra);
                 BlasLike.dnegvec(ntrue, cextra);
@@ -691,6 +688,7 @@ namespace Portfolio
         }
         public static void printVector<T>(string name, T[] a, StreamWriter dave, int linelimit = 500, int upto = -1)
         {
+            if (a == null) return;
             dave.WriteLine(name);
             if (upto == -1) upto = a.Length;
             for (int i = 0; i < upto; ++i)
@@ -727,12 +725,10 @@ namespace Portfolio
                 printVector("WW", w, writer);
                 printVector("LL", L, writer);
                 printVector("UU", U, writer);
+                printVector("bench", bench, writer);
                 printVector("CC", c, writer);
                 printVector("AA", A, writer);
-                if (HH != null)
-                {
-                    printVector("QQ", HH, writer);
-                }
+                printVector("QQ", HH, writer);
             }
         }
         public FPortfolio(string file) : base(file)

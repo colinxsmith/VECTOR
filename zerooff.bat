@@ -1,1 +1,1 @@
-\cygwin\bin\sed -i "s/\.00000000//g" %1%
+\cygwin\bin\sed -i "s/0*e+00//g;s/0* / /g;s/\. / /g" %1%
