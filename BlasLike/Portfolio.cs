@@ -21,7 +21,7 @@ namespace Portfolio
                 printVector("WW", w, writer);
                 printVector("LL", L, writer);
                 printVector("UU", U, writer);
-                printVector("CC", CCCCCC, writer);
+                printVector("CC", c, writer);
                 printVector("AA", A, writer);
                 printVector("QQ", Q, writer);
             }
@@ -41,8 +41,8 @@ namespace Portfolio
                     gamma = OptData.mapDouble["gamma"][0];
                     kappa = OptData.mapDouble["kappa"][0];
                     delta = OptData.mapDouble["delta"][0];
-                    CCCCCC = OptData.mapDouble["alpha"];
-                    BlasLike.dnegvec(CCCCCC.Length, CCCCCC);
+                    c = OptData.mapDouble["alpha"];
+                    BlasLike.dnegvec(c.Length, c);
                     initial = OptData.mapDouble["initial"];
                     bench = OptData.mapDouble["bench"];
                     L = OptData.mapDouble["L"];
@@ -181,7 +181,7 @@ namespace Portfolio
             this.n = N;
             this.m = M;
             this.gamma = gamma;
-            this.CCCCCC = CC;
+            this.c = CC;
             if (useIP)
             {
                 var back = InteriorOpt(1e-10, WW);
@@ -319,7 +319,7 @@ namespace Portfolio
             this.n = N;
             this.m = M;
             this.gamma = 0.5;
-            this.CCCCCC = cc;
+            this.c = cc;
             double alphamax = 0, alphamin = 0;
             BlasLike.dxminmax(alpha.Length, alpha, 1, ref alphamax, ref alphamin);
             Console.WriteLine($"c range ({alphamax},{alphamin}) ratio {(alphamin / alphamax):E8}");
@@ -409,7 +409,7 @@ namespace Portfolio
                     if (i < n)
                     {
                         AA[i * (m + 1)] = 1;
-                        AA[i * (m + 1) + 1] = -CCCCCC[i];
+                        AA[i * (m + 1) + 1] = -c[i];
                     }
                     LL[i] = L[i];
                     UU[i] = U[i];
@@ -449,7 +449,7 @@ namespace Portfolio
         public double[] buy = null;
         public double[] sell = null;
         public double[] A = null;
-        public double[] CCCCCC = null;
+        public double[] c = null;
         public double[] Q = null;
         public string[] names;
         public virtual int makeQ()
@@ -493,7 +493,6 @@ namespace Portfolio
             if (ntrue == 0) ntrue = n;
             var obj = 0.0;
             var iter = 10;
-            var c = (double[])CCCCCC.Clone();
             var cextra = new double[n];
             var opt = new ActiveSet.Optimise();
             if (lp == 0) opt.h = hessmull;
@@ -524,7 +523,6 @@ namespace Portfolio
                 if (L[i] == -1 && U[i] == 0) L[i] = -BlasLike.lm_max;
             }
             var slacklarge = 0;
-            var c = (double[])CCCCCC.Clone();
             var cextra = new double[n];
             var CTEST = new double[n];
             var slackb = 0;
@@ -729,7 +727,7 @@ namespace Portfolio
                 printVector("WW", w, writer);
                 printVector("LL", L, writer);
                 printVector("UU", U, writer);
-                printVector("CC", CCCCCC, writer);
+                printVector("CC", c, writer);
                 printVector("AA", A, writer);
                 if (HH != null)
                 {
