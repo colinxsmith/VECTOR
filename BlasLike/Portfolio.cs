@@ -705,7 +705,6 @@ namespace Portfolio
 
         public static void printVector<T>(string name, T[] a, StreamWriter dave, bool uplo)
         {
-            //The programs that read this data interpret a line with one data item as a scalar, so I needed to hack when ij==1
             if (a == null) return;
             var n = (int)((-1 + Math.Sqrt(1 + 8 * a.Length)) * 0.5);
             dave.WriteLine(name);
@@ -717,7 +716,7 @@ namespace Portfolio
                         dave.Write($"{a[ic]:F8} ");
                     else
                         dave.Write($"{a[ic]} ");
-                    if (i % (ij) == (ij - 1)) { if (ij != 1) dave.Write("\n"); ij++; i = -1; }
+                    if (i % (ij) == (ij - 1)) { dave.Write("\n"); ij++; i = -1; }
                 }
             else
                 for (int i = 0, ij = n, ic = 0; ic < a.Length; ++i, ic++)
