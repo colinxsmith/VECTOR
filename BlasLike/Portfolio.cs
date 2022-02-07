@@ -2,6 +2,7 @@ using System;
 using Blas;
 using Solver;
 using System.IO;
+using DataFile;
 using System.Diagnostics;
 namespace Portfolio
 {
@@ -21,17 +22,17 @@ namespace Portfolio
                 printVector("WW", w, writer);
                 printVector("LL", L, writer);
                 printVector("UU", U, writer);
-                printVector("CC", c, writer);
                 printVector("bench", bench, writer);
-                printVector("AA", A, writer);
-                printVector("QQ", Q, writer);
+                printVector("QQ", Q, writer, true);
+                printVector("AA", A, writer, m);
+                printVector("CC", c, writer);
             }
         }
         public Portfolio(string file)
         {
             inFile = file;
             if (inFile != "")
-                using (var OptData = new DataFile.InputSomeData())
+                using (var OptData = new InputSomeData())
                 {
                     OptData.intFields = "n m nfac";
                     OptData.doubleFields = "delta kappa gamma alpha Q L U A buy sell initial bench FC FL SV";
@@ -279,7 +280,7 @@ namespace Portfolio
             double[] bb = new double[M];
             if ((activeLp == 0))
             {
-                Q = new double[N * (N + 1) / 2];
+                Q = new double[n * (n + 1) / 2];
                 for (int i = 0, ij = 0; i < n; ++i, ij += i)
                 {
                     Q[ij + i] = 10;
@@ -388,7 +389,7 @@ namespace Portfolio
             }
 
         }
-        public virtual void Optimise()
+        public virtual void OptimiseTest()
         {
             if (ntrue == 0) ntrue = n;
             var back = makeQ();
@@ -686,12 +687,12 @@ namespace Portfolio
             if (wback != null) BlasLike.dcopyvec(wback.Length, ww, wback);
             return back;
         }
-        public static void printVector<T>(string name, T[] a, StreamWriter dave, int linelimit = 500, int upto = -1)
+        public static void printVector<T>(string name, T[] a, StreamWriter dave, int linelimit = 1)
         {
             if (a == null) return;
+            if (linelimit == 1) linelimit = a.Length; //Hack so that line with one item is not treated as a scalar
             dave.WriteLine(name);
-            if (upto == -1) upto = a.Length;
-            for (int i = 0; i < upto; ++i)
+            for (int i = 0; i < a.Length; ++i)
             {
                 var p = a[i].GetType();
                 if (p.FullName == "System.Double")
@@ -700,7 +701,34 @@ namespace Portfolio
                     dave.Write($"{a[i]} ");
                 if (i % linelimit == (linelimit - 1)) dave.Write("\n");
             }
-            dave.Write("\n");
+        }
+
+        public static void printVector<T>(string name, T[] a, StreamWriter dave, bool uplo)
+        {
+            //The programs that read this data interpret a line with one data item as a scalar, so I needed to hack when ij==1
+            if (a == null) return;
+            var n = (int)((-1 + Math.Sqrt(1 + 8 * a.Length)) * 0.5);
+            dave.WriteLine(name);
+            if (uplo)
+                for (int i = 0, ij = 1, ic = 0; ij <= n; ++i, ic++)
+                {
+                    var p = a[ic].GetType();
+                    if (p.FullName == "System.Double")
+                        dave.Write($"{a[ic]:F8} ");
+                    else
+                        dave.Write($"{a[ic]} ");
+                    if (i % (ij) == (ij - 1)) { if (ij != 1) dave.Write("\n"); ij++; i = -1; }
+                }
+            else
+                for (int i = 0, ij = n, ic = 0; ic < a.Length; ++i, ic++)
+                {
+                    var p = a[ic].GetType();
+                    if (p.FullName == "System.Double")
+                        dave.Write($"{a[ic]:F8} ");
+                    else
+                        dave.Write($"{a[ic]} ");
+                    if (i % (ij) == (ij - 1)) { dave.Write("\n"); ij--; i = -1; }
+                }
         }
     }
     public class FPortfolio : Portfolio
@@ -726,16 +754,16 @@ namespace Portfolio
                 printVector("LL", L, writer);
                 printVector("UU", U, writer);
                 printVector("bench", bench, writer);
+                printVector("QQ", HH, writer, true);
+                printVector("AA", A, writer, m);
                 printVector("CC", c, writer);
-                printVector("AA", A, writer);
-                printVector("QQ", HH, writer);
             }
         }
         public FPortfolio(string file) : base(file)
         {
             inFile = file;
             if (inFile != "")
-                using (var OptData = new DataFile.InputSomeData())
+                using (var OptData = new InputSomeData())
                 {
                     OptData.intFields = "n m nfac";
                     OptData.doubleFields = "delta kappa gamma alpha Q L U A buy sell initial bench FC FL SV";
