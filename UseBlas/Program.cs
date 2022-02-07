@@ -73,11 +73,11 @@ namespace UseBlas
                 double[] b = { 1, 2, 3, 4 };
                 double[] bcopy = (double[])b.Clone(); Factorise.Solve(U, n, 1, aa, piv, b, n);
                 double[] c = new double[n];
-                fixed (double* acp = acopy)
-                fixed (double* bp = b)
-                fixed (double* cp = c)
-                    //                   Factorise.dsmxmulv(n, acp, bp, cp);
-                    Factorise.dsmxmulv(n, acopy, b, c);
+                //fixed (double* acp = acopy)
+                //fixed (double* bp = b)
+                //fixed (double* cp = c)
+                //                   Factorise.dsmxmulv(n, acp, bp, cp);
+                Factorise.dsmxmulv(n, acopy, b, c);
                 Console.WriteLine($"back={back} safe dsmxmulv {c[0]},{c[1]},{c[2]},{c[3]} ");
                 Factorise.dsmxmulv(n, acopy, b, c);
                 double[] errorvec = new double[n];
@@ -1120,16 +1120,38 @@ namespace UseBlas
             }
             {
                 Console.WriteLine("-------------------------Portfolio----------------");
-                Portfolio.FPortfolio port;
-                try
+                FPortfolio port = new FPortfolio("");
+                using (var OptData = new InputSomeData())
                 {
-                    port = new Portfolio.FPortfolio("./pylog.log");
+                    OptData.intFields = "n m nfac";
+                    OptData.doubleFields = "delta kappa gamma alpha Q L U A buy sell initial bench FC FL SV";
+                    OptData.stringFields = "names";
+                    string inFile = "pylog.log";
+                    try { OptData.Read(inFile); }
+                    catch { OptData.Read("../" + inFile); }
+                    port.n = OptData.mapInt["n"][0];
+                    port.m = OptData.mapInt["m"][0];
+                    port.gamma = OptData.mapDouble["gamma"][0];
+                    port.kappa = OptData.mapDouble["kappa"][0];
+                    port.delta = OptData.mapDouble["delta"][0];
+                    port.c = OptData.mapDouble["alpha"];
+                    BlasLike.dnegvec(port.c.Length, port.c);
+                    port.initial = OptData.mapDouble["initial"];
+                    port.bench = OptData.mapDouble["bench"];
+                    port.L = OptData.mapDouble["L"];
+                    port.U = OptData.mapDouble["U"];
+                    port.A = OptData.mapDouble["A"];
+                    port.buy = OptData.mapDouble["buy"];
+                    port.sell = OptData.mapDouble["sell"];
+                    port.names = OptData.mapString["names"];
+                    port.nfac = OptData.mapInt["nfac"][0];
+                    port.FC = OptData.mapDouble["FC"];
+                    port.FL = OptData.mapDouble["FL"];
+                    port.SV = OptData.mapDouble["SV"];
+                    port.names = OptData.mapString["names"];
+                    if (port.names != null) Array.Resize(ref port.names, port.n);
                 }
-                catch
-                {
-                    port = new Portfolio.FPortfolio("../pylog.log");
-                }
-                port.Optimise();
+                port.OptimiseTest();
             }
             {
                 Console.WriteLine("GAIN/LOSS");
@@ -1138,7 +1160,7 @@ namespace UseBlas
                 double lambda, R;
                 string[] names;
                 int n, tlen;
-                using (var GainLossData = new DataFile.InputSomeData())
+                using (var GainLossData = new InputSomeData())
                 {
                     GainLossData.doubleFields = "DATA lambda R";
                     GainLossData.intFields = "n tlen";
@@ -1163,14 +1185,14 @@ namespace UseBlas
             }
             {
                 Console.WriteLine("BUY/SELL");
-                Portfolio.FPortfolio opt = new FPortfolio("");
+                FPortfolio opt = new FPortfolio("");
                 double[] SV = null, FC = null, FL = null, L = null, U = null, alpha = null, initial = null, A = null;
                 double[] buy = null, sell = null, bench = null;
                 double gamma, delta, kappa;
                 int n, nfac, m;
                 string[] names;
 
-                using (var buysell = new DataFile.InputSomeData())
+                using (var buysell = new InputSomeData())
                 {
                     buysell.doubleFields = "SV FC FL L U alpha initial A buy sell gamma delta kappa bench";
                     buysell.intFields = "n nfac m";
