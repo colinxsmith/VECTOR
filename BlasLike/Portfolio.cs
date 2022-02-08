@@ -18,6 +18,8 @@ namespace Portfolio
                 writer.WriteLine(ntrue);
                 writer.WriteLine("m");
                 writer.WriteLine(m);
+                writer.WriteLine("mtrue");
+                writer.WriteLine(mtrue);
                 printVector("initial", initial, writer);
                 printVector("WW", w, writer);
                 printVector("LL", L, writer);
@@ -65,6 +67,7 @@ namespace Portfolio
             var useCosts = kappa > 0.0;
             if (!useCosts) kappa = 0;
             this.ntrue = n;
+            this.mtrue=m;
             makeQ();
             var bothsellbuy = false; //bothsellbuy = false means treat sell side only
             var N = n + n;
@@ -345,6 +348,7 @@ namespace Portfolio
                 }
                 this.w = ww;
                 ntrue = n;
+                mtrue=m;
                 WriteInputs("./gainloss");
                 var back = ActiveOpt(activeLp, ww);
             }
@@ -418,6 +422,7 @@ namespace Portfolio
                 U = UU;
                 A = AA;
             }
+            if (mtrue == 0) mtrue = m;
             var Aw = new double[m];
             w = new double[n];
             BlasLike.dsetvec(n, 1.0 / n, w);
@@ -435,6 +440,7 @@ namespace Portfolio
         public string inFile = "";
         public int n;
         public int ntrue = 0;
+        public int mtrue = 0;
         public int m;
         public double gamma;
         public double kappa;
@@ -489,6 +495,7 @@ namespace Portfolio
         public int ActiveOpt(int lp = 0, double[] www = null)
         {
             if (ntrue == 0) ntrue = n;
+            if (mtrue == 0) mtrue = m;
             var obj = 0.0;
             var iter = 10;
             var cextra = new double[n];
@@ -515,6 +522,7 @@ namespace Portfolio
         public int InteriorOpt(double conv = 1e-16, double[] wback = null)
         {
             if (ntrue == 0) ntrue = n;
+            if (mtrue == 0) mtrue = m;
             for (var i = 0; i < n; ++i)
             {
                 if (U[i] == 1 && L[i] == 0) U[i] = BlasLike.lm_max;
@@ -644,7 +652,7 @@ namespace Portfolio
             IOPT.baseA = A;//We only need to pass the constraints without slack variables AA just use for testing
             IOPT.basen = n;
             IOPT.bases = slacklarge;
-            IOPT.basem = m;
+            mtrue=IOPT.basem = m;
             IOPT.conv = conv;
             IOPT.compConv = Math.Max(conv, IOPT.compConv);
             IOPT.slacklargeConstraintToStock = slacklargeConstraint;
@@ -748,6 +756,8 @@ namespace Portfolio
                 writer.WriteLine(ntrue);
                 writer.WriteLine("m");
                 writer.WriteLine(m);
+                writer.WriteLine("mtrue");
+                writer.WriteLine(mtrue);
                 printVector("initial", initial, writer);
                 printVector("WW", w, writer);
                 printVector("LL", L, writer);

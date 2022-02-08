@@ -47,10 +47,11 @@ class FDATA:
                             addon = [float(i) for i in addon]
                         except:
                             pass
-                    try:up += addon
+                    try:
+                        up += addon
                     except:
-                        up=[up]
-                        up+=addon
+                        up = [up]
+                        up += addon
                     setattr(self, lastkey, up)
                     keyw = 0
             else:
@@ -81,6 +82,7 @@ L = Opt.LL
 U = Opt.UU
 n = Opt.n
 ntrue = Opt.ntrue
+mtrue = Opt.mtrue
 if len(Opt.QQ) > 0 and len(Opt.bench) > 0:
     cextra = []
     Sym_mult(ntrue, Opt.QQ, Opt.bench, cextra)
@@ -104,3 +106,34 @@ Hhere = Opt.QQ+[0.0]*int(n*(n+1)-ntrue*(ntrue+1)/2)
 back = OptAdvanced(n, m, w, A, L, U, C, LAMBDA, testmul, Hhere)
 print(back)
 print(utility(C, Opt.QQ, w, testmul))
+Ahere = [0]*(n*m)
+wex = [0]*(n-ntrue)
+cex = [0]*ntrue
+if m > mtrue:
+    for i in range(ntrue):
+        cex[i] = -ddot(m-mtrue, A, 1, LAMBDA, 1, mtrue+i*m, n+mtrue)
+print(m-mtrue, len(Opt.QQ))
+for i in range(n-ntrue):
+    astart = i+mtrue
+    wex[i] = ddot(n, A, m, w, 1, astart, 0)
+for i in range(n-ntrue):
+    print(('%10.5f %10.5f %10.5f %10.5f' %
+          (w[i+ntrue], wex[i]-L[n+mtrue+i], C[i+ntrue], -LAMBDA[n+mtrue+i])))
+implied = []
+if len(Opt.QQ) > 0:
+    Sym_mult(ntrue, Opt.QQ, w, implied)
+print(('\033[1;1;39mAnalysis over the true variables\033[0;m'))
+print(('\033[1;1;31m%10s\033[1;1;32m%10s\033[1;1;35m%10s\033[1;1;34m%10s\033[0;m') % (
+    'x', 'dU/dx', 'extradU/dx', 'Marginal'))
+UU = 0
+for i in range(ntrue):
+    if len(Opt.QQ) > 0:
+        UU += w[i]*(C[i]+implied[i]+cex[i])
+        print(('\033[1;1;31m%10.5f\033[1;1;32m%10.5f\033[1;1;35m%10.5f\033[1;1;34m%10.5f\033[0;m' % (
+            w[i], C[i]+implied[i], cex[i], C[i]+implied[i]+cex[i])))
+    else:
+        UU += w[i]*(C[i]+cex[i])
+        print(('\033[1;1;31m%10.5f\033[1;1;32m%10.5f\033[1;1;35m%10.5f\033[1;1;34m%10.5f\033[0;m' % (
+            w[i], C[i], cex[i], C[i]+cex[i])))
+print(('%10s%10s%10s\033[1;1;34m%10.5f\033[0;m') % ('', '', 'Primal:', UU))
+print(('Dual:\033[1;1;39m%10.5f\033[0;m')%ddot(mtrue, LAMBDA, 1, L, 1, n, n))
