@@ -8,6 +8,34 @@ namespace Portfolio
 {
     public class Portfolio
     {
+        public void UtilityAnalysis(double[] LAMBDA, double[] cextra = null)
+        {
+            var Ceff = new double[ntrue];
+            var chere = cextra == null ? c : cextra;
+            for (var i = 0; i < ntrue; ++i)
+            {
+                Ceff[i] = -BlasLike.ddot(m - mtrue, A, 1, LAMBDA, 1, mtrue + i * m, n + mtrue);
+            }
+            var implied = new double[n];
+            if (Q != null) hessmull(n, Q, w, implied);
+            BlasLike.daddvec(ntrue, Ceff, chere, Ceff);
+            if (Q != null) BlasLike.daddvec(ntrue, Ceff, implied, Ceff);
+            var dual = BlasLike.ddotvec(mtrue, LAMBDA, L, n, n);
+            var primal = BlasLike.ddotvec(ntrue, Ceff, w);
+            var old = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Effective true variable analysis");
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"Weight\t\t\tEffective Utility Gradient");
+            for (var i = 0; i < ntrue; ++i)
+            {
+                Console.WriteLine($"{w[i]:F8}\t\t\t{Ceff[i]:F8}");
+            }
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.WriteLine($"Primal:\t{primal:F8}");
+            Console.WriteLine($"Dual:\t{dual:F8}");
+            Console.ForegroundColor = old;
+        }
         public virtual void WriteInputs(string filename)
         {
             using (StreamWriter writer = new StreamWriter(filename))
@@ -67,7 +95,7 @@ namespace Portfolio
             var useCosts = kappa > 0.0;
             if (!useCosts) kappa = 0;
             this.ntrue = n;
-            this.mtrue=m;
+            this.mtrue = m;
             makeQ();
             var bothsellbuy = false; //bothsellbuy = false means treat sell side only
             var N = n + n;
@@ -204,7 +232,8 @@ namespace Portfolio
                 this.w = WW;
                 if (bothsellbuy) BlasLike.dcopyvec(n, initial, WW, 0, n + n);
                 WriteInputs("./optinput1");
-                var back = ActiveOpt(1, WW);
+                var LAMBDAS = new double[N + M];
+                var back = ActiveOpt(1, WW, LAMBDAS);
                 Console.WriteLine($"back = {back}");
                 makeQ();
                 BlasLike.dsetvec(WW.Length, 1.0 / n, WW);
@@ -215,7 +244,7 @@ namespace Portfolio
                 }
                 this.w = WW;
                 WriteInputs("./optinput2");
-                back = ActiveOpt(0, WW);
+                back = ActiveOpt(0, WW, LAMBDAS);
                 Console.WriteLine($"back = {back}");
             }
             var turnover = 0.0;
@@ -348,9 +377,10 @@ namespace Portfolio
                 }
                 this.w = ww;
                 ntrue = n;
-                mtrue=m;
+                mtrue = m;
                 WriteInputs("./gainloss");
-                var back = ActiveOpt(activeLp, ww);
+                var LAMBDAS = new double[N + M];
+                var back = ActiveOpt(activeLp, ww, LAMBDAS);
             }
             var gain = 0.0;
             var loss = 0.0;
@@ -492,7 +522,7 @@ namespace Portfolio
             hessmull(n, Q, w, Qx);
             return BlasLike.ddotvec(n, w, Qx);
         }
-        public int ActiveOpt(int lp = 0, double[] www = null)
+        public int ActiveOpt(int lp = 0, double[] www = null, double[] LAM = null)
         {
             if (ntrue == 0) ntrue = n;
             if (mtrue == 0) mtrue = m;
@@ -514,7 +544,8 @@ namespace Portfolio
             }
             else
                 w = www;
-            var back = opt.QPopt(n, m, w, L, U, A, cextra, Q, ref obj, ref iter, lp);
+            var back = opt.QPopt(n, m, w, L, U, A, cextra, Q, ref obj, ref iter, lp, LAM);
+            if (LAM != null) UtilityAnalysis(LAM, cextra);
             Console.WriteLine($"objective:\t\t{obj}; {iter} iterations");
             return back;
         }
@@ -652,7 +683,7 @@ namespace Portfolio
             IOPT.baseA = A;//We only need to pass the constraints without slack variables AA just use for testing
             IOPT.basen = n;
             IOPT.bases = slacklarge;
-            mtrue=IOPT.basem = m;
+            mtrue = IOPT.basem = m;
             IOPT.conv = conv;
             IOPT.compConv = Math.Max(conv, IOPT.compConv);
             IOPT.slacklargeConstraintToStock = slacklargeConstraint;

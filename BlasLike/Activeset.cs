@@ -4306,7 +4306,7 @@ namespace ActiveSet
 
                 ++iter;
                 if (iter >= istart) msg = msglvl;
-//Console.WriteLine($"iter {iter} objective {objqp:E16}");
+                //Console.WriteLine($"iter {iter} objective {objqp:E16}");
                 dfindp(nullr, unitpg, n, nclin,
                     NROWRT, ncolr, ncolz, ref nfree,
                     negligible != 0, ref gtp, ref pnorm, ref rdlast);
@@ -5056,7 +5056,7 @@ namespace ActiveSet
             }
             Console.Write("\n");
         }
-        public static short LPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, ref double objective, ref int iter)
+        public static short LPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, ref double objective, ref int iter, double[] LAMBDAback = null)
         {
             var opt = new Optimise();
             var lp = 1;
@@ -5090,9 +5090,10 @@ namespace ActiveSet
             var tt = opt.clocker();
             Console.WriteLine($"Time elapsed {tt} m secs");
             objective = obj;
+            if (LAMBDAback != null) BlasLike.dcopyvec(LAMBDAback.Length, opt.LAMBDA, LAMBDAback);
             return back;
         }
-        public short QPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] QQ, ref double objective, ref int iter, int lp = 0)
+        public short QPopt(int n, int m, double[] ww, double[] LL, double[] UU, double[] AA, double[] cc, double[] QQ, ref double objective, ref int iter, int lp = 0, double[] LAMBDAback = null)
         {
             var opt = this;
             if (opt.h == null) opt.h = opt.qphess1;
@@ -5127,6 +5128,7 @@ namespace ActiveSet
             objective = obj;
             var tt = opt.clocker();
             Console.WriteLine($"Time elapsed {tt} m secs");
+            if (LAMBDAback != null) BlasLike.dcopyvec(LAMBDAback.Length, opt.LAMBDA, LAMBDAback);
             return back;
         }
         int badboundcount()
