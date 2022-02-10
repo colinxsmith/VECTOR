@@ -1228,8 +1228,8 @@ namespace UseBlas
                     opt.FC = FC;
                     opt.nfac = nfac;
                     opt.bench = bench;
-                    bool useIp = false;
-                    opt.BuySellSetup(n, m, nfac, A, L, U, gamma, kappa, delta, alpha, initial, buy, sell, names, useIp);
+                    bool useIp = true;
+                    opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, alpha, initial, buy, sell, names, useIp);
                 }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);

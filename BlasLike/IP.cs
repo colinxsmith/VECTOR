@@ -78,7 +78,7 @@ namespace InteriorPoint
         double[] W2 = null;
         double[] THETA = null;
         double[] dx = null;
-        double[] y = null;
+        public double[] y = null;
         double[] dy = null;
         double[] z = null;
         double[] dz = null;
