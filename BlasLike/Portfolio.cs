@@ -314,18 +314,21 @@ namespace Portfolio
             if (!useCosts) kappa = 0;
             this.ntrue = n;
             this.mtrue = m;
-            makeQ();
+                makeQ();
             var buysellI = 0;
             for (var i = 0; i < n; ++i)
             {
                 if (initial[i] > L[i] && initial[i] < U[i]) buysellI++;
             }
             var buysellIndex = new int[buysellI];
+            var buysellIndex_inverse = new int[n];
+            for (var i = 0; i < n; ++i) buysellIndex_inverse[i] = -1;
             buysellI = 0;
             for (var i = 0; i < n; ++i)
             {
                 if (initial[i] > L[i] && initial[i] < U[i]) buysellIndex[buysellI++] = i;
             }
+            for (var i = 0; i < buysellI; ++i) buysellIndex_inverse[buysellIndex[i]] = i;
             var N = n + buysellI;
             var M = m + buysellI + (delta < 1.0 ? 1 : 0);
             var CC = new double[N];
@@ -337,12 +340,7 @@ namespace Portfolio
             BlasLike.dcopyvec(n, L, LL);
             BlasLike.dcopyvec(n, U, UU);
             BlasLike.dsetvec(buysellI, 0, LL, n);
-            for (var i = 0; i < buysellI; ++i)
-            {
-                var ind = buysellIndex[i];
-                LL[N + i] = L[ind];
-                UU[N + i] = useIP ? BlasLike.lm_max : U[ind];
-            }
+            BlasLike.dsetvec(buysellI, useIP ? BlasLike.lm_max : 1, UU, n);
             //Constraints
             BlasLike.dcopyvec(m, L, LL, n, N);
             BlasLike.dcopyvec(m, U, UU, n, N);
@@ -355,25 +353,21 @@ namespace Portfolio
                 LL[N + m + i] = initial[buysellIndex[i]];
             }
             if (useIP) BlasLike.dsetvec(buysellI, BlasLike.lm_max, UU, N + m);
-            else
-            {
-                BlasLike.dsetvec(buysellI, 1, UU, N + m);
-            }
+            else BlasLike.dsetvec(buysellI, 1, UU, N + m);
             for (var i = m; i < m + buysellI; ++i)
             {
                 var ind = buysellIndex[i - m];
-                BlasLike.dset(1, 1.0, AA, M, ind + M * (ind));
+                BlasLike.dset(1, 1.0, AA, M, i + M * ind);
                 BlasLike.dset(1, 1.0, AA, M, i + M * (n + i - m));
             }
+            var mult = kappa / (1.0 - kappa);
             BlasLike.dsccopyvec(n, -gamma / (1 - gamma), alpha, CC);
             if (useCosts)
             {
-                var mult = kappa / (1.0 - kappa);
-                BlasLike.daxpyvec(n, mult, buy, CC);
                 for (var i = 0; i < n; ++i)
                 {
-                    if (initial[i] < L[i]) CC[i] += mult * buy[i];
-                    else if (initial[i] > U[i]) CC[i] += mult * sell[i];
+                    if (initial[i] <= L[i]) CC[i] += mult * buy[i];
+                    else if (initial[i] >= U[i]) CC[i] += mult * sell[i];
                     else if (initial[i] > L[i] && initial[i] < U[i]) CC[i] += mult * buy[i];
                 }
                 for (var i = 0; i < buysellI; ++i)
@@ -422,9 +416,10 @@ namespace Portfolio
                 Console.WriteLine($"back = {back}");
                 makeQ();
                 BlasLike.dsetvec(WW.Length, 1.0 / n, WW);
-                for (var i = 0; i < n; ++i)
+                for (var i = 0; i < buysellI; ++i)
                 {
-                    WW[i + n] = initial[i] == 0 ? 0 : Math.Max(0, (initial[i] - 1.0 / n));
+                    var ind = buysellIndex[i];
+                    WW[i + n] = initial[ind] == 0 ? 0 : Math.Max(0, (initial[ind] - 1.0 / n));
                 }
                 this.w = WW;
                 WriteInputs("./optinput2");
@@ -433,6 +428,7 @@ namespace Portfolio
             }
             var turnover = 0.0;
             var cost = 0.0;
+            Console.WriteLine($"Asset                 BUY          SELL        BUY       initial          LIMIT");
             for (var i = 0; i < n; ++i)
             {
                 turnover += Math.Abs(WW[i] - initial[i]);
@@ -441,16 +437,40 @@ namespace Portfolio
                     var diff = (WW[i] - initial[i]);
                     cost += diff > 0 ? diff * buy[i] : -diff * sell[i];
                 }
-                var c1 = BlasLike.ddot(N, AA, M, WW, 1, i + m);
-                if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(!useIP ? (UU[i + N + m] - c1) : 10):f2}");
-                else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(!useIP ? (UU[i + N + m] - c1) : 10):f2}");
+                if (buysellIndex_inverse[i] != -1)
+                {
+                    var ind = buysellIndex_inverse[i];
+                    var c1 = BlasLike.ddot(N, AA, M, WW, 1, ind + m);
+                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]):F8}\t{WW[ind + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(!useIP ? (UU[ind + N + m] - c1) : 10):f2}");
+                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]):F8}\t{WW[ind + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(!useIP ? (UU[ind + N + m] - c1) : 10):f2}");
+                }
             }
             var eret = BlasLike.ddotvec(n, alpha, WW);
             var variance = Variance(WW);
-            var eretA = -BlasLike.ddotvec(n, CC, WW) + (kappa / (1 - kappa) * BlasLike.ddotvec(n, buy, WW));
-            var turn2 = BlasLike.dsumvec(n, WW, n) + (BlasLike.dsumvec(n, WW) - BlasLike.dsumvec(n, initial)) * 0.5;
+            var costbase = 0.0;
+            var initbase = 0.0;
+            for (var i = 0; i < n; ++i)
+            {
+                if (initial[i] > U[i])
+                {
+                    costbase += sell[i] * WW[i];
+                    initbase += sell[i] * initial[i];
+                }
+                else
+                {
+                    costbase += buy[i] * WW[i];
+                    initbase += buy[i] * initial[i];
+                }
+            }
+            var eretA = -BlasLike.ddotvec(n, CC, WW) + kappa / (1 - kappa) * costbase;
+            var turn2 = BlasLike.dsumvec(buysellI, WW, n) + (BlasLike.dsumvec(n, WW) - BlasLike.dsumvec(n, initial)) * 0.5;
             var costA = 0.0;
-            costA = BlasLike.ddotvec(n, WW, sell, n) + BlasLike.ddotvec(n, WW, buy, n) + BlasLike.ddotvec(n, WW, buy) - BlasLike.ddotvec(n, initial, buy);
+            for (var i = 0; i < buysellI; ++i)
+            {
+                var ind = buysellIndex[i];
+                costA += WW[n+i] * (buy[ind] + sell[ind]);
+            }
+            costA += costbase - initbase;
             Console.WriteLine($"Variance: {variance}");
             Console.WriteLine($"Return: {eret}: {eretA}");
             Console.WriteLine($"Turnover: {turnover * 0.5}: {turn2}");
@@ -462,7 +482,7 @@ namespace Portfolio
                 hessmull(n, 1, 1, 1, Q, bench, implied);
                 extra = -BlasLike.ddotvec(ntrue, WW, implied);
             }
-            var utility = -gamma / (1 - gamma) * eret + kappa / (1 - kappa) * (cost + BlasLike.ddotvec(n, initial, buy)) + 0.5 * variance + extra;
+            var utility = -gamma / (1 - gamma) * eret + kappa / (1 - kappa) * (cost + initbase) + 0.5 * variance + extra;
             var utilityA = BlasLike.ddotvec(N, CC, WW) + 0.5 * variance + extra;
             Console.WriteLine($"Utility: {utility}: {utilityA}");
             for (var i = 0; i < m; ++i)

@@ -1228,7 +1228,7 @@ namespace UseBlas
                     opt.FC = FC;
                     opt.nfac = nfac;
                     opt.bench = bench;
-                    bool useIp = true;
+                    bool useIp = false;
                     opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, alpha, initial, buy, sell, names, useIp);
                 }
             }
