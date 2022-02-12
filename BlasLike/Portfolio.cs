@@ -36,11 +36,11 @@ namespace Portfolio
             Console.WriteLine($"Weight\t\t\tEffective Utility Gradient");
             for (var i = 0; i < ntrue; ++i)
             {
-                Console.WriteLine($"{w[i]:F8}\t\t\t{Ceff[i]:F8}");
+                Console.WriteLine($"{w[i],12:F8}\t\t\t{Ceff[i],12:F8}");
             }
             Console.ForegroundColor = ConsoleColor.Blue;
-            Console.WriteLine($"Primal:\t{primal:F8}");
-            Console.WriteLine($"Dual:\t{dual:F8}");
+            Console.WriteLine($"Primal:\t{primal,12:F8}");
+            Console.WriteLine($"Dual:\t{dual,12:F8}");
             Console.ForegroundColor = old;
         }
         public virtual void WriteInputs(string filename)
@@ -268,13 +268,13 @@ namespace Portfolio
                 if (bothsellbuy)
                 {
                     var c2 = BlasLike.ddot(N, AA, M, WW, 1, n + i + m);
-                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {c1:F8} {WW[i + n + n]:F8} {c2:F8} {initial[i]:F8}");
-                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {c1:F8} {WW[i + n + n]:F8} {c2:F8} {initial[i]:F8}");
+                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]),12:F8}\t{WW[i + n],12:F8} {c1,12:F8} {WW[i + n + n],12:F8} {c2,12:F8} {initial[i],12:F8}");
+                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]),12:F8}\t{WW[i + n],12:F8} {c1,12:F8} {WW[i + n + n],12:F8} {c2,12:F8} {initial[i],12:F8}");
                 }
                 else
                 {
-                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(!useIP ? (UU[i + N + m] - c1) : 10):f2}");
-                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]):F8}\t{WW[i + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(!useIP ? (UU[i + N + m] - c1) : 10):f2}");
+                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]),12:F8}\t{WW[i + n],12:F8} {(c1 - initial[i]),12:F8}  {initial[i],12:F8}\t\t{(!useIP ? (UU[i + N + m] - c1) : 10):f2}");
+                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]),12:F8}\t{WW[i + n],12:F8} {(c1 - initial[i]),12:F8}  {initial[i],12:F8}\t\t{(!useIP ? (UU[i + N + m] - c1) : 10):f2}");
                 }
             }
             var eret = BlasLike.ddotvec(n, alpha, WW);
@@ -428,7 +428,7 @@ namespace Portfolio
             }
             var turnover = 0.0;
             var cost = 0.0;
-            Console.WriteLine($"Asset                 BUY          SELL        BUY       initial          LIMIT");
+            Console.WriteLine($"{"Asset",12}\t{"BUY",12}\t{"SELL",12}\t{"BUY",12}\t{"initial",12}\t\t{"LIMIT",12}");
             for (var i = 0; i < n; ++i)
             {
                 turnover += Math.Abs(WW[i] - initial[i]);
@@ -441,8 +441,8 @@ namespace Portfolio
                 {
                     var ind = buysellIndex_inverse[i];
                     var c1 = BlasLike.ddot(N, AA, M, WW, 1, ind + m);
-                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]):F8}\t{WW[ind + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(!useIP ? (UU[ind + N + m] - c1) : 10):f2}");
-                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]):F8}\t{WW[ind + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(!useIP ? (UU[ind + N + m] - c1) : 10):f2}");
+                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i],12}\t{(WW[i] - initial[i]),12:F8}\t{WW[ind + n],12:F8}\t{(c1 - initial[i]),12:F8}\t{initial[i],12:F8}\t\t{(!useIP ? (UU[ind + N + m] - c1) : 10),12:f2}");
+                    else Console.WriteLine($"{names[i],12} {(WW[i] - initial[i]),12:F8}\t{WW[ind + n],12:F8}\t{(c1 - initial[i]),12:F8}\t{initial[i],12:F8}\t\t{(!useIP ? (UU[ind + N + m] - c1) : 10),12:f2}");
                 }
             }
             var eret = BlasLike.ddotvec(n, alpha, WW);
@@ -590,25 +590,25 @@ namespace Portfolio
             {
                 gainV += BlasLike.ddot(N, AA, M, ww, 1, i + m) - R;
             }
-            Console.WriteLine($"Total GAIN = \t\t\t\t{gain:F8}");
-            Console.WriteLine($"Total GAIN (check from opt variables) = {gainV:F8}");
-            Console.WriteLine($"Total LOSS = \t\t\t\t{loss:F8}");
-            Console.WriteLine($"Total LOSS (check from opt variables) = {lossV:F8}");
+            Console.WriteLine($"Total GAIN = \t\t\t\t{gain,12:F8}");
+            Console.WriteLine($"Total GAIN (check from opt variables) = {gainV,12:F8}");
+            Console.WriteLine($"Total LOSS = \t\t\t\t{loss,12:F8}");
+            Console.WriteLine($"Total LOSS (check from opt variables) = {lossV,12:F8}");
             var variance = this.Variance(ww);
             var expret = BlasLike.ddotvec(n, ww, alpha);
-            Console.WriteLine($"Return {expret:F8}");
-            Console.WriteLine($"Variance {variance:F8}");
+            Console.WriteLine($"Return {expret,12:F8}");
+            Console.WriteLine($"Variance {variance,12:F8}");
             Console.WriteLine($"Utility {-expret + lossV * lambda / tlen + 0.5 * variance}");
             for (var i = 0; i < n; ++i)
             {
-                Console.WriteLine($"{names[i]}\t{ww[i]:F8}");
+                Console.WriteLine($"{names[i]}\t{ww[i],12:F8}");
             }
             for (var i = 0; i < M; ++i)
             {
                 var constraint = BlasLike.ddot(N, AA, M, ww, 1, i);
-                if (i < m) Console.WriteLine($"Constraint {i} = {constraint:F8}");
-                else if (useIP) Console.WriteLine($"Constraint {i} = {constraint:F8}  LOSS var {ww[n + i - 1]:F8}");
-                else Console.WriteLine($"Constraint {i} = {constraint:F8}  {UU[N + i]} LOSS var {ww[n + i - 1]:F8}  {UU[n + i - 1]}");
+                if (i < m) Console.WriteLine($"Constraint {i} = {constraint,12:F8}");
+                else if (useIP) Console.WriteLine($"Constraint {i} = {constraint,12:F8}  LOSS var {ww[n + i - 1],12:F8}");
+                else Console.WriteLine($"Constraint {i} = {constraint,12:F8}  {UU[N + i]} LOSS var {ww[n + i - 1],12:F8}  {UU[n + i - 1]}");
             }
             for (var i = 0; i < m; ++i)
             {
@@ -936,7 +936,7 @@ namespace Portfolio
             {
                 var p = a[i].GetType();
                 if (p.FullName == "System.Double")
-                    dave.Write($"{a[i]:F8} ");
+                    dave.Write($"{a[i],12:F8} ");
                 else
                     dave.Write($"{a[i]} ");
                 if (i % linelimit == (linelimit - 1)) dave.Write("\n");
@@ -953,7 +953,7 @@ namespace Portfolio
                 {
                     var p = a[ic].GetType();
                     if (p.FullName == "System.Double")
-                        dave.Write($"{a[ic]:F8} ");
+                        dave.Write($"{a[ic],12:F8} ");
                     else
                         dave.Write($"{a[ic]} ");
                     if (i % (ij) == (ij - 1)) { dave.Write("\n"); ij++; i = -1; }
@@ -963,7 +963,7 @@ namespace Portfolio
                 {
                     var p = a[ic].GetType();
                     if (p.FullName == "System.Double")
-                        dave.Write($"{a[ic]:F8} ");
+                        dave.Write($"{a[ic],12:F8} ");
                     else
                         dave.Write($"{a[ic]} ");
                     if (i % (ij) == (ij - 1)) { dave.Write("\n"); ij--; i = -1; }
