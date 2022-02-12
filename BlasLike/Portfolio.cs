@@ -428,7 +428,7 @@ namespace Portfolio
             }
             var turnover = 0.0;
             var cost = 0.0;
-            Console.WriteLine($"Asset                 BUY          SELL        BUY       initial          LIMIT");
+            Console.WriteLine($"{"Asset",12}\t{"BUY",12}\t{"SELL",12}\t{"BUY",12}\t{"initial",12}\t\t{"LIMIT",12}");
             for (var i = 0; i < n; ++i)
             {
                 turnover += Math.Abs(WW[i] - initial[i]);
@@ -441,8 +441,8 @@ namespace Portfolio
                 {
                     var ind = buysellIndex_inverse[i];
                     var c1 = BlasLike.ddot(N, AA, M, WW, 1, ind + m);
-                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]),12:F8}\t{WW[ind + n],12:F8} {(c1 - initial[i]),12:F8}  {initial[i],12:F8}\t\t{(!useIP ? (UU[ind + N + m] - c1) : 10):f2}");
-                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]),12:F8}\t{WW[ind + n],12:F8} {(c1 - initial[i]),12:F8}  {initial[i],12:F8}\t\t{(!useIP ? (UU[ind + N + m] - c1) : 10):f2}");
+                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i],12}\t{(WW[i] - initial[i]),12:F8}\t{WW[ind + n],12:F8}\t{(c1 - initial[i]),12:F8}\t{initial[i],12:F8}\t\t{(!useIP ? (UU[ind + N + m] - c1) : 10),12:f2}");
+                    else Console.WriteLine($"{names[i],12} {(WW[i] - initial[i]),12:F8}\t{WW[ind + n],12:F8}\t{(c1 - initial[i]),12:F8}\t{initial[i],12:F8}\t\t{(!useIP ? (UU[ind + N + m] - c1) : 10),12:f2}");
                 }
             }
             var eret = BlasLike.ddotvec(n, alpha, WW);
