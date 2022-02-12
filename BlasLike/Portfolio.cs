@@ -8,6 +8,41 @@ namespace Portfolio
 {
     public class Portfolio
     {
+        public static void fixup_zero(double[] s, double thresh = 1e-12)
+        {
+            for (var i = 0; i < s.Length; ++i)
+            {
+                if (Math.Abs(s[i]) < thresh) s[i] = 0;
+            }
+        }
+        public void UtilityAnalysis(double[] LAMBDA, double[] cextra = null, int lstart = 0)
+        {
+            var Ceff = new double[ntrue];
+            var chere = cextra == null ? c : cextra;
+            for (var i = 0; i < ntrue; ++i)
+            {
+                Ceff[i] = -BlasLike.ddot(m - mtrue, A, 1, LAMBDA, 1, mtrue + i * m, n + mtrue + lstart);
+            }
+            var implied = new double[n];
+            if (Q != null) hessmull(n, Q, w, implied);
+            BlasLike.daddvec(ntrue, Ceff, chere, Ceff);
+            if (Q != null) BlasLike.daddvec(ntrue, Ceff, implied, Ceff);
+            var dual = BlasLike.ddotvec(mtrue, LAMBDA, L, n + lstart, n);
+            var primal = BlasLike.ddotvec(ntrue, Ceff, w);
+            var old = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine($"Effective true variable linear model analysis");
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"Weight\t\t\tEffective Utility Gradient");
+            for (var i = 0; i < ntrue; ++i)
+            {
+                Console.WriteLine($"{w[i]:F8}\t\t\t{Ceff[i]:F8}");
+            }
+            Console.ForegroundColor = ConsoleColor.Blue;
+            Console.WriteLine($"Primal:\t{primal:F8}");
+            Console.WriteLine($"Dual:\t{dual:F8}");
+            Console.ForegroundColor = old;
+        }
         public virtual void WriteInputs(string filename)
         {
             using (StreamWriter writer = new StreamWriter(filename))
@@ -67,7 +102,7 @@ namespace Portfolio
             var useCosts = kappa > 0.0;
             if (!useCosts) kappa = 0;
             this.ntrue = n;
-            this.mtrue=m;
+            this.mtrue = m;
             makeQ();
             var bothsellbuy = false; //bothsellbuy = false means treat sell side only
             var N = n + n;
@@ -204,7 +239,8 @@ namespace Portfolio
                 this.w = WW;
                 if (bothsellbuy) BlasLike.dcopyvec(n, initial, WW, 0, n + n);
                 WriteInputs("./optinput1");
-                var back = ActiveOpt(1, WW);
+                var LAMBDAS = new double[N + M];
+                var back = ActiveOpt(1, WW, LAMBDAS);
                 Console.WriteLine($"back = {back}");
                 makeQ();
                 BlasLike.dsetvec(WW.Length, 1.0 / n, WW);
@@ -215,7 +251,7 @@ namespace Portfolio
                 }
                 this.w = WW;
                 WriteInputs("./optinput2");
-                back = ActiveOpt(0, WW);
+                back = ActiveOpt(0, WW, LAMBDAS);
                 Console.WriteLine($"back = {back}");
             }
             var turnover = 0.0;
@@ -260,6 +296,193 @@ namespace Portfolio
                 extra = -BlasLike.ddotvec(ntrue, WW, implied);
             }
             var utility = -gamma / (1 - gamma) * eret + kappa / (1 - kappa) * (cost + (bothsellbuy ? 0 : BlasLike.ddotvec(n, initial, buy))) + 0.5 * variance + extra;
+            var utilityA = BlasLike.ddotvec(N, CC, WW) + 0.5 * variance + extra;
+            Console.WriteLine($"Utility: {utility}: {utilityA}");
+            for (var i = 0; i < m; ++i)
+            {
+                var ccval = BlasLike.ddot(n, A, m, WW, 1, i);
+                Console.WriteLine($"Portfolio constraint {i}: {ccval}");
+            }
+            //            ActiveSet.Optimise.printV("optimal weights", WW, n);
+        }
+
+        public void BasicOptimisation(int n, int m, int nfac, double[] A, double[] L, double[] U, double gamma, double kappa, double delta, double[] alpha, double[] initial, double[] buy, double[] sell, string[] names, bool useIP = true)
+        {
+            if (delta < 0) delta = 2;
+            // kappa = -1;
+            var useCosts = kappa > 0.0;
+            if (!useCosts) kappa = 0;
+            this.ntrue = n;
+            this.mtrue = m;
+                makeQ();
+            var buysellI = 0;
+            for (var i = 0; i < n; ++i)
+            {
+                if (initial[i] > L[i] && initial[i] < U[i]) buysellI++;
+            }
+            var buysellIndex = new int[buysellI];
+            var buysellIndex_inverse = new int[n];
+            for (var i = 0; i < n; ++i) buysellIndex_inverse[i] = -1;
+            buysellI = 0;
+            for (var i = 0; i < n; ++i)
+            {
+                if (initial[i] > L[i] && initial[i] < U[i]) buysellIndex[buysellI++] = i;
+            }
+            for (var i = 0; i < buysellI; ++i) buysellIndex_inverse[buysellIndex[i]] = i;
+            var N = n + buysellI;
+            var M = m + buysellI + (delta < 1.0 ? 1 : 0);
+            var CC = new double[N];
+            var AA = new double[N * M];
+            var LL = new double[N + M];
+            var UU = new double[N + M];
+            var WW = new double[N];
+            //Variables
+            BlasLike.dcopyvec(n, L, LL);
+            BlasLike.dcopyvec(n, U, UU);
+            BlasLike.dsetvec(buysellI, 0, LL, n);
+            BlasLike.dsetvec(buysellI, useIP ? BlasLike.lm_max : 1, UU, n);
+            //Constraints
+            BlasLike.dcopyvec(m, L, LL, n, N);
+            BlasLike.dcopyvec(m, U, UU, n, N);
+            for (var i = 0; i < m; i++)
+            {
+                BlasLike.dcopy(n, A, m, AA, M, i, i);
+            }
+            for (var i = 0; i < buysellI; ++i)
+            {
+                LL[N + m + i] = initial[buysellIndex[i]];
+            }
+            if (useIP) BlasLike.dsetvec(buysellI, BlasLike.lm_max, UU, N + m);
+            else BlasLike.dsetvec(buysellI, 1, UU, N + m);
+            for (var i = m; i < m + buysellI; ++i)
+            {
+                var ind = buysellIndex[i - m];
+                BlasLike.dset(1, 1.0, AA, M, i + M * ind);
+                BlasLike.dset(1, 1.0, AA, M, i + M * (n + i - m));
+            }
+            var mult = kappa / (1.0 - kappa);
+            BlasLike.dsccopyvec(n, -gamma / (1 - gamma), alpha, CC);
+            if (useCosts)
+            {
+                for (var i = 0; i < n; ++i)
+                {
+                    if (initial[i] <= L[i]) CC[i] += mult * buy[i];
+                    else if (initial[i] >= U[i]) CC[i] += mult * sell[i];
+                    else if (initial[i] > L[i] && initial[i] < U[i]) CC[i] += mult * buy[i];
+                }
+                for (var i = 0; i < buysellI; ++i)
+                {
+                    var ind = buysellIndex[i];
+                    CC[n + i] = mult * (buy[ind] + sell[ind]);
+                }
+            }
+            else
+            {
+                BlasLike.dsetvec(buysellI, 0, CC, n);
+            }
+            if (delta < 1.0)
+            {
+                LL[N + M - 1] = -BlasLike.lm_max * 0;// Proper lower bound <=0 is redundant
+                BlasLike.dset(n, 1.0, AA, M, M - 1);
+                BlasLike.dset(buysellI, 2.0, AA, M, M - 1 + M * n);
+                /*   LL[N + M - 1] = */
+                UU[N + M - 1] = 2.0 * delta + BlasLike.dsumvec(n, initial);
+            }
+            this.L = LL;
+            this.U = UU;
+            this.A = AA;
+            this.n = N;
+            this.m = M;
+            this.gamma = gamma;
+            this.c = CC;
+            if (useIP)
+            {
+                var back = InteriorOpt(1e-10, WW);
+            }
+            else
+            {
+                Q = null;
+                BlasLike.dsetvec(WW.Length, 1.0 / n, WW);
+                for (var i = 0; i < buysellI; ++i)
+                {
+                    var ind = buysellIndex[i];
+                    WW[i + n] = initial[ind] == 0 ? 0 : Math.Max(0, (initial[ind] - 1.0 / n));
+                }
+                this.initial = initial;
+                this.w = WW;
+                WriteInputs("./optinput1");
+                var LAMBDAS = new double[N + M];
+                var back = ActiveOpt(1, WW, LAMBDAS);
+                Console.WriteLine($"back = {back}");
+                makeQ();
+                BlasLike.dsetvec(WW.Length, 1.0 / n, WW);
+                for (var i = 0; i < buysellI; ++i)
+                {
+                    var ind = buysellIndex[i];
+                    WW[i + n] = initial[ind] == 0 ? 0 : Math.Max(0, (initial[ind] - 1.0 / n));
+                }
+                this.w = WW;
+                WriteInputs("./optinput2");
+                back = ActiveOpt(0, WW, LAMBDAS);
+                Console.WriteLine($"back = {back}");
+            }
+            var turnover = 0.0;
+            var cost = 0.0;
+            Console.WriteLine($"Asset                 BUY          SELL        BUY       initial          LIMIT");
+            for (var i = 0; i < n; ++i)
+            {
+                turnover += Math.Abs(WW[i] - initial[i]);
+                if ((buy != null) && (sell != null))
+                {
+                    var diff = (WW[i] - initial[i]);
+                    cost += diff > 0 ? diff * buy[i] : -diff * sell[i];
+                }
+                if (buysellIndex_inverse[i] != -1)
+                {
+                    var ind = buysellIndex_inverse[i];
+                    var c1 = BlasLike.ddot(N, AA, M, WW, 1, ind + m);
+                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]):F8}\t{WW[ind + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(!useIP ? (UU[ind + N + m] - c1) : 10):f2}");
+                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]):F8}\t{WW[ind + n]:F8} {(c1 - initial[i]):F8}  {initial[i]:F8}\t\t{(!useIP ? (UU[ind + N + m] - c1) : 10):f2}");
+                }
+            }
+            var eret = BlasLike.ddotvec(n, alpha, WW);
+            var variance = Variance(WW);
+            var costbase = 0.0;
+            var initbase = 0.0;
+            for (var i = 0; i < n; ++i)
+            {
+                if (initial[i] > U[i])
+                {
+                    costbase += sell[i] * WW[i];
+                    initbase += sell[i] * initial[i];
+                }
+                else
+                {
+                    costbase += buy[i] * WW[i];
+                    initbase += buy[i] * initial[i];
+                }
+            }
+            var eretA = -BlasLike.ddotvec(n, CC, WW) + kappa / (1 - kappa) * costbase;
+            var turn2 = BlasLike.dsumvec(buysellI, WW, n) + (BlasLike.dsumvec(n, WW) - BlasLike.dsumvec(n, initial)) * 0.5;
+            var costA = 0.0;
+            for (var i = 0; i < buysellI; ++i)
+            {
+                var ind = buysellIndex[i];
+                costA += WW[n+i] * (buy[ind] + sell[ind]);
+            }
+            costA += costbase - initbase;
+            Console.WriteLine($"Variance: {variance}");
+            Console.WriteLine($"Return: {eret}: {eretA}");
+            Console.WriteLine($"Turnover: {turnover * 0.5}: {turn2}");
+            Console.WriteLine($"Cost: {cost}:  {costA}");
+            var extra = 0.0;
+            if (bench != null)
+            {
+                var implied = new double[ntrue];
+                hessmull(n, 1, 1, 1, Q, bench, implied);
+                extra = -BlasLike.ddotvec(ntrue, WW, implied);
+            }
+            var utility = -gamma / (1 - gamma) * eret + kappa / (1 - kappa) * (cost + initbase) + 0.5 * variance + extra;
             var utilityA = BlasLike.ddotvec(N, CC, WW) + 0.5 * variance + extra;
             Console.WriteLine($"Utility: {utility}: {utilityA}");
             for (var i = 0; i < m; ++i)
@@ -348,9 +571,10 @@ namespace Portfolio
                 }
                 this.w = ww;
                 ntrue = n;
-                mtrue=m;
+                mtrue = m;
                 WriteInputs("./gainloss");
-                var back = ActiveOpt(activeLp, ww);
+                var LAMBDAS = new double[N + M];
+                var back = ActiveOpt(activeLp, ww, LAMBDAS);
             }
             var gain = 0.0;
             var loss = 0.0;
@@ -427,7 +651,8 @@ namespace Portfolio
             w = new double[n];
             BlasLike.dsetvec(n, 1.0 / n, w);
             WriteInputs("./basic");
-            var ok = ActiveOpt();
+            var llambda = new double[n + m];
+            var ok = ActiveOpt(0, w, llambda);
             ActiveSet.Optimise.printV("w from Active Set", w);
             Console.WriteLine($"Variance from Active Set:\t\t{Variance(w)}");
             Factorise.dmxmulv(m, n, A, w, Aw);
@@ -492,7 +717,7 @@ namespace Portfolio
             hessmull(n, Q, w, Qx);
             return BlasLike.ddotvec(n, w, Qx);
         }
-        public int ActiveOpt(int lp = 0, double[] www = null)
+        public int ActiveOpt(int lp = 0, double[] www = null, double[] LAM = null)
         {
             if (ntrue == 0) ntrue = n;
             if (mtrue == 0) mtrue = m;
@@ -514,7 +739,8 @@ namespace Portfolio
             }
             else
                 w = www;
-            var back = opt.QPopt(n, m, w, L, U, A, cextra, Q, ref obj, ref iter, lp);
+            var back = opt.QPopt(n, m, w, L, U, A, cextra, Q, ref obj, ref iter, lp, LAM);
+            if (LAM != null) UtilityAnalysis(LAM, cextra);
             Console.WriteLine($"objective:\t\t{obj}; {iter} iterations");
             return back;
         }
@@ -652,7 +878,7 @@ namespace Portfolio
             IOPT.baseA = A;//We only need to pass the constraints without slack variables AA just use for testing
             IOPT.basen = n;
             IOPT.bases = slacklarge;
-            mtrue=IOPT.basem = m;
+            mtrue = IOPT.basem = m;
             IOPT.conv = conv;
             IOPT.compConv = Math.Max(conv, IOPT.compConv);
             IOPT.slacklargeConstraintToStock = slacklargeConstraint;
@@ -661,6 +887,9 @@ namespace Portfolio
             IOPT.slackToConstraintU = slackToConstraintU;
             var back =
             IOPT.Opt("QP", null, null, true, UL, sign);
+            BlasLike.dcopyvec(n, ww, w);
+            //   fixup_zero(IOPT.y);
+            //   UtilityAnalysis(IOPT.y, cextra, -w.Length);
             if (back < -10) Console.WriteLine($"Failed -- too many iterations");
             if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
             if (back == 6) Console.WriteLine("INFEASIBLE");
@@ -688,10 +917,13 @@ namespace Portfolio
                 IOPT.conv = conv;
                 IOPT.compConv = Math.Max(conv, IOPT.compConv);
                 back = IOPT.Opt("QP", null, null, false, UL, sign);
+
                 BlasLike.dcopyvec(n, ww, w);
                 if (back < -10) Console.WriteLine($"Failed -- too many iterations");
                 else if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
             }
+            //    fixup_zero(IOPT.y);
+            //    UtilityAnalysis(IOPT.y, cextra, -w.Length);
             if (wback != null) BlasLike.dcopyvec(wback.Length, ww, wback);
             return back;
         }
