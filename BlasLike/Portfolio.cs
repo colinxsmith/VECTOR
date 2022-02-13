@@ -15,6 +15,13 @@ namespace Portfolio
                 if (Math.Abs(s[i]) < thresh) s[i] = 0;
             }
         }
+        ///<summary>
+        /// Project out the extra variables added to handle non-linear constraints
+        /// leaving an effective linear model. Show that primal utility = dual utility
+        ///</summary>
+        ///<param name="LAMBDA">The Lagrangian multipliers from the optimisation</param>
+        ///<param name="cextra">The addition to c due to quadratic part</param>
+        ///<param name="lstart">Fiddled start of LAMBDA, this would be negative if LAMBDA=y from IP method</param>
         public void UtilityAnalysis(double[] LAMBDA, double[] cextra = null, int lstart = 0)
         {
             var Ceff = new double[ntrue];
