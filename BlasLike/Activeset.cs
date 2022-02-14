@@ -47,11 +47,11 @@ namespace ActiveSet
         long timeaquired = -12233;
         void wrexit(string name, int inform, int iter)
         {
-            Console.WriteLine($"{name} Inform={inform} Iter={iter}");
+            ColourConsole.WriteInfo($"{name} Inform={inform} Iter={iter}");
         }
         void wdinky(string name, double ztgnrm, double dinky)
         {
-            Console.WriteLine($"\n//{name}//         ZTGNRM         DINKY\n//{name}//{ztgnrm}{dinky}");
+            ColourConsole.WriteInfo($"\n//{name}//         ZTGNRM         DINKY\n//{name}//{ztgnrm}{dinky}");
             //lm_wmsg("\n//%s//         ZTGNRM         DINKY\n//%s//%14.5lg%14.5lg",
             //name,name,ztgnrm,dinky);
         }
@@ -666,7 +666,7 @@ namespace ActiveSet
         void lm_mdvwri<T>(string nn, int na, T[] wrk, int wstart = 0)
         {
             if (wrk == null) return;
-            Console.WriteLine(nn);
+            ColourConsole.WriteInfo(nn);
             for (int i = 0; i < na; ++i)
             {
                 Console.Write($"{wrk[i + wstart]} ");
@@ -676,7 +676,7 @@ namespace ActiveSet
         }
         void itrwri(string name, int n)
         {
-            Console.WriteLine($"{name} iteration {n}");
+            ColourConsole.WriteInfo($"{name} iteration {n}");
         }
         void dlpcrsh(bool orthog, int vertex, byte lcrash, int n, int nclin, int nctotl,
          int Nrowrt, int Ncolrt, ref int nactiv, ref int ncolz,
@@ -748,7 +748,7 @@ namespace ActiveSet
             {
                 //lm_wmsg("\n//LPCRSH//  LCRASH NCLIN NCTOTL\n//LPCRSH//%7d%7ld%7ld",
                 //    lcrash, CL(*nclin), CL(*nctotl));
-                Console.WriteLine($"{lcrash},{nclin}, {nctotl}");
+                ColourConsole.WriteInfo($"{lcrash},{nclin}, {nctotl}");
                 lm_mdvwri("\nLP VARIABLES BEFORE CRASH...", n, W);
                 lm_mdvwri("\nSTATUS OF THE LP BOUND   CONSTRAINTS", nctotl, ISTATE);
             }
@@ -1190,7 +1190,7 @@ namespace ActiveSet
                 //  lm_wmsg(
                 //"\nLPCRSH. WORKING SET SELECTED ...\nBOUNDS = %ld TEMPORARY BOUNDS = %ld GENERAL LINEAR = %ld",
                 //  CL(nfixed), CL(nartif), CL(*nactiv));
-                Console.WriteLine($"{nfixed},{nartif}, {nactiv}");
+                ColourConsole.WriteInfo($"{nfixed},{nartif}, {nactiv}");
                 lm_mdvwri("\nLP VARIABLES AFTER  CRASH...", n, W);
             }
         }
@@ -1658,55 +1658,55 @@ namespace ActiveSet
         }
         void lm_wmsg<T>(string mess, T n1)
         {
-            Console.WriteLine($"{mess} {n1}");
+            ColourConsole.WriteInfo($"{mess} {n1}");
         }
         void lm_wmsg(string mess, int n1, double n2, int n3)
         {
-            Console.WriteLine($"{mess} {n1} {n2} {n3}");
+            ColourConsole.WriteInfo($"{mess} {n1} {n2} {n3}");
         }
         void lm_wmsg(string mess, double n1, double n2, double n3)
         {
-            Console.WriteLine($"{mess} {n1} {n2} {n3}");
+            ColourConsole.WriteInfo($"{mess} {n1} {n2} {n3}");
         }
         void lm_wmsg<T>(string mess, T n1, T n2, double n3, double n4)
         {
-            Console.WriteLine($"{mess} {n1} {n2} {n3} {n4}");
+            ColourConsole.WriteInfo($"{mess} {n1} {n2} {n3} {n4}");
         }
         void lm_wmsg<T>(string mess, int n1, int n2, int n3, int n4, int n5, T n6)
         {
-            Console.WriteLine($"{mess} {n1} {n2} {n3} {n4} {n5} {n6}");
+            ColourConsole.WriteInfo($"{mess} {n1} {n2} {n3} {n4} {n5} {n6}");
         }
         void lm_wmsg(string mess, string n1, string n2, string n3, int n4, double n5, double n6)
         {
-            Console.WriteLine($"{mess} {n1} {n2} {n3} {n4} {n5} {n6}");
+            ColourConsole.WriteInfo($"{mess} {n1} {n2} {n3} {n4} {n5} {n6}");
         }
         void lm_wmsg(string mess, int n1, int n2, double n3, double n4, double n5, bool n6, int n7, int n8, int n9, int n10)
         {
-            Console.WriteLine($"{mess} {n1} {n2} {n3} {n4} {n5} {n6} {n7} {n8} {n9} {n10}");
+            ColourConsole.WriteInfo($"{mess} {n1} {n2} {n3} {n4} {n5} {n6} {n7} {n8} {n9} {n10}");
         }
         void lm_wmsg(string mess, int n1, int n2, double n3, double n4, double n5, bool n6, double n7, int n8, double n9)
         {
-            Console.WriteLine($"{mess} {n1} {n2} {n3} {n4} {n5} {n6} {n7} {n8} {n9}");
+            ColourConsole.WriteInfo($"{mess} {n1} {n2} {n3} {n4} {n5} {n6} {n7} {n8} {n9}");
         }
         void lm_wmsg(string mess, int n1, int n2, double n3, double n4, double n5, int n6, double n7, int n8, double n9)
         {
-            Console.WriteLine($"{mess} {n1} {n2} {n3} {n4} {n5} {n6} {n7} {n8} {n9}");
+            ColourConsole.WriteInfo($"{mess} {n1} {n2} {n3} {n4} {n5} {n6} {n7} {n8} {n9}");
         }
         void lm_wmsg(string mess, int n1, int n2, double n3, double n4, double n5, double n6, double n7, double n8, double n9, double n10, double n11, double n12, double n13, double n14)
         {
-            Console.WriteLine($"{mess} {n1} {n2} {n3} {n4} {n5} {n6} {n7} {n8} {n9} {n10} {n11} {n12} {n13} {n14}");
+            ColourConsole.WriteInfo($"{mess} {n1} {n2} {n3} {n4} {n5} {n6} {n7} {n8} {n9} {n10} {n11} {n12} {n13} {n14}");
         }
         void lm_wmsg(string mess, string n1, string n2, int n3)
         {
-            Console.WriteLine($"{mess} {n1} {n2} {n3}");
+            ColourConsole.WriteInfo($"{mess} {n1} {n2} {n3}");
         }
         void lm_wmsg<T>(string mess, string n1, T n2)
         {
-            Console.WriteLine($"{mess} {n1} {n2}");
+            ColourConsole.WriteInfo($"{mess} {n1} {n2}");
         }
         void lm_wmsg(string mess, double n1, double n2)
         {
-            Console.WriteLine($"{mess} {n1} {n2}");
+            ColourConsole.WriteInfo($"{mess} {n1} {n2}");
         }
         void dlpbgst(int n, int nactiv, int nfree, ref int jbigst, ref int kbigst,
          double dinky, double feamin, ref double trulam)
@@ -2059,7 +2059,7 @@ namespace ActiveSet
             CHOOSE THE ONE (OF EACH TYPE) THAT MAKES THE LARGEST ANGLE
             WITH THE SEARCH DIRECTION
             */
-            if (msg == 99) Console.WriteLine(
+            if (msg == 99) ColourConsole.WriteInfo(
         "BNDALF ENTERED\n    J  JS         FEATOL         AX             AP     JADD1        ALFA1     JADD2        ALFA2");
             alfa1 = bigalf;
             alfa2 = 0.0;
@@ -2653,7 +2653,7 @@ namespace ActiveSet
         L480:
             if (msg >= 80)
             {
-                Console.WriteLine("\n//ADDCON//  DEPENDENT CONSTRAINT REJECTED");
+                ColourConsole.WriteInfo("\n//ADDCON//  DEPENDENT CONSTRAINT REJECTED");
                 if (jadd <= (int)n)
                     lm_wmsg(
                     "\n//ADDCON//     ASIZE     DTMAX     DTMIN\n//ADDCON//%10.2le%10.2le%10.2le",
@@ -2709,7 +2709,7 @@ namespace ActiveSet
                 LAMBDA[j - 1] = RLAM[k - 1];
             }
             if (msg < 10 && msg != 1) return;
-            Console.WriteLine("\n\nVARBL STATE     VALUE      LOWER BOUND    UPPER BOUND    LAGR MULT   RESIDUAL");
+            ColourConsole.WriteInfo("\n\nVARBL STATE     VALUE      LOWER BOUND    UPPER BOUND    LAGR MULT   RESIDUAL");
             id3[0] = id[0];
             for (j = 1; j <= nctotl; ++j)
             {
@@ -2732,7 +2732,7 @@ namespace ActiveSet
                     /* ----------------------------------------- */
                     if (j == n + 1)
                     {
-                        Console.WriteLine("\n\nLNCON STATE     VALUE      LOWER BOUND    UPPER BOUND    LAGR MULT   RESIDUAL");
+                        ColourConsole.WriteInfo("\n\nLNCON STATE     VALUE      LOWER BOUND    UPPER BOUND    LAGR MULT   RESIDUAL");
                         id3[0] = id[1];
                     }
                     k = j - n;
@@ -2745,7 +2745,7 @@ namespace ActiveSet
                     if (ncnln <= 0) continue;
                     if (j == nplin + 1)
                     {
-                        Console.WriteLine("\n\nNLCON STATE     VALUE      LOWER BOUND    UPPER BOUND    LAGR MULT   RESIDUAL");
+                        ColourConsole.WriteInfo("\n\nNLCON STATE     VALUE      LOWER BOUND    UPPER BOUND    LAGR MULT   RESIDUAL");
                         id3[0] = id[2];
                     }
                     k = j - nplin;
@@ -2759,12 +2759,12 @@ namespace ActiveSet
                 ip = 1;
                 if (b1 <= -bigbnd) ip = 2;
                 if (b2 >= bigbnd) ip += 2;
-                Console.WriteLine($"{id3[0]},{k},{ls[0]},{ls[1]},{v}");
-                if (ip != 0) Console.WriteLine($"{b1}");
-                else Console.WriteLine("     NONE      ");
-                if (ip < 3) Console.WriteLine($"{b2}");
-                else Console.WriteLine("     NONE      ");
-                Console.WriteLine($"{wlam},{res}");
+                ColourConsole.WriteInfo($"{id3[0]},{k},{ls[0]},{ls[1]},{v}");
+                if (ip != 0) ColourConsole.WriteInfo($"{b1}");
+                else ColourConsole.WriteInfo("     NONE      ");
+                if (ip < 3) ColourConsole.WriteInfo($"{b2}");
+                else ColourConsole.WriteInfo("     NONE      ");
+                ColourConsole.WriteInfo($"{wlam},{res}");
             }
         }
         double dnrm2(int n, double[] x, int incx, int xstart = 0)
@@ -3095,14 +3095,14 @@ namespace ActiveSet
                     /*Noisy exit */
                     Console.WriteLine($"Mathematics routine {srname}: exited with ifail={ierror}",
                     srname, ierror);
-                    if (ifail != 0) { Console.WriteLine("Hard failure"); return -50; }
+                    if (ifail != 0) { ColourConsole.WriteInfo("Hard failure"); return -50; }
                 }
                 //#if 0
                 else
                 {   /*Soft failure*/
                     Console.WriteLine($"Mathematics routine {srname}: exited with ifail={ierror}",
                     srname, ierror);
-                    Console.WriteLine(" ** Soft failure - control returned");
+                    ColourConsole.WriteInfo(" ** Soft failure - control returned");
                 }
                 //#endif
             }
@@ -3496,7 +3496,7 @@ namespace ActiveSet
             // --istate;
 
             epspt9 = parm[3];
-            if (msg == 99) Console.WriteLine(
+            if (msg == 99) ColourConsole.WriteInfo(
         "\n   J  JS         FEATOL         AX             AP     JADD1       PALFA1     JADD2       PALFA2\n");
             lastv = !firstv;
             jadd1 = 0;
@@ -3868,28 +3868,28 @@ namespace ActiveSet
                         lm_wmsg("\nEXIT QPSOL- OPTIMAL %.2s SOLUTION.", l);
                         break;
                     case 1:
-                        Console.WriteLine("WEAK LOCAL MINIMUM.");
+                        ColourConsole.WriteInfo("WEAK LOCAL MINIMUM.");
                         break;
                     case 2:
                         lm_wmsg("\nEXIT dqpsol- %.2s SOLUTION IS UNBOUNDED.", l);
                         break;
                     case 3:
-                        Console.WriteLine("ZERO MULTIPLIERS.");
+                        ColourConsole.WriteInfo("ZERO MULTIPLIERS.");
                         break;
                     case 4:
-                        Console.WriteLine("TOO MANY ITERATIONS WITHOUT CHANGING X.");
+                        ColourConsole.WriteInfo("TOO MANY ITERATIONS WITHOUT CHANGING X.");
                         break;
                     case 5:
-                        Console.WriteLine("TOO MANY ITERATIONS.");
+                        ColourConsole.WriteInfo("TOO MANY ITERATIONS.");
                         break;
                     case 6:
-                        Console.WriteLine("CANNOT SATISFY THE LINEAR CONSTRAINTS.");
+                        ColourConsole.WriteInfo("CANNOT SATISFY THE LINEAR CONSTRAINTS.");
                         break;
                     case 7:
-                        Console.WriteLine("TOO MANY ITERATIONS WITHOUT CHANGING X IN THE LP PHASE.");
+                        ColourConsole.WriteInfo("TOO MANY ITERATIONS WITHOUT CHANGING X IN THE LP PHASE.");
                         break;
                     case 8:
-                        Console.WriteLine("TOO MANY ITERATIONS DURING THE LP PHASE.");
+                        ColourConsole.WriteInfo("TOO MANY ITERATIONS DURING THE LP PHASE.");
                         break;
                 }
                 if (numinf == 0) lm_wmsg("\n FINAL %.2s OBJECTIVE VALUE =%20.9lg", l, obj);
@@ -3903,7 +3903,7 @@ namespace ActiveSet
             int j, k;
             double atx;
 
-            Console.WriteLine("\n\n\n\n\n\nOUTPUT FROM LPDUMP\n ******************");
+            ColourConsole.WriteInfo("\n\n\n\n\n\nOUTPUT FROM LPDUMP\n ******************");
             lm_wmsg("\nLCRASH =%d LP=%d MINSUM=%d VERTEX=%d", lcrash, lp, minsum, vertex);
 
             /*PRINT  A  BY ROWS AND COMPUTE  AX = A*X. */
@@ -3915,7 +3915,7 @@ namespace ActiveSet
             }
 
             /*PRINT  BL, BU  AND  X OR AX. */
-            Console.WriteLine("\n              J      BL(J)          BU(J)           X(J)");
+            ColourConsole.WriteInfo("\n              J      BL(J)          BU(J)           X(J)");
             for (j = 0; j < nctotl; ++j)
             {
                 if (j < n)
@@ -3928,7 +3928,7 @@ namespace ActiveSet
                     k = j - n;
                     atx = LWRK[k];
                     if (k != 0)
-                        Console.WriteLine("\n              I    BL(N+I)        BU(N+I)         A(I)*X");
+                        ColourConsole.WriteInfo("\n              I    BL(N+I)        BU(N+I)         A(I)*X");
                 }
                 lm_wmsg("", k + 1, L[j], U[j], atx);
             }
@@ -3976,7 +3976,7 @@ namespace ActiveSet
         {
             int j, i;
 
-            Console.WriteLine("\n\n\n\n\n\nOUTPUT FROM QPDUMP\n******************");
+            ColourConsole.WriteInfo("\n\n\n\n\n\nOUTPUT FROM QPDUMP\n******************");
             lm_mdvwri("\nCVEC ...", n, c);
 
             /*PRINT  HESS  UNLESS IT APPEARS TO BE IMPLICIT. */
@@ -3996,7 +3996,7 @@ namespace ActiveSet
                 }
             }
             /*CALL  QPHESS  TO COMPUTE EACH COLUMN OF THE HESSIAN. */
-            Console.WriteLine("\n\n THE FOLLOWING IS RETURNED BY  QPHESS.");
+            ColourConsole.WriteInfo("\n\n THE FOLLOWING IS RETURNED BY  QPHESS.");
             BlasLike.dzerovec(n, WRK);
             for (j = 1; j <= n; ++j)
             {
@@ -4306,7 +4306,7 @@ namespace ActiveSet
 
                 ++iter;
                 if (iter >= istart) msg = msglvl;
-                //Console.WriteLine($"iter {iter} objective {objqp:E16}");
+                //ColourConsole.WriteInfo($"iter {iter} objective {objqp:E16}");
                 dfindp(nullr, unitpg, n, nclin,
                     NROWRT, ncolr, ncolz, ref nfree,
                     negligible != 0, ref gtp, ref pnorm, ref rdlast);
@@ -4808,7 +4808,7 @@ namespace ActiveSet
             }
             if (ncolz > 0)
             {
-                Console.WriteLine("\nDIAGONALS OF QP PRJ. HESSIAN FACTOR  R");
+                ColourConsole.WriteInfo("\nDIAGONALS OF QP PRJ. HESSIAN FACTOR  R");
                 lm_gdvwri(ncolz, RT, NROWRT + 1);
             }
         }
@@ -5043,7 +5043,7 @@ namespace ActiveSet
         }
         public static void printV<T>(string name, T[] a, int upto = -1)
         {
-            Console.WriteLine(name);
+            ColourConsole.WriteInfo(name);
             if (upto == -1) upto = a.Length;
             for (int i = 0; i < upto; ++i)
             {
@@ -5088,7 +5088,7 @@ namespace ActiveSet
       n + n, 1, cold, lp, orthog, ref
        iter, ref obj, n + n, lwrk, ifail);
             var tt = opt.clocker();
-            Console.WriteLine($"Time elapsed {tt} m secs");
+            ColourConsole.WriteInfo($"Time elapsed {tt} m secs");
             objective = obj;
             if (LAMBDAback != null) BlasLike.dcopyvec(LAMBDAback.Length, opt.LAMBDA, LAMBDAback);
             return back;
@@ -5127,7 +5127,7 @@ namespace ActiveSet
        iter, ref obj, n + n, lwrk, ifail);
             objective = obj;
             var tt = opt.clocker();
-            Console.WriteLine($"Time elapsed {tt} m secs");
+            ColourConsole.WriteInfo($"Time elapsed {tt} m secs");
             if (LAMBDAback != null) BlasLike.dcopyvec(LAMBDAback.Length, opt.LAMBDA, LAMBDAback);
             return back;
         }

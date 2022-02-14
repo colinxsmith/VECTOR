@@ -17,34 +17,33 @@ namespace Portfolio
         }
         ///<summary>
         /// Project out the extra variables added to handle non-linear constraints
-        /// leaving an effective linear model. Show that primal utility = dual utility
+        /// leaving an effective model. Show that primal utility = dual utility
         ///</summary>
-        ///<param name="LAMBDA">The Lagrangian multipliers from the optimisation</param>
-        ///<param name="cextra">The addition to c due to quadratic part</param>
-        ///<param name="lstart">Fiddled start of LAMBDA, this would be negative if LAMBDA=y from IP method</param>
-        public void UtilityAnalysis(double[] LAMBDA, double[] cextra = null, int lstart = 0)
+        ///<param name="LAMBDA">The Lagrangian multipliers as defined in Active Set</param>
+        ///<param name="cextra">The addition to c due to benchmark</param>
+        public void UtilityAnalysis(double[] LAMBDA, double[] cextra = null)
         {
             var Ceff = new double[ntrue];
             var chere = cextra == null ? c : cextra;
             for (var i = 0; i < ntrue; ++i)
             {
-                Ceff[i] = -BlasLike.ddot(m - mtrue, A, 1, LAMBDA, 1, mtrue + i * m, n + mtrue + lstart);
+                Ceff[i] = -BlasLike.ddot(m - mtrue, A, 1, LAMBDA, 1, mtrue + i * m, n + mtrue);
             }
             var implied = new double[n];
             if (Q != null) hessmull(n, Q, w, implied);
             BlasLike.daddvec(ntrue, Ceff, chere, Ceff);
             if (Q != null) BlasLike.daddvec(ntrue, Ceff, implied, Ceff);
-            var dual = BlasLike.ddotvec(mtrue, LAMBDA, L, n + lstart, n);
-            var primal = BlasLike.ddotvec(ntrue, Ceff, w);
+            var dual = BlasLike.ddotvec(mtrue + n, LAMBDA, L) - BlasLike.ddotvec(n - ntrue, LAMBDA, L, ntrue, ntrue) - 0.5 * BlasLike.ddotvec(ntrue, w, implied);
+            var primal = BlasLike.ddotvec(ntrue, Ceff, w) - 0.5 * BlasLike.ddotvec(ntrue, w, implied);
             var old = Console.ForegroundColor;
-            ColourConsole.WriteEmbeddedColorLine($"[red]Effective true variable linear model analysis[/red]");
-            ColourConsole.WriteEmbeddedColorLine($"[green]Weight[/green]\t\t\t[cyan]Effective Utility Gradient[/cyan]");
+            ColourConsole.WriteEmbeddedColourLine($"[red]Effective model with non-linear extra part projected out[/red]");
+            ColourConsole.WriteEmbeddedColourLine($"[green]Weight[/green]\t\t\t[cyan]Effective Utility Gradient[/cyan]");
             for (var i = 0; i < ntrue; ++i)
             {
-                ColourConsole.WriteEmbeddedColorLine($"[green]{w[i],12:F8}[/green]\t\t\t[cyan]{Ceff[i],12:F8}[/cyan]");
+                ColourConsole.WriteEmbeddedColourLine($"[green]{w[i],12:F8}[/green]\t\t\t[cyan]{Ceff[i],12:F8}[/cyan]");
             }
-            ColourConsole.WriteEmbeddedColorLine($"Primal:\t[yellow]{primal,12:F8}[/yellow]");
-            ColourConsole.WriteEmbeddedColorLine($"Dual:\t[blue]{dual,12:F8}[/blue]");
+            ColourConsole.WriteEmbeddedColourLine($"Primal:\t[yellow]{primal,12:F8}[/yellow]");
+            ColourConsole.WriteEmbeddedColourLine($"Dual:\t[blue]{dual,12:F8}[/blue]");
         }
         public virtual void WriteInputs(string filename)
         {
@@ -317,21 +316,29 @@ namespace Portfolio
             if (!useCosts) kappa = 0;
             this.ntrue = n;
             this.mtrue = m;
-                makeQ();
+            makeQ();
             var buysellI = 0;
+            var longshortI=0;
             for (var i = 0; i < n; ++i)
             {
                 if (initial[i] > L[i] && initial[i] < U[i]) buysellI++;
+                if (0 > L[i] && 0 < U[i]) longshortI++;
             }
             var buysellIndex = new int[buysellI];
             var buysellIndex_inverse = new int[n];
             for (var i = 0; i < n; ++i) buysellIndex_inverse[i] = -1;
+            var longshortIndex = new int[longshortI];
+            var longshortIndex_inverse = new int[n];
+            for (var i = 0; i < n; ++i) longshortIndex_inverse[i] = -1;
             buysellI = 0;
+            longshortI=0;
             for (var i = 0; i < n; ++i)
             {
                 if (initial[i] > L[i] && initial[i] < U[i]) buysellIndex[buysellI++] = i;
+                if (0 > L[i] && 0 < U[i]) longshortIndex[longshortI++] = i;
             }
             for (var i = 0; i < buysellI; ++i) buysellIndex_inverse[buysellIndex[i]] = i;
+            for (var i = 0; i < longshortI; ++i) longshortIndex_inverse[longshortIndex[i]] = i;
             var N = n + buysellI;
             var M = m + buysellI + (delta < 1.0 ? 1 : 0);
             var CC = new double[N];
@@ -431,7 +438,7 @@ namespace Portfolio
             }
             var turnover = 0.0;
             var cost = 0.0;
-            ColourConsole.WriteEmbeddedColorLine($"[yellow]{"Asset",12}[/yellow]\t[blue]{"WEIGHT-INITIAL",15}[/blue]\t[red]{"SELL",12}[/red]\t[blue]{"BUY",12}[/blue]\t[green]{"INITIAL",12}[/green]\t\t[darkmagenta]{"LIMIT",12}[/darkmagenta]");
+            ColourConsole.WriteEmbeddedColourLine($"[yellow]{"Asset",12}[/yellow]\t[blue]{"WEIGHT-INITIAL",15}[/blue]\t[red]{"SELL",12}[/red]\t[blue]{"BUY",12}[/blue]\t[green]{"INITIAL",12}[/green]\t\t[darkmagenta]{"LIMIT",12}[/darkmagenta]");
             for (var i = 0; i < n; ++i)
             {
                 turnover += Math.Abs(WW[i] - initial[i]);
@@ -444,8 +451,8 @@ namespace Portfolio
                 {
                     var ind = buysellIndex_inverse[i];
                     var c1 = BlasLike.ddot(N, AA, M, WW, 1, ind + m);
-                    if (WW[i] <= initial[i]) ColourConsole.WriteEmbeddedColorLine($"[yellow]{names[i],12}[/yellow]\t[blue]{(WW[i] - initial[i]),15:F8}[/blue]\t[red]{WW[ind + n],12:F8}[/red]\t[blue]{(c1 - initial[i]),12:F8}[/blue]\t[green]{initial[i],12:F8}[/green]\t\t[darkmagenta]{(!useIP ? (UU[ind + N + m] - c1) : 10),12:f2}[/darkmagenta]");
-                    else ColourConsole.WriteEmbeddedColorLine($"[yellow]{names[i],12}[/yellow][blue] {(WW[i] - initial[i]),15:F8}[/blue]\t[red]{WW[ind + n],12:F8}[/red]\t[blue]{(c1 - initial[i]),12:F8}[/blue]\t[green]{initial[i],12:F8}[/green]\t\t[darkmagenta]{(!useIP ? (UU[ind + N + m] - c1) : 10),12:f2}[/darkmagenta]");
+                    if (WW[i] <= initial[i]) ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i],12}[/yellow]\t[blue]{(WW[i] - initial[i]),15:F8}[/blue]\t[red]{WW[ind + n],12:F8}[/red]\t[blue]{(c1 - initial[i]),12:F8}[/blue]\t[green]{initial[i],12:F8}[/green]\t\t[darkmagenta]{(!useIP ? (UU[ind + N + m] - c1) : 10),12:f2}[/darkmagenta]");
+                    else ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i],12}[/yellow][blue] {(WW[i] - initial[i]),15:F8}[/blue]\t[red]{WW[ind + n],12:F8}[/red]\t[blue]{(c1 - initial[i]),12:F8}[/blue]\t[green]{initial[i],12:F8}[/green]\t\t[darkmagenta]{(!useIP ? (UU[ind + N + m] - c1) : 10),12:f2}[/darkmagenta]");
                 }
             }
             var eret = BlasLike.ddotvec(n, alpha, WW);
@@ -471,7 +478,7 @@ namespace Portfolio
             for (var i = 0; i < buysellI; ++i)
             {
                 var ind = buysellIndex[i];
-                costA += WW[n+i] * (buy[ind] + sell[ind]);
+                costA += WW[n + i] * (buy[ind] + sell[ind]);
             }
             costA += costbase - initbase;
             Console.WriteLine($"Variance: {variance}");
@@ -593,10 +600,10 @@ namespace Portfolio
             {
                 gainV += BlasLike.ddot(N, AA, M, ww, 1, i + m) - R;
             }
-            ColourConsole.WriteEmbeddedColorLine($"[green]Total GAIN = \t\t\t\t{gain,12:F8}[/green]");
-            ColourConsole.WriteEmbeddedColorLine($"[green]Total GAIN (check from opt variables) = {gainV,12:F8}[/green]");
-            ColourConsole.WriteEmbeddedColorLine($"[red]Total LOSS = \t\t\t\t{loss,12:F8}[/red]");
-            ColourConsole.WriteEmbeddedColorLine($"[red]Total LOSS (check from opt variables) = {lossV,12:F8}[/red]");
+            ColourConsole.WriteEmbeddedColourLine($"[green]Total GAIN = \t\t\t\t{gain,12:F8}[/green]");
+            ColourConsole.WriteEmbeddedColourLine($"[green]Total GAIN (check from opt variables) = {gainV,12:F8}[/green]");
+            ColourConsole.WriteEmbeddedColourLine($"[red]Total LOSS = \t\t\t\t{loss,12:F8}[/red]");
+            ColourConsole.WriteEmbeddedColourLine($"[red]Total LOSS (check from opt variables) = {lossV,12:F8}[/red]");
             var variance = this.Variance(ww);
             var expret = BlasLike.ddotvec(n, ww, alpha);
             Console.WriteLine($"Return {expret,12:F8}");
@@ -609,14 +616,14 @@ namespace Portfolio
             for (var i = 0; i < M; ++i)
             {
                 var constraint = BlasLike.ddot(N, AA, M, ww, 1, i);
-                if (i < m) ColourConsole.WriteEmbeddedColorLine($"[green]Constraint {i,3}[/green] = [blue]{constraint,12:F8}[/blue]");
-                else if (useIP) ColourConsole.WriteEmbeddedColorLine($"[cyan]Constraint {i,3}[/cyan] = [magenta]{constraint,12:F8}[/magenta][red]  LOSS var {ww[n + i - 1],12:F8}[/red]");
-                else ColourConsole.WriteEmbeddedColorLine($"[cyan]Constraint {i,3}[/cyan] = [magenta]{constraint,12:F8}[/magenta]  {UU[N + i]} [red]LOSS var {ww[n + i - 1],12:F8}[/red]  {UU[n + i - 1]}");
+                if (i < m) ColourConsole.WriteEmbeddedColourLine($"[green]Constraint {i,3}[/green] = [blue]{constraint,12:F8}[/blue]");
+                else if (useIP) ColourConsole.WriteEmbeddedColourLine($"[cyan]Constraint {i,3}[/cyan] = [magenta]{constraint,12:F8}[/magenta][red]  LOSS var {ww[n + i - 1],12:F8}[/red]");
+                else ColourConsole.WriteEmbeddedColourLine($"[cyan]Constraint {i,3}[/cyan] = [magenta]{constraint,12:F8}[/magenta]  {UU[N + i]} [red]LOSS var {ww[n + i - 1],12:F8}[/red]  {UU[n + i - 1]}");
             }
             for (var i = 0; i < m; ++i)
             {
                 var ccval = BlasLike.dsumvec(n, ww);
-                ColourConsole.WriteEmbeddedColorLine($"Portfolio constraint {i,3}: [cyan]{ccval}[/cyan]");
+                ColourConsole.WriteEmbeddedColourLine($"Portfolio constraint {i,3}: [cyan]{ccval}[/cyan]");
             }
 
         }
@@ -891,8 +898,6 @@ namespace Portfolio
             var back =
             IOPT.Opt("QP", null, null, true, UL, sign);
             BlasLike.dcopyvec(n, ww, w);
-            //   fixup_zero(IOPT.y);
-            //   UtilityAnalysis(IOPT.y, cextra, -w.Length);
             if (back < -10) Console.WriteLine($"Failed -- too many iterations");
             if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
             if (back == 6) Console.WriteLine("INFEASIBLE");
@@ -925,8 +930,6 @@ namespace Portfolio
                 if (back < -10) Console.WriteLine($"Failed -- too many iterations");
                 else if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
             }
-            //    fixup_zero(IOPT.y);
-            //    UtilityAnalysis(IOPT.y, cextra, -w.Length);
             if (wback != null) BlasLike.dcopyvec(wback.Length, ww, wback);
             return back;
         }
