@@ -361,7 +361,7 @@ namespace InteriorPoint
                                     }
                                 }
                                 else
-                                    Console.WriteLine("still negative");
+                                    ColourConsole.WriteInfo("still negative");
                             }
                         }
 
@@ -402,7 +402,7 @@ namespace InteriorPoint
                                     }
                                 }
                                 else
-                                    Console.WriteLine("still negative");
+                                    ColourConsole.WriteInfo("still negative");
                             }
                         }
                     }
@@ -692,7 +692,7 @@ namespace InteriorPoint
                 }
                 if (specialDebug)
                 {
-                    Console.WriteLine($"usrH {usrH} NORMAL MATRIX");
+                    ColourConsole.WriteInfo($"usrH {usrH} NORMAL MATRIX");
                     for (var k = 0; k < M.Length; ++k)
                     {
                         Console.Write($"{M[k]:F10}");
@@ -761,7 +761,7 @@ namespace InteriorPoint
                     }
                 }
             }
-            Console.WriteLine($"Time in CreateNormalMatrix {clocker() - clock1} m secs");
+            ColourConsole.WriteInfo($"Time in CreateNormalMatrix {clocker() - clock1} m secs");
         }
         void adaptedResiduals(double[] rp, double[] rd, double[] rm, double delta, double[] rpnew, double[] rdnew, double[] rmnew)
         {
@@ -801,7 +801,7 @@ namespace InteriorPoint
                 else for (int i = 0; i < n; ++i) w1[i] *= aob(x[i], z[i]);
                 if (specialDebug)
                 {
-                    Console.WriteLine($"{usrH} w1");
+                    ColourConsole.WriteInfo($"{usrH} w1");
                     for (var k = 0; k < n; ++k)
                     {
                         Console.Write($"{w1[k]:F10}");
@@ -810,7 +810,7 @@ namespace InteriorPoint
                             Console.Write("\n");
                     }
                     Console.Write("\n");
-                    Console.WriteLine($"{usrH} x");
+                    ColourConsole.WriteInfo($"{usrH} x");
                     for (var k = 0; k < n; ++k)
                     {
                         Console.Write($"{x[k]:F10}");
@@ -819,7 +819,7 @@ namespace InteriorPoint
                             Console.Write("\n");
                     }
                     Console.Write("\n");
-                    Console.WriteLine($"{usrH} z");
+                    ColourConsole.WriteInfo($"{usrH} z");
                     for (var k = 0; k < n; ++k)
                     {
                         Console.Write($"{z[k]:F10}");
@@ -828,7 +828,7 @@ namespace InteriorPoint
                             Console.Write("\n");
                     }
                     Console.Write("\n");
-                    Console.WriteLine($"{usrH} dy");
+                    ColourConsole.WriteInfo($"{usrH} dy");
                     for (var k = 0; k < Math.Min(20, dy.Length); ++k)
                     {
                         Console.Write($"{dy[k]:F10}");
@@ -839,7 +839,7 @@ namespace InteriorPoint
                 AmultSparse(w1, dy);
                 if (specialDebug)
                 {
-                    Console.WriteLine($"{usrH} dy after Amult");
+                    ColourConsole.WriteInfo($"{usrH} dy after Amult");
                     for (var k = 0; k < Math.Min(20, dy.Length); ++k)
                     {
                         Console.Write($"{dy[k]:F10}");
@@ -850,7 +850,7 @@ namespace InteriorPoint
                 BlasLike.daxpyvec(m, g1, rp, dy);
                 if (specialDebug)
                 {
-                    Console.WriteLine($"{usrH} dy After axpy");
+                    ColourConsole.WriteInfo($"{usrH} dy After axpy");
                     for (var k = 0; k < Math.Min(20, dy.Length); ++k)
                     {
                         Console.Write($"{dy[k]:F10}");
@@ -907,7 +907,7 @@ namespace InteriorPoint
                 {
                     if (specialDebug)
                     {
-                        Console.WriteLine($"{usrH} dy after Solve");
+                        ColourConsole.WriteInfo($"{usrH} dy after Solve");
                         for (var k = 0; k < Math.Min(20, dy.Length); ++k)
                         {
                             Console.Write($"{dy[k]:F10}");
@@ -923,7 +923,7 @@ namespace InteriorPoint
                         for (int i = 0; i < (n - nh); ++i) dx[i + nh] /= aob(z[i + nh], x[i + nh]);
                     }
                     else for (int i = 0; i < n; ++i) dx[i] *= aob(x[i], z[i]);
-                    /* Console.WriteLine($"{usrH} dx");
+                    /* ColourConsole.WriteInfo($"{usrH} dx");
                      for (var k = 0; k < Math.Min(20, dx.Length); ++k)
                      {
                          Console.Write(dx[k]);
@@ -1006,7 +1006,7 @@ namespace InteriorPoint
                         {
                             for (int i = cstart; i < n + cstart; ++i) w1[i] /= W2[i];
                         }
-                        /*   Console.WriteLine($"{usrH} w1");
+                        /*   ColourConsole.WriteInfo($"{usrH} w1");
                            for (var k = 0; k < Math.Min(20, w1.Length); ++k)
                            {
                                Console.Write(w1[k]);
@@ -1156,7 +1156,7 @@ namespace InteriorPoint
                             {
                                 for (int i = cstart; i < n + cstart; ++i) dx[i] /= W2[i];
                             }
-                            /*   Console.WriteLine($"{usrH} dx");
+                            /*   ColourConsole.WriteInfo($"{usrH} dx");
                                for (var k = 0; k < Math.Min(20, dx.Length); ++k)
                                {
                                    Console.Write(dx[k]);
@@ -1324,7 +1324,7 @@ namespace InteriorPoint
                             double wcheck = BlasLike.ddotvec(n, W, W, cstart, cstart);
                             if (double.IsNaN(wcheck))
                             {
-                                Console.WriteLine("BAD W"); Debug.Assert(false);
+                                ColourConsole.WriteInfo("BAD W"); Debug.Assert(false);
                             }
                             Wtrans(n, x, W, xbar, cstart, cstart, cstart); //xbar=thetaW.x
                             thetaScale(n, xbar, THETA[icone], false, false, cstart);
@@ -1447,7 +1447,7 @@ namespace InteriorPoint
                 }
                 catch
                 {
-                    Console.WriteLine("######################################### Fix-up for getorder exception in condition estimate ###################################");
+                    ColourConsole.WriteInfo("######################################### Fix-up for getorder exception in condition estimate ###################################");
                     double a1 = 0, a2 = 0;
                     BlasLike.dxminmax(m, diags, 1, ref a1, ref a2);
                     condition = a1 / a2;
@@ -1768,15 +1768,15 @@ namespace InteriorPoint
                     double test = BlasLike.ddotvec(n, diff, diff);
                     if (test > BlasLike.lm_eps * 256)
                     {
-                        Console.WriteLine($"xbar test = {test}");
-                        Console.WriteLine($"rp1 = {rp1}");
-                        Console.WriteLine($"rd1 = {rd1}");
-                        Console.WriteLine($"comp1 = {comp1}");
+                        ColourConsole.WriteInfo($"xbar test = {test}");
+                        ColourConsole.WriteInfo($"rp1 = {rp1}");
+                        ColourConsole.WriteInfo($"rd1 = {rd1}");
+                        ColourConsole.WriteInfo($"comp1 = {comp1}");
                         //   break;
                     }
                 }
                 opt.SolvePrimaryDual();
-                if (opt.badindex != 0 && m > 1) Console.WriteLine($"Normal matrix is unstable: badindex={opt.badindex}");
+                if (opt.badindex != 0 && m > 1) ColourConsole.WriteInfo($"Normal matrix is unstable: badindex={opt.badindex}");
                 BlasLike.dcopyvec(n, opt.dx, dxold);
                 BlasLike.dcopyvec(n, opt.dz, dzold);
                 BlasLike.dcopyvec(m, opt.dy, dyold);
@@ -1888,14 +1888,14 @@ namespace InteriorPoint
             var infease = !(opt.homogenous && (opt.tau > 1e2 * opt.kappa));
             if (opt.homogenous)
             {
-                Console.WriteLine($"tau = {opt.tau} kappa={opt.kappa}");
+                ColourConsole.WriteEmbeddedColourLine($"[green]tau = {opt.tau}[/green] [cyan]kappa={opt.kappa}[/cyan]");
                 if (opt.tau != 0 && opt.tau != 1)
                 {
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                 }
-                if (infease) Console.WriteLine("INFEASIBLE");
+                if (infease) ColourConsole.WriteError("INFEASIBLE");
             }
             if (optMode == "QP")
             {
@@ -1912,20 +1912,20 @@ namespace InteriorPoint
             else if (opt.homogenous && infease) return 6;
             else
             {
-                Console.WriteLine($"{ir} outer iterations out of {opt.maxouter}");
-                Console.WriteLine($"{innerIteration} iterations out of {opt.maxinner}");
-                Console.WriteLine($"Relative Primal Residual\t\t {rp1}");
-                Console.WriteLine($"Relative Dual Residual\t\t\t {rd1}");
-                Console.WriteLine($"Relative Complementarity\t\t {comp1}");
-                Console.WriteLine($"Primal Utility:\t\t{opt.Primal()}");
+                ColourConsole.WriteInfo($"{ir} outer iterations out of {opt.maxouter}");
+                ColourConsole.WriteInfo($"{innerIteration} iterations out of {opt.maxinner}");
+                ColourConsole.WriteInfo($"Relative Primal Residual\t\t {rp1}");
+                ColourConsole.WriteInfo($"Relative Dual Residual\t\t\t {rd1}");
+                ColourConsole.WriteInfo($"Relative Complementarity\t\t {comp1}");
+                ColourConsole.WriteInfo($"Primal Utility:\t\t{opt.Primal()}");
                 ActiveSet.Optimise.printV("x", opt.x);
-                Console.WriteLine($"Dual Utility:\t\t{opt.Dual() + zL}");
+                ColourConsole.WriteInfo($"Dual Utility:\t\t{opt.Dual() + zL}");
                 ActiveSet.Optimise.printV("y", opt.y);
                 ActiveSet.Optimise.printV("z", opt.z);
-                Console.WriteLine($"Complementarity:\t{BlasLike.ddotvec(opt.n, opt.x, opt.z) - zL}");
-                Console.WriteLine($"Gap:\t\t\t{opt.Primal() - opt.Dual() - zL}");
-                Console.WriteLine($"Job took {opt.clocker()} m secs");
-                Console.WriteLine($"Last conv {opt.conv}");
+                ColourConsole.WriteInfo($"Complementarity:\t{BlasLike.ddotvec(opt.n, opt.x, opt.z) - zL}");
+                ColourConsole.WriteInfo($"Gap:\t\t\t{opt.Primal() - opt.Dual() - zL}");
+                ColourConsole.WriteInfo($"Job took {opt.clocker()} m secs");
+                ColourConsole.WriteInfo($"Last conv {opt.conv}");
                 return -iup;
             }
         }
@@ -1991,7 +1991,7 @@ namespace InteriorPoint
                 outer = x[ncm1 + xstart] * x[ncm1 + xstart] - BlasLike.ddotvec(ncm1, x, x, xstart, xstart);
                 if (outer <= 0)
                 {
-                    Console.WriteLine($"outer is not positive in applyXm1 {x[ncm1 + xstart]} {outer}");
+                    ColourConsole.WriteInfo($"outer is not positive in applyXm1 {x[ncm1 + xstart]} {outer}");
                     if (x[ncm1] > BlasLike.lm_rooteps)
                     {
                         BlasLike.dscalvec(ncm1, .95 * x[ncm1 + xstart] / Math.Sqrt(x[ncm1 + xstart] * x[ncm1 + xstart] - outer), x, xstart);
@@ -2002,7 +2002,7 @@ namespace InteriorPoint
                         x[ncm1 + xstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)ncone);
                     }
                     outer = x[ncm1 + xstart] * x[ncm1 + xstart] - BlasLike.ddotvec(ncm1, x, x, xstart, xstart);
-                    Console.WriteLine($"fixed outer is now {outer}");
+                    ColourConsole.WriteInfo($"fixed outer is now {outer}");
                 }
                 inner = BlasLike.ddotvec(ncm1, A, x, Astart, xstart);
                 for (int j = 0; j < ncone; ++j)
@@ -2036,7 +2036,7 @@ namespace InteriorPoint
                 wc = BlasLike.ddotvec(ncm1, w, A, wstart, Astart);
                 bot = 1.0 + w[ncm1 + wstart];
                 if (bot < BlasLike.lm_eps)
-                    Console.WriteLine($"bad cone in Wtrans {bot}");
+                    ColourConsole.WriteInfo($"bad cone in Wtrans {bot}");
                 /*   for (int j = 0; j < ncm1; ++j)
                                {
                                    if (wc != 0) WA[j + WAStart] = w[j + wstart] * wc / bot;
@@ -2072,7 +2072,7 @@ namespace InteriorPoint
             wc = BlasLike.ddotvec(ncm1, w, A, wstart, Astart);
             bot = 1 + w[ncm1 + wstart];
             if (bot < BlasLike.lm_eps)
-                Console.WriteLine($"bad cone in WtransR {bot}");
+                ColourConsole.WriteInfo($"bad cone in WtransR {bot}");
             /*  for (int j = 0; j < ncm1; ++j)
               {
                   if (wc != 0) WA[j + WAStart] = w[j + wstart] * wc / bot;

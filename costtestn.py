@@ -74,7 +74,7 @@ class FDATA:
 if len(argv) > 1:
     Opt = FDATA(open(argv[1]))
 else:
-    Opt = FDATA(open('./costtestdata'))
+    Opt = FDATA(open('./optinput1'))
 
 A = Opt.AA
 C = Opt.CC
@@ -127,6 +127,11 @@ print(('\033[1;1;39mAnalysis over the true variables\033[0;m'))
 print(('\033[1;1;31m%16s \033[1;1;32m%16s \033[1;1;35m%16s \033[1;1;34m%16s \033[0;m') % (
     'x', 'dU/dx', 'extradU/dx', 'Marginal'))
 UU = 0
+dual = ddot(mtrue+n, LAMBDA, 1, L, 1) - \
+    ddot(n-ntrue, LAMBDA, 1, L, 1, ntrue, ntrue)
+qextra = 0
+if len(Opt.QQ) > 0:
+    qextra = ddot(ntrue, w, 1, implied, 1)/2
 for i in range(ntrue):
     if len(Opt.QQ) > 0:
         UU += w[i]*(C[i]+implied[i]+cex[i])
@@ -136,6 +141,7 @@ for i in range(ntrue):
         UU += w[i]*(C[i]+cex[i])
         print(('\033[1;1;31m%16.8f \033[1;1;32m%16.8f \033[1;1;35m%16.8f \033[1;1;34m%16.8f \033[0;m' % (
             w[i], C[i], cex[i], C[i]+cex[i])))
-print(('%16s %16s %16s \033[1;1;33m%16.8f \033[0;m') % ('', '', 'Primal:', UU))
+print(('%16s %16s %16s \033[1;1;33m%16.8f \033[0;m') %
+      ('', '', 'Primal:', UU-qextra))
 print(('%16s %16s %16s \033[1;1;36m%16.8f \033[0;m') %
-      ('', '', 'Dual:', ddot(mtrue, LAMBDA, 1, L, 1, n, n)))
+      ('', '', 'Dual:', dual-qextra))

@@ -1,27 +1,27 @@
 using System;
 using System.Text.RegularExpressions;
 /// <summary>
-/// Console Color Helper class that provides coloring to individual commands
+/// Console Colour Helper class that provides Colouring to individual commands
 /// </summary>
 public static class ColourConsole
 {
     /// <summary>
-    /// WriteLine with color
+    /// WriteLine with Colour
     /// </summary>
     /// <param name="text"></param>
-    /// <param name="color"></param>
-    public static void WriteLine(string text, ConsoleColor? color = null)
+    /// <param name="Colour"></param>
+    public static void WriteLine(string text, ConsoleColor? Colour = null)
     {
-        if (color.HasValue)
+        if (Colour.HasValue)
         {
-            var oldColor = System.Console.ForegroundColor;
-            if (color == oldColor)
+            var oldColour = System.Console.ForegroundColor;
+            if (Colour == oldColour)
                 Console.WriteLine(text);
             else
             {
-                Console.ForegroundColor = color.Value;
+                Console.ForegroundColor = Colour.Value;
                 Console.WriteLine(text);
-                Console.ForegroundColor = oldColor;
+                Console.ForegroundColor = oldColour;
             }
         }
         else
@@ -29,19 +29,19 @@ public static class ColourConsole
     }
 
     /// <summary>
-    /// Writes out a line with a specific color as a string
+    /// Writes out a line with a specific Colour as a string
     /// </summary>
     /// <param name="text">Text to write</param>
-    /// <param name="color">A console color. Must match ConsoleColors collection names (case insensitive)</param>
-    public static void WriteLine(string text, string color)
+    /// <param name="Colour">A console Colour. Must match ConsoleColours collection names (case insensitive)</param>
+    public static void WriteLine(string text, string Colour)
     {
-        if (string.IsNullOrEmpty(color))
+        if (string.IsNullOrEmpty(Colour))
         {
             WriteLine(text);
             return;
         }
 
-        if (!Enum.TryParse(color, true, out ConsoleColor col))
+        if (!Enum.TryParse(Colour, true, out ConsoleColor col))
         {
             WriteLine(text);
         }
@@ -52,22 +52,22 @@ public static class ColourConsole
     }
 
     /// <summary>
-    /// Write with color
+    /// Write with Colour
     /// </summary>
     /// <param name="text"></param>
-    /// <param name="color"></param>
-    public static void Write(string text, ConsoleColor? color = null)
+    /// <param name="Colour"></param>
+    public static void Write(string text, ConsoleColor? Colour = null)
     {
-        if (color.HasValue)
+        if (Colour.HasValue)
         {
-            var oldColor = System.Console.ForegroundColor;
-            if (color == oldColor)
+            var oldColour = System.Console.ForegroundColor;
+            if (Colour == oldColour)
                 Console.Write(text);
             else
             {
-                Console.ForegroundColor = color.Value;
+                Console.ForegroundColor = Colour.Value;
                 Console.Write(text);
-                Console.ForegroundColor = oldColor;
+                Console.ForegroundColor = oldColour;
             }
         }
         else
@@ -75,19 +75,19 @@ public static class ColourConsole
     }
 
     /// <summary>
-    /// Writes out a line with color specified as a string
+    /// Writes out a line with Colour specified as a string
     /// </summary>
     /// <param name="text">Text to write</param>
-    /// <param name="color">A console color. Must match ConsoleColors collection names (case insensitive)</param>
-    public static void Write(string text, string color)
+    /// <param name="Colour">A console Colour. Must match ConsoleColours collection names (case insensitive)</param>
+    public static void Write(string text, string Colour)
     {
-        if (string.IsNullOrEmpty(color))
+        if (string.IsNullOrEmpty(Colour))
         {
             Write(text);
             return;
         }
 
-        if (!ConsoleColor.TryParse(color, true, out ConsoleColor col))
+        if (!ConsoleColor.TryParse(Colour, true, out ConsoleColor col))
         {
             Write(text);
         }
@@ -105,41 +105,41 @@ public static class ColourConsole
     /// -----------
     /// Header Text
     /// -----------
-    /// and allows you to specify a color for the header. The dashes are colored
+    /// and allows you to specify a Colour for the header. The dashes are Coloured
     /// </summary>
     /// <param name="headerText">Header text to display</param>
     /// <param name="wrapperChar">wrapper character (-)</param>
-    /// <param name="headerColor">Color for header text (yellow)</param>
-    /// <param name="dashColor">Color for dashes (gray)</param>
+    /// <param name="headerColour">Colour for header text (yellow)</param>
+    /// <param name="dashColour">Colour for dashes (gray)</param>
     public static void WriteWrappedHeader(string headerText,
                                             char wrapperChar = '-',
-                                            ConsoleColor headerColor = ConsoleColor.Yellow,
-                                            ConsoleColor dashColor = ConsoleColor.DarkGray)
+                                            ConsoleColor headerColour = ConsoleColor.Yellow,
+                                            ConsoleColor dashColour = ConsoleColor.DarkGray)
     {
         if (string.IsNullOrEmpty(headerText))
             return;
 
         string line = new string(wrapperChar, headerText.Length);
 
-        WriteLine(line,dashColor);
-        WriteLine(headerText, headerColor);
-        WriteLine(line,dashColor);
+        WriteLine(line, dashColour);
+        WriteLine(headerText, headerColour);
+        WriteLine(line, dashColour);
     }
 
-    private static Lazy<Regex> colorBlockRegEx = new Lazy<Regex>(
-        ()=>  new Regex("\\[(?<color>.*?)\\](?<text>[^[]*)\\[/\\k<color>\\]", RegexOptions.IgnoreCase), 
+    private static Lazy<Regex> ColourBlockRegEx = new Lazy<Regex>(
+        () => new Regex("\\[(?<Colour>.*?)\\](?<text>[^[]*)\\[/\\k<Colour>\\]", RegexOptions.IgnoreCase),
         isThreadSafe: true);
 
     /// <summary>
-    /// Allows a string to be written with embedded color values using:
-    /// This is [red]Red[/red] text and this is [cyan]Blue[/blue] text
+    /// Allows a string to be written with embedded Colour values using:
+    /// This is [red]Red[/red] text and this is [blue]Blue[/blue] text
     /// </summary>
     /// <param name="text">Text to display</param>
-    /// <param name="baseTextColor">Base text color</param>
-    public static void WriteEmbeddedColorLine(string text, ConsoleColor? baseTextColor = null)
+    /// <param name="baseTextColour">Base text Colour</param>
+    public static void WriteEmbeddedColourLine(string text, ConsoleColor? baseTextColour = null)
     {
-        if (baseTextColor == null)
-            baseTextColor = Console.ForegroundColor;
+        if (baseTextColour == null)
+            baseTextColour = Console.ForegroundColor;
 
         if (string.IsNullOrEmpty(text))
         {
@@ -151,27 +151,27 @@ public static class ColourConsole
         int at2 = text.IndexOf("]");
         if (at == -1 || at2 <= at)
         {
-            WriteLine(text, baseTextColor);
+            WriteLine(text, baseTextColour);
             return;
         }
 
         while (true)
         {
-            var match = colorBlockRegEx.Value.Match(text);
+            var match = ColourBlockRegEx.Value.Match(text);
             if (match.Length < 1)
             {
-                Write(text, baseTextColor);
+                Write(text, baseTextColour);
                 break;
             }
 
             // write up to expression
-            Write(text.Substring(0, match.Index), baseTextColor);
+            Write(text.Substring(0, match.Index), baseTextColour);
 
             // strip out the expression
             string highlightText = match.Groups["text"].Value;
-            string colorVal = match.Groups["color"].Value;
+            string ColourVal = match.Groups["Colour"].Value;
 
-            Write(highlightText, colorVal);
+            Write(highlightText, ColourVal);
 
             // remainder of string
             text = text.Substring(match.Index + match.Value.Length);
@@ -192,7 +192,7 @@ public static class ColourConsole
     {
         WriteLine(text, ConsoleColor.Green);
     }
-    
+
     /// <summary>
     /// Write a Error Line - Red
     /// </summary>
@@ -218,7 +218,7 @@ public static class ColourConsole
     /// <param name="text">Text to write out</param>
     public static void WriteInfo(string text)
     {
-        WriteLine(text, ConsoleColor.DarkCyan);
+        WriteLine(text, ConsoleColor.Green);
     }
 
     #endregion
