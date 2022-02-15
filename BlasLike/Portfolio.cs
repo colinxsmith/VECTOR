@@ -431,7 +431,7 @@ namespace Portfolio
                     LL[n + cnum] = valuel;
                     UU[n + cnum] = value;
                     BlasLike.dset(n, 1.0, AA, M, cnum);
-                    BlasLike.dset(longshortI, -2.0, AA, M, cnum + M * (n + buysellI));
+                    BlasLike.dset(longshortI, 2.0, AA, M, cnum + M * (n + buysellI));
                     cnum++;
                 }
                 if (rmax > 0 && rmax == rmin)
@@ -440,7 +440,7 @@ namespace Portfolio
                     LL[n + cnum] = 0;
                     UU[n + cnum] = 0;
                     BlasLike.dset(n, rmax, AA, M, cnum);//rmax*(L+S)
-                    BlasLike.dset(longshortI, -(1.0 + rmax), AA, M, cnum + M * (n + buysellI));//-S-rmax*S
+                    BlasLike.dset(longshortI, (1.0 + rmax), AA, M, cnum + M * (n + buysellI));//-S-rmax*S
                     cnum++;
                 }
                 else if (rmax > 0)
@@ -449,7 +449,7 @@ namespace Portfolio
                     LL[n + cnum] = 0;
                     UU[n + cnum] = useIP ? BlasLike.lm_max : 10;
                     BlasLike.dset(n, rmax, AA, M, cnum);
-                    BlasLike.dset(longshortI, -(1.0 + rmax), AA, M, cnum + M * (n + buysellI));
+                    BlasLike.dset(longshortI, (1.0 + rmax), AA, M, cnum + M * (n + buysellI));
                     cnum++;
                 }
                 else if (rmin > 0)
@@ -458,7 +458,7 @@ namespace Portfolio
                     LL[n + cnum] = 0;
                     UU[n + cnum] = useIP ? BlasLike.lm_max : 10;
                     BlasLike.dset(n, -rmin, AA, M, cnum);
-                    BlasLike.dset(longshortI, (1.0 + rmin), AA, M, cnum + M * (n + buysellI));
+                    BlasLike.dset(longshortI, - (1.0 + rmin), AA, M, cnum + M * (n + buysellI));
                     cnum++;
                 }
             }
