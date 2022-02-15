@@ -485,7 +485,7 @@ namespace Portfolio
                 for (var i = 0; i < longshortI; ++i)
                 {
                     var ind = longshortIndex[i];
-                    WW[i + n + buysellI] = initial[ind] - 1.0 / n;
+                    WW[i + n + buysellI] = - 1.0 / n;
                 }
                 this.initial = initial;
                 this.w = WW;
@@ -503,7 +503,7 @@ namespace Portfolio
                 for (var i = 0; i < longshortI; ++i)
                 {
                     var ind = longshortIndex[i];
-                    WW[i + n + buysellI] = initial[ind] - 1.0 / n;
+                    WW[i + n + buysellI] = - 1.0 / n;
                 }
                 this.w = WW;
                 WriteInputs("./optinput2");
