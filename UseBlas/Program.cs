@@ -1188,13 +1188,13 @@ namespace UseBlas
                 FPortfolio opt = new FPortfolio("");
                 double[] SV = null, FC = null, FL = null, L = null, U = null, alpha = null, initial = null, A = null;
                 double[] buy = null, sell = null, bench = null;
-                double gamma, delta, kappa;
+                double gamma, delta, kappa, value, valuel, rmin, rmax;
                 int n, nfac, m;
                 string[] names;
 
                 using (var buysell = new InputSomeData())
                 {
-                    buysell.doubleFields = "SV FC FL L U alpha initial A buy sell gamma delta kappa bench";
+                    buysell.doubleFields = "SV FC FL L U alpha initial A buy sell gamma delta kappa bench value valuel rmin rmax";
                     buysell.intFields = "n nfac m";
                     buysell.stringFields = "names";
                     try
@@ -1221,6 +1221,10 @@ namespace UseBlas
                     delta = buysell.mapDouble["delta"][0];
                     kappa = buysell.mapDouble["kappa"][0];
                     gamma = buysell.mapDouble["gamma"][0];
+                    value = buysell.mapDouble["value"][0];
+                    valuel = buysell.mapDouble["valuel"][0];
+                    rmin = buysell.mapDouble["rmin"][0];
+                    rmax = buysell.mapDouble["rmax"][0];
                     nfac = buysell.mapInt["nfac"][0];
                     names = buysell.mapString["names"];
                     opt.SV = SV;
@@ -1229,7 +1233,8 @@ namespace UseBlas
                     opt.nfac = nfac;
                     opt.bench = bench;
                     bool useIp = false;
-                    opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, alpha, initial, buy, sell, names, useIp);
+                    opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
+                     alpha, initial, buy, sell, names, useIp);
                 }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);

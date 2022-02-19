@@ -212,7 +212,7 @@ public static class ColourConsole
 
 
     /// <summary>
-    /// Write a Info Line - dark cyan
+    /// Write a Info Line - green
     /// </summary>
     /// <param name="text">Text to write out</param>
     public static void WriteInfo(string text)

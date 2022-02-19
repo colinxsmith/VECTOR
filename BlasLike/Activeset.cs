@@ -5049,9 +5049,9 @@ namespace ActiveSet
             {
                 var p = a[i].GetType();
                 if (p.FullName == "System.Double")
-                    Console.Write($"{a[i]:F8} ");
+                    ColourConsole.Write($"{a[i],11:F8} ", ConsoleColor.Magenta);
                 else
-                    Console.Write($"{a[i]} ");
+                    ColourConsole.Write($"{a[i]} ", ConsoleColor.Magenta);
                 if (i % 10 == 9) Console.Write("\n");
             }
             Console.Write("\n");
@@ -5088,7 +5088,7 @@ namespace ActiveSet
       n + n, 1, cold, lp, orthog, ref
        iter, ref obj, n + n, lwrk, ifail);
             var tt = opt.clocker();
-            ColourConsole.WriteInfo($"Time elapsed {tt} m secs");
+            ColourConsole.WriteLine($"Time elapsed {tt} m secs",ConsoleColor.DarkCyan);
             objective = obj;
             if (LAMBDAback != null) BlasLike.dcopyvec(LAMBDAback.Length, opt.LAMBDA, LAMBDAback);
             return back;
@@ -5127,7 +5127,7 @@ namespace ActiveSet
        iter, ref obj, n + n, lwrk, ifail);
             objective = obj;
             var tt = opt.clocker();
-            ColourConsole.WriteInfo($"Time elapsed {tt} m secs");
+            ColourConsole.WriteLine($"Time elapsed {tt} m secs",ConsoleColor.DarkCyan);
             if (LAMBDAback != null) BlasLike.dcopyvec(LAMBDAback.Length, opt.LAMBDA, LAMBDAback);
             return back;
         }
