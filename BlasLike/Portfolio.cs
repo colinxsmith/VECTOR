@@ -408,7 +408,7 @@ namespace Portfolio
                 for (var i = 0; i < n; ++i)
                 {
                     if (initial[i] <= L[i]) CC[i] += mult * buy[i];
-                    else if (initial[i] >= U[i]) CC[i] += mult * sell[i];
+                    else if (initial[i] >= U[i]) CC[i] -= mult * sell[i];
                     else if (initial[i] > L[i] && initial[i] < U[i]) CC[i] += mult * buy[i];
                 }
                 for (var i = 0; i < buysellI; ++i)
