@@ -127,7 +127,7 @@ print(('\033[1;1;39mAnalysis over the true variables\033[0;m'))
 print(('\033[1;1;31m%16s \033[1;1;32m%16s \033[1;1;35m%16s \033[1;1;34m%16s \033[0;m') % (
     'x', 'dU/dx', 'extradU/dx', 'Marginal'))
 UU = 0
-dual = ddot(mtrue+n, LAMBDA, 1, L, 1) - \
+dual = ddot(n, LAMBDA, 1, w, 1) + ddot(mtrue, LAMBDA, 1, L, 1, n, n) - \
     ddot(n-ntrue, LAMBDA, 1, L, 1, ntrue, ntrue)
 qextra = 0
 if len(Opt.QQ) > 0:
