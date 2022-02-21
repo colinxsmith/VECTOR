@@ -425,18 +425,18 @@ namespace Portfolio
             if (delta < 1.0)
             {
                 LL[N + cnum] = -BlasLike.lm_max * 0;// Proper lower bound <=0 is redundant
-                                                    // BlasLike.dset(n, 1.0, AA, M, cnum);
+                                                    //BlasLike.dset(n, 1.0, AA, M, cnum);
                 for (var i = 0; i < n; ++i)
                 {
                     if (buysellIndex_inverse[i] == -1)
                     {
                         if (initial[i] <= L[i])
-                            BlasLike.dset(1, 1.0, AA, M, cnum + i + M * n);
+                            BlasLike.dset(1, 1.0, AA, M, cnum + M * i);
                         else if (initial[i] >= U[i])
-                            BlasLike.dset(1, -1.0, AA, M, cnum + i + M * n);
+                            BlasLike.dset(1, -1.0, AA, M, cnum + M * i);
                     }
                     else
-                        BlasLike.dset(1, 1.0, AA, M, cnum + i + M * n);
+                        BlasLike.dset(1, 1.0, AA, M, cnum + M * i);
                 }
                 BlasLike.dset(buysellI, 2.0, AA, M, cnum + M * n);
                 /*   LL[N + cnum] = */
@@ -738,6 +738,7 @@ namespace Portfolio
             Console.WriteLine($"c range ({alphamax},{alphamin}) ratio {(alphamin / alphamax):E8}");
             if (useIP)
             {
+                this.ntrue = n;
                 var back = InteriorOpt(5e-11, ww);
             }
             else
