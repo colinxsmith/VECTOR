@@ -405,7 +405,7 @@ namespace Portfolio
             {
                 var ind = longshortIndex[i - m - buysellI];
                 BlasLike.dset(1, 1.0, AA, M, i + M * ind);
-                BlasLike.dset(1, 1.0, AA, M, i + M * (n + i - m - buysellI));
+                BlasLike.dset(1, 1.0, AA, M, i + M * (n + i - m));
             }
             var mult = kappa / (1.0 - kappa);
             BlasLike.dsccopyvec(n, -gamma / (1 - gamma), alpha, CC);
@@ -428,7 +428,7 @@ namespace Portfolio
                 BlasLike.dsetvec(buysellI, 0, CC, n);
             }
             var cnum = m + buysellI + longshortI;
-            if (delta < 1.0)
+            if (delta < 2.0)
             {
                 LL[N + cnum] = -BlasLike.lm_max * 0;// Proper lower bound <=0 is redundant
                                                     //BlasLike.dset(n, 1.0, AA, M, cnum);
@@ -630,7 +630,7 @@ namespace Portfolio
                 longside -= shortside;
                 shortsideS += BlasLike.dsumvec(longshortI, WW, n + buysellI);
             }
-            ColourConsole.WriteLine("Test Value constraint:\t" + BlasLike.ddot(N, AA, M, WW, 1, m + buysellI + longshortI).ToString(), ConsoleColor.DarkYellow);
+            ColourConsole.WriteLine("Test Value constraint:\t" + BlasLike.ddot(N, AA, M, WW, 1, m + buysellI + longshortI + ((delta < 2) ? 1 : 0)).ToString(), ConsoleColor.DarkYellow);
             ColourConsole.WriteEmbeddedColourLine($"[green]Longside={longside}[/green]\t[red]Shortside={shortside}[/red] [magenta]({-shortsideS})[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"[magenta]-Short/Long[/magenta] = [darkgreen]{-shortside / longside}[/darkgreen]");
             if (buy != null && sell != null)
@@ -638,8 +638,8 @@ namespace Portfolio
                 {
                     if (initial[i] > U[i])
                     {
-                        costbase += sell[i] * WW[i];
-                        initbase += sell[i] * initial[i];
+                        costbase -= sell[i] * WW[i];
+                        initbase -= sell[i] * initial[i];
                     }
                     else
                     {
@@ -838,11 +838,13 @@ namespace Portfolio
             BlasLike.dsetvec(n, 1.0 / n, w);
             WriteInputs("./basic");
             var llambda = new double[n + m];
+            L[n + 1] = -10;
             var ok = ActiveOpt(0, w, llambda);
             ActiveSet.Optimise.printV("w from Active Set", w);
             Console.WriteLine($"Variance from Active Set:\t\t{Variance(w)}");
             Factorise.dmxmulv(m, n, A, w, Aw);
             ActiveSet.Optimise.printV("Constraints", Aw);
+            L[n + 1] = -BlasLike.lm_max;
             var ip = InteriorOpt(5e-10);
             Console.WriteLine($"Variance from IP:\t\t{Variance(w)}");
             Factorise.dmxmulv(m, n, A, w, Aw);
