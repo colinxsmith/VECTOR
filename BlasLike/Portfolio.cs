@@ -33,7 +33,13 @@ namespace Portfolio
             if (Q != null) hessmull(n, Q, w, implied);
             BlasLike.daddvec(ntrue, Ceff, chere, Ceff);
             if (Q != null) BlasLike.daddvec(ntrue, Ceff, implied, Ceff);
-            var dual = BlasLike.ddotvec(n, LAMBDA, w) + BlasLike.ddotvec(mtrue, LAMBDA, L, n, n) - BlasLike.ddotvec(n - ntrue, LAMBDA, L, ntrue, ntrue) - 0.5 * BlasLike.ddotvec(ntrue, w, implied);
+            var cvals = new double[mtrue];
+            for (var i = 0; i < mtrue; ++i)
+            {
+                cvals[i] = BlasLike.ddot(n, A, m, w, 1, i);
+                ColourConsole.WriteEmbeddedColourLine($"[red]LAMBDA {LAMBDA[i + n],12:F8}[/red][green] L {L[n + i],12:F8}[/green][cyan] value {cvals[i],12:F8}[/cyan][green] U {U[i + n],12:F8}[/green]");
+            }
+            var dual = BlasLike.ddotvec(n, LAMBDA, w) + BlasLike.ddotvec(mtrue, LAMBDA, cvals, n) - BlasLike.ddotvec(n - ntrue, LAMBDA, L, ntrue, ntrue) - 0.5 * BlasLike.ddotvec(ntrue, w, implied);
             var primal = BlasLike.ddotvec(ntrue, Ceff, w) - 0.5 * BlasLike.ddotvec(ntrue, w, implied);
             var old = Console.ForegroundColor;
             ColourConsole.WriteEmbeddedColourLine($"[red]Effective model with non-linear extra part projected out[/red]");
