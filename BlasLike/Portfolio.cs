@@ -630,7 +630,7 @@ namespace Portfolio
                 longside -= shortside;
                 shortsideS += BlasLike.dsumvec(longshortI, WW, n + buysellI);
             }
-            ColourConsole.WriteLine("Test Value constraint:\t" + BlasLike.ddot(N, AA, M, WW, 1, m + buysellI + longshortI + ((delta < 2) ? 1 : 0)).ToString(), ConsoleColor.DarkYellow);
+            if (longshortI > 0 && value > 0) ColourConsole.WriteLine("Test Value constraint:\t" + BlasLike.ddot(N, AA, M, WW, 1, m + buysellI + longshortI + ((delta < 2) ? 1 : 0)).ToString(), ConsoleColor.DarkYellow);
             ColourConsole.WriteEmbeddedColourLine($"[green]Longside={longside}[/green]\t[red]Shortside={shortside}[/red] [magenta]({-shortsideS})[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"[magenta]-Short/Long[/magenta] = [darkgreen]{-shortside / longside}[/darkgreen]");
             if (buy != null && sell != null)
@@ -937,11 +937,15 @@ namespace Portfolio
         {
             if (ntrue == 0) ntrue = n;
             if (mtrue == 0) mtrue = m;
-            for (var i = 0; i < n; ++i)
+            if (true)
             {
-                if (U[i] == 1 && (L[i] == 0 || L[i] == -1)) U[i] = BlasLike.lm_max;
-                if (L[i] == -1 && U[i] == 0) L[i] = -BlasLike.lm_max;
+                for (var i = 0; i < n; ++i)
+                {
+                    if (U[i] == 1 && (L[i] == 0 /*|| L[i] == -1*/)) U[i] = BlasLike.lm_max;
+                    if (L[i] == -1 && U[i] == 0) L[i] = -BlasLike.lm_max;
+                }
             }
+
             var slacklarge = 0;
             var cextra = new double[n];
             var CTEST = new double[n];
@@ -951,7 +955,7 @@ namespace Portfolio
             for (var i = 0; i < n; ++i)
             {
                 if (U[i] != BlasLike.lm_max && U[i] != 0) slacklarge++;
-                else if (U[i] != BlasLike.lm_max && L[i] != -BlasLike.lm_max && L[i] != 0) slacklarge++;
+                else if (/*U[i] != BlasLike.lm_max &&*/ L[i] != -BlasLike.lm_max && L[i] != 0) slacklarge++;
             }
             for (var i = 0; i < m; ++i)
             {
