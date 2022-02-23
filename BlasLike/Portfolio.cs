@@ -405,7 +405,7 @@ namespace Portfolio
             {
                 var ind = longshortIndex[i - m - buysellI];
                 BlasLike.dset(1, 1.0, AA, M, i + M * ind);
-                BlasLike.dset(1, 1.0, AA, M, i + M * (n + i - m - buysellI));
+                BlasLike.dset(1, 1.0, AA, M, i + M * (n + i - m));
             }
             var mult = kappa / (1.0 - kappa);
             BlasLike.dsccopyvec(n, -gamma / (1 - gamma), alpha, CC);
@@ -428,7 +428,7 @@ namespace Portfolio
                 BlasLike.dsetvec(buysellI, 0, CC, n);
             }
             var cnum = m + buysellI + longshortI;
-            if (delta < 1.0)
+            if (delta < 2.0)
             {
                 LL[N + cnum] = -BlasLike.lm_max * 0;// Proper lower bound <=0 is redundant
                                                     //BlasLike.dset(n, 1.0, AA, M, cnum);
@@ -630,7 +630,7 @@ namespace Portfolio
                 longside -= shortside;
                 shortsideS += BlasLike.dsumvec(longshortI, WW, n + buysellI);
             }
-            ColourConsole.WriteLine("Test Value constraint:\t" + BlasLike.ddot(N, AA, M, WW, 1, m + buysellI + longshortI).ToString(), ConsoleColor.DarkYellow);
+            if (longshortI > 0 && value > 0) ColourConsole.WriteLine("Test Value constraint:\t" + BlasLike.ddot(N, AA, M, WW, 1, m + buysellI + longshortI + ((delta < 2) ? 1 : 0)).ToString(), ConsoleColor.DarkYellow);
             ColourConsole.WriteEmbeddedColourLine($"[green]Longside={longside}[/green]\t[red]Shortside={shortside}[/red] [magenta]({-shortsideS})[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"[magenta]-Short/Long[/magenta] = [darkgreen]{-shortside / longside}[/darkgreen]");
             if (buy != null && sell != null)
@@ -638,8 +638,8 @@ namespace Portfolio
                 {
                     if (initial[i] > U[i])
                     {
-                        costbase += sell[i] * WW[i];
-                        initbase += sell[i] * initial[i];
+                        costbase -= sell[i] * WW[i];
+                        initbase -= sell[i] * initial[i];
                     }
                     else
                     {
@@ -838,11 +838,13 @@ namespace Portfolio
             BlasLike.dsetvec(n, 1.0 / n, w);
             WriteInputs("./basic");
             var llambda = new double[n + m];
+            L[n + 1] = -10;
             var ok = ActiveOpt(0, w, llambda);
             ActiveSet.Optimise.printV("w from Active Set", w);
             Console.WriteLine($"Variance from Active Set:\t\t{Variance(w)}");
             Factorise.dmxmulv(m, n, A, w, Aw);
             ActiveSet.Optimise.printV("Constraints", Aw);
+            L[n + 1] = -BlasLike.lm_max;
             var ip = InteriorOpt(5e-10);
             Console.WriteLine($"Variance from IP:\t\t{Variance(w)}");
             Factorise.dmxmulv(m, n, A, w, Aw);
@@ -935,21 +937,25 @@ namespace Portfolio
         {
             if (ntrue == 0) ntrue = n;
             if (mtrue == 0) mtrue = m;
-            for (var i = 0; i < n; ++i)
+            if (true)
             {
-                if (U[i] == 1 && (L[i] == 0 || L[i] == -1)) U[i] = BlasLike.lm_max;
-                if (L[i] == -1 && U[i] == 0) L[i] = -BlasLike.lm_max;
+                for (var i = 0; i < n; ++i)
+                {
+                    if (U[i] == 1 && (L[i] == 0 || L[i] == -1)) U[i] = BlasLike.lm_max;
+                    if (L[i] == -1 && U[i] == 0) L[i] = -BlasLike.lm_max;
+                }
             }
+
             var slacklarge = 0;
             var cextra = new double[n];
             var CTEST = new double[n];
             var slackb = 0;
             var slackL = 0;
             var slackU = 0;
-            for (var i = 0; i < n; ++i)
+           for (var i = 0; i < n; ++i)
             {
                 if (U[i] != BlasLike.lm_max && U[i] != 0) slacklarge++;
-                else if (U[i] != BlasLike.lm_max && L[i] != -BlasLike.lm_max && L[i] != 0) slacklarge++;
+                else if (/*U[i] != BlasLike.lm_max &&*/ L[i] != -BlasLike.lm_max && L[i] != 0) slacklarge++;
             }
             for (var i = 0; i < m; ++i)
             {
@@ -970,7 +976,7 @@ namespace Portfolio
                 {
                     slacklargeConstraint[slack++] = i;
                 }
-                else if (U[i] != BlasLike.lm_max && L[i] != -BlasLike.lm_max && L[i] != 0)
+                else if (/*U[i] != BlasLike.lm_max &&*/ L[i] != -BlasLike.lm_max && L[i] != 0)
                 {
                     slacklargeConstraint[slack++] = i;
                 }
@@ -1020,7 +1026,7 @@ namespace Portfolio
                 }
                 else if (U[i] <= 0)
                 {
-                    sign[i] = -1;
+                    sign[i] = 1;
                     if (L[i] != -BlasLike.lm_max && slacklarge > 0 && slack < slacklarge && slacklargeConstraint[slack] == i) sign[slack++ + n] = -1;
                     UL[i] = U[i];
                     signfix = true;
@@ -1049,7 +1055,12 @@ namespace Portfolio
             {
                 bb[m + i + slacklarge] = b[m + i];
             }
-            if (!signfix) { CTEST = cextra; sign = null; }
+            //     if (!signfix) { CTEST = cextra; sign = null; }
+            sign = null;
+            for (var i = 0; i < cextra.Length; ++i)
+            {
+                CTEST[i] = Math.Abs(cextra[i]);
+            }
             w = new double[n];
             BlasLike.dsetvec(n, 1.0 / n, w);
             var HH = new double[ntrue * (ntrue + 1) / 2];
@@ -1071,8 +1082,8 @@ namespace Portfolio
             IOPT.slackToConstraintBOTH = slackToConstraintBOTH;
             IOPT.slackToConstraintL = slackToConstraintL;
             IOPT.slackToConstraintU = slackToConstraintU;
-            var back =
-            IOPT.Opt("QP", null, null, true, UL, sign);
+            var back =0;/*
+            IOPT.Opt("QP", null, null, true, UL, sign);*/
             BlasLike.dcopyvec(n, ww, w);
             if (back < -10) Console.WriteLine($"Failed -- too many iterations");
             if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
