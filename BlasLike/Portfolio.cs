@@ -630,7 +630,7 @@ namespace Portfolio
                 longside -= shortside;
                 shortsideS += BlasLike.dsumvec(longshortI, WW, n + buysellI);
             }
-            ColourConsole.WriteLine("Test Value constraint:\t" + BlasLike.ddot(N, AA, M, WW, 1, m + buysellI + longshortI + ((delta < 2) ? 1 : 0)).ToString(), ConsoleColor.DarkYellow);
+            if (longshortI > 0 && value > 0) ColourConsole.WriteLine("Test Value constraint:\t" + BlasLike.ddot(N, AA, M, WW, 1, m + buysellI + longshortI + ((delta < 2) ? 1 : 0)).ToString(), ConsoleColor.DarkYellow);
             ColourConsole.WriteEmbeddedColourLine($"[green]Longside={longside}[/green]\t[red]Shortside={shortside}[/red] [magenta]({-shortsideS})[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"[magenta]-Short/Long[/magenta] = [darkgreen]{-shortside / longside}[/darkgreen]");
             if (buy != null && sell != null)
@@ -939,7 +939,7 @@ namespace Portfolio
             if (mtrue == 0) mtrue = m;
             for (var i = 0; i < n; ++i)
             {
-                if (U[i] == 1 && (L[i] == 0 || L[i] == -1)) U[i] = BlasLike.lm_max;
+                if (U[i] == 1 && (L[i] == 0/* || L[i] == -1*/)) U[i] = BlasLike.lm_max;
                 if (L[i] == -1 && U[i] == 0) L[i] = -BlasLike.lm_max;
             }
             var slacklarge = 0;
@@ -948,10 +948,10 @@ namespace Portfolio
             var slackb = 0;
             var slackL = 0;
             var slackU = 0;
-            for (var i = 0; i < n; ++i)
+           for (var i = 0; i < n; ++i)
             {
                 if (U[i] != BlasLike.lm_max && U[i] != 0) slacklarge++;
-                else if (U[i] != BlasLike.lm_max && L[i] != -BlasLike.lm_max && L[i] != 0) slacklarge++;
+                else if (/*U[i] != BlasLike.lm_max &&*/ L[i] != -BlasLike.lm_max && L[i] != 0) slacklarge++;
             }
             for (var i = 0; i < m; ++i)
             {
@@ -972,7 +972,7 @@ namespace Portfolio
                 {
                     slacklargeConstraint[slack++] = i;
                 }
-                else if (U[i] != BlasLike.lm_max && L[i] != -BlasLike.lm_max && L[i] != 0)
+                else if (/*U[i] != BlasLike.lm_max &&*/ L[i] != -BlasLike.lm_max && L[i] != 0)
                 {
                     slacklargeConstraint[slack++] = i;
                 }
@@ -1022,7 +1022,7 @@ namespace Portfolio
                 }
                 else if (U[i] <= 0)
                 {
-                    sign[i] = -1;
+                    sign[i] = 1;
                     if (L[i] != -BlasLike.lm_max && slacklarge > 0 && slack < slacklarge && slacklargeConstraint[slack] == i) sign[slack++ + n] = -1;
                     UL[i] = U[i];
                     signfix = true;
@@ -1051,7 +1051,12 @@ namespace Portfolio
             {
                 bb[m + i + slacklarge] = b[m + i];
             }
-            if (!signfix) { CTEST = cextra; sign = null; }
+            //     if (!signfix) { CTEST = cextra; sign = null; }
+            sign = null;
+            for (var i = 0; i < cextra.Length; ++i)
+            {
+                CTEST[i] = Math.Abs(cextra[i]);
+            }
             w = new double[n];
             BlasLike.dsetvec(n, 1.0 / n, w);
             var HH = new double[ntrue * (ntrue + 1) / 2];
