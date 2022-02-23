@@ -941,7 +941,7 @@ namespace Portfolio
             {
                 for (var i = 0; i < n; ++i)
                 {
-                    if (U[i] == 1 && (L[i] == 0 /*|| L[i] == -1*/)) U[i] = BlasLike.lm_max;
+                    if (U[i] == 1 && (L[i] == 0 || L[i] == -1)) U[i] = BlasLike.lm_max;
                     if (L[i] == -1 && U[i] == 0) L[i] = -BlasLike.lm_max;
                 }
             }
@@ -955,7 +955,7 @@ namespace Portfolio
             for (var i = 0; i < n; ++i)
             {
                 if (U[i] != BlasLike.lm_max && U[i] != 0) slacklarge++;
-                else if (/*U[i] != BlasLike.lm_max &&*/ L[i] != -BlasLike.lm_max && L[i] != 0) slacklarge++;
+                else if (U[i] != BlasLike.lm_max && L[i] != -BlasLike.lm_max && L[i] != 0) slacklarge++;
             }
             for (var i = 0; i < m; ++i)
             {
@@ -1077,8 +1077,8 @@ namespace Portfolio
             IOPT.slackToConstraintBOTH = slackToConstraintBOTH;
             IOPT.slackToConstraintL = slackToConstraintL;
             IOPT.slackToConstraintU = slackToConstraintU;
-            var back =
-            IOPT.Opt("QP", null, null, true, UL, sign);
+            var back =0;/*
+            IOPT.Opt("QP", null, null, true, UL, sign);*/
             BlasLike.dcopyvec(n, ww, w);
             if (back < -10) Console.WriteLine($"Failed -- too many iterations");
             if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
