@@ -650,7 +650,7 @@ namespace Portfolio
             var eretA = -BlasLike.ddotvec(n, CC, WW) + kappa / (1 - kappa) * costbase;
             var turn2 = buysellI > 0 ? (BlasLike.dsumvec(buysellI, WW, n) + (BlasLike.dsumvec(n, WW) - BlasLike.dsumvec(n, initial)) * 0.5) : turnover * 0.5;
             var costA = 0.0;
-            for (var i = 0; i < buysellI; ++i)
+            for (var i = 0; useCosts && i < buysellI; ++i)
             {
                 var ind = buysellIndex[i];
                 costA += WW[n + i] * (buy[ind] + sell[ind]);
