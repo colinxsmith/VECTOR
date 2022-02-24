@@ -662,7 +662,12 @@ namespace InteriorPoint
                                         if (baseA[k * basem + j] != 0)
                                             M[ij + j] += baseA[k * basem + j] * xoz;
                                     }
-                                    M[ij + i] += xoz;
+                                    for (var j = basem; j <= i && ik == 0; ++j)
+                                    {
+                                        M[ij + j] += xoz;
+                                    }
+                                    if (ik == 1) M[ij + i] += xoz;
+
                                 }
                             }
                             else if (i < basem + bases + slackmboth)
