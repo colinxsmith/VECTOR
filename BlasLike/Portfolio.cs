@@ -942,7 +942,7 @@ namespace Portfolio
                 for (var i = 0; i < n; ++i)
                 {
                     if (U[i] == 1 && (L[i] == 0 || L[i] == -1)) U[i] = BlasLike.lm_max;
-                    if (L[i] == -1 && U[i] == 0) L[i] = -BlasLike.lm_max;
+                    else if (L[i] == -1 && U[i] == 0) L[i] = -BlasLike.lm_max;
                 }
             }
 
@@ -952,10 +952,10 @@ namespace Portfolio
             var slackb = 0;
             var slackL = 0;
             var slackU = 0;
-           for (var i = 0; i < n; ++i)
+            for (var i = 0; i < n; ++i)
             {
                 if (U[i] != BlasLike.lm_max && U[i] != 0) slacklarge++;
-                else if (/*U[i] != BlasLike.lm_max &&*/ L[i] != -BlasLike.lm_max && L[i] != 0) slacklarge++;
+                else if (U[i] != BlasLike.lm_max && L[i] != -BlasLike.lm_max && L[i] != 0) slacklarge++;
             }
             for (var i = 0; i < m; ++i)
             {
@@ -976,7 +976,7 @@ namespace Portfolio
                 {
                     slacklargeConstraint[slack++] = i;
                 }
-                else if (/*U[i] != BlasLike.lm_max &&*/ L[i] != -BlasLike.lm_max && L[i] != 0)
+                else if (U[i] != BlasLike.lm_max && L[i] != -BlasLike.lm_max && L[i] != 0)
                 {
                     slacklargeConstraint[slack++] = i;
                 }
@@ -1059,7 +1059,8 @@ namespace Portfolio
             sign = null;
             for (var i = 0; i < cextra.Length; ++i)
             {
-                CTEST[i] = Math.Abs(cextra[i]);
+                 CTEST[i] = Math.Abs(cextra[i]);
+                //CTEST[i] = cextra[i];
             }
             w = new double[n];
             BlasLike.dsetvec(n, 1.0 / n, w);

@@ -653,22 +653,16 @@ namespace InteriorPoint
                             }
                             else if (i < basem + bases)
                             {
-                                for (var ik = 0; ik < 2; ik++)
+                                var k = slacklargeConstraintToStock[i - basem];
+                                var xoz = aob(x[k], z[k]);
+                                for (var j = 0; j < basem; ++j)
                                 {
-                                    var k = (ik == 0 ? slacklargeConstraintToStock[i - basem] : (i - basem + basen));
-                                    var xoz = aob(x[k], z[k]);
-                                    for (var j = 0; j < basem && ik == 0; ++j)
-                                    {
-                                        if (baseA[k * basem + j] != 0)
-                                            M[ij + j] += baseA[k * basem + j] * xoz;
-                                    }
-                                    for (var j = basem; j <= i && ik == 0; ++j)
-                                    {
-                                        M[ij + j] += xoz;
-                                    }
-                                    if (ik == 1) M[ij + i] += xoz;
-
+                                    M[ij + j] += baseA[k * basem + j] * xoz;
                                 }
+                                M[ij + i] += xoz;
+                                k = i - basem + basen;
+                                xoz = aob(x[k], z[k]);
+                                M[ij + i] += xoz;
                             }
                             else if (i < basem + bases + slackmboth)
                             {
@@ -678,10 +672,11 @@ namespace InteriorPoint
                                     if (baseA[k * basem + ii] != 0.0)
                                     {
                                         var xoz = aob(x[k], z[k]);
+                                        var cons = 0;
                                         xoz *= baseA[k * basem + ii];
                                         BlasLike.daxpyvec(basem, xoz, baseA, M, k * basem, ij);
-                                        if (bases > 0 && slacklargeConstraintToStock_inverse[k] != -1)
-                                            M[ij + slacklargeConstraintToStock_inverse[k] + basem] += xoz;
+                                        if (bases > 0 && (cons = slacklargeConstraintToStock_inverse[k]) != -1)
+                                            M[ij + cons + basem] += xoz;
                                         for (var j = 0; j < slackmboth; j++)
                                         {
                                             var jj = slackToConstraintBOTH[j];
@@ -689,7 +684,7 @@ namespace InteriorPoint
                                         }
                                     }
                                 }
-                                var kk = slackToConstraintBOTH_inverse[ii] + basen + bases;
+                                var kk = i - basem  + basen;
                                 M[ij + i] += aob(x[kk], z[kk]);
                             }
                         }
@@ -1738,6 +1733,7 @@ namespace InteriorPoint
             {
                 rp1 = lInfinity(opt.rp) / denomTest(rp0);
                 rd1 = lInfinity(opt.rd) / denomTest(rd0);
+                ColourConsole.WriteEmbeddedColourLine($"[green]rp1 {rp1:E10}[/green][cyan]rd1 {rd1:E10}[/cyan]");
                 gap = opt.Gap();
                 gap1 = gap / denomTest(gap0);
                 comp1 = opt.Complementarity();
