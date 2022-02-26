@@ -677,14 +677,14 @@ namespace InteriorPoint
                                         BlasLike.daxpyvec(basem, xoz, baseA, M, k * basem, ij);
                                         if (bases > 0 && (cons = slacklargeConstraintToStock_inverse[k]) != -1)
                                             M[ij + cons + basem] += xoz;
-                                        for (var j = 0; j < slackmboth; j++)
+                                        for (var j = 0; j <= i - basem - bases; j++)
                                         {
                                             var jj = slackToConstraintBOTH[j];
                                             M[ij + basem + bases + j] += xoz * baseA[k * basem + jj];
                                         }
                                     }
                                 }
-                                var kk = i - basem  + basen;
+                                var kk = i - basem + basen;
                                 M[ij + i] += aob(x[kk], z[kk]);
                             }
                         }
