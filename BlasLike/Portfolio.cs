@@ -332,16 +332,19 @@ namespace Portfolio
             for (var i = 0; i < n; ++i)
             {
                 if (buysellvars && (initial[i] > L[i] && initial[i] < U[i])) buysellI++;
-                if (0 > L[i] && 0 < U[i]) longshortI++;
-                if (initial[i] == 0) longshortbuysell++;
+                if (0 > L[i] && 0 < U[i])
+                {
+                    longshortI++;
+                    if (true && initial[i] == 0) longshortbuysell++;
+                }
             }
             var longshortbuysellIndex = new int[longshortbuysell];
             var longshortbuysellIndex_inverse = new int[n];
-            if (longshortbuysell > 0) for (var i = 0; i < n; ++i) longshortbuysellIndex_inverse[i] = -1;
+            for (var i = 0; i < n; ++i) longshortbuysellIndex_inverse[i] = -1;
             var buysellIndex = new int[buysellI];
             var buysellIndex_inverse = new int[n];
             if (buysellI > 0) for (var i = 0; i < n; ++i) buysellIndex_inverse[i] = -1;
-            var longshortIndex = new int[longshortI];
+            var longshortIndex = new int[longshortI - longshortbuysell];
             var longshortIndex_inverse = new int[n];
             if (longshortI > 0) for (var i = 0; i < n; ++i) longshortIndex_inverse[i] = -1;
             buysellI = 0;
@@ -350,11 +353,15 @@ namespace Portfolio
             for (var i = 0; i < n; ++i)
             {
                 if (buysellvars && (initial[i] > L[i] && initial[i] < U[i])) buysellIndex[buysellI++] = i;
-                if (0 > L[i] && 0 < U[i]) longshortIndex[longshortI++] = i;
-                if (initial[i] == 0) longshortbuysellIndex[longshortbuysell++] = i;
+                if (0 > L[i] && 0 < U[i])
+                {
+                    if (true && initial[i] == 0) longshortbuysellIndex[longshortbuysell++] = i;
+                    else longshortIndex[longshortI++] = i;
+                }
             }
             for (var i = 0; i < buysellI; ++i) buysellIndex_inverse[buysellIndex[i]] = i;
             for (var i = 0; i < longshortI; ++i) longshortIndex_inverse[longshortIndex[i]] = i;
+            for (var i = 0; i < longshortbuysell; ++i) longshortbuysellIndex_inverse[longshortbuysellIndex[i]] = i;
             var N = n + buysellI + longshortI;
             var M = m + buysellI + longshortI + (delta < 2.0 ? 1 : 0);
             if (longshortI > 0)
@@ -458,7 +465,7 @@ namespace Portfolio
                     // BlasLike.dset(n, 1.0, AA, M, cnum);//L+S
                     for (var i = 0; i < n; ++i)
                     {
-                        if (longshortIndex_inverse[i] == -1)
+                        if (longshortIndex_inverse[i] == -1 && longshortbuysellIndex_inverse[i] == -1)
                         {
                             if (LL[i] >= 0) BlasLike.dset(1, 1, AA, M, cnum + i * M);
                             else if (UU[i] <= 0) BlasLike.dset(1, 0, AA, M, cnum + i * M);
@@ -469,6 +476,12 @@ namespace Portfolio
                         }
                     }
                     BlasLike.dset(longshortI, 1.0, AA, M, cnum + M * (n + buysellI));//-S
+                    for (var i = 0; i < longshortbuysell; ++i)
+                    {
+                        var ii = longshortbuysellIndex[i];
+                        ii = buysellIndex_inverse[ii];
+                        BlasLike.dset(1, 1, AA, M, cnum + M * (n + ii));
+                    }
                     cnum++;
                 }
                 if (rmax > 0 && rmax == rmin)
@@ -478,7 +491,7 @@ namespace Portfolio
                     //   BlasLike.dset(n, rmax, AA, M, cnum);//rmax*(L+S)
                     for (var i = 0; i < n; ++i)
                     {
-                        if (longshortIndex_inverse[i] == -1)
+                        if (longshortIndex_inverse[i] == -1 && longshortbuysellIndex_inverse[i] == -1)
                         {
                             if (LL[i] >= 0) BlasLike.dset(1, rmax, AA, M, cnum + i * M);
                             else if (UU[i] <= 0) BlasLike.dset(1, 1.0, AA, M, cnum + i * M);
@@ -489,6 +502,12 @@ namespace Portfolio
                         }
                     }
                     BlasLike.dset(longshortI, rmax - 1.0, AA, M, cnum + M * (n + buysellI));//-S*rmax+S
+                    for (var i = 0; i < longshortbuysell; ++i)
+                    {
+                        var ii = longshortbuysellIndex[i];
+                        ii = buysellIndex_inverse[ii];
+                        BlasLike.dset(1, rmax - 1.0, AA, M, cnum + M * (n + ii));
+                    }
                     cnum++;
                 }
                 else if (rmax > 0)
@@ -498,7 +517,7 @@ namespace Portfolio
                     //  BlasLike.dset(n, rmax, AA, M, cnum);
                     for (var i = 0; i < n; ++i)
                     {
-                        if (longshortIndex_inverse[i] == -1)
+                        if (longshortIndex_inverse[i] == -1 && longshortbuysellIndex_inverse[i] == -1)
                         {
                             if (LL[i] >= 0) BlasLike.dset(1, rmax, AA, M, cnum + i * M);
                             else if (UU[i] <= 0) BlasLike.dset(1, 1.0, AA, M, cnum + i * M);
@@ -509,6 +528,12 @@ namespace Portfolio
                         }
                     }
                     BlasLike.dset(longshortI, rmax - 1.0, AA, M, cnum + M * (n + buysellI));
+                    for (var i = 0; i < longshortbuysell; ++i)
+                    {
+                        var ii = longshortbuysellIndex[i];
+                        ii = buysellIndex_inverse[ii];
+                        BlasLike.dset(1, rmax - 1.0, AA, M, cnum + M * (n + ii));
+                    }
                     cnum++;
                 }
                 if (rmin > 0)
@@ -518,7 +543,7 @@ namespace Portfolio
                     //  BlasLike.dset(n, -rmin, AA, M, cnum);
                     for (var i = 0; i < n; ++i)
                     {
-                        if (longshortIndex_inverse[i] == -1)
+                        if (longshortIndex_inverse[i] == -1 && longshortbuysellIndex_inverse[i] == -1)
                         {
                             if (LL[i] >= 0) BlasLike.dset(1, -rmin, AA, M, cnum + i * M);
                             else if (UU[i] <= 0) BlasLike.dset(1, -1.0, AA, M, cnum + i * M);
@@ -529,6 +554,12 @@ namespace Portfolio
                         }
                     }
                     BlasLike.dset(longshortI, -(rmin - 1.0), AA, M, cnum + M * (n + buysellI));
+                    for (var i = 0; i < longshortbuysell; ++i)
+                    {
+                        var ii = longshortbuysellIndex[i];
+                        ii = buysellIndex_inverse[ii];
+                        BlasLike.dset(1, -(rmin - 1.0), AA, M, cnum + M * (n + ii));
+                    }
                     cnum++;
                 }
             }
@@ -545,6 +576,7 @@ namespace Portfolio
             }
             else
             {
+                var oldQ = Q;
                 Q = null;
                 BlasLike.dsetvec(WW.Length, 1.0 / n, WW);
                 for (var i = 0; i < buysellI; ++i)
@@ -562,6 +594,7 @@ namespace Portfolio
                 WriteInputs("./optinput1");
                 var LAMBDAS = new double[N + M];
                 var back = ActiveOpt(1, WW, LAMBDAS);
+                Q = oldQ;
                 Console.WriteLine($"back = {back}");
                 makeQ();
                 BlasLike.dsetvec(WW.Length, 1.0 / n, WW);
@@ -623,9 +656,12 @@ namespace Portfolio
             {
                 for (var i = 0; i < n; ++i)
                 {
+                    var cc = 0;
                     if (WW[i] < 0) shortside += WW[i];
                     if (longshortIndex_inverse[i] == -1 && UU[i] < 0)
                         shortsideS -= WW[i];
+                    if ((cc = longshortbuysellIndex_inverse[i]) != -1)
+                        shortsideS += WW[buysellIndex_inverse[i] + n];
                 }
                 longside -= shortside;
                 shortsideS += BlasLike.dsumvec(longshortI, WW, n + buysellI);
@@ -877,6 +913,10 @@ namespace Portfolio
             else
                 return -10;
         }
+        public void hessmulltest(int nn, double[] QQ, double[] x, double[] hx)
+        {
+            BlasLike.dzerovec(nn, hx);
+        }
         public void hessmulltest(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
         {
             BlasLike.dzerovec(nn, hx);
@@ -1024,9 +1064,9 @@ namespace Portfolio
                     if (U[i] != BlasLike.lm_max && slacklarge > 0 && slack < slacklarge && slacklargeConstraint[slack] == i) sign[slack++ + n] = 1;
                     UL[i] = L[i];
                 }
-                else if (U[i] <= 0)
+                else if (L[i] <= 0 && U[i] == 0)
                 {
-                    sign[i] = 1;
+                    sign[i] = -1;
                     if (L[i] != -BlasLike.lm_max && slacklarge > 0 && slack < slacklarge && slacklargeConstraint[slack] == i) sign[slack++ + n] = -1;
                     UL[i] = U[i];
                     signfix = true;
@@ -1055,13 +1095,13 @@ namespace Portfolio
             {
                 bb[m + i + slacklarge] = b[m + i];
             }
-            //     if (!signfix) { CTEST = cextra; sign = null; }
-            sign = null;
-            for (var i = 0; i < cextra.Length; ++i)
-            {
-                 CTEST[i] = Math.Abs(cextra[i]);
-                //CTEST[i] = cextra[i];
-            }
+            if (!signfix) { CTEST = cextra; sign = null; }
+            /*     sign = null;
+                 for (var i = 0; i < cextra.Length; ++i)
+                 {
+                      CTEST[i] = Math.Abs(cextra[i]);
+                     //CTEST[i] = cextra[i];
+                 }*/
             w = new double[n];
             BlasLike.dsetvec(n, 1.0 / n, w);
             var HH = new double[ntrue * (ntrue + 1) / 2];
@@ -1083,8 +1123,8 @@ namespace Portfolio
             IOPT.slackToConstraintBOTH = slackToConstraintBOTH;
             IOPT.slackToConstraintL = slackToConstraintL;
             IOPT.slackToConstraintU = slackToConstraintU;
-            var back =0;/*
-            IOPT.Opt("QP", null, null, true, UL, sign);*/
+            var back =
+            IOPT.Opt("QP", null, null, true, UL, sign);
             BlasLike.dcopyvec(n, ww, w);
             if (back < -10) Console.WriteLine($"Failed -- too many iterations");
             if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
