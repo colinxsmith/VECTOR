@@ -1733,7 +1733,7 @@ namespace InteriorPoint
             {
                 rp1 = lInfinity(opt.rp) / denomTest(rp0);
                 rd1 = lInfinity(opt.rd) / denomTest(rd0);
-                ColourConsole.WriteEmbeddedColourLine($"[green]rp1 {rp1:E10}[/green][cyan]rd1 {rd1:E10}[/cyan]");
+                ColourConsole.WriteEmbeddedColourLine($"[magenta]rp1 {rp1:E10}[/magenta]\t[cyan]rd1 {rd1:E10}[/cyan]");
                 gap = opt.Gap();
                 gap1 = gap / denomTest(gap0);
                 comp1 = opt.Complementarity();
