@@ -1229,7 +1229,7 @@ namespace UseBlas
                     nfac = buysell.mapInt["nfac"][0];
                     names = buysell.mapString["names"];
                 }
-                bool useIp = false;
+                bool useIp = true;
                 if (nfac > -1)
                 {
                     FPortfolio opt = new FPortfolio("");

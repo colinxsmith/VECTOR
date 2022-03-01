@@ -335,7 +335,7 @@ namespace Portfolio
                 if (0 > L[i] && 0 < U[i])
                 {
                     longshortI++;
-                    if (true && initial[i] == 0) longshortbuysell++;
+                    if (buysellI > 0 && initial[i] == 0) longshortbuysell++;
                 }
             }
             var longshortbuysellIndex = new int[longshortbuysell];
@@ -355,7 +355,7 @@ namespace Portfolio
                 if (buysellvars && (initial[i] > L[i] && initial[i] < U[i])) buysellIndex[buysellI++] = i;
                 if (0 > L[i] && 0 < U[i])
                 {
-                    if (true && initial[i] == 0) longshortbuysellIndex[longshortbuysell++] = i;
+                    if (buysellI > 0 && initial[i] == 0) longshortbuysellIndex[longshortbuysell++] = i;
                     else longshortIndex[longshortI++] = i;
                 }
             }
@@ -572,7 +572,8 @@ namespace Portfolio
             this.c = CC;
             if (useIP)
             {
-                var back = InteriorOpt(1e-10, WW);
+                var LLL = new double[N + M];
+                var back = InteriorOpt(1e-12, WW, LLL);
             }
             else
             {
@@ -693,9 +694,9 @@ namespace Portfolio
             }
             if (buysellI > 0) costA += costbase - initbase;
             ColourConsole.WriteEmbeddedColourLine($"Variance:\t\t\t[green]{variance}[/green]");
-            ColourConsole.WriteEmbeddedColourLine($"Return:\t\t\t\t[green]{eret}:[/green] [cyan]{eretA}[/cyan]");
-            ColourConsole.WriteEmbeddedColourLine($"Turnover:\t\t\t[green]{turnover * 0.5}:[/green] [cyan]{turn2}[/cyan]");
-            ColourConsole.WriteEmbeddedColourLine($"Cost:\t\t\t\t[green]{cost}:[/green] [cyan]{costA}[/cyan]");
+            ColourConsole.WriteEmbeddedColourLine($"Return:\t\t\t\t[green]{eret}:[/green]\t[cyan]{eretA}[/cyan]");
+            ColourConsole.WriteEmbeddedColourLine($"Turnover:\t\t\t[green]{turnover * 0.5}:[/green]\t[cyan]{turn2}[/cyan]");
+            ColourConsole.WriteEmbeddedColourLine($"Cost:\t\t\t\t[green]{cost}:[/green]\t[cyan]{costA}[/cyan]");
             var extra = 0.0;
             if (bench != null)
             {
@@ -705,7 +706,7 @@ namespace Portfolio
             }
             var utility = -gamma / (1 - gamma) * eret + kappa / (1 - kappa) * (cost + initbase) + 0.5 * variance + extra;
             var utilityA = BlasLike.ddotvec(N, CC, WW) + 0.5 * variance + extra;
-            ColourConsole.WriteEmbeddedColourLine($"Utility:\t\t\t[green]{utility}:[/green][cyan] {utilityA}[/cyan]");
+            ColourConsole.WriteEmbeddedColourLine($"Utility:\t\t\t[green]{utility}:[/green]\t[cyan] {utilityA}[/cyan]");
             for (var i = 0; i < m; ++i)
             {
                 var ccval = BlasLike.ddot(n, A, m, WW, 1, i);
@@ -781,7 +782,7 @@ namespace Portfolio
             if (useIP)
             {
                 this.ntrue = n;
-                var back = InteriorOpt(5e-11, ww);
+                var back = InteriorOpt(BlasLike.lm_eps2, ww);
             }
             else
             {
@@ -842,6 +843,7 @@ namespace Portfolio
         public virtual void OptimiseTest()
         {
             if (ntrue == 0) ntrue = n;
+            if (mtrue == 0) mtrue = m;
             var back = makeQ();
             BlasLike.dscalvec(Q.Length, 1e5, Q);
             if (true)
@@ -868,7 +870,6 @@ namespace Portfolio
                 U = UU;
                 A = AA;
             }
-            if (mtrue == 0) mtrue = m;
             var Aw = new double[m];
             w = new double[n];
             BlasLike.dsetvec(n, 1.0 / n, w);
@@ -881,7 +882,7 @@ namespace Portfolio
             Factorise.dmxmulv(m, n, A, w, Aw);
             ActiveSet.Optimise.printV("Constraints", Aw);
             L[n + 1] = -BlasLike.lm_max;
-            var ip = InteriorOpt(5e-10);
+            var ip = InteriorOpt(BlasLike.lm_eps2);
             Console.WriteLine($"Variance from IP:\t\t{Variance(w)}");
             Factorise.dmxmulv(m, n, A, w, Aw);
             ActiveSet.Optimise.printV("Constraints", Aw);
@@ -973,7 +974,7 @@ namespace Portfolio
             return back;
         }
 
-        public int InteriorOpt(double conv = 1e-16, double[] wback = null)
+        public int InteriorOpt(double conv = 1e-16, double[] wback = null, double[] LLL = null)
         {
             if (ntrue == 0) ntrue = n;
             if (mtrue == 0) mtrue = m;
@@ -1064,7 +1065,7 @@ namespace Portfolio
                     if (U[i] != BlasLike.lm_max && slacklarge > 0 && slack < slacklarge && slacklargeConstraint[slack] == i) sign[slack++ + n] = 1;
                     UL[i] = L[i];
                 }
-                else if (L[i] <= 0 && U[i] == 0)
+                else if (L[i] < 0 && U[i] == 0)
                 {
                     sign[i] = -1;
                     if (L[i] != -BlasLike.lm_max && slacklarge > 0 && slack < slacklarge && slacklargeConstraint[slack] == i) sign[slack++ + n] = -1;
@@ -1116,7 +1117,7 @@ namespace Portfolio
             IOPT.baseA = A;//We only need to pass the constraints without slack variables AA just use for testing
             IOPT.basen = n;
             IOPT.bases = slacklarge;
-            mtrue = IOPT.basem = m;
+            IOPT.basem = m;
             IOPT.conv = conv;
             IOPT.compConv = Math.Max(conv, IOPT.compConv);
             IOPT.slacklargeConstraintToStock = slacklargeConstraint;
@@ -1126,6 +1127,16 @@ namespace Portfolio
             var back =
             IOPT.Opt("QP", null, null, true, UL, sign);
             BlasLike.dcopyvec(n, ww, w);
+            if (false && LLL != null)
+            {
+                BlasLike.dsccopyvec(IOPT.basen, 1, IOPT.z, LLL);
+                BlasLike.dsccopyvec(IOPT.basem, 1, IOPT.y, LLL, 0, IOPT.basen);
+                for (var i = 0; i < slackb; ++i)
+                {
+                    LLL[n + slackToConstraintBOTH[i]] += IOPT.y[m + slacklarge + i];
+                }
+                UtilityAnalysis(LLL, cextra);
+            }
             if (back < -10) Console.WriteLine($"Failed -- too many iterations");
             if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
             if (back == 6) Console.WriteLine("INFEASIBLE");
@@ -1153,8 +1164,16 @@ namespace Portfolio
                 IOPT.conv = conv;
                 IOPT.compConv = Math.Max(conv, IOPT.compConv);
                 back = IOPT.Opt("QP", null, null, false, UL, sign);
-
-                BlasLike.dcopyvec(n, ww, w);
+                if (false && LLL != null)
+                {
+                    BlasLike.dsccopyvec(IOPT.basen, 1, IOPT.z, LLL);
+                    BlasLike.dsccopyvec(IOPT.basem, 1, IOPT.y, LLL, 0, IOPT.basen);
+                    for (var i = 0; i < slackb; ++i)
+                    {
+                        LLL[n + slackToConstraintBOTH[i]] += IOPT.y[m + slacklarge + i];
+                    }
+                    UtilityAnalysis(LLL, cextra);
+                }
                 if (back < -10) Console.WriteLine($"Failed -- too many iterations");
                 else if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
             }

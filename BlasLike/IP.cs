@@ -80,7 +80,7 @@ namespace InteriorPoint
         double[] dx = null;
         public double[] y = null;
         double[] dy = null;
-        double[] z = null;
+        public double[] z = null;
         double[] dz = null;
         public double[] H = null;
         double[] xbar = null;
@@ -1733,7 +1733,7 @@ namespace InteriorPoint
             {
                 rp1 = lInfinity(opt.rp) / denomTest(rp0);
                 rd1 = lInfinity(opt.rd) / denomTest(rd0);
-                ColourConsole.WriteEmbeddedColourLine($"[magenta]rp1 {rp1:E10}[/magenta]\t[cyan]rd1 {rd1:E10}[/cyan]");
+                ColourConsole.WriteEmbeddedColourLine($"[darkgreen]{innerIteration,4}[/darkgreen] [magenta]rp1 {rp1:E10}[/magenta]\t[cyan]rd1 {rd1:E10}[/cyan]");
                 gap = opt.Gap();
                 gap1 = gap / denomTest(gap0);
                 comp1 = opt.Complementarity();
@@ -1858,7 +1858,7 @@ namespace InteriorPoint
                     }
                 }
                 gap = opt.Primal() - opt.Dual();
-                if (homogenous && opt.tau < 1e-5 && opt.kappa < 1e-5)
+                if (homogenous && opt.tau < 1e-8 && opt.kappa < 1e-8)
                 {
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
