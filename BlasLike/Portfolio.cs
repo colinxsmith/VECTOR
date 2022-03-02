@@ -437,6 +437,7 @@ namespace Portfolio
             var cnum = m + buysellI + longshortI;
             if (delta < 2.0)
             {
+                var forced = 0.0;
                 LL[N + cnum] = -BlasLike.lm_max * 0;// Proper lower bound <=0 is redundant
                                                     //BlasLike.dset(n, 1.0, AA, M, cnum);
                 for (var i = 0; i < n; ++i)
@@ -446,14 +447,17 @@ namespace Portfolio
                         if (initial[i] <= L[i])
                             BlasLike.dset(1, 1.0, AA, M, cnum + M * i);
                         else if (initial[i] >= U[i])
+                        {
+                            forced += U[i] - initial[i];
                             BlasLike.dset(1, -1.0, AA, M, cnum + M * i);
+                        }
                     }
                     else
                         BlasLike.dset(1, 1.0, AA, M, cnum + M * i);
                 }
                 BlasLike.dset(buysellI, 2.0, AA, M, cnum + M * n);
                 /*   LL[N + cnum] = */
-                UU[N + cnum] = 2.0 * delta + BlasLike.dsumvec(n, initial);
+                UU[N + cnum] = 2.0 * delta + BlasLike.dsumvec(n, initial) + 2 * forced;
                 cnum++;
             }
             if (longshortI > 0)
@@ -550,7 +554,7 @@ namespace Portfolio
                         }
                         else
                         {
-                            BlasLike.dset(1, rmax, AA, M, cnum + i * M);
+                            BlasLike.dset(1, -rmin, AA, M, cnum + i * M);
                         }
                     }
                     BlasLike.dset(longshortI, -(rmin - 1.0), AA, M, cnum + M * (n + buysellI));
@@ -573,7 +577,7 @@ namespace Portfolio
             if (useIP)
             {
                 var LLL = new double[N + M];
-                var back = InteriorOpt(1e-12, WW, LLL);
+                var back = InteriorOpt(1e-11, WW, LLL);
             }
             else
             {
@@ -1127,15 +1131,32 @@ namespace Portfolio
             var back =
             IOPT.Opt("QP", null, null, true, UL, sign);
             BlasLike.dcopyvec(n, ww, w);
-            if (false && LLL != null)
+            if (true && LLL != null)//Need to get this right
             {
-                BlasLike.dsccopyvec(IOPT.basen, 1, IOPT.z, LLL);
-                BlasLike.dsccopyvec(IOPT.basem, 1, IOPT.y, LLL, 0, IOPT.basen);
+                BlasLike.dsccopyvec(n, 1, IOPT.z, LLL);
+                BlasLike.dsccopyvec(m, 1, IOPT.y, LLL, 0, n);
                 for (var i = 0; i < slackb; ++i)
                 {
                     LLL[n + slackToConstraintBOTH[i]] += IOPT.y[m + slacklarge + i];
+                    LLL[n + slackToConstraintBOTH[i]] -= IOPT.z[n + slacklarge + slackb + i];
                 }
+                for (var i = 0; i < slackL; ++i)
+                {
+                    LLL[n + slackToConstraintL[i]] -= IOPT.z[n + slacklarge + slackb * 2 + i];
+                }
+                for (var i = 0; i < slackU; ++i)
+                {
+                    LLL[n + slackToConstraintU[i]] -= IOPT.z[n + slacklarge + slackb * 2 + slackL + i];
+                }
+                for (var i = 0; i < slacklarge; ++i)
+                {
+                    LLL[slacklargeConstraint[i]] += IOPT.y[m + i];
+                    LLL[slacklargeConstraint[i]] -= IOPT.z[n + i];
+                }
+                var oldQ = Q;
+                Q = null;
                 UtilityAnalysis(LLL, cextra);
+                Q = oldQ;
             }
             if (back < -10) Console.WriteLine($"Failed -- too many iterations");
             if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
@@ -1164,13 +1185,27 @@ namespace Portfolio
                 IOPT.conv = conv;
                 IOPT.compConv = Math.Max(conv, IOPT.compConv);
                 back = IOPT.Opt("QP", null, null, false, UL, sign);
-                if (false && LLL != null)
+                if (true && LLL != null)//Need to get this right
                 {
-                    BlasLike.dsccopyvec(IOPT.basen, 1, IOPT.z, LLL);
-                    BlasLike.dsccopyvec(IOPT.basem, 1, IOPT.y, LLL, 0, IOPT.basen);
+                    BlasLike.dsccopyvec(n, 1, IOPT.z, LLL);
+                    BlasLike.dsccopyvec(m, 1, IOPT.y, LLL, 0, n);
                     for (var i = 0; i < slackb; ++i)
                     {
                         LLL[n + slackToConstraintBOTH[i]] += IOPT.y[m + slacklarge + i];
+                        LLL[n + slackToConstraintBOTH[i]] -= IOPT.z[n + slacklarge + slackb + i];
+                    }
+                    for (var i = 0; i < slackL; ++i)
+                    {
+                        LLL[n + slackToConstraintL[i]] -= IOPT.z[n + slacklarge + slackb * 2 + i];
+                    }
+                    for (var i = 0; i < slackU; ++i)
+                    {
+                        LLL[n + slackToConstraintU[i]] -= IOPT.z[n + slacklarge + slackb * 2 + slackL + i];
+                    }
+                    for (var i = 0; i < slacklarge; ++i)
+                    {
+                        LLL[slacklargeConstraint[i]] += IOPT.y[m + i];
+                        LLL[slacklargeConstraint[i]] -= IOPT.z[n + i];
                     }
                     UtilityAnalysis(LLL, cextra);
                 }
