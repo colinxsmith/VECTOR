@@ -22,7 +22,11 @@ namespace Portfolio
         ///<param name="LAMBDA">The Lagrangian multipliers as defined in Active Set</param>
         ///<param name="cextra">The addition to c due to benchmark</param>
         public void UtilityAnalysis(double[] LAMBDA, double[] cextra = null)
-        {
+        {/*
+            for (var i = 0; i < n + m; ++i)
+            {
+                Console.WriteLine($"{i,10}\t{LAMBDA[i],16:F8}");
+            }*/
             var Ceff = new double[ntrue];
             var chere = cextra == null ? c : cextra;
             for (var i = 0; i < ntrue; ++i)
@@ -36,10 +40,10 @@ namespace Portfolio
             var cvals = new double[mtrue];
             for (var i = 0; i < mtrue; ++i)
             {
-                cvals[i] = BlasLike.ddot(n, A, m, w, 1, i);
+                cvals[i] = BlasLike.ddot(ntrue, A, m, w, 1, i);
                 ColourConsole.WriteEmbeddedColourLine($"[red]LAMBDA {LAMBDA[i + n],12:F8}[/red][green] L {L[n + i],12:F8}[/green][cyan] value {cvals[i],12:F8}[/cyan][green] U {U[i + n],12:F8}[/green]");
             }
-            var dual = BlasLike.ddotvec(n, LAMBDA, w) + BlasLike.ddotvec(mtrue, LAMBDA, cvals, n) - BlasLike.ddotvec(n - ntrue, LAMBDA, L, ntrue, ntrue) - 0.5 * BlasLike.ddotvec(ntrue, w, implied);
+            var dual = BlasLike.ddotvec(ntrue, LAMBDA, w) + BlasLike.ddotvec(mtrue, LAMBDA, cvals, n) - BlasLike.ddotvec(n - ntrue, LAMBDA, w, ntrue, ntrue) - 0.5 * BlasLike.ddotvec(ntrue, w, implied);
             var primal = BlasLike.ddotvec(ntrue, Ceff, w) - 0.5 * BlasLike.ddotvec(ntrue, w, implied);
             var old = Console.ForegroundColor;
             ColourConsole.WriteEmbeddedColourLine($"[red]Effective model with non-linear extra part projected out[/red]");
@@ -1131,32 +1135,25 @@ namespace Portfolio
             var back =
             IOPT.Opt("QP", null, null, true, UL, sign);
             BlasLike.dcopyvec(n, ww, w);
-            if (true && LLL != null)//Need to get this right
+            if (true && LLL != null)
             {
+                var cold = cextra;
+                cextra = CTEST;
                 BlasLike.dsccopyvec(n, 1, IOPT.z, LLL);
                 BlasLike.dsccopyvec(m, 1, IOPT.y, LLL, 0, n);
                 for (var i = 0; i < slackb; ++i)
                 {
                     LLL[n + slackToConstraintBOTH[i]] += IOPT.y[m + slacklarge + i];
-                    LLL[n + slackToConstraintBOTH[i]] -= IOPT.z[n + slacklarge + slackb + i];
-                }
-                for (var i = 0; i < slackL; ++i)
-                {
-                    LLL[n + slackToConstraintL[i]] -= IOPT.z[n + slacklarge + slackb * 2 + i];
-                }
-                for (var i = 0; i < slackU; ++i)
-                {
-                    LLL[n + slackToConstraintU[i]] -= IOPT.z[n + slacklarge + slackb * 2 + slackL + i];
                 }
                 for (var i = 0; i < slacklarge; ++i)
                 {
-                    LLL[slacklargeConstraint[i]] += IOPT.y[m + i];
                     LLL[slacklargeConstraint[i]] -= IOPT.z[n + i];
                 }
                 var oldQ = Q;
                 Q = null;
                 UtilityAnalysis(LLL, cextra);
                 Q = oldQ;
+                cextra = cold;
             }
             if (back < -10) Console.WriteLine($"Failed -- too many iterations");
             if (back < 0) Console.WriteLine($"Normal Matrix became ill-conditioned");
@@ -1185,26 +1182,17 @@ namespace Portfolio
                 IOPT.conv = conv;
                 IOPT.compConv = Math.Max(conv, IOPT.compConv);
                 back = IOPT.Opt("QP", null, null, false, UL, sign);
-                if (true && LLL != null)//Need to get this right
+                BlasLike.dcopyvec(n, ww, w);
+                if (true && LLL != null)
                 {
                     BlasLike.dsccopyvec(n, 1, IOPT.z, LLL);
                     BlasLike.dsccopyvec(m, 1, IOPT.y, LLL, 0, n);
                     for (var i = 0; i < slackb; ++i)
                     {
                         LLL[n + slackToConstraintBOTH[i]] += IOPT.y[m + slacklarge + i];
-                        LLL[n + slackToConstraintBOTH[i]] -= IOPT.z[n + slacklarge + slackb + i];
-                    }
-                    for (var i = 0; i < slackL; ++i)
-                    {
-                        LLL[n + slackToConstraintL[i]] -= IOPT.z[n + slacklarge + slackb * 2 + i];
-                    }
-                    for (var i = 0; i < slackU; ++i)
-                    {
-                        LLL[n + slackToConstraintU[i]] -= IOPT.z[n + slacklarge + slackb * 2 + slackL + i];
                     }
                     for (var i = 0; i < slacklarge; ++i)
                     {
-                        LLL[slacklargeConstraint[i]] += IOPT.y[m + i];
                         LLL[slacklargeConstraint[i]] -= IOPT.z[n + i];
                     }
                     UtilityAnalysis(LLL, cextra);
