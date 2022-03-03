@@ -1184,7 +1184,7 @@ namespace UseBlas
                 opt.GainLossSetUp(n, tlen, DATA, names, R, lambda, useIP);
             }
             {
-                var filename = "costlog";
+                var filename = "smallog";
                 Console.WriteLine("BUY/SELL");
                 double[] SV = null, FC = null, FL = null, L = null, U = null, alpha = null, initial = null, A = null;
                 double[] buy = null, sell = null, bench = null, Q = null;
@@ -1229,7 +1229,7 @@ namespace UseBlas
                     nfac = buysell.mapInt["nfac"][0];
                     names = buysell.mapString["names"];
                 }
-                bool useIp = true;
+                bool useIp = false;
                 if (nfac > -1)
                 {
                     FPortfolio opt = new FPortfolio("");
