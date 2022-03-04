@@ -1184,7 +1184,7 @@ namespace UseBlas
                 opt.GainLossSetUp(n, tlen, DATA, names, R, lambda, useIP);
             }
             {
-                var filename = "smallog";
+                var filename = "costlog";
                 Console.WriteLine("BUY/SELL");
                 double[] SV = null, FC = null, FL = null, L = null, U = null, alpha = null, initial = null, A = null;
                 double[] buy = null, sell = null, bench = null, Q = null;
@@ -1206,9 +1206,12 @@ namespace UseBlas
                         buysell.Read("../" + filename);
                     }
                     Q = buysell.mapDouble["Q"];
-                    SV = buysell.mapDouble["SV"];
-                    FC = buysell.mapDouble["FC"];
-                    FL = buysell.mapDouble["FL"];
+                    try { SV = buysell.mapDouble["SV"]; }
+                    catch { SV = null; }
+                    try { FC = buysell.mapDouble["FC"]; }
+                    catch { FC = null; }
+                    try { FL = buysell.mapDouble["FL"]; }
+                    catch { FL = null; }
                     L = buysell.mapDouble["L"];
                     U = buysell.mapDouble["U"];
                     alpha = buysell.mapDouble["alpha"];
