@@ -1184,27 +1184,28 @@ namespace UseBlas
                 opt.GainLossSetUp(n, tlen, DATA, names, R, lambda, useIP);
             }
             {
+                var filename = "smallog";
                 Console.WriteLine("BUY/SELL");
-                FPortfolio opt = new FPortfolio("");
                 double[] SV = null, FC = null, FL = null, L = null, U = null, alpha = null, initial = null, A = null;
-                double[] buy = null, sell = null, bench = null;
+                double[] buy = null, sell = null, bench = null, Q = null;
                 double gamma, delta, kappa, value, valuel, rmin, rmax;
                 int n, nfac, m;
                 string[] names;
 
                 using (var buysell = new InputSomeData())
                 {
-                    buysell.doubleFields = "SV FC FL L U alpha initial A buy sell gamma delta kappa bench value valuel rmin rmax";
+                    buysell.doubleFields = "Q SV FC FL L U alpha initial A buy sell gamma delta kappa bench value valuel rmin rmax";
                     buysell.intFields = "n nfac m";
                     buysell.stringFields = "names";
                     try
                     {
-                        buysell.Read("./costlog");
+                        buysell.Read("./" + filename);
                     }
                     catch
                     {
-                        buysell.Read("../costlog");
+                        buysell.Read("../" + filename);
                     }
+                    Q = buysell.mapDouble["Q"];
                     SV = buysell.mapDouble["SV"];
                     FC = buysell.mapDouble["FC"];
                     FL = buysell.mapDouble["FL"];
@@ -1227,12 +1228,24 @@ namespace UseBlas
                     rmax = buysell.mapDouble["rmax"][0];
                     nfac = buysell.mapInt["nfac"][0];
                     names = buysell.mapString["names"];
+                }
+                bool useIp = false;
+                if (nfac > -1)
+                {
+                    FPortfolio opt = new FPortfolio("");
                     opt.SV = SV;
                     opt.FL = FL;
                     opt.FC = FC;
                     opt.nfac = nfac;
                     opt.bench = bench;
-                    bool useIp = false;
+                    opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
+                     alpha, initial, buy, sell, names, useIp);
+                }
+                else
+                {
+                    Portfolio.Portfolio opt = new Portfolio.Portfolio("");
+                    opt.Q = Q;
+                    opt.bench = bench;
                     opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
                      alpha, initial, buy, sell, names, useIp);
                 }
