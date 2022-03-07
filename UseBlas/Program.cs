@@ -1184,18 +1184,19 @@ namespace UseBlas
                 opt.GainLossSetUp(n, tlen, DATA, names, R, lambda, useIP);
             }
             {
-                var filename = "costlog";
+                var filename = "roger3.log";
                 Console.WriteLine("BUY/SELL");
                 double[] SV = null, FC = null, FL = null, L = null, U = null, alpha = null, initial = null, A = null;
-                double[] buy = null, sell = null, bench = null, Q = null;
+                double[] buy = null, sell = null, bench = null, Q = null, A_abs = null, Abs_U = null, Abs_L = null;
                 double gamma, delta, kappa, value, valuel, rmin, rmax;
-                int n, nfac, m;
+                int n, nfac, m, nabs, mabs;
+                int[] I_A = null;
                 string[] names;
 
                 using (var buysell = new InputSomeData())
                 {
-                    buysell.doubleFields = "Q SV FC FL L U alpha initial A buy sell gamma delta kappa bench value valuel rmin rmax";
-                    buysell.intFields = "n nfac m";
+                    buysell.doubleFields = "Q SV FC FL L U alpha initial A buy sell gamma delta kappa bench value valuel rmin rmax Abs_U Abs_L A_abs";
+                    buysell.intFields = "n nfac m nabs mabs I_A";
                     buysell.stringFields = "names";
                     try
                     {
@@ -1231,8 +1232,14 @@ namespace UseBlas
                     rmax = buysell.mapDouble["rmax"][0];
                     nfac = buysell.mapInt["nfac"][0];
                     names = buysell.mapString["names"];
+                    nabs=buysell.mapInt["nabs"][0];
+                    mabs=buysell.mapInt["mabs"][0];
+                    A_abs = buysell.mapDouble["A_abs"];
+                    Abs_U = buysell.mapDouble["Abs_U"];
+                    Abs_L = buysell.mapDouble["Abs_L"];
+                    I_A = buysell.mapInt["I_A"];
                 }
-                bool useIp = false;
+                bool useIp = true;
                 if (nfac > -1)
                 {
                     FPortfolio opt = new FPortfolio("");
@@ -1242,7 +1249,7 @@ namespace UseBlas
                     opt.nfac = nfac;
                     opt.bench = bench;
                     opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                     alpha, initial, buy, sell, names, useIp);
+                     alpha, initial, buy, sell, names, useIp,nabs,A_abs,Abs_L,Abs_U,mabs,I_A);
                 }
                 else
                 {
@@ -1250,7 +1257,7 @@ namespace UseBlas
                     opt.Q = Q;
                     opt.bench = bench;
                     opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                     alpha, initial, buy, sell, names, useIp);
+                     alpha, initial, buy, sell, names, useIp,nabs,A_abs,Abs_L,Abs_U,mabs,I_A);
                 }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
