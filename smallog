@@ -101,7 +101,7 @@ ncomp
 Composites
 
 value
-1.00000000e+00
+0.9259
 valuel
 0.00000000e+00
 npiece
@@ -115,13 +115,13 @@ nabs
 A_abs
 
 mabs
-0
+1
 I_A
-
+0
 Abs_U
-
+1
 Abs_L
-
+1
 ShortCostScale
 1.00000000e+00
 mask
