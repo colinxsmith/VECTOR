@@ -198,7 +198,7 @@ namespace DataFile
             int[] back = null;
             var lineF = line.Split(dataSep);
             var n = 0;
-            if ((n = lineF.Length) > 0)
+            if (line != "" && (n = lineF.Length) > 0)
             {
                 back = new int[n];
                 for (var i = 0; i < n; ++i)

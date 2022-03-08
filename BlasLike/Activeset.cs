@@ -6,7 +6,15 @@ namespace ActiveSet
 {
     public delegate void hessmull(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx);
     public class Optimise
-    {
+    {///<summary>
+     ///Return the next lowest multiple of double base
+     ///</summary>
+     ///<param name="eps">Typically a convergence number</param>
+        public static double small_round(double eps)
+        {
+            double reps = BlasLike.lm_eps * Math.Floor(eps / BlasLike.lm_eps);
+            return (Math.Abs(eps - reps) > BlasLike.lm_eps * 8 ? eps : reps);//In case eps is too big
+        }
 
         public hessmull h = null;
         double[] xnorm;
@@ -1735,7 +1743,7 @@ namespace ActiveSet
                     rlam = RLAM[k - 1];
                     if (was_is == 2) rlam = -rlam;
                     if (was_is == 3) rlam = Math.Abs(rlam);
-                    rlam = FEATOL[j - 1] / feamin * rlam;
+                    rlam *= FEATOL[j - 1] / feamin;
                     if (biggst < rlam)
                     {
                         biggst = rlam;
@@ -5066,7 +5074,7 @@ namespace ActiveSet
             var nctotl = n + m;
             var nrowa = m;
             double obj = 1e10;
-            var featolv = 1e-8;
+            var featolv = small_round(1e-10);
             int cold = 1;
             short msglvl = -1000;
             opt.ISTATE = new int[n + m + n + n];
@@ -5088,7 +5096,7 @@ namespace ActiveSet
       n + n, 1, cold, lp, orthog, ref
        iter, ref obj, n + n, lwrk, ifail);
             var tt = opt.clocker();
-            ColourConsole.WriteLine($"Time elapsed {tt} m secs",ConsoleColor.DarkCyan);
+            ColourConsole.WriteLine($"Time elapsed {tt} m secs", ConsoleColor.DarkCyan);
             objective = obj;
             if (LAMBDAback != null) BlasLike.dcopyvec(LAMBDAback.Length, opt.LAMBDA, LAMBDAback);
             return back;
@@ -5103,7 +5111,7 @@ namespace ActiveSet
             var nctotl = n + m;
             var nrowa = m;
             double obj = 1e10;
-            var featolv = 1e-8;
+            var featolv = small_round(1e-10);
             int cold = 1;
             short msglvl = -1000;
             opt.ISTATE = new int[n + m + n + n];
@@ -5127,7 +5135,7 @@ namespace ActiveSet
        iter, ref obj, n + n, lwrk, ifail);
             objective = obj;
             var tt = opt.clocker();
-            ColourConsole.WriteLine($"Time elapsed {tt} m secs",ConsoleColor.DarkCyan);
+            ColourConsole.WriteLine($"Time elapsed {tt} m secs", ConsoleColor.DarkCyan);
             if (LAMBDAback != null) BlasLike.dcopyvec(LAMBDAback.Length, opt.LAMBDA, LAMBDAback);
             return back;
         }
