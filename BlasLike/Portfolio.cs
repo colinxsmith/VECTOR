@@ -545,7 +545,7 @@ namespace Portfolio
                 }
                 BlasLike.dset(buysellI, 2.0, AA, M, cnum + M * n);
                 LL[N + cnum] = forced * 2.0;
-                UU[N + cnum] = 2.0 * delta + BlasLike.dsumvec(n + nfixed, initial) + 2.0 * forced;
+                UU[N + cnum] = 2.0 * delta + BlasLike.dsumvec(n, initial) + 2.0 * forced;
                 cnum++;
             }
             var extraLong = 0.0;
@@ -872,6 +872,9 @@ namespace Portfolio
                 if (Q != null && nfac == -1) Order.ReorderSymm(n, mainorderInverse, Q);
             }
             var eret = BlasLike.ddotvec(n, alpha, wback);
+            for(var i=0;i<n;++i){
+                ColourConsole.WriteEmbeddedColourLine($"[magenta]{names[i]}[/magenta] [green]{alpha[i],12:f8}[/green] [red]{wback[i],12:f8}[/red]");
+            }
             var variance = Variance(wback);
             var costbase = 0.0;
             var initbase = 0.0;
