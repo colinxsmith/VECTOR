@@ -713,9 +713,9 @@ namespace Portfolio
                     var basecon = I_a[con];
                     for (var i = 0; i < nfixed; ++i)
                     {
-                        Lfixed += Math.Abs(L[n + m + basecon] * A[(n + basecon) * m + con]);
+                        Lfixed += Math.Abs(L[n + m + i] * A[(n + i) * m + basecon]);
                     }
-                    if (con == 0) cnumGross = cnum;
+                    if (basecon == 0) cnumGross = cnum;
                     LL[N + cnum] = L_abs[con + nabs] - Lfixed;
                     UU[N + cnum] = U_abs[con + nabs] - Lfixed;
                     for (var i = 0; i < n; ++i)
