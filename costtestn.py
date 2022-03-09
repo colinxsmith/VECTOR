@@ -81,6 +81,9 @@ C = Opt.CC
 L = Opt.LL
 U = Opt.UU
 n = Opt.n
+m = Opt.m
+for i in range(n+m):
+    if L[i]>U[i]:print(('bad bound on %d: %20.15f %20.15f'%(i+1,L[i],U[i])))
 ntrue = Opt.ntrue
 mtrue = Opt.mtrue
 if len(Opt.QQ) > 0 and len(Opt.bench) > 0:
@@ -89,7 +92,6 @@ if len(Opt.QQ) > 0 and len(Opt.bench) > 0:
     for i in range(len(cextra)):
         Opt.CC[i] -= cextra[i]
 
-m = Opt.m
 pp = [1, 2, 3]  # Opt.QQ#+[0.0]*int(n*(n+1)-ntrue*(ntrue+1)/2)
 print(pp[-1])
 print('pp', n*(n+1)/2, len(pp))
@@ -105,6 +107,7 @@ print('w', n, len(w))
 Hhere = Opt.QQ+[0.0]*int(n*(n+1)-ntrue*(ntrue+1)/2)
 back = OptAdvanced(n, m, w, A, L, U, C, LAMBDA, testmul, Hhere)
 print(back)
+print(Return_Message(back))
 print(utility(C, Opt.QQ, w, testmul))
 Ahere = [0]*(n*m)
 wex = [0]*(n-ntrue)
