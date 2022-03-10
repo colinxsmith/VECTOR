@@ -79,6 +79,11 @@ namespace Ordering
                 Array.Sort(xxx, order, cmp);
             }
         }
+        ///<summary>Re-order an array</summary>
+        ///<param name="n"> length of array</param>
+        ///<param name="order"> integer array defining the re-order</param>
+        ///<param name="array"> array to re-order</param>
+        ///<param name="astart"> start at index astart in array</param>
         public static void Reorder<T>(int n, int[] order, T[] array, int astart = 0)
         {
             if (array == null || order == null) return;
@@ -101,6 +106,12 @@ namespace Ordering
         }
 
 
+        ///<summary>Re-order a symmetric matrix stored as an array</summary>
+        ///<param name="n"> order of matrix, length is n*(n+1)/2</param>
+        ///<param name="order"> integer array defining the re-order</param>
+        ///<param name="array"> array to re-order</param>
+        ///<param name="way"> either U or L for upper or lower triangle as defined by LAPACK</param>
+        ///<param name="astart"> start at index astart in array</param>
         public static void ReorderSymm<T>(int n, int[] order, T[] array, char way = 'U', int astart = 0)
         {
             if (array == null || order == null) return;
@@ -187,6 +198,14 @@ namespace Ordering
             }
             else return;
         }
+        ///<summary>Re-order an n by m matrix stored as a one variable array ai,j = a[i*m+j]</summary>
+        ///<param name="n"> first dimension</param>
+        ///<param name="m"> second dimension</param>
+        ///<param name="order"> integer array defining the re-order</param>
+        ///<param name="array"> 2d array as a single index array to re-order</param>
+        ///<param name="columns"> transpose array if true (use this for constraint array A)</param>
+        ///<param name="im"> jump if columns is false, otherwise 1</param>
+        ///<param name="astart"> start at index astart in array</param>
         public static void Reorder_gen<T>(int n, int[] order, T[] array, int m = 1, int im = 1, bool columns = false, int astart = 0)
         {
             if (m == 1 && im == 1) { Reorder(n, order, array, astart); return; }

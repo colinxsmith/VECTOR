@@ -1184,7 +1184,7 @@ namespace UseBlas
                 opt.GainLossSetUp(n, tlen, DATA, names, R, lambda, useIP);
             }
             {
-                var filename = "smallog";
+                var filename = "roger3";
                 Console.WriteLine("BUY/SELL");
                 double[] SV = null, FC = null, FL = null, L = null, U = null, alpha = null, initial = null, A = null;
                 double[] buy = null, sell = null, bench = null, Q = null, A_abs = null, Abs_U = null, Abs_L = null;
@@ -1239,6 +1239,8 @@ namespace UseBlas
                     Abs_L = buysell.mapDouble["Abs_L"];
                     I_A = buysell.mapInt["I_A"];
                 }
+            //    L[0]=-0.01800471;
+            //    U[0]=-0.01800471;
                 bool useIp = false;
                 if (nfac > -1)
                 {
