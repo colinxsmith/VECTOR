@@ -923,6 +923,7 @@ namespace Portfolio
             if (buy != null && sell != null)
                 for (var i = 0; i < n; ++i)
                 {
+                    if (U[i] == L[i]) continue;
                     if (initial[i] > U[i])
                     {
                         costbase -= sell[i] * wback[i];
@@ -934,7 +935,7 @@ namespace Portfolio
                         initbase += buy[i] * initial[i];
                     }
                 }
-            var eretA = alphaFixed * gamma / (1 - gamma) - BlasLike.ddotvec(n - nfixed, CC, WW) +  kappa / (1 - kappa) * costbase;
+            var eretA = alphaFixed * gamma / (1 - gamma) - BlasLike.ddotvec(n - nfixed, CC, WW) + kappa / (1 - kappa) * costbase;
             var costA = 0.0;
             for (var i = 0; useCosts && i < buysellI; ++i)
             {
@@ -957,6 +958,7 @@ namespace Portfolio
 
             var turnover = 0.0;
             var cost = 0.0;
+            var costFixed = 0.0;
             for (var i = 0; i < n; ++i)
             {
                 turnover += Math.Abs(wback[i] - initial[i]);
@@ -964,13 +966,17 @@ namespace Portfolio
                 {
                     var diff = (wback[i] - initial[i]);
                     cost += diff > 0 ? diff * buy[i] : -diff * sell[i];
+                    if (U[i] == L[i])
+                    {
+                        costFixed += diff > 0 ? diff * buy[i] : -diff * sell[i];
+                    }
                 }
             }
             var utility = -gamma / (1 - gamma) * eret + kappa / (1 - kappa) * (cost + initbase) + 0.5 * variance + extra;
-            var utilityA = -alphaFixed * gamma / (1 - gamma) + BlasLike.ddotvec(N, CC, WW) + 0.5 * variance + extra;
+            var utilityA = -alphaFixed * gamma / (1 - gamma) + costFixed * kappa / (1 - kappa) + BlasLike.ddotvec(N, CC, WW) + 0.5 * variance + extra;
             ColourConsole.WriteEmbeddedColourLine($"Utility:\t\t\t[green]{utility,20:f16}:[/green]\t[cyan] {utilityA,20:f16}[/cyan]");
             ColourConsole.WriteEmbeddedColourLine($"Turnover:\t\t\t[green]{turnover * 0.5,20:f16}:[/green]\t[cyan]{turn2,20:f16}[/cyan]");
-            ColourConsole.WriteEmbeddedColourLine($"Cost:\t\t\t\t[green]{cost,20:f16}:[/green]\t[cyan]{costA,20:f16}[/cyan]");
+            ColourConsole.WriteEmbeddedColourLine($"Cost:\t\t\t\t[green]{cost,20:f16}:[/green]\t[cyan]{costA+costFixed,20:f16}[/cyan]");
             for (var i = 0; i < m; ++i)
             {
                 var ccval = BlasLike.ddot(n, A, m, wback, 1, i);
