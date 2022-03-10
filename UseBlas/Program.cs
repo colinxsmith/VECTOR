@@ -1239,8 +1239,8 @@ namespace UseBlas
                     Abs_L = buysell.mapDouble["Abs_L"];
                     I_A = buysell.mapInt["I_A"];
                 }
-            //    L[0]=-0.01800471;
-            //    U[0]=-0.01800471;
+                L[0]=-0.01800471;
+                U[0]=-0.01800471;
                 bool useIp = false;
                 if (nfac > -1)
                 {
