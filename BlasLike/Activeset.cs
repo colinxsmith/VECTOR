@@ -1285,7 +1285,7 @@ namespace ActiveSet
                     {
                         continue;
                     }
-                    ISTATE[j] = -1;
+                    ISTATE[j - 1] = -1;
                     weight = feamin / feasj;
                 /* add the infeasibility */
                 L40:
@@ -5074,7 +5074,7 @@ namespace ActiveSet
             var nctotl = n + m;
             var nrowa = m;
             double obj = 1e10;
-            var featolv = small_round(1e-14);
+            var featolv = small_round(1e-8);
             int cold = 1;
             short msglvl = -1000;
             opt.ISTATE = new int[n + m + n + n];
@@ -5111,7 +5111,7 @@ namespace ActiveSet
             var nctotl = n + m;
             var nrowa = m;
             double obj = 1e10;
-            var featolv = small_round(1e-14);
+            var featolv = small_round(1e-8);
             int cold = 1;
             short msglvl = -1000;
             opt.ISTATE = new int[n + m + n + n];
