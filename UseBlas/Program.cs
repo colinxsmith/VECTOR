@@ -1232,15 +1232,17 @@ namespace UseBlas
                     rmax = buysell.mapDouble["rmax"][0];
                     nfac = buysell.mapInt["nfac"][0];
                     names = buysell.mapString["names"];
-                    nabs=buysell.mapInt["nabs"][0];
-                    mabs=buysell.mapInt["mabs"][0];
+                    nabs = buysell.mapInt["nabs"][0];
+                    mabs = buysell.mapInt["mabs"][0];
                     A_abs = buysell.mapDouble["A_abs"];
                     Abs_U = buysell.mapDouble["Abs_U"];
                     Abs_L = buysell.mapDouble["Abs_L"];
                     I_A = buysell.mapInt["I_A"];
                 }
-                L[0]=-0.01800471;
-                U[0]=-0.01800471;
+                L[0] = -0.01800471;
+                U[0] = -0.01800471;
+                L[n - 1] = 0;//-1e-3;
+                U[n - 1] = 0;//1e-3;
                 bool useIp = false;
                 if (nfac > -1)
                 {
@@ -1251,7 +1253,7 @@ namespace UseBlas
                     opt.nfac = nfac;
                     opt.bench = bench;
                     opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                     alpha, initial, buy, sell, names, useIp,nabs,A_abs,Abs_L,Abs_U,mabs,I_A);
+                     alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
                 }
                 else
                 {
@@ -1259,7 +1261,7 @@ namespace UseBlas
                     opt.Q = Q;
                     opt.bench = bench;
                     opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                     alpha, initial, buy, sell, names, useIp,nabs,A_abs,Abs_L,Abs_U,mabs,I_A);
+                     alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
                 }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
