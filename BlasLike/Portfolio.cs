@@ -377,9 +377,9 @@ namespace Portfolio
                                 Order.swap(ref mainorder[i], ref mainorder[I]); ifixed++; break;
                             }
                         }
-                        if (ifixed == nfixed) break;
                     }
                     else ifixed++;
+                    if (ifixed == nfixed) break;
                 }
                 for (i = 0; i < n; ++i)
                 {
@@ -405,7 +405,7 @@ namespace Portfolio
                 var getFalpha = new double[n];
                 BlasLike.dcopyvec(nfixed, L, getFalpha, n - nfixed + m, n - nfixed);
                 hessmull(n, Q, getFalpha, fixedSecondOrder);
-                BlasLike.daddvec(n,alpha,fixedSecondOrder,alpha);
+                BlasLike.daddvec(n, alpha, fixedSecondOrder, alpha);
                 n -= nfixed;
                 for (i = 0; i < m; ++i)
                 {
@@ -894,7 +894,7 @@ namespace Portfolio
                 Order.Reorder(n, mainorderInverse, U);
                 Order.Reorder(n, mainorderInverse, alpha);
                 Order.Reorder(n, mainorderInverse, initial);
-                BlasLike.dsubvec(n,alpha,fixedSecondOrder,alpha);
+                BlasLike.dsubvec(n, alpha, fixedSecondOrder, alpha);
                 if (buy != null) Order.Reorder(n, mainorderInverse, buy);
                 if (sell != null) Order.Reorder(n, mainorderInverse, sell);
                 if (names != null) Order.Reorder(n, mainorderInverse, names);
@@ -979,7 +979,7 @@ namespace Portfolio
             var utilityA = -alphaFixed * gamma / (1 - gamma) + costFixed * kappa / (1 - kappa) + BlasLike.ddotvec(N, CC, WW) + 0.5 * variance + extra;
             ColourConsole.WriteEmbeddedColourLine($"Utility:\t\t\t[green]{utility,20:f16}:[/green]\t[cyan] {utilityA,20:f16}[/cyan]");
             ColourConsole.WriteEmbeddedColourLine($"Turnover:\t\t\t[green]{turnover * 0.5,20:f16}:[/green]\t[cyan]{turn2,20:f16}[/cyan]");
-            ColourConsole.WriteEmbeddedColourLine($"Cost:\t\t\t\t[green]{cost,20:f16}:[/green]\t[cyan]{costA+costFixed,20:f16}[/cyan]");
+            ColourConsole.WriteEmbeddedColourLine($"Cost:\t\t\t\t[green]{cost,20:f16}:[/green]\t[cyan]{costA + costFixed,20:f16}[/cyan]");
             for (var i = 0; i < m; ++i)
             {
                 var ccval = BlasLike.ddot(n, A, m, wback, 1, i);
