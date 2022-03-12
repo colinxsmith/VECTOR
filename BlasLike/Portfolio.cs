@@ -405,6 +405,7 @@ namespace Portfolio
                 var getFalpha = new double[n];
                 BlasLike.dcopyvec(nfixed, L, getFalpha, n - nfixed + m, n - nfixed);
                 hessmull(n, Q, getFalpha, fixedSecondOrder);
+                BlasLike.daddvec(n,alpha,fixedSecondOrder,alpha);
                 n -= nfixed;
                 for (i = 0; i < m; ++i)
                 {
@@ -887,11 +888,13 @@ namespace Portfolio
                 n += nfixed;
                 Order.bound_reorganise(0, n, n - nfixed, m, L);
                 Order.bound_reorganise(0, n, n - nfixed, m, U);
+                Order.Reorder(n, mainorderInverse, fixedSecondOrder);
                 Order.Reorder(n, mainorderInverse, wback);
                 Order.Reorder(n, mainorderInverse, L);
                 Order.Reorder(n, mainorderInverse, U);
                 Order.Reorder(n, mainorderInverse, alpha);
                 Order.Reorder(n, mainorderInverse, initial);
+                BlasLike.dsubvec(n,alpha,fixedSecondOrder,alpha);
                 if (buy != null) Order.Reorder(n, mainorderInverse, buy);
                 if (sell != null) Order.Reorder(n, mainorderInverse, sell);
                 if (names != null) Order.Reorder(n, mainorderInverse, names);
@@ -1477,7 +1480,7 @@ namespace Portfolio
             {
                 var p = a[i].GetType();
                 if (p.FullName == "System.Double")
-                    dave.Write($"{a[i],12:F8} ");
+                    dave.Write($"{a[i],20:F16} ");
                 else
                     dave.Write($"{a[i]} ");
                 if (i % linelimit == (linelimit - 1)) dave.Write("\n");
