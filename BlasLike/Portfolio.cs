@@ -374,7 +374,7 @@ namespace Portfolio
                         {
                             if (L[mainorder[i]] == U[mainorder[i]])
                             {
-                                Order.swap(ref mainorder[i], ref mainorder[I]); ifixed++; i++;break;
+                                Order.swap(ref mainorder[i], ref mainorder[I]); ifixed++; i++; break;
                             }
                         }
                     }
@@ -535,12 +535,11 @@ namespace Portfolio
             var cnum = m + buysellI + longshortI;
             var cnumTurn = -1;
             var forcedTurn = 0.0;
+            var fixedTurn = 0.0;
             for (var i = 0; i < nfixed; ++i)
             {
-                if (initial[i + n] >= U[nfixed - i - 1 + n + m])
-                {
-                    forcedTurn += 0.5 * (U[nfixed - i - 1 + n + m] - initial[i + n]);
-                }
+             //   if (initial[i + n] >= U[nfixed - i - 1 + n + m])
+                    fixedTurn += Math.Abs(U[nfixed - i - 1 + n + m] - initial[i + n])/2.0;
             }
             for (var i = 0; i < n; ++i)
             {
@@ -571,7 +570,7 @@ namespace Portfolio
                 }
                 BlasLike.dset(buysellI, 2.0, AA, M, cnum + M * n);
                 LL[N + cnum] = forcedTurn * 2.0;
-                UU[N + cnum] = 2.0 * delta + BlasLike.dsumvec(n, initial) + 2.0 * forcedTurn;
+                UU[N + cnum] = 2.0 * (delta -fixedTurn) + BlasLike.dsumvec(n, initial) + 2.0 * forcedTurn;
                 cnum++;
             }
             var extraLong = 0.0;
@@ -866,8 +865,8 @@ namespace Portfolio
             if (cnumRminmax != -1) ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Test Rminmax constraint:[/darkyellow]\t[red]{LL[N + cnumRminmax],20:f16}[/red]\t[cyan]{BlasLike.ddot(N, AA, M, WW, 1, cnumRminmax),20:f16}[/cyan]\t[green]{UU[N + cnumRminmax],20:f16}[/green]");
             if (cnumRmin != -1) ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Test Rmin constraint:[/darkyellow]\t\t[red]{LL[N + cnumRmin],20:f16}[/red]\t[cyan]{BlasLike.ddot(N, AA, M, WW, 1, cnumRmin),20:f16}[/cyan]\t[green]{UU[N + cnumRmin],20:f16}[/green]");
             if (cnumRmax != -1) ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Test Rmax constraint:[/darkyellow]\t\t[red]{LL[N + cnumRmax],20:f16}[/red]\t[cyan]{BlasLike.ddot(N, AA, M, WW, 1, cnumRmax),20:f16}[/cyan]\t[green]{UU[N + cnumRmax],20:f16}[/green]");
-            var turn2 = 0.0;
-            if (buysellI > 0) turn2 = (-forcedTurn + BlasLike.dsumvec(buysellI, WW, n) + (BlasLike.dsumvec(n, WW) - BlasLike.dsumvec(n, initial)) * 0.5);
+            var turn2 = fixedTurn;
+            if (buysellI > 0) turn2 += (-forcedTurn  + BlasLike.dsumvec(buysellI, WW, n) + (BlasLike.dsumvec(n, WW) - BlasLike.dsumvec(n, initial)) * 0.5);
             var shortsideS = -extraShort;
             for (var i = 0; i < n; ++i)
             {
