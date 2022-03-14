@@ -39,7 +39,7 @@ namespace Ordering
         }
     }
     public class Order
-    {
+    {///<summary>Exchange the values of two references</summary>
         public static void swap<Q>(ref Q a, ref Q b)
         {
             var k2 = a;
@@ -325,7 +325,21 @@ namespace Ordering
                 swap(ref b[bstart + N + --ie], ref b[bstart + ib++]);
             }
         }
-
+        ///<summary>
+        ///Translation to c# from c of Robin Becker's subroutine for re-arranging the lower and
+        ///upper bounds arrays. The scenario is that the optimiser expects the bounds to be
+        ///[stock1,stock2,.......stockn,constraint1,constraint2,.....constraintm].
+        ///When dropping for eg. basket constraint where basket size is nn we use this to re-order the
+        ///upper and lower bounds so that the fixed stocks appear at the end of the array
+        ///[stock1,stock2,.......stocknn,constraint1,constraint2,.....constraintm,stockn,stockn-1,....stocknn+1].
+        ///IMPORTANT note how the order of the fixed stocks at the end is reversed, this doesn't affect the optimisation,
+        ///but will give nightmares if the wrong order is used accidentally!
+        ///</summary>
+        ///<param name="f">organise forwards if 1, backwards if 0</param>
+        ///<param name="n">number of true portfolio assets</param>
+        ///<param name="nn">number of portfolio assets in optimisation</param>
+        ///<param name="m">number of constraints</param>
+        ///<param name="bb">array to re-order either upper or lower bounds</param>
         public static void bound_reorganise(int f, int n, int nn, int m, double[] bb)
         {
             //	BEFORE bound_reorganise(1,n,temp_stocks,m,L);

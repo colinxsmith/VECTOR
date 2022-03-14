@@ -374,7 +374,7 @@ namespace Portfolio
                         {
                             if (L[mainorder[i]] == U[mainorder[i]])
                             {
-                                Order.swap(ref mainorder[i], ref mainorder[I]); ifixed++; break;
+                                Order.swap(ref mainorder[i], ref mainorder[I]); ifixed++; i++;break;
                             }
                         }
                     }
@@ -387,8 +387,6 @@ namespace Portfolio
                 }
                 Order.Reorder(n, mainorder, L);
                 Order.Reorder(n, mainorder, U);
-                Order.bound_reorganise(1, n, n - nfixed, m, L);
-                Order.bound_reorganise(1, n, n - nfixed, m, U);
                 Order.Reorder(n, mainorder, alpha);
                 Order.Reorder(n, mainorder, initial);
                 if (buy != null) Order.Reorder(n, mainorder, buy);
@@ -402,15 +400,19 @@ namespace Portfolio
                     Order.Reorder(n, mainorder, Q);
                     Order.Reorder_gen(n, mainorder, Q, nfac, 1, true, n);
                 }
+                ActiveSet.Optimise.printV("L before convert", L, -1, n - nfixed);
+                for (i = 0; i < m; ++i)
+                {
+                    boundLU[i] = BlasLike.ddot(nfixed, A, m, L, 1, (n - nfixed) * m + i, n - nfixed);
+                }
                 var getFalpha = new double[n];
-                BlasLike.dcopyvec(nfixed, L, getFalpha, n - nfixed + m, n - nfixed);
+                BlasLike.dcopyvec(nfixed, L, getFalpha, n - nfixed, n - nfixed);
+                Order.bound_reorganise(1, n, n - nfixed, m, L);
+                ActiveSet.Optimise.printV("L", L, -1, n - nfixed);
+                Order.bound_reorganise(1, n, n - nfixed, m, U);
                 hessmull(n, Q, getFalpha, fixedSecondOrder);
                 BlasLike.daddvec(n, alpha, fixedSecondOrder, alpha);
                 n -= nfixed;
-                for (i = 0; i < m; ++i)
-                {
-                    boundLU[i] = BlasLike.ddot(nfixed, A, m, L, 1, n * m + i, n + m);
-                }
                 BlasLike.dsubvec(m, L, boundLU, L, n, 0, n);
                 BlasLike.dsubvec(m, U, boundLU, U, n, 0, n);
             }
@@ -535,9 +537,9 @@ namespace Portfolio
             var forcedTurn = 0.0;
             for (var i = 0; i < nfixed; ++i)
             {
-                if (initial[i + n] >= U[i + n + m])
+                if (initial[i + n] >= U[nfixed - i - 1 + n + m])
                 {
-                    forcedTurn += 0.5 * (U[i + n + m] - initial[i + n]);
+                    forcedTurn += 0.5 * (U[nfixed - i - 1 + n + m] - initial[i + n]);
                 }
             }
             for (var i = 0; i < n; ++i)
@@ -574,7 +576,7 @@ namespace Portfolio
             }
             var extraLong = 0.0;
             var extraShort = 0.0;
-            for (var i = 0; i < nfixed; ++i)
+            for (var i = nfixed - 1; i >= 0; --i)
             {
                 extraLong += Math.Max(0, L[i + n + m]);
                 extraShort += Math.Min(0, L[i + n + m]);
@@ -698,7 +700,7 @@ namespace Portfolio
                     var Lfixed = 0.0;
                     for (var i = 0; i < nfixed; ++i)
                     {
-                        Lfixed += Math.Abs(L[n + m + i] * A_abs[(n + i) * nabs + con]);
+                        Lfixed += Math.Abs(L[n + m + nfixed - i - 1] * A_abs[(n + i) * nabs + con]);
                     }
                     LL[N + cnum] = L_abs[con] - Lfixed;
                     UU[N + cnum] = U_abs[con] - Lfixed;
@@ -737,7 +739,7 @@ namespace Portfolio
                     var basecon = I_a[con];
                     for (var i = 0; i < nfixed; ++i)
                     {
-                        Lfixed += Math.Abs(L[n + m + i] * A[(n + i) * m + basecon]);
+                        Lfixed += Math.Abs(L[n + m + nfixed - i - 1] * A[(n + i) * m + basecon]);
                     }
                     if (basecon == 0) cnumGross = cnum;
                     LL[N + cnum] = L_abs[con + nabs] - Lfixed;
@@ -883,11 +885,13 @@ namespace Portfolio
             {
                 BlasLike.daddvec(m, L, boundLU, L, n, 0, n);
                 BlasLike.daddvec(m, U, boundLU, U, n, 0, n);
-                BlasLike.dcopyvec(nfixed, L, wback, n + m, n);
-                alphaFixed = BlasLike.ddotvec(nfixed, alpha, wback, n, n);
                 n += nfixed;
+                ActiveSet.Optimise.printV("L before covert back", L, -1, n - nfixed);
                 Order.bound_reorganise(0, n, n - nfixed, m, L);
+                ActiveSet.Optimise.printV("L", L, -1, n - nfixed);
                 Order.bound_reorganise(0, n, n - nfixed, m, U);
+                BlasLike.dcopyvec(nfixed, L, wback, n - nfixed, n - nfixed);
+                alphaFixed = BlasLike.ddotvec(nfixed, alpha, wback, n - nfixed, n - nfixed);
                 Order.Reorder(n, mainorderInverse, fixedSecondOrder);
                 Order.Reorder(n, mainorderInverse, wback);
                 Order.Reorder(n, mainorderInverse, L);
