@@ -1310,17 +1310,17 @@ void ddmxmulv(int n, double* d, int incd, double* x, int incx)
                 Qw[i + Qwstart] = Q[i + Qstart] * w[i + wstart];
             }
         }
-        public static void CovMul(int n, double[] Q, double[] w, double[] Qw, int Qstart = 0, int wstart = 0, int Qwstart = 0, char uplow = 'U')
+        public static void CovMul(int n, double[] Q, double[] w, double[] Qw, int Qstart = 0, int wstart = 0, int Qwstart = 0, char uplow = 'U', int nfixed = 0)
         {
-            if (uplow == 'U') dsmxmulv(n, Q, w, Qw, wstart, Qwstart, Qstart);
-            else if (uplow == 'L') dsmxmulvT(n, Q, w, Qw, wstart, Qwstart, Qstart);
+            if (uplow == 'U') dsmxmulv(n - nfixed, Q, w, Qw, wstart, Qwstart, Qstart);
+            else if (uplow == 'L') dsmxmulvT(n, Q, w, Qw, wstart, Qwstart, Qstart);// Can't do nfixed easily so we allways use uplow='U'
         }
-        public static void FacMul(int n, int nfac, double[] Q, double[] w, double[] Qw, int Qstart = 0, int wstart = 0, int Qwstart = 0)
+        public static void FacMul(int n, int nfac, double[] Q, double[] w, double[] Qw, int Qstart = 0, int wstart = 0, int Qwstart = 0, int nfixed = 0)
         {
-            DiagMul(n, Q, w, Qw, Qstart, wstart, Qwstart);
+            DiagMul(n - nfixed, Q, w, Qw, Qstart, wstart, Qwstart);
             for (var k = 0; k < nfac; ++k)
             {
-                BlasLike.daxpy(n, BlasLike.ddot(n, Q, nfac, w, 1, Qstart + n + k, wstart), Q, nfac, Qw, 1, Qstart + n + k, Qwstart);
+                BlasLike.daxpy(n - nfixed, BlasLike.ddot(n - nfixed, Q, nfac, w, 1, Qstart + n + k, wstart), Q, nfac, Qw, 1, Qstart + n + k, Qwstart);
             }
         }
         public static void SolveRefine(int n, double[] Q, double[] Qsol, int[] order, double[] y, int ystart = 0)
