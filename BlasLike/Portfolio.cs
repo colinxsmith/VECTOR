@@ -28,7 +28,7 @@ namespace Portfolio
             {
                 Console.WriteLine($"{i,10}\t{LAMBDA[i],16:F8}");
             }*/
-            var ntrue=this.ntrue-nfixed;
+            var ntrue = this.ntrue - nfixed;
             var Ceff = new double[ntrue];
             var chere = cextra == null ? c : cextra;
             for (var i = 0; i < ntrue; ++i)
@@ -412,7 +412,7 @@ namespace Portfolio
                     boundLU[i] = BlasLike.ddot(nfixed, A, m, L, 1, (n - nfixed) * m + i, n - nfixed);
                 }
                 BlasLike.dcopyvec(nfixed, L, fixedW, n - nfixed, n - nfixed);
-                // if (bench != null) BlasLike.dsubvec(nfixed, fixedW, bench, fixedW, n - nfixed, n - nfixed, n - nfixed);
+                if (bench != null) BlasLike.dsubvec(nfixed, fixedW, bench, fixedW, n - nfixed, n - nfixed, n - nfixed);
                 Order.bound_reorganise(1, n, n - nfixed, m, L);
                 ActiveSet.Optimise.printV("L end", L, -1, n - nfixed);
                 Order.bound_reorganise(1, n, n - nfixed, m, U);
@@ -420,6 +420,7 @@ namespace Portfolio
                 var nfixedo = nfixed;
                 nfixed = 0;
                 hessmull(n, Q, fixedW, fixedSecondOrder);
+                fixedUtility = 0.5 * BlasLike.ddotvec(n, fixedW, fixedSecondOrder);
                 nfixed = nfixedo;
                 n -= nfixed;
                 BlasLike.dsubvec(m, L, boundLU, L, n, 0, n);
@@ -781,6 +782,7 @@ namespace Portfolio
             this.A = AA;
             this.n = N;
             this.m = M;
+            this.initial = initial;
             this.gamma = gamma;
             this.c = CC;
             if (useIP)
@@ -939,16 +941,28 @@ namespace Portfolio
             ColourConsole.WriteEmbeddedColourLine($"Variance:\t\t\t[green]{variance,20:f16}[/green]");
             ColourConsole.WriteEmbeddedColourLine($"Return:\t\t\t\t[green]{eret,20:f16}:[/green]\t[cyan]{eretA,20:f16}[/cyan]");
             var extra = 0.0;
-            if (bench != null)
+            nfixedold = nfixed;
+            nfixed = 0;
+            if (Q != null)
             {
                 var implied = new double[ntrue];
-                nfixedold = nfixed;
-                nfixed = 0;
-                hessmull(n, 1, 1, 1, Q, bench, implied);
-                nfixed = nfixedold;
-                extra = -BlasLike.ddotvec(ntrue, wback, implied);
+                if (bench != null)
+                {
+                    hessmull(n, Q, bench, implied);
+                    for (var i = 0; i < ntrue; ++i)
+                    {
+                        if (U[i] != L[i])
+                            extra -= wback[i] * implied[i];
+                    }
+                }
+                hessmull(n, Q, wback, implied);
+                for (var i = 0; i < ntrue; ++i)
+                {
+                    if (U[i] == L[i])
+                        extra -= 0.5 * wback[i] * implied[i];
+                }
             }
-
+            nfixed = nfixedold;
             var turnover = 0.0;
             var cost = 0.0;
             var costFixed = 0.0;
@@ -966,7 +980,7 @@ namespace Portfolio
                 }
             }
             var utility = -gamma / (1 - gamma) * eret + kappa / (1 - kappa) * (cost + initbase) + 0.5 * variance + extra;
-            var utilityA = -alphaFixed * gamma / (1 - gamma) + costFixed * kappa / (1 - kappa) + BlasLike.ddotvec(N, CC, WW) + 0.5 * variance + extra;
+            var utilityA = -alphaFixed * gamma / (1 - gamma) + costFixed * kappa / (1 - kappa) - BlasLike.ddotvec(n - nfixed, fixedSecondOrder, WW) + BlasLike.ddotvec(N, CC, WW) + 0.5 * variance + extra;
             ColourConsole.WriteEmbeddedColourLine($"Utility:\t\t\t[green]{utility,20:f16}:[/green]\t[cyan] {utilityA,20:f16}[/cyan]");
             ColourConsole.WriteEmbeddedColourLine($"Turnover:\t\t\t[green]{turnover * 0.5,20:f16}:[/green]\t[cyan]{turn2,20:f16}[/cyan]");
             ColourConsole.WriteEmbeddedColourLine($"Cost:\t\t\t\t[green]{cost,20:f16}:[/green]\t[cyan]{costA + costFixed,20:f16}[/cyan]");
@@ -1159,6 +1173,7 @@ namespace Portfolio
         public int n;
         public int nfixed = 0;
         public double[] fixedW = null;
+        public double fixedUtility = 0;
         public int ntrue = 0;
         public int mtrue = 0;
         public int m;
@@ -1229,8 +1244,8 @@ namespace Portfolio
             if (lp == 0) opt.h = hessmull;
             if (bench != null && lp == 0)
             {
-                opt.h(n, 0, 0, 0, Q, bench, cextra);
-                BlasLike.dnegvec(n, cextra);
+                opt.h(ntrue, 0, 0, 0, Q, bench, cextra);
+                BlasLike.dnegvec(ntrue - nfixed, cextra);
             }
             BlasLike.daxpyvec(n, 1.0, c, cextra);
             if (www == null)
@@ -1318,11 +1333,8 @@ namespace Portfolio
             var UL = new double[n];
             if (bench != null && Q != null)
             {
-                var nfixedo = nfixed;
-                nfixed = 0;
                 hessmull(ntrue, Q, bench, cextra);
-                nfixed = nfixedo;
-                BlasLike.dnegvec(ntrue, cextra);
+                BlasLike.dnegvec(ntrue - nfixed, cextra);
             }
             BlasLike.daxpyvec(n, 1.0, c, cextra);
             var zcount = 0;
