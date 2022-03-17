@@ -411,8 +411,8 @@ namespace Portfolio
                 {
                     boundLU[i] = BlasLike.ddot(nfixed, A, m, L, 1, (n - nfixed) * m + i, n - nfixed);
                 }
+                BlasLike.dzerovec(n - nfixed, fixedW);
                 BlasLike.dcopyvec(nfixed, L, fixedW, n - nfixed, n - nfixed);
-                if (bench != null) BlasLike.dsubvec(nfixed, fixedW, bench, fixedW, n - nfixed, n - nfixed, n - nfixed);
                 Order.bound_reorganise(1, n, n - nfixed, m, L);
                 ActiveSet.Optimise.printV("L end", L, -1, n - nfixed);
                 Order.bound_reorganise(1, n, n - nfixed, m, U);
@@ -420,7 +420,7 @@ namespace Portfolio
                 var nfixedo = nfixed;
                 nfixed = 0;
                 hessmull(n, Q, fixedW, fixedSecondOrder);
-                fixedUtility = 0.5 * BlasLike.ddotvec(n, fixedW, fixedSecondOrder);
+                fixedVariance = 0.5 * BlasLike.ddotvec(n, fixedW, fixedSecondOrder);
                 nfixed = nfixedo;
                 n -= nfixed;
                 BlasLike.dsubvec(m, L, boundLU, L, n, 0, n);
@@ -893,7 +893,7 @@ namespace Portfolio
                     Order.Reorder_gen(n, mainorderInverse, Q, nfac, 1, true, n);
                 }
             }
-            var eret = BlasLike.ddotvec(n, alpha, wback);
+            var eret = BlasLike.ddotvec(n, alpha, wback) * gamma / (1 - gamma);
             var printAlphas = false;
             for (var i = 0; printAlphas && i < n; ++i)
             {
@@ -940,7 +940,7 @@ namespace Portfolio
             ColourConsole.WriteEmbeddedColourLine($"[magenta]-Short/Long:[/magenta]\t\t\t[red]{rmin,20:f16}[/red]\t[cyan]{-shortside / longside,20:f16}[/cyan]\t[green]{rmax,20:f16}[/green]");
             ColourConsole.WriteEmbeddedColourLine($"Variance:\t\t\t[green]{variance,20:f16}[/green]");
             ColourConsole.WriteEmbeddedColourLine($"Return:\t\t\t\t[green]{eret,20:f16}:[/green]\t[cyan]{eretA,20:f16}[/cyan]");
-            var extra = 0.0;
+            var benchmarkExtra = 0.0;
             nfixedold = nfixed;
             nfixed = 0;
             if (Q != null)
@@ -952,14 +952,8 @@ namespace Portfolio
                     for (var i = 0; i < ntrue; ++i)
                     {
                         if (U[i] != L[i])
-                            extra -= wback[i] * implied[i];
+                            benchmarkExtra -= wback[i] * implied[i];
                     }
-                }
-                hessmull(n, Q, wback, implied);
-                for (var i = 0; i < ntrue; ++i)
-                {
-                    if (U[i] == L[i])
-                        extra -= 0.5 * wback[i] * implied[i];
                 }
             }
             nfixed = nfixedold;
@@ -979,15 +973,15 @@ namespace Portfolio
                     }
                 }
             }
-            var utility = -gamma / (1 - gamma) * eret + kappa / (1 - kappa) * (cost + initbase) + 0.5 * variance + extra;
-            var utilityA = -alphaFixed * gamma / (1 - gamma) + costFixed * kappa / (1 - kappa) - BlasLike.ddotvec(n - nfixed, fixedSecondOrder, WW) + BlasLike.ddotvec(N, CC, WW) + 0.5 * variance + extra;
+            var utility = -gamma / (1 - gamma) * eret + kappa / (1 - kappa) * (cost + initbase) + 0.5 * variance + benchmarkExtra + alphaFixed * gamma / (1 - gamma) - costFixed * kappa / (1 - kappa) - fixedVariance;
+            var utilityA = -BlasLike.ddotvec(n - nfixed, fixedSecondOrder, WW) + BlasLike.ddotvec(N, CC, WW) + 0.5 * variance + benchmarkExtra - fixedVariance;
             ColourConsole.WriteEmbeddedColourLine($"Utility:\t\t\t[green]{utility,20:f16}:[/green]\t[cyan] {utilityA,20:f16}[/cyan]");
             ColourConsole.WriteEmbeddedColourLine($"Turnover:\t\t\t[green]{turnover * 0.5,20:f16}:[/green]\t[cyan]{turn2,20:f16}[/cyan]");
             ColourConsole.WriteEmbeddedColourLine($"Cost:\t\t\t\t[green]{cost,20:f16}:[/green]\t[cyan]{costA + costFixed,20:f16}[/cyan]");
             for (var i = 0; i < m; ++i)
             {
                 var ccval = BlasLike.ddot(n, A, m, wback, 1, i);
-                ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio constraint {(i + 1),3}:[/magenta]\t[cyan]{ccval,20:f16}[/cyan]");
+                ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio constraint {(i + 1),3}:[/magenta]\t[cyan]{ccval,20:f16}[/cyan]\t([red]{L[i + n],20:f16},{U[i + n],20:f16}[/red])");
             }
             //            ActiveSet.Optimise.printV("optimal weights", WW, n);
         }
@@ -1173,7 +1167,7 @@ namespace Portfolio
         public int n;
         public int nfixed = 0;
         public double[] fixedW = null;
-        public double fixedUtility = 0;
+        public double fixedVariance = 0;
         public int ntrue = 0;
         public int mtrue = 0;
         public int m;
@@ -1237,14 +1231,16 @@ namespace Portfolio
             if (ntrue == 0) ntrue = n;
             if (mtrue == 0) mtrue = m;
             var obj = 0.0;
-            var nfixedo = nfixed;
             var iter = 10;
             var cextra = new double[n];
             var opt = new ActiveSet.Optimise();
             if (lp == 0) opt.h = hessmull;
             if (bench != null && lp == 0)
             {
+                var nfixedo = nfixed;
+                nfixed = 0;
                 opt.h(ntrue, 0, 0, 0, Q, bench, cextra);
+                nfixed = nfixedo;
                 BlasLike.dnegvec(ntrue - nfixed, cextra);
             }
             BlasLike.daxpyvec(n, 1.0, c, cextra);
@@ -1333,8 +1329,11 @@ namespace Portfolio
             var UL = new double[n];
             if (bench != null && Q != null)
             {
+                var nfixedo = nfixed;
+                nfixed = 0;
                 hessmull(ntrue, Q, bench, cextra);
                 BlasLike.dnegvec(ntrue - nfixed, cextra);
+                nfixed = nfixedo;
             }
             BlasLike.daxpyvec(n, 1.0, c, cextra);
             var zcount = 0;
@@ -1505,7 +1504,7 @@ namespace Portfolio
                 {
                     var p = a[ic].GetType();
                     if (p.FullName == "System.Double")
-                        dave.Write($"{a[ic],12:F8} ");
+                        dave.Write($"{a[ic],20:F16} ");
                     else
                         dave.Write($"{a[ic]} ");
                     if (i % (ij) == (ij - 1)) { dave.Write("\n"); ij++; i = -1; }
