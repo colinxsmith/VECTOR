@@ -681,9 +681,10 @@ namespace UseBlas
                 Ordering.Order.Reorder_gen(S.Length, order, S);
                 Ordering.Order.Display(S, "abs(S) big at the start");
                 string[] MN = { "11", "12", "13", "14", "15",
-                                "21", "22", "23", "24", "25" };
-                var m = 2;
-                int[] ord = { 0, 3, 2, 1, 4 };
+                                "21", "22", "23", "24", "25" ,
+                                "31", "32", "33", "34", "35" };
+                var m = 3;
+                int[] ord = { 3, 4, 2, 0, 1 };
                 Ordering.Order.Display(MN, "Two Rows", m);
                 Ordering.Order.Reorder_gen(MN.Length / m, ord, MN, m, MN.Length / m);
                 Ordering.Order.Display(MN, "Two Rows", m);
@@ -1184,7 +1185,7 @@ namespace UseBlas
                 opt.GainLossSetUp(n, tlen, DATA, names, R, lambda, useIP);
             }
             {
-                var filename = "roger3";
+                var filename = "costlogC";
                 Console.WriteLine("BUY/SELL");
                 double[] SV = null, FC = null, FL = null, L = null, U = null, alpha = null, initial = null, A = null;
                 double[] buy = null, sell = null, bench = null, Q = null, A_abs = null, Abs_U = null, Abs_L = null;
@@ -1239,10 +1240,12 @@ namespace UseBlas
                     Abs_L = buysell.mapDouble["Abs_L"];
                     I_A = buysell.mapInt["I_A"];
                 }
-                L[0] = -0.01800471;
-                U[0] = -0.01800471;
-                L[n - 1] = 0;//-1e-3;
-                U[n - 1] = 0;//1e-3;
+          /*    L[0] = -0.017583279913421082;
+                U[0] = -0.017583279913421082;
+                L[n - 10] = 0;//-1e-3;
+                U[n - 10] = 0;//1e-3;
+                L[n - 20] = 0;//-1e-3;
+                U[n - 20] = 0;//1e-3;*/
                 bool useIp = false;
                 if (nfac > -1)
                 {
@@ -1262,6 +1265,9 @@ namespace UseBlas
                     opt.bench = bench;
                     opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
                      alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
+
+     //               ColourConsole.WriteEmbeddedColourLine($"[red]{opt.wback[0]} {opt.wback[n - 10]} {opt.wback[n - 20]} [/red]");
+     //               ColourConsole.WriteEmbeddedColourLine($"[magenta]{alpha[0]} {alpha[n - 10]} {alpha[n - 20]} [/magenta]");
                 }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);

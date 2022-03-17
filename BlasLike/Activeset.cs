@@ -5049,18 +5049,18 @@ namespace ActiveSet
             BlasLike.dnegvec(n, PX);
             if (nclin > 0) BlasLike.dnegvec(nclin, AP);
         }
-        public static void printV<T>(string name, T[] a, int upto = -1)
+        public static void printV<T>(string name, T[] a, int upto = -1,int astart=0)
         {
             ColourConsole.WriteInfo(name);
             if (upto == -1) upto = a.Length;
-            for (int i = 0; i < upto; ++i)
+            for (int i = astart; i < upto; ++i)
             {
                 var p = a[i].GetType();
                 if (p.FullName == "System.Double")
                     ColourConsole.Write($"{a[i],11:F8} ", ConsoleColor.Magenta);
                 else
-                    ColourConsole.Write($"{a[i]} ", ConsoleColor.Magenta);
-                if (i % 10 == 9) Console.Write("\n");
+                    ColourConsole.Write($"{a[i]} ", ConsoleColor.DarkGreen);
+                if ((i-astart) % 10 == 9) Console.Write("\n");
             }
             Console.Write("\n");
         }
