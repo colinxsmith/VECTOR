@@ -1286,8 +1286,8 @@ namespace Portfolio
                 var nfixedo = nfixed;
                 nfixed = 0;
                 opt.h(ntrue, 0, 0, 0, Q, bench, cextra);
-                nfixed = nfixedo;
                 BlasLike.dnegvec(ntrue - nfixed, cextra);
+nfixed=nfixedo;
             }
             BlasLike.daxpyvec(n, 1.0, c, cextra);
             if (www == null)
