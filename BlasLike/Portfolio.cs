@@ -1288,6 +1288,7 @@ namespace Portfolio
                 opt.h(ntrue, 0, 0, 0, Q, bench, cextra);
                 BlasLike.dnegvec(ntrue - nfixed, cextra);
 nfixed=nfixedo;
+BlasLike.dzerovec(nfixed,cextra,ntrue-nfixed);
             }
             BlasLike.daxpyvec(n, 1.0, c, cextra);
             if (www == null)
@@ -1380,6 +1381,7 @@ nfixed=nfixedo;
                 hessmull(ntrue, Q, bench, cextra);
                 BlasLike.dnegvec(ntrue - nfixed, cextra);
                 nfixed = nfixedo;
+BlasLike.dzerovec(nfixed,cextra,ntrue-nfixed);
             }
             BlasLike.daxpyvec(n, 1.0, c, cextra);
             var zcount = 0;
