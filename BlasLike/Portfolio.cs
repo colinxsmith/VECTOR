@@ -601,6 +601,10 @@ namespace Portfolio
                     {
                         forcedTurn += U[i] - initial[i];
                     }
+                    else if (initial[i] <= L[i])
+                    {
+                        forcedTurn += initial[i] - L[i];
+                    }
                 }
             }
             if (delta < 2.0)
@@ -1287,8 +1291,8 @@ namespace Portfolio
                 nfixed = 0;
                 opt.h(ntrue, 0, 0, 0, Q, bench, cextra);
                 BlasLike.dnegvec(ntrue - nfixed, cextra);
-nfixed=nfixedo;
-BlasLike.dzerovec(nfixed,cextra,ntrue-nfixed);
+                nfixed = nfixedo;
+                BlasLike.dzerovec(nfixed, cextra, ntrue - nfixed);
             }
             BlasLike.daxpyvec(n, 1.0, c, cextra);
             if (www == null)
@@ -1381,7 +1385,7 @@ BlasLike.dzerovec(nfixed,cextra,ntrue-nfixed);
                 hessmull(ntrue, Q, bench, cextra);
                 BlasLike.dnegvec(ntrue - nfixed, cextra);
                 nfixed = nfixedo;
-BlasLike.dzerovec(nfixed,cextra,ntrue-nfixed);
+                BlasLike.dzerovec(nfixed, cextra, ntrue - nfixed);
             }
             BlasLike.daxpyvec(n, 1.0, c, cextra);
             var zcount = 0;
