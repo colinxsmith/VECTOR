@@ -17,6 +17,51 @@ namespace Portfolio
             }
         }
         ///<summary>
+        /// Return the utility of a portfolio with weights w[i]
+        ///</summary>
+        ///<param name="n">Number of assets in portfolio</param>
+        ///<param name="gamma">gamma/(1-gamma) is the multiplier for returns</param>
+        ///<param name="kappa">kappa/(1-kappa) is the multiplier for costs</param>
+        ///<param name="buy">buy[i] is the buy cost gradient for i'th asset</param>
+        ///<param name="sell">sell[i] is the sell cost gradient for i'th asset</param>
+        ///<param name="alpha">alpha[i] is the return for i'th asset</param>
+        ///<param name="w">w[i] is the weight for i'th asset</param>
+        ///<param name="gradient">gradient[i] is the gradient for i'th asset</param>
+        public double PortfolioUtility(int n, double gamma, double kappa, double[] buy, double[] sell, double[] alpha, double[] w, double[] gradient)
+        {
+            nfixed = 0;//Must set this here
+            BlasLike.dzerovec(n, gradient);
+            double back = 0;
+            if (gamma != 0 && alpha != null)
+            {
+                BlasLike.daxpyvec(n, -gamma / (1 - gamma), alpha, gradient);
+                back += BlasLike.ddotvec(n, w, gradient);
+            }
+            if (kappa != 0 && buy != null && sell != null)
+            {
+                for (var i = 0; i < n; ++i)
+                {
+                    var costgrad = kappa / (1 - kappa) * (w[i] > initial[i] ? buy[i] : -sell[i]);
+                    gradient[i] += costgrad;
+                    back += costgrad * (w[i] - initial[i]);
+                }
+            }
+            if (Q != null)
+            {
+                var implied = new double[n];
+                hessmull(n, Q, w, implied);
+                back += 0.5 * BlasLike.ddotvec(n, implied, w);
+                BlasLike.daxpyvec(n, 1, implied, gradient);
+                if (bench != null)
+                {
+                    hessmull(n, Q, bench, implied);
+                    BlasLike.daxpyvec(n, -1, implied, gradient);
+                    back -= 0.5 * BlasLike.ddotvec(n, implied, w);
+                }
+            }
+            return back;
+        }
+        ///<summary>
         /// Project out the extra variables added to handle non-linear constraints
         /// leaving an effective model. Show that primal effective utility = dual effective utility
         ///</summary>
@@ -52,7 +97,7 @@ namespace Portfolio
             ColourConsole.WriteEmbeddedColourLine($"[green]Weight[/green]\t\t\t[cyan]Effective Utility Gradient[/cyan]");
             for (var i = 0; i < ntrue; ++i)
             {
-                ColourConsole.WriteEmbeddedColourLine($"[darkred]{i + 1,5}[/darkred][red]{names[i],30}[/red][green]{w[i],12:F8}[/green]\t\t\t[cyan]{Ceff[i],12:F8}[/cyan]");
+                ColourConsole.WriteEmbeddedColourLine($"[darkred]{i + 1,5}[/darkred][red]{names[i],30}[/red][green]{w[i],12:F8}[/green]\t\t\t[cyan]{Ceff[i],20:e12}[/cyan]");
             }
             ColourConsole.WriteEmbeddedColourLine($"Primal:\t[magenta]{primal,12:F8}[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"Dual:\t[cyan]{dual,12:F8}[/cyan]");
@@ -1165,6 +1210,7 @@ namespace Portfolio
         }
         public string inFile = "";
         public int n;
+        ///<summary>Number of assets with lower==upper</summary>
         public int nfixed = 0;
         public double[] fixedW = null;
         public double fixedVariance = 0;
@@ -1240,8 +1286,9 @@ namespace Portfolio
                 var nfixedo = nfixed;
                 nfixed = 0;
                 opt.h(ntrue, 0, 0, 0, Q, bench, cextra);
-                nfixed = nfixedo;
                 BlasLike.dnegvec(ntrue - nfixed, cextra);
+nfixed=nfixedo;
+BlasLike.dzerovec(nfixed,cextra,ntrue-nfixed);
             }
             BlasLike.daxpyvec(n, 1.0, c, cextra);
             if (www == null)
@@ -1334,6 +1381,7 @@ namespace Portfolio
                 hessmull(ntrue, Q, bench, cextra);
                 BlasLike.dnegvec(ntrue - nfixed, cextra);
                 nfixed = nfixedo;
+BlasLike.dzerovec(nfixed,cextra,ntrue-nfixed);
             }
             BlasLike.daxpyvec(n, 1.0, c, cextra);
             var zcount = 0;
