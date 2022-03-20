@@ -588,6 +588,7 @@ namespace Portfolio
             var cnum = m + buysellI + longshortI;
             var cnumTurn = -1;
             var forcedTurn = 0.0;
+            var forcedI = 0.0;
             var fixedTurn = 0.0;
             for (var i = 0; i < nfixed; ++i)
             {
@@ -599,11 +600,8 @@ namespace Portfolio
                 {
                     if (initial[i] >= U[i])
                     {
+                        forcedI += -initial[i];
                         forcedTurn += U[i] - initial[i];
-                    }
-                    else if (initial[i] <= L[i])
-                    {
-                        forcedTurn += initial[i] - L[i];
                     }
                 }
             }
@@ -622,11 +620,11 @@ namespace Portfolio
                         }
                     }
                     else
-                        BlasLike.dset(1, 1.0, AA, M, cnum + M * i);
+                        BlasLike.dset(1, 1.0, AA, M, cnum + M * i);//sum w =sum buy+ initial + initial-sell
                 }
-                BlasLike.dset(buysellI, 2.0, AA, M, cnum + M * n);
-                LL[N + cnum] = forcedTurn * 2.0;
-                UU[N + cnum] = 2.0 * (delta - fixedTurn) + BlasLike.dsumvec(n, initial) + 2.0 * forcedTurn;
+                BlasLike.dset(buysellI, 2.0, AA, M, cnum + M * n);//2sum sell
+                LL[N + cnum] = 2 * forcedI;
+                UU[N + cnum] = 2.0 * (delta - fixedTurn) + BlasLike.dsumvec(n, initial) + 2 * forcedI;
                 cnum++;
             }
             var extraLong = 0.0;
