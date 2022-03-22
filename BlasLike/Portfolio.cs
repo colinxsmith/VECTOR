@@ -623,7 +623,7 @@ namespace Portfolio
                         BlasLike.dset(1, 1.0, AA, M, cnum + M * i);//sum w =sum buy+ initial + initial-sell
                 }
                 BlasLike.dset(buysellI, 2.0, AA, M, cnum + M * n);//2sum sell
-                LL[N + cnum] = 2 * forcedI;
+                LL[N + cnum] =BlasLike.dsumvec(n, initial) + 2 * forcedI;
                 UU[N + cnum] = 2.0 * (delta - fixedTurn) + BlasLike.dsumvec(n, initial) + 2 * forcedI;
                 cnum++;
             }
