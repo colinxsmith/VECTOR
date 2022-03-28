@@ -1186,7 +1186,7 @@ namespace UseBlas
             }
             {
                 var filename = "costlog";
-                Console.WriteLine("BUY/SELL");
+                Console.WriteLine("BUY/SELL and LONG/SHORT");
                 double[] SV = null, FC = null, FL = null, L = null, U = null, alpha = null, initial = null, A = null;
                 double[] buy = null, sell = null, bench = null, Q = null, A_abs = null, Abs_U = null, Abs_L = null;
                 double gamma, delta, kappa, value, valuel, rmin, rmax;
@@ -1246,7 +1246,9 @@ namespace UseBlas
                       U[n - 10] = 0;//1e-3;
                       L[n - 20] = 0;//-1e-3;
                       U[n - 20] = 0;//1e-3;*/
-                bool useIp = false;
+                bool useIp = true;
+                var basket = 0;
+                var trades = 0;
                 if (nfac > -1)
                 {
                     FPortfolio opt = new FPortfolio("");
@@ -1260,7 +1262,15 @@ namespace UseBlas
                     var w = new double[n];
                     var gradient = new double[n];
                     BlasLike.dcopyvec(n, opt.wback, w);
-                    var utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient);
+                    var utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref basket, ref trades);
+                    ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
+                    opt.BoundsSetToSign(n, L, U, initial, w);
+                    opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
+                     alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
+                    w = new double[n];
+                    gradient = new double[n];
+                    BlasLike.dcopyvec(n, opt.wback, w);
+                    utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref basket, ref trades);
                     ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
                 }
                 else
@@ -1273,7 +1283,15 @@ namespace UseBlas
                     var w = new double[n];
                     var gradient = new double[n];
                     BlasLike.dcopyvec(n, opt.wback, w);
-                    var utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient);
+                    var utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref basket, ref trades);
+                    ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
+                    opt.BoundsSetToSign(n, L, U, initial, w);
+                    opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
+                     alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
+                    w = new double[n];
+                    gradient = new double[n];
+                    BlasLike.dcopyvec(n, opt.wback, w);
+                    utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref basket, ref trades);
                     ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
                 }
             }
