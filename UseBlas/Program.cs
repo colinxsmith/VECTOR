@@ -1257,6 +1257,7 @@ namespace UseBlas
                     opt.FC = FC;
                     opt.nfac = nfac;
                     opt.bench = bench;
+                    useIp = false;
                     opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
                      alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
                     var w = new double[n];
@@ -1265,6 +1266,7 @@ namespace UseBlas
                     var utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref basket, ref trades);
                     ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
                     opt.BoundsSetToSign(n, L, U, initial, w);
+                    useIp = true;
                     opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
                      alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
                     w = new double[n];
@@ -1278,6 +1280,7 @@ namespace UseBlas
                     Portfolio.Portfolio opt = new Portfolio.Portfolio("");
                     opt.Q = Q;
                     opt.bench = bench;
+                    useIp = false;
                     opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
                      alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
                     var w = new double[n];
@@ -1286,6 +1289,7 @@ namespace UseBlas
                     var utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref basket, ref trades);
                     ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
                     opt.BoundsSetToSign(n, L, U, initial, w);
+                    useIp = true;
                     opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
                      alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
                     w = new double[n];

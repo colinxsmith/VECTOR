@@ -1353,8 +1353,8 @@ namespace Portfolio
             }
 
             var slacklarge = 0;
-            var cextra = new double[n+nfixed];
-            var CTEST = new double[n+nfixed];
+            var cextra = new double[n + nfixed];
+            var CTEST = new double[n + nfixed];
             var slackb = 0;
             var slackL = 0;
             var slackU = 0;
@@ -1520,6 +1520,7 @@ namespace Portfolio
             {
                 IOPT = new InteriorPoint.Optimise(slacklarge + n + totalConstraintslack, m + slacklarge + slackb, ww, null, bb, cextra, ntrue, HH);
                 IOPT.h = hessmull;
+                IOPT.nh = n;
                 IOPT.baseA = A;
                 IOPT.basen = n;
                 IOPT.bases = slacklarge;
@@ -1534,7 +1535,7 @@ namespace Portfolio
                 var kk = new Portfolio("");
                 kk.ntrue = ntrue;
                 kk.Q = HH;
-                kk.nfixed=nfixed;
+                kk.nfixed = nfixed;
                 kk.hessmull(n, HH, w, testmul);
                 Console.WriteLine(BlasLike.ddotvec(n, w, testmul));
                 IOPT.alphamin = 1e-8;

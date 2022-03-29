@@ -82,6 +82,9 @@ namespace InteriorPoint
         double[] dy = null;
         public double[] z = null;
         double[] dz = null;
+        ///<summary>H is the symmetric second order matrix. 
+        ///For an optimisation that uses a factor model, this is 
+        ///supplied separately and not what's used in hessmull.</summary>
         public double[] H = null;
         double[] xbar = null;
         double[] zbar = null;
@@ -1539,6 +1542,7 @@ namespace InteriorPoint
             double[] bl = null;
             double[] QL = null;
             double zL = 0;
+            ///<summary>stepReduce is the factor by which the step length to the boundary is reduce</summary>
             var stepReduce = 1.0;
             opt.optMode = mode;
             if (mode == "SOCP")
