@@ -1520,7 +1520,7 @@ namespace Portfolio
             {
                 IOPT = new InteriorPoint.Optimise(slacklarge + n + totalConstraintslack, m + slacklarge + slackb, ww, null, bb, cextra, ntrue, HH);
                 IOPT.h = hessmull;
-                IOPT.nh = n;
+                IOPT.nh = ntrue - nfixed;
                 IOPT.baseA = A;
                 IOPT.basen = n;
                 IOPT.bases = slacklarge;
