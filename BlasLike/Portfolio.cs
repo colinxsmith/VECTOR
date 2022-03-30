@@ -30,6 +30,7 @@ namespace Portfolio
         ///<param name="print">print output if true</param>
         public double PortfolioUtility(int n, double gamma, double kappa, double[] buy, double[] sell, double[] alpha, double[] w, double[] gradient, ref int basket, ref int trades, bool print = true)
         {
+            var nfixedo = nfixed;
             nfixed = 0;//Must set this here
             BlasLike.dzerovec(n, gradient);
             double back = 0;
@@ -37,6 +38,7 @@ namespace Portfolio
             {
                 BlasLike.daxpyvec(n, -gamma / (1 - gamma), alpha, gradient);
                 back += BlasLike.ddotvec(n, w, gradient);
+                if (bench != null) back -= BlasLike.ddotvec(n, bench, gradient);
             }
             if (kappa != 0 && buy != null && sell != null)
             {
@@ -69,6 +71,7 @@ namespace Portfolio
                 if (print) ColourConsole.WriteEmbeddedColourLine($"[green]{w[i],14:E6}[/green]\t[red]{gradient[i],14:E6}[/red]\t[yellow]{w[i] * gradient[i],15:E6}[/yellow]");
             }
             if (print) ColourConsole.WriteEmbeddedColourLine($"[green]Basket size:{basket,4}[/green]\t[cyan]Trade size:{trades,4}[/cyan]");
+            nfixed = nfixedo;
             return back;
         }
         ///<summary>
@@ -1292,12 +1295,12 @@ namespace Portfolio
                 if (L[i] < 0 && U[i] > 0)
                 {
                     if (w[i] > 0) L[i] = 0;
-                    else U[i] = 0;
+                    else if (w[i] < 0) U[i] = 0;
                 }
                 if (L[i] < initial[i] && U[i] > initial[i])
                 {
                     if (w[i] > initial[i]) L[i] = initial[i];
-                    else U[i] = initial[i];
+                    else if (w[i] < initial[i]) U[i] = initial[i];
                 }
             }
         }
