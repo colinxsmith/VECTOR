@@ -1296,12 +1296,13 @@ namespace Portfolio
                 {
                     if (w[i] > 0) L[i] = 0;
                     else if (w[i] < 0) U[i] = 0;
+else if (w[i] == 0) {U[i] = 0;L[i] =0;}
                 }
                 if (L[i] < initial[i] && U[i] > initial[i])
                 {
                     if (w[i] > initial[i]) L[i] = initial[i];
                     else if (w[i] < initial[i]) U[i] = initial[i];
-                }
+ else if (w[i] == initial[i] ) {U[i] = initial[i] ;L[i] =initial[i] ;}               }
             }
         }
         public double Variance(double[] w)
