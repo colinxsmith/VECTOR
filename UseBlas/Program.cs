@@ -1348,7 +1348,7 @@ namespace UseBlas
                                 {
                                     bad += k;
                                 }
-                                if (bad == w.Length) break;
+                                if (bad > basket) break;
                             }
                             w = new double[n];
                             gradient = new double[n];
