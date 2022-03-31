@@ -18,6 +18,8 @@ namespace Portfolio
         }
         ///<summary>
         /// Return the utility of a portfolio with weights w[i]
+        /// Also return utility gradient
+        /// and the number of non-zero w[i] (basket size) and non-zero w[i]-initial[i] (trades)
         ///</summary>
         ///<param name="n">Number of assets in portfolio</param>
         ///<param name="gamma">gamma/(1-gamma) is the multiplier for returns</param>
@@ -28,7 +30,8 @@ namespace Portfolio
         ///<param name="w">w[i] is the weight for i'th asset</param>
         ///<param name="gradient">gradient[i] is the gradient for i'th asset</param>
         ///<param name="print">print output if true</param>
-        public double PortfolioUtility(int n, double gamma, double kappa, double[] buy, double[] sell, double[] alpha, double[] w, double[] gradient, ref int basket, ref int trades, bool print = true)
+        ///<param name="thresh">less than thresh means zero</param>
+        public double PortfolioUtility(int n, double gamma, double kappa, double[] buy, double[] sell, double[] alpha, double[] w, double[] gradient, ref int basket, ref int trades, bool print = true, double thresh = 1e-10)
         {
             var nfixedo = nfixed;
             nfixed = 0;//Must set this here
@@ -66,8 +69,8 @@ namespace Portfolio
             if (print) ColourConsole.WriteEmbeddedColourLine($"[green]{"Weight",14}[/green]\t[red]{"Gradient",14}[/red]\t[yellow]{"weight*gradient",15}[/yellow]");
             for (var i = 0; i < n; ++i)
             {
-                if (Math.Abs(w[i]) > 1e-12) basket++;
-                if (Math.Abs(w[i] - initial[i]) > 1e-12) trades++;
+                if (Math.Abs(w[i]) >= thresh) basket++;
+                if (Math.Abs(w[i] - initial[i]) >= thresh) trades++;
                 if (print) ColourConsole.WriteEmbeddedColourLine($"[green]{w[i],14:E6}[/green]\t[red]{gradient[i],14:E6}[/red]\t[yellow]{w[i] * gradient[i],15:E6}[/yellow]");
             }
             if (print) ColourConsole.WriteEmbeddedColourLine($"[green]Basket size:{basket,4}[/green]\t[cyan]Trade size:{trades,4}[/cyan]");
@@ -405,12 +408,13 @@ namespace Portfolio
         ///<param name="U_abs">array of upper bounds for absolute constraints (nabs+mabs)</param>
         ///<param name="mabs">number of absolute constraints in I_a</param>
         ///<param name="I_a">integer array, if I_a[i] = k, the i'th constraint has data from the k'th constraint in A</param>
-        public void BasicOptimisation(int n, int m, int nfac, double[] A, double[] L, double[] U,
+        public int BasicOptimisation(int n, int m, int nfac, double[] A, double[] L, double[] U,
         double gamma, double kappa, double delta, double value, double valuel,
         double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell,
         string[] names, bool useIP = true, int nabs = 0, double[] A_abs = null, double[] L_abs = null, double[] U_abs = null,
         int mabs = 0, int[] I_a = null)
         {
+            int back;
             nfixed = 0;
             ntrue = n;
             mtrue = m;
@@ -463,8 +467,11 @@ namespace Portfolio
                     Order.Reorder(n, mainorder, Q);
                     Order.Reorder_gen(n, mainorder, Q, nfac, 1, true, n);
                 }
-                ActiveSet.Optimise.printV("L end before convert", L, -1, n - nfixed);
-                ActiveSet.Optimise.printV("U end before convert", U, -1, n - nfixed);
+                if (debugLevel == 2)
+                {
+                    ActiveSet.Optimise.printV("L end before convert", L, -1, n - nfixed);
+                    ActiveSet.Optimise.printV("U end before convert", U, -1, n - nfixed);
+                }
                 for (i = 0; i < m; ++i)
                 {
                     boundLU[i] = BlasLike.ddot(nfixed, A, m, L, 1, (n - nfixed) * m + i, n - nfixed);
@@ -472,9 +479,9 @@ namespace Portfolio
                 BlasLike.dzerovec(n - nfixed, fixedW);
                 BlasLike.dcopyvec(nfixed, L, fixedW, n - nfixed, n - nfixed);
                 Order.bound_reorganise(1, n, n - nfixed, m, L);
-                ActiveSet.Optimise.printV("L end", L, -1, n - nfixed);
+                if (debugLevel == 2) ActiveSet.Optimise.printV("L end", L, -1, n - nfixed);
                 Order.bound_reorganise(1, n, n - nfixed, m, U);
-                ActiveSet.Optimise.printV("U end", U, -1, n - nfixed);
+                if (debugLevel == 2) ActiveSet.Optimise.printV("U end", U, -1, n - nfixed);
                 var nfixedo = nfixed;
                 nfixed = 0;
                 hessmull(n, Q, fixedW, fixedSecondOrder);
@@ -848,7 +855,7 @@ namespace Portfolio
             if (useIP)
             {
                 var LLL = new double[N + M];
-                var back = InteriorOpt(1e-11, WW, LLL);
+                back = InteriorOpt(1e-11, WW, LLL);
             }
             else
             {
@@ -872,7 +879,7 @@ namespace Portfolio
                 }
                 this.w = WW;
                 WriteInputs("./optinput2");
-                var back = ActiveOpt(0, WW, LAMBDAS);
+                back = ActiveOpt(0, WW, LAMBDAS);
                 Console.WriteLine($"back = {back}");
             }
             ColourConsole.WriteLine("_______________________________________________________________________________________________________________________", ConsoleColor.Green);
@@ -927,12 +934,15 @@ namespace Portfolio
                 BlasLike.daddvec(m, L, boundLU, L, n, 0, n);
                 BlasLike.daddvec(m, U, boundLU, U, n, 0, n);
                 n += nfixed;
-                ActiveSet.Optimise.printV("L end before covert back", L, -1, n - nfixed);
-                ActiveSet.Optimise.printV("U end before covert back", U, -1, n - nfixed);
+                if (debugLevel == 2)
+                {
+                    ActiveSet.Optimise.printV("L end before covert back", L, -1, n - nfixed);
+                    ActiveSet.Optimise.printV("U end before covert back", U, -1, n - nfixed);
+                }
                 Order.bound_reorganise(0, n, n - nfixed, m, L);
-                ActiveSet.Optimise.printV("L end", L, -1, n - nfixed);
+                if (debugLevel == 2) ActiveSet.Optimise.printV("L end", L, -1, n - nfixed);
                 Order.bound_reorganise(0, n, n - nfixed, m, U);
-                ActiveSet.Optimise.printV("U end", U, -1, n - nfixed);
+                if (debugLevel == 2) ActiveSet.Optimise.printV("U end", U, -1, n - nfixed);
                 BlasLike.dcopyvec(nfixed, L, wback, n - nfixed, n - nfixed);
                 alphaFixed = BlasLike.ddotvec(nfixed, alpha, wback, n - nfixed, n - nfixed);
                 Order.Reorder(n, mainorderInverse, wback);
@@ -1044,6 +1054,7 @@ namespace Portfolio
                 ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio constraint {(i + 1),3}:[/magenta]\t[cyan]{ccval,20:f16}[/cyan]\t([red]{L[i + n],20:f16},{U[i + n],20:f16}[/red])");
             }
             //            ActiveSet.Optimise.printV("optimal weights", WW, n);
+            return back;
         }
         public void GainLossSetUp(int n, int tlen, double[] DATA, string[] names, double R, double lambda, bool useIP = true)
         {
@@ -1227,6 +1238,7 @@ namespace Portfolio
         public int n;
         ///<summary>Number of assets with lower==upper</summary>
         public int nfixed = 0;
+        public int debugLevel = 1;
         public double[] fixedW = null;
         public double fixedVariance = 0;
         public int ntrue = 0;
@@ -1288,7 +1300,8 @@ namespace Portfolio
         ///<param name="U">Upper bound array</param>
         ///<param name="initial">Initial weight array</param>
         ///<param name="w">weight array that defines buy/sell and/or long/short</param>
-        public void BoundsSetToSign(int n, double[] L, double[] U, double[] initial, double[] w)
+        ///<param name="setFixed">If true, set the bounds to constrain the fixed wieghts</param>
+        public void BoundsSetToSign(int n, double[] L, double[] U, double[] initial, double[] w, bool setFixed = false)
         {
             for (var i = 0; i < n; ++i)
             {
@@ -1296,13 +1309,14 @@ namespace Portfolio
                 {
                     if (w[i] > 0) L[i] = 0;
                     else if (w[i] < 0) U[i] = 0;
-else if (w[i] == 0) {U[i] = 0;L[i] =0;}
+                    else if (setFixed && w[i] == 0) { U[i] = 0; L[i] = 0; }
                 }
                 if (L[i] < initial[i] && U[i] > initial[i])
                 {
                     if (w[i] > initial[i]) L[i] = initial[i];
                     else if (w[i] < initial[i]) U[i] = initial[i];
- else if (w[i] == initial[i] ) {U[i] = initial[i] ;L[i] =initial[i] ;}               }
+                    else if (setFixed && w[i] == initial[i]) { U[i] = initial[i]; L[i] = initial[i]; }
+                }
             }
         }
         public double Variance(double[] w)
