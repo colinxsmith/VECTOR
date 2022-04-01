@@ -9,6 +9,11 @@ namespace Portfolio
 {
     public class Portfolio
     {
+        public class BestDrop
+        {
+            public double utility;
+            public double[] w;
+        }
         public static void fixup_zero(double[] s, double thresh = 1e-14)
         {
             for (var i = 0; i < s.Length; ++i)
@@ -76,6 +81,144 @@ namespace Portfolio
             if (print) ColourConsole.WriteEmbeddedColourLine($"[green]Basket size:{basket,4}[/green]\t[cyan]Trade size:{trades,4}[/cyan]");
             nfixed = nfixedo;
             return back;
+        }
+        public int Dropper(int n, int m, int nfac, double[] A, double[] L, double[] U,
+        double gamma, double kappa, double delta, double value, double valuel,
+        double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell,
+        string[] names, bool useIp = true, int nabs = 0, double[] A_abs = null, double[] Abs_L = null, double[] Abs_U = null,
+        int mabs = 0, int[] I_A = null, int basket = -1, int baskethere = -1)
+        {
+            var opt = this;
+            double[] gradient = new double[n];
+            double[] w = (double[])wback.Clone();
+            double utility = 0;
+            if (basket < baskethere)
+            {
+                int basketnow = 0, tradesnow = 0;
+                var order = new int[w.Length];
+                var orderk = new int[w.Length];
+                var dropbad = new byte[w.Length];
+                for (var i = 0; i < w.Length; i++)
+                {
+                    if (L[i] > 0 || U[i] < 0) dropbad[i] = 1;
+                    else if (L[i] == U[i] && L[i] != 0) dropbad[i] = 1;
+                }
+                var oldL = (double[])L.Clone();
+                var oldU = (double[])U.Clone();
+                Ordering.Order.getorderabs(w.Length, w, order, dropbad);
+                for (var i = basket; i < w.Length; ++i)
+                {
+                    var ii = order[i];
+                    L[ii] = U[ii] = 0;
+                }
+                var back = opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
+                    alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
+
+                if (back != 6)
+                {
+                    BlasLike.dcopyvec(n, opt.wback, w);
+                    utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref basketnow, ref tradesnow, false);
+                    ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
+                }
+                L = (double[])oldL.Clone();
+                U = (double[])oldU.Clone();
+                FPortfolio.BestDrop results = new FPortfolio.BestDrop();
+                FPortfolio.BestDrop[] overall = new FPortfolio.BestDrop[0];
+                if (back != 6)
+                {
+                    Array.Resize(ref overall, overall.Length + 1);
+                    results.w = (double[])w.Clone();
+                    results.utility = utility;
+                    overall.SetValue(results, overall.Length - 1);
+                }
+                else ColourConsole.WriteEmbeddedColourLine($"[green]NAIVE DROP was [/green][red]INFEASIBLE[/red]");
+                int interimBasket;
+                var scale = 0.5;
+                basketnow = baskethere;
+                interimBasket = (int)Math.Floor(basketnow * scale + (1.0 - scale) * basket);
+                bool same = false;
+                bool fast = true;
+                var bad = 0;
+                while (basketnow > basket && bad < w.Length)
+                {
+                    ColourConsole.WriteEmbeddedColourLine($"[magenta]INTERIM BASKET[/magenta][green] {interimBasket}[/green]");
+                    for (var i = interimBasket; i < w.Length; ++i)
+                    {
+                        var ii = order[i];
+                        L[ii] = U[ii] = 0;
+                    }
+                    back = opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
+                       alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
+                    while (back == 6)
+                    {
+                        fast = false;
+                        L = (double[])oldL.Clone();
+                        U = (double[])oldU.Clone();
+                        interimBasket = basketnow - 1;
+                        ColourConsole.WriteEmbeddedColourLine($"[magenta]INTERIM BASKET[/magenta][green] {interimBasket}[/green]");
+                        for (var i = interimBasket; i < w.Length; ++i)
+                        {
+                            var ii = order[i];
+                            L[ii] = U[ii] = 0;
+                        }
+                        back = opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
+                           alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
+                        if (back == 6) dropbad[order[interimBasket]] = 1;
+                        else
+                        {
+                            BlasLike.dcopyvec(n, opt.wback, w); break;
+                        }
+                        Ordering.Order.getorderabs(w.Length, w, order, dropbad);
+                        bad = 0;
+                        foreach (var k in dropbad)
+                        {
+                            bad += k;
+                        }
+                        if (bad > basket) break;
+                    }
+                    if (back == 6) break;
+                    BlasLike.dcopyvec(n, opt.wback, w);
+                    utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref basketnow, ref tradesnow, false);
+                    ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
+                    L = (double[])oldL.Clone();
+                    U = (double[])oldU.Clone();
+                    if (fast) interimBasket = (int)Math.Floor(basketnow * scale + (1.0 - scale) * basket);
+                    else interimBasket = basketnow - 1;
+                    Ordering.Order.getorderabs(w.Length, w, orderk, dropbad);
+                    same = true;
+                    for (var i = 0; i < w.Length; ++i)
+                    {
+                        same = same && (orderk[i] == order[i]);
+                        order[i] = orderk[i];
+                    }
+                    if (same) ColourConsole.WriteEmbeddedColourLine($"[cyan]DROPPING ORDER DID NOT CHANGE THIS TIME[/cyan]");
+                }
+                if (back != 6 && basketnow <= basket)
+                {
+                    results.w = (double[])w.Clone();
+                    results.utility = utility;
+                    Array.Resize(ref overall, overall.Length + 1);
+                    overall.SetValue(results, overall.Length - 1);
+                }
+                var minutil = BlasLike.lm_max;
+                var minId = -1;
+                for (var i = 0; i < overall.Length; ++i)
+                {
+                    if (minutil > overall[i].utility)
+                    {
+                        minId = i;
+                        minutil = overall[i].utility;
+                    }
+                }
+                if (minId != -1)
+                {
+                    wback = overall[minId].w;
+                    ColourConsole.WriteEmbeddedColourLine($"[magenta]Best drop utility[/magenta] ([darkmagenta]{minId + 1}[/darkmagenta]):\t[green]{overall[minId].utility,20:e12}[/green][cyan] (out of {overall.Length})[/cyan]");
+                    return 0;
+                }
+                else { ColourConsole.WriteError("NUMBER CONSTRAINT COULD NOT BE MET"); return 6; }
+            }
+            return 0;
         }
         ///<summary>
         /// Project out the extra variables added to handle non-linear constraints
