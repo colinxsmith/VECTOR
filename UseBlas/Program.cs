@@ -8,11 +8,6 @@ using Microsoft.Win32;
 
 namespace UseBlas
 {///<summary>Holder for dropped portfolio results<sumary>
-    class BestDrop
-    {
-        public double utility;
-        public double[] w;
-    }
     class Program
     {
         static unsafe void Main(string[] args)
@@ -1190,7 +1185,7 @@ namespace UseBlas
                 opt.GainLossSetUp(n, tlen, DATA, names, R, lambda, useIP);
             }
             {
-                var filename = "costlog";
+                var filename = "costlogC";
                 Console.WriteLine("BUY/SELL and LONG/SHORT");
                 double[] SV = null, FC = null, FL = null, L = null, U = null, alpha = null, initial = null, A = null;
                 double[] buy = null, sell = null, bench = null, Q = null, A_abs = null, Abs_U = null, Abs_L = null;
@@ -1252,10 +1247,10 @@ namespace UseBlas
                       L[n - 20] = 0;//-1e-3;
                       U[n - 20] = 0;//1e-3;*/
                 bool useIp = true;
-                var basket = 5;
+                var basket = 10;
                 var baskethere = 0;
                 var tradeshere = 0;
-                int back;
+                int back = -10000;
                 if (nfac > -1)
                 {
                     FPortfolio opt = new FPortfolio("");
@@ -1265,145 +1260,37 @@ namespace UseBlas
                     opt.nfac = nfac;
                     opt.bench = bench;
                     useIp = false;
-                    opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
+                    back = opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
                      alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
                     var w = new double[n];
                     var gradient = new double[n];
                     BlasLike.dcopyvec(n, opt.wback, w);
                     var utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref baskethere, ref tradeshere);
                     ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
-                    if (basket < baskethere)
+
+                    if (back != 6) back = opt.Dropper(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
+                         alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, basket, baskethere);
+                    if (back == 6) ColourConsole.WriteError("INFEASIBLE");
+                    BlasLike.dcopyvec(n, opt.wback, w);
+                    if (back != 6)
                     {
-                        int basketnow = 0, tradesnow = 0;
-                        var order = new int[w.Length];
-                        var orderk = new int[w.Length];
-                        var dropbad = new byte[w.Length];
-                        for (var i = 0; i < w.Length; i++)
-                        {
-                            if (L[i] > 0 || U[i] < 0) dropbad[i] = 1;
-                            else if (L[i] == U[i] && L[i] != 0) dropbad[i] = 1;
-                        }
-                        var oldL = (double[])L.Clone();
-                        var oldU = (double[])U.Clone();
-                        Ordering.Order.getorderabs(w.Length, w, order, dropbad);
-                        for (var i = basket; i < w.Length; ++i)
-                        {
-                            var ii = order[i];
-                            L[ii] = U[ii] = 0;
-                        }
-                        back = opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                            alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
+                        opt.BoundsSetToSign(n, L, U, initial, w, true);
+                        useIp = false;
+                        opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
+                         alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
                         w = new double[n];
                         gradient = new double[n];
                         BlasLike.dcopyvec(n, opt.wback, w);
-                        utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref basketnow, ref tradesnow, false);
+                        utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref baskethere, ref tradeshere);
                         ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
-                        L = (double[])oldL.Clone();
-                        U = (double[])oldU.Clone();
-                        BestDrop results = new BestDrop();
-                        BestDrop[] overall = new BestDrop[0];
-                        if (back != 6)
-                        {
-                            Array.Resize(ref overall, overall.Length + 1);
-                            results.w = (double[])w.Clone();
-                            results.utility = utility;
-                            overall.SetValue(results, overall.Length - 1);
-                        }
-                        int interimBasket;
-                        var scale = 0.9;
-                        basketnow = baskethere;
-                        interimBasket = (int)Math.Floor(basketnow * scale + (1.0 - scale) * basket);
-                        bool same = false;
-                        bool fast = true;
-                        var bad = 0;
-                        while (basketnow > basket && bad < w.Length)
-                        {
-                            ColourConsole.WriteEmbeddedColourLine($"[magenta]INTERIM BASKET[/magenta][green] {interimBasket}[/green]");
-                            for (var i = interimBasket; i < w.Length; ++i)
-                            {
-                                var ii = order[i];
-                                L[ii] = U[ii] = 0;
-                            }
-                            back = opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                               alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
-                            while (back == 6)
-                            {
-                                fast = false;
-                                L = (double[])oldL.Clone();
-                                U = (double[])oldU.Clone();
-                                interimBasket = basketnow - 1;
-                                for (var i = interimBasket; i < w.Length; ++i)
-                                {
-                                    var ii = order[i];
-                                    L[ii] = U[ii] = 0;
-                                }
-                                back = opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                                   alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
-                                BlasLike.dcopyvec(n, opt.wback, w);
-                                if (back == 6) dropbad[order[interimBasket]] = 1;
-                                else break;
-                                Ordering.Order.getorderabs(w.Length, w, order, dropbad);
-                                bad = 0;
-                                foreach (var k in dropbad)
-                                {
-                                    bad += k;
-                                }
-                                if (bad > basket) break;
-                            }
-                            w = new double[n];
-                            gradient = new double[n];
-                            BlasLike.dcopyvec(n, opt.wback, w);
-                            utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref basketnow, ref tradesnow, false);
-                            ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
-                            L = (double[])oldL.Clone();
-                            U = (double[])oldU.Clone();
-                            if (fast) interimBasket = (int)Math.Floor(basketnow * scale + (1.0 - scale) * basket);
-                            else interimBasket = basketnow - 1;
-                            Ordering.Order.getorderabs(w.Length, w, orderk, dropbad);
-                            same = true;
-                            for (var i = 0; i < w.Length; ++i)
-                            {
-                                same = same && (orderk[i] == order[i]);
-                                order[i] = orderk[i];
-                            }
-                            if (same) ColourConsole.WriteEmbeddedColourLine($"[cyan]DROPPING ORDER DID NOT CHANGE THIS TIME[/cyan]");
-                        }
-                        if (basketnow <= basket)
-                        {
-                            results.w = (double[])w.Clone();
-                            results.utility = utility;
-                            Array.Resize(ref overall, overall.Length + 1);
-                            overall.SetValue(results, overall.Length - 1);
-                        }
-                        var minutil = BlasLike.lm_max;
-                        var minId = -1;
-                        for (var i = 0; i < overall.Length; ++i)
-                        {
-                            if (minutil > overall[i].utility)
-                            {
-                                minId = i;
-                                minutil = overall[i].utility;
-                            }
-                        }
-                        w = overall[minId].w;
-                        ColourConsole.WriteEmbeddedColourLine($"[magenta]Best drop utility[/magenta] ([darkmagenta]{minId}[/darkmagenta]):\t[green]{overall[minId].utility,20:e12}[/green]");
                     }
-                    opt.BoundsSetToSign(n, L, U, initial, w, true);
-                    useIp = false;
-                    opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                     alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
-                    w = new double[n];
-                    gradient = new double[n];
-                    BlasLike.dcopyvec(n, opt.wback, w);
-                    utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref baskethere, ref tradeshere);
-                    ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
                 }
                 else
                 {
                     Portfolio.Portfolio opt = new Portfolio.Portfolio("");
                     opt.Q = Q;
                     opt.bench = bench;
-                    useIp = true;
+                    useIp = false;
                     opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
                      alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
                     var w = new double[n];
@@ -1411,15 +1298,25 @@ namespace UseBlas
                     BlasLike.dcopyvec(n, opt.wback, w);
                     var utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref baskethere, ref tradeshere);
                     ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
-                    opt.BoundsSetToSign(n, L, U, initial, w);
-                    useIp = true;
-                    opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                     alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
-                    w = new double[n];
-                    gradient = new double[n];
+
+                    if (back != 6) back = opt.Dropper(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
+                         alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, basket, baskethere);
+                    if (back == 6) ColourConsole.WriteError("INFEASIBLE");
                     BlasLike.dcopyvec(n, opt.wback, w);
-                    utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref baskethere, ref tradeshere);
-                    ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
+
+                    if (back != 6)
+                    {
+
+                        opt.BoundsSetToSign(n, L, U, initial, w, true);
+                        useIp = false;
+                        opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
+                         alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
+                        w = new double[n];
+                        gradient = new double[n];
+                        BlasLike.dcopyvec(n, opt.wback, w);
+                        utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref baskethere, ref tradeshere);
+                        ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
+                    }
                 }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);

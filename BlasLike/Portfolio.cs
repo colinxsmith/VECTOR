@@ -9,7 +9,7 @@ namespace Portfolio
 {
     public class Portfolio
     {
-        public static void fixup_zero(double[] s, double thresh = 1e-12)
+        public static void fixup_zero(double[] s, double thresh = 1e-14)
         {
             for (var i = 0; i < s.Length; ++i)
             {
@@ -31,7 +31,7 @@ namespace Portfolio
         ///<param name="gradient">gradient[i] is the gradient for i'th asset</param>
         ///<param name="print">print output if true</param>
         ///<param name="thresh">less than thresh means zero</param>
-        public double PortfolioUtility(int n, double gamma, double kappa, double[] buy, double[] sell, double[] alpha, double[] w, double[] gradient, ref int basket, ref int trades, bool print = true, double thresh = 1e-10)
+        public double PortfolioUtility(int n, double gamma, double kappa, double[] buy, double[] sell, double[] alpha, double[] w, double[] gradient, ref int basket, ref int trades, bool print = true, double thresh = 1e-14)
         {
             var nfixedo = nfixed;
             nfixed = 0;//Must set this here
@@ -1054,6 +1054,15 @@ namespace Portfolio
                 ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio constraint {(i + 1),3}:[/magenta]\t[cyan]{ccval,20:f16}[/cyan]\t([red]{L[i + n],20:f16},{U[i + n],20:f16}[/red])");
             }
             //            ActiveSet.Optimise.printV("optimal weights", WW, n);
+            if (buysellI > 0 || longshortI > 0)
+            {
+                if (Math.Abs(shortside + shortsideS) > BlasLike.lm_eps2)
+                    back = 6;
+                if (Math.Abs(utility - utilityA) > BlasLike.lm_eps2)
+                    back = 6;
+                if (Math.Abs(cost - costA - costFixed) > BlasLike.lm_eps2)
+                    back = 6;
+            }
             return back;
         }
         public void GainLossSetUp(int n, int tlen, double[] DATA, string[] names, double R, double lambda, bool useIP = true)
@@ -1301,21 +1310,21 @@ namespace Portfolio
         ///<param name="initial">Initial weight array</param>
         ///<param name="w">weight array that defines buy/sell and/or long/short</param>
         ///<param name="setFixed">If true, set the bounds to constrain the fixed wieghts</param>
-        public void BoundsSetToSign(int n, double[] L, double[] U, double[] initial, double[] w, bool setFixed = false)
+        public void BoundsSetToSign(int n, double[] L, double[] U, double[] initial, double[] w, bool setFixed = false, double tol = 1e-14)
         {
             for (var i = 0; i < n; ++i)
             {
+                if (setFixed && Math.Abs(w[i]) < tol) { U[i] = 0; L[i] = 0; }
+                else if (setFixed && Math.Abs(w[i] - initial[i]) < tol) { U[i] = initial[i]; L[i] = initial[i]; }
                 if (L[i] < 0 && U[i] > 0)
                 {
                     if (w[i] > 0) L[i] = 0;
                     else if (w[i] < 0) U[i] = 0;
-                    else if (setFixed && w[i] == 0) { U[i] = 0; L[i] = 0; }
                 }
                 if (L[i] < initial[i] && U[i] > initial[i])
                 {
                     if (w[i] > initial[i]) L[i] = initial[i];
                     else if (w[i] < initial[i]) U[i] = initial[i];
-                    else if (setFixed && w[i] == initial[i]) { U[i] = initial[i]; L[i] = initial[i]; }
                 }
             }
         }
