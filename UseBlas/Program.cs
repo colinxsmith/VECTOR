@@ -1247,7 +1247,8 @@ namespace UseBlas
                       L[n - 20] = 0;//-1e-3;
                       U[n - 20] = 0;//1e-3;*/
                 bool useIp = true;
-                var basket = 10;
+                var basket = -1;
+                var trades = 10;
                 var baskethere = 0;
                 var tradeshere = 0;
                 int back = -10000;
@@ -1269,7 +1270,7 @@ namespace UseBlas
                     ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
 
                     if (back != 6) back = opt.Dropper(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                         alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, basket, baskethere);
+                         alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, basket, baskethere, trades, tradeshere);
                     if (back == 6) ColourConsole.WriteError("INFEASIBLE");
                     BlasLike.dcopyvec(n, opt.wback, w);
                     if (back != 6)
@@ -1291,7 +1292,7 @@ namespace UseBlas
                     opt.Q = Q;
                     opt.bench = bench;
                     useIp = false;
-                    opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
+                    back = opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
                      alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
                     var w = new double[n];
                     var gradient = new double[n];
@@ -1300,7 +1301,7 @@ namespace UseBlas
                     ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
 
                     if (back != 6) back = opt.Dropper(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                         alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, basket, baskethere);
+                         alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, basket, baskethere, trades, tradeshere);
                     if (back == 6) ColourConsole.WriteError("INFEASIBLE");
                     BlasLike.dcopyvec(n, opt.wback, w);
 
