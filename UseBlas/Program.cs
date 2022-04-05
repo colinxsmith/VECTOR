@@ -1247,8 +1247,8 @@ namespace UseBlas
                       L[n - 20] = 0;//-1e-3;
                       U[n - 20] = 0;//1e-3;*/
                 bool useIp = true;
-                var basket = -1;
-                var trades = 10;
+                var basket = 20;
+                var trades = -1;//200;
                 var baskethere = 0;
                 var tradeshere = 0;
                 int back = -10000;
