@@ -1291,24 +1291,23 @@ namespace UseBlas
                     opt.Q = Q;
                     opt.bench = bench;
                     useIp = false;
-                    var seek=0.1;
+                    var seek = 0.1;
                     double CalcRisk(double gam)
                     {
                         back = opt.BasicOptimisation(n, m, nfac, A, L, U, gam, kappa, delta, value, valuel, rmin, rmax,
                                  alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
                         double[] www = (double[])opt.wback.Clone();
                         if (bench != null) BlasLike.dsubvec(n, www, bench, www);
-                        var fix=opt.nfixed;
-                        opt.nfixed=0;
-                        var backr=Math.Sqrt(opt.Variance(www))-seek;
-                        opt.nfixed=fix;
+                        var fix = opt.nfixed;
+                        opt.nfixed = 0;
+                        var backr = Math.Sqrt(opt.Variance(www)) - seek;
+                        opt.nfixed = fix;
                         return backr;
                     }
-                    var newgamma=ActiveSet.Optimise.Solve1D(CalcRisk);
-                    gamma=newgamma;
-                    seek=0;
-                    var riskh = CalcRisk(gamma);
-                    ColourConsole.WriteEmbeddedColourLine($"[green]risk for {gamma,20:e12} is[/green]\t[yellow]{riskh,20:e12}[/yellow]");
+                    var newgamma = ActiveSet.Optimise.Solve1D(CalcRisk);
+                    gamma = newgamma;
+                    var riskh = CalcRisk(gamma) + seek;
+                    ColourConsole.WriteEmbeddedColourLine($"[green]risk for {gamma,20:e12} is[/green]\t[yellow]{riskh,20:e12}[/yellow]\t[cyan]seek {seek}[/cyan]");
                     var w = new double[n];
                     var gradient = new double[n];
                     BlasLike.dcopyvec(n, opt.wback, w);
@@ -1319,7 +1318,6 @@ namespace UseBlas
                          alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, basket, baskethere, trades, tradeshere);
                     if (back == 6) ColourConsole.WriteError("INFEASIBLE");
                     BlasLike.dcopyvec(n, opt.wback, w);
-
                     if (back != 6)
                     {
                         opt.BoundsSetToSign(n, L, U, initial, w, true);
@@ -1331,8 +1329,6 @@ namespace UseBlas
                         BlasLike.dcopyvec(n, opt.wback, w);
                         utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref baskethere, ref tradeshere);
                         ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
-                        opt.n = n;
-                        var best = ActiveSet.Optimise.PathMin(opt.TestPathMin, 0, 1, 1e-10, 0);
                     }
                 }
             }

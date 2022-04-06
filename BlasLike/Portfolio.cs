@@ -84,21 +84,6 @@ namespace Portfolio
             nfixed = nfixedo;
             return back;
         }
-        public double TestPathMin(double p)
-        {
-            double[] p1, p2;
-            p1 = new double[n];
-            p2 = new double[n];
-            p1[0] = 1;
-            p2[1] = 1;
-            for (var i = 0; i < n; ++i)
-            {
-                wback[i] = p1[i] + p * (p2[i] - p1[i]);
-            }
-            var back = Variance(wback);
-            ColourConsole.WriteEmbeddedColourLine($"[green]{p}[/green]\t[yellow]{back}[/yellow]");
-            return back;
-        }
         public int Dropper(int n, int m, int nfac, double[] A, double[] L, double[] U,
         double gamma, double kappa, double delta, double value, double valuel,
         double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell,
@@ -1287,7 +1272,7 @@ namespace Portfolio
                     }
                 }
             }
-            var utility = -gamma / (1 - gamma) * eret + kappa / (1 - kappa) * (cost + initbase) + 0.5 * variance + benchmarkExtra + alphaFixed * gamma / (1 - gamma) - costFixed * kappa / (1 - kappa) - fixedVariance;
+            var utility = -eret + kappa / (1 - kappa) * (cost + initbase) + 0.5 * variance + benchmarkExtra + alphaFixed * gamma / (1 - gamma) - costFixed * kappa / (1 - kappa) - fixedVariance;
             var utilityA = -BlasLike.ddotvec(n - nfixed, fixedSecondOrder, WW) + BlasLike.ddotvec(N, CC, WW) + 0.5 * variance + benchmarkExtra - fixedVariance;
             ColourConsole.WriteEmbeddedColourLine($"Utility:\t\t\t[green]{utility,20:f16}:[/green]\t[cyan] {utilityA,20:f16}[/cyan]");
             ColourConsole.WriteEmbeddedColourLine($"Turnover:\t\t\t[green]{turnover * 0.5,20:f16}:[/green]\t[cyan]{turn2,20:f16}[/cyan]");
@@ -1302,8 +1287,8 @@ namespace Portfolio
             {
                 if (Math.Abs(shortside + shortsideS) > BlasLike.lm_eps * 10)
                     back = 6;
-            //    if (Math.Abs(utility - utilityA) > BlasLike.lm_eps * 10)
-            //        back = 6;
+                if (Math.Abs(utility - utilityA) > BlasLike.lm_eps * 10)
+                    back = 6;
                 if (Math.Abs(cost - costA - costFixed) > BlasLike.lm_eps * 10)
                     back = 6;
             }
