@@ -1193,7 +1193,6 @@ namespace UseBlas
                 int n, nfac, m, nabs, mabs;
                 int[] I_A = null;
                 string[] names;
-
                 using (var buysell = new InputSomeData())
                 {
                     buysell.doubleFields = "Q SV FC FL L U alpha initial A buy sell gamma delta kappa bench value valuel rmin rmax Abs_U Abs_L A_abs";
@@ -1247,8 +1246,8 @@ namespace UseBlas
                       L[n - 20] = 0;//-1e-3;
                       U[n - 20] = 0;//1e-3;*/
                 bool useIp = true;
-                var basket = 20;
-                var trades = -1;//200;
+                var basket = -1;
+                var trades = 10;//390;//200;
                 var baskethere = 0;
                 var tradeshere = 0;
                 int back = -10000;
@@ -1292,8 +1291,24 @@ namespace UseBlas
                     opt.Q = Q;
                     opt.bench = bench;
                     useIp = false;
-                    back = opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                     alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
+                    var seek=0.1;
+                    double CalcRisk(double gam)
+                    {
+                        back = opt.BasicOptimisation(n, m, nfac, A, L, U, gam, kappa, delta, value, valuel, rmin, rmax,
+                                 alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
+                        double[] www = (double[])opt.wback.Clone();
+                        if (bench != null) BlasLike.dsubvec(n, www, bench, www);
+                        var fix=opt.nfixed;
+                        opt.nfixed=0;
+                        var backr=Math.Sqrt(opt.Variance(www))-seek;
+                        opt.nfixed=fix;
+                        return backr;
+                    }
+                    var newgamma=ActiveSet.Optimise.Solve1D(CalcRisk);
+                    gamma=newgamma;
+                    seek=0;
+                    var riskh = CalcRisk(gamma);
+                    ColourConsole.WriteEmbeddedColourLine($"[green]risk for {gamma,20:e12} is[/green]\t[yellow]{riskh,20:e12}[/yellow]");
                     var w = new double[n];
                     var gradient = new double[n];
                     BlasLike.dcopyvec(n, opt.wback, w);
@@ -1307,7 +1322,6 @@ namespace UseBlas
 
                     if (back != 6)
                     {
-
                         opt.BoundsSetToSign(n, L, U, initial, w, true);
                         useIp = false;
                         opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
@@ -1317,6 +1331,8 @@ namespace UseBlas
                         BlasLike.dcopyvec(n, opt.wback, w);
                         utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref baskethere, ref tradeshere);
                         ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
+                        opt.n = n;
+                        var best = ActiveSet.Optimise.PathMin(opt.TestPathMin, 0, 1, 1e-10, 0);
                     }
                 }
             }

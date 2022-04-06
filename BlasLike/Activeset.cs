@@ -6,10 +6,236 @@ namespace ActiveSet
 {
     public delegate void hessmull(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx);
     public class Optimise
-    {///<summary>
-     ///Return the next lowest multiple of double base
-     ///</summary>
-     ///<param name="eps">Typically a convergence number</param>
+    {
+        static void shifter<S>(ref S a, ref S b, ref S c, ref S d)
+        {
+            a = b; b = c; c = d;
+        }///<summary>Prototype for one dimensional function. Used as an argument for PathMin and Solve1D</summary>
+         ///<param name="x">One dimensional variable</param>
+        public delegate double OneD(double x);
+        ///<summary>Find x such that f(x)=0 such that x is between x=gammabot and x=gammatop and return the value of x which gives f(x)=0</summary>
+        ///<param name="OneDimensionalFunction"> Function to be minimised</param>
+        ///<param name="gammabot"> Lower value of optimisation domain</param>
+        ///<param name="gammatop"> Upper value of optimisation domain</param>
+        ///<param name="tol"> tolerance</param>
+        public static double Solve1D(OneD OneDimensionalFunction, double gammabot = 0,
+                                       double gammatop = 1.0, double tol = 0)
+        {
+            if (tol == 0) { tol = BlasLike.lm_rooteps; gammatop = 1 - tol; }
+            int iter, itmax = 200;
+            short signk = 1;
+            double c = 0, d = 0, e = 0, min1, min2, fc, p, q, r, s, tol1, xm;
+            double gamma_opt, a = gammatop, b = gammabot;
+            double fa = OneDimensionalFunction(a);
+            if (Math.Abs(fa) < BlasLike.lm_rooteps)
+                return a;
+            double fb = OneDimensionalFunction(b);
+            if (Math.Abs(fb) < BlasLike.lm_rooteps)
+                return b;
+            double scalelimit = Math.Max(((Math.Abs(fa) + Math.Abs(fb)) * .5), 1.0);
+            if (tol == 0)
+                tol = BlasLike.lm_eps;
+            if (fa * fb > 0)
+            {
+                return 1e+10;
+            }
+            if (fa < fb)
+            {
+                double kk = fa;
+                signk = -1;
+                fa = fb; fb = kk;
+            }
+            fc = fb;
+            gamma_opt = signk == 1 ? gammabot : gammatop;
+            for (iter = 0; iter < itmax; iter++)
+            {
+                if (fb * fc > 0)
+                {
+                    c = a;
+                    fc = fa;
+                    e = d = b - a;
+                }
+                if (Math.Abs(fc) < Math.Abs(fb))
+                {
+                    a = b;
+                    b = c;
+                    c = a;
+                    fa = fb;
+                    fb = fc;
+                    fc = fa;
+                }
+                tol1 = 2 * BlasLike.lm_rooteps * Math.Abs(b) + 0.5 * tol;
+                xm = 0.5 * (c - b);
+                if (Math.Abs(xm) <= tol1 || Math.Abs(fb) < 1e-12)
+                {
+                    if (Math.Abs(fb) > 1e-02 * scalelimit)
+                    {
+                        ColourConsole.WriteEmbeddedColourLine($"[red]Problem with the 1d function shape (many valued or not continuous) error[/red] [yellow]g1={b} f({b})={fb} g2={c} f({c})={fc}[/yellow]");
+                    }
+                    return gamma_opt;
+                }
+                if (Math.Abs(e) >= tol1 && Math.Abs(fa) > Math.Abs(fb))
+                {
+                    s = fb / fa;
+                    if (a == c)
+                    {
+                        p = 2 * xm * s;
+                        q = 1 - s;
+                    }
+                    else
+                    {
+                        q = fa / fc;
+                        r = fb / fc;
+                        p = s * (2 * xm * q * (q - r) - (b - a) * (r - 1));
+                        q = (q - 1) * (r - 1) * (s - 1);
+                    }
+                    if (p > 0) q = -q;
+                    p = Math.Abs(p);
+                    min1 = 3 * xm * q - Math.Abs(tol1 * q);
+                    min2 = Math.Abs(e * q);
+                    if (2 * p < (min1 < min2 ? min1 : min2))
+                    {
+                        e = d;
+                        d = p / q;
+                    }
+                    else
+                    {
+                        d = xm;
+                        e = d;
+                    }
+                }
+                else
+                {
+                    d = xm;
+                    e = d;
+                }
+                a = b;
+                fa = fb;
+                b += (Math.Abs(d) > tol1) ? d : (xm > 0 ? Math.Abs(tol1) : -Math.Abs(tol1));
+                if (signk == 1)
+                {
+                    fb = OneDimensionalFunction(b);
+                    gamma_opt = b;
+                }
+                else
+                {
+                    double new_b = (gammatop - b) + gammabot;
+                    fb = OneDimensionalFunction(new_b);
+                    gamma_opt = new_b;
+                }
+            }
+            return gamma_opt;
+        }
+
+        ///<summary>Minimise a function f(x) with 1 variable between x=gammabot and x=gammatop and return the value of x which gives this minimum</summary>
+        ///<param name="OneDimensionalFunction"> Function to be minimised</param>
+        ///<param name="gammabot"> Lower value of optimisation domain</param>
+        ///<param name="gammatop"> Upper value of optimisation domain</param>
+        ///<param name="tol"> tolerance</param>
+        ///<param name="stopifpos"> stop if the function becomes positive if 1</param>
+        public static double PathMin(OneD OneDimensionalFunction, double gammabot,
+                                       double gammatop, double tol, int stopifpos)
+        {
+            //	Based on routine in "Numerical Recipes in C" page 301.
+            double ax = gammabot, bx = 0.5, cx = gammatop, ret_val;
+            double a, b, d = 1e34, etemp, fu, fv, fw, fx, p, q, r, tol1, tol2, u, v, w, x, xm, e = 0.0, basek;
+            int error = 0;
+            int count = 0, maxcount = 100;
+
+            bx = (ax + cx) * .5;
+            a = ((ax < cx) ? ax : cx);
+            b = ((ax > cx) ? ax : cx);
+
+            x = w = v = bx;
+
+            fw = OneDimensionalFunction(x);
+            basek = Math.Abs(fw); if (fw < 0) { fw = fv = fx = -1; } else { fw = fv = fx = 1; }
+            if (basek == 0)
+            {
+                fw = fv = fx = basek;
+                basek = 1;
+            }
+            ret_val = x;
+            while (error == 0 && count < maxcount)
+            {
+                xm = 0.5 * (a + b);
+                tol2 = 2.0 * (tol1 = tol * Math.Abs(x) + BlasLike.lm_eps);
+                if (Math.Abs(x - xm) <= (tol2 - 0.5 * (b - a)))
+                {
+                    if (x > (gammatop + gammabot) * 0.5)
+                        return Math.Min(Math.Max(gammatop, gammabot), ret_val + tol2);//If x is close to gammatop then x = gammatop is probably correct (same pieces throughout)
+                    else
+                        return Math.Max(Math.Min(gammatop, gammabot), ret_val - tol2);//If x is close to gammabot then x = gammabot
+                }
+                if (Math.Abs(e) > tol1)
+                {
+                    r = (x - w) * (fx - fv);
+                    q = (x - v) * (fx - fw);
+                    p = (x - v) * q - (x - w) * r;
+                    q = 2.0 * (q - r);
+                    if (q > 0.0)
+                        p = -p;
+                    q = Math.Abs(q);
+                    etemp = e;
+                    e = d;
+                    if (Math.Abs(p) >= Math.Abs(0.5 * q * etemp) || p <= q * (a - x) || p >= q * (b - x))
+                    {
+                        d = (e = (x >= xm ? a - x : b - x)) * BlasLike.lm_golden_ratio;
+                    }
+                    else
+                    {
+                        d = p / q;
+                        u = x + d;
+                        if (u - a < tol2 || b - u < tol2)
+                            d = BlasLike.dsign(tol1, xm - x);
+                    }
+                }
+                else
+                {
+                    d = (e = (x >= xm ? a - x : b - x)) * BlasLike.lm_golden_ratio;
+                }
+                u = (Math.Abs(d) >= tol1 ? x + d : x + BlasLike.dsign(tol1, d));
+                fu = OneDimensionalFunction(u) / basek;
+                ret_val = u;
+                if ((stopifpos * fu) > 0) break;
+                if (fu <= fx)
+                {
+                    if (u >= x)
+                        a = x;
+                    else
+                        b = x;
+                    shifter(ref v, ref w, ref x, ref u);
+                    shifter(ref fv, ref fw, ref fx, ref fu);
+                }
+                else
+                {
+                    if (u < x)
+                        a = u;
+                    else
+                        b = u;
+                    if (fu <= fw || w == x)
+                    {
+                        v = w;
+                        w = u;
+                        fv = fw;
+                        fw = fu;
+                    }
+                    else if (fu <= fv || v == x || v == w)
+                    {
+                        v = u;
+                        fv = fu;
+                    }
+                }
+                count++;
+            }
+            if (count >= maxcount)
+                ColourConsole.WriteError("PathMin did not converge");
+            return ret_val;
+        }
+        ///<summary>
+        ///Return the next lowest multiple of double base
+        ///</summary>
+        ///<param name="eps">Typically a convergence number</param>
         public static double small_round(double eps)
         {
             double reps = BlasLike.lm_eps * Math.Floor(eps / BlasLike.lm_eps);
@@ -5049,7 +5275,7 @@ namespace ActiveSet
             BlasLike.dnegvec(n, PX);
             if (nclin > 0) BlasLike.dnegvec(nclin, AP);
         }
-        public static void printV<T>(string name, T[] a, int upto = -1,int astart=0)
+        public static void printV<T>(string name, T[] a, int upto = -1, int astart = 0)
         {
             ColourConsole.WriteInfo(name);
             if (upto == -1) upto = a.Length;
@@ -5060,7 +5286,7 @@ namespace ActiveSet
                     ColourConsole.Write($"{a[i],11:F8} ", ConsoleColor.Magenta);
                 else
                     ColourConsole.Write($"{a[i]} ", ConsoleColor.DarkGreen);
-                if ((i-astart) % 10 == 9) Console.Write("\n");
+                if ((i - astart) % 10 == 9) Console.Write("\n");
             }
             Console.Write("\n");
         }

@@ -84,6 +84,21 @@ namespace Portfolio
             nfixed = nfixedo;
             return back;
         }
+        public double TestPathMin(double p)
+        {
+            double[] p1, p2;
+            p1 = new double[n];
+            p2 = new double[n];
+            p1[0] = 1;
+            p2[1] = 1;
+            for (var i = 0; i < n; ++i)
+            {
+                wback[i] = p1[i] + p * (p2[i] - p1[i]);
+            }
+            var back = Variance(wback);
+            ColourConsole.WriteEmbeddedColourLine($"[green]{p}[/green]\t[yellow]{back}[/yellow]");
+            return back;
+        }
         public int Dropper(int n, int m, int nfac, double[] A, double[] L, double[] U,
         double gamma, double kappa, double delta, double value, double valuel,
         double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell,
@@ -1287,8 +1302,8 @@ namespace Portfolio
             {
                 if (Math.Abs(shortside + shortsideS) > BlasLike.lm_eps * 10)
                     back = 6;
-                if (Math.Abs(utility - utilityA) > BlasLike.lm_eps * 10)
-                    back = 6;
+            //    if (Math.Abs(utility - utilityA) > BlasLike.lm_eps * 10)
+            //        back = 6;
                 if (Math.Abs(cost - costA - costFixed) > BlasLike.lm_eps * 10)
                     back = 6;
             }
@@ -1551,19 +1566,18 @@ namespace Portfolio
                 {
                     U[i] = initial[i]; L[i] = initial[i];
                 }
-                if (L[i] < 0 && U[i] > 0)
+                else
                 {
-                    if (w[i] > 0)
-                        L[i] = 0;
-                    else if (w[i] < 0)
-                        U[i] = 0;
-                }
-                if (L[i] < initial[i] && U[i] > initial[i])
-                {
-                    if (w[i] > initial[i])
-                        L[i] = initial[i];
-                    else if (w[i] < initial[i])
-                        U[i] = initial[i];
+                    if (L[i] < 0 && U[i] > 0)
+                    {
+                        if (w[i] >= 0) L[i] = 0;
+                        else if (w[i] < 0) U[i] = 0;
+                    }
+                    if (L[i] < initial[i] && U[i] > initial[i])
+                    {
+                        if (w[i] >= initial[i]) L[i] = initial[i];
+                        else if (w[i] < initial[i]) U[i] = initial[i];
+                    }
                 }
             }
         }
