@@ -90,8 +90,9 @@ namespace Portfolio
         string[] names, bool useIp = true, int nabs = 0, double[] A_abs = null, double[] Abs_L = null, double[] Abs_U = null,
         int mabs = 0, int[] I_A = null, int basket = -1, int baskethere = -1, int trades = -1, int tradeshere = -1)
         {
-            if (basket == -1) { basket = n; baskethere = n; }
-            if (trades == -1) { trades = n; tradeshere = n; }
+            if (basket < 0) { basket = n; baskethere = n; }
+            if (trades < 0) { trades = n; tradeshere = n; }
+            var twoside = (trades < n && basket < n);
             double[] gradient = new double[n];
             double[] w = (double[])wback.Clone();
             double utility = 0;
@@ -162,13 +163,13 @@ namespace Portfolio
                 {
                     ColourConsole.WriteEmbeddedColourLine($"[magenta]INTERIM BASKET[/magenta][green] {interimBasket}[/green]");
                     ColourConsole.WriteEmbeddedColourLine($"[darkcyan]INTERIM TRADES[/darkcyan][green] {interimTrades}[/green]");
-                    if (true || basketnow > basket)
+                    if (basketnow > basket)
                         for (var i = interimBasket; i < w.Length; ++i)
                         {
                             var ii = order[i];
                             L[ii] = U[ii] = 0;
                         }
-                    if (true || tradesnow > trades)
+                    if (tradesnow > trades)
                     {
                         done = 0;
                         for (var i = w.Length - 1; i >= interimTrades - done; --i)
@@ -242,6 +243,7 @@ namespace Portfolio
                         {
                             bad += k;
                         }
+                        ColourConsole.WriteEmbeddedColourLine($"[green]Number of assets that cannot be dropped:\t[/green][red]{bad,20}[/red]");
                         if (bad > basket) break;
                         if (bad > trades) break;
                     }
@@ -1192,7 +1194,7 @@ namespace Portfolio
                     Order.Reorder_gen(n, mainorderInverse, Q, nfac, 1, true, n);
                 }
             }
-            var eret = BlasLike.ddotvec(n, alpha, wback) * gamma / (1 - gamma);
+            var eret = BlasLike.ddotvec(n, alpha, wback);
             var printAlphas = false;
             for (var i = 0; printAlphas && i < n; ++i)
             {
@@ -1201,6 +1203,14 @@ namespace Portfolio
             var nfixedold = nfixed;
             nfixed = 0;
             var variance = Variance(wback);
+            var risk = 0.0;
+            if (bench != null)
+            {
+                BlasLike.dsubvec(n, wback, bench, wback);
+                risk = Math.Sqrt(Variance(wback));
+                BlasLike.daddvec(n, wback, bench, wback);
+            }
+            else risk = Math.Sqrt(variance);
             nfixed = nfixedold;
             var costbase = 0.0;
             var initbase = 0.0;
@@ -1227,6 +1237,7 @@ namespace Portfolio
                     }
                 }
             var eretA = alphaFixed * gamma / (1 - gamma) + BlasLike.ddotvec(n - nfixed, fixedSecondOrder, WW) - BlasLike.ddotvec(n - nfixed, CC, WW) + kappa / (1 - kappa) * costbase;
+            if (gamma != 0) eretA /= gamma / (1 - gamma);
             var costA = 0.0;
             for (var i = 0; useCosts && i < buysellI; ++i)
             {
@@ -1238,6 +1249,7 @@ namespace Portfolio
             ColourConsole.WriteEmbeddedColourLine($"[green]Longside={longside,20:f16}[/green]\t[red]Shortside={shortside,20:f16}[/red] [magenta]({-shortsideS,20:f16})[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"[magenta]-Short/Long:[/magenta]\t\t\t[red]{rmin,20:f16}[/red]\t[cyan]{-shortside / longside,20:f16}[/cyan]\t[green]{rmax,20:f16}[/green]");
             ColourConsole.WriteEmbeddedColourLine($"Variance:\t\t\t[green]{variance,20:f16}[/green]");
+            ColourConsole.WriteEmbeddedColourLine($"Risk:\t\t\t\t[green]{risk,20:f16}[/green]");
             ColourConsole.WriteEmbeddedColourLine($"Return:\t\t\t\t[green]{eret,20:f16}:[/green]\t[cyan]{eretA,20:f16}[/cyan]");
             var benchmarkExtra = 0.0;
             nfixedold = nfixed;
@@ -1272,7 +1284,7 @@ namespace Portfolio
                     }
                 }
             }
-            var utility = -eret + kappa / (1 - kappa) * (cost + initbase) + 0.5 * variance + benchmarkExtra + alphaFixed * gamma / (1 - gamma) - costFixed * kappa / (1 - kappa) - fixedVariance;
+            var utility = -eret * gamma / (1 - gamma) + kappa / (1 - kappa) * (cost + initbase) + 0.5 * variance + benchmarkExtra + alphaFixed * gamma / (1 - gamma) - costFixed * kappa / (1 - kappa) - fixedVariance;
             var utilityA = -BlasLike.ddotvec(n - nfixed, fixedSecondOrder, WW) + BlasLike.ddotvec(N, CC, WW) + 0.5 * variance + benchmarkExtra - fixedVariance;
             ColourConsole.WriteEmbeddedColourLine($"Utility:\t\t\t[green]{utility,20:f16}:[/green]\t[cyan] {utilityA,20:f16}[/cyan]");
             ColourConsole.WriteEmbeddedColourLine($"Turnover:\t\t\t[green]{turnover * 0.5,20:f16}:[/green]\t[cyan]{turn2,20:f16}[/cyan]");
@@ -1287,9 +1299,9 @@ namespace Portfolio
             {
                 if (Math.Abs(shortside + shortsideS) > BlasLike.lm_eps * 10)
                     back = 6;
-                if (Math.Abs(utility - utilityA) > BlasLike.lm_eps * 10)
+                if (Math.Abs(utility - utilityA) > BlasLike.lm_rooteps)
                     back = 6;
-                if (Math.Abs(cost - costA - costFixed) > BlasLike.lm_eps * 10)
+                if (kappa > 1e-14 && Math.Abs(cost - costA - costFixed) > BlasLike.lm_eps * 10)
                     back = 6;
             }
             return back;

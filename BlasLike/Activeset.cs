@@ -12,24 +12,24 @@ namespace ActiveSet
             a = b; b = c; c = d;
         }///<summary>Prototype for one dimensional function. Used as an argument for PathMin and Solve1D</summary>
          ///<param name="x">One dimensional variable</param>
-        public delegate double OneD(double x);
+        public delegate double OneD(double x, object info);
         ///<summary>Find x such that f(x)=0 such that x is between x=gammabot and x=gammatop and return the value of x which gives f(x)=0</summary>
         ///<param name="OneDimensionalFunction"> Function to be minimised</param>
         ///<param name="gammabot"> Lower value of optimisation domain</param>
         ///<param name="gammatop"> Upper value of optimisation domain</param>
         ///<param name="tol"> tolerance</param>
         public static double Solve1D(OneD OneDimensionalFunction, double gammabot = 0,
-                                       double gammatop = 1.0, double tol = 0)
+                                       double gammatop = 1.0, double tol = 0, object info = null)
         {
             if (tol == 0) { tol = BlasLike.lm_rooteps; gammatop = 1 - tol; }
             int iter, itmax = 200;
             short signk = 1;
             double c = 0, d = 0, e = 0, min1, min2, fc, p, q, r, s, tol1, xm;
             double gamma_opt, a = gammatop, b = gammabot;
-            double fa = OneDimensionalFunction(a);
+            double fa = OneDimensionalFunction(a, info);
             if (Math.Abs(fa) < BlasLike.lm_rooteps)
                 return a;
-            double fb = OneDimensionalFunction(b);
+            double fb = OneDimensionalFunction(b, info);
             if (Math.Abs(fb) < BlasLike.lm_rooteps)
                 return b;
             double scalelimit = Math.Max(((Math.Abs(fa) + Math.Abs(fb)) * .5), 1.0);
@@ -114,13 +114,13 @@ namespace ActiveSet
                 b += (Math.Abs(d) > tol1) ? d : (xm > 0 ? Math.Abs(tol1) : -Math.Abs(tol1));
                 if (signk == 1)
                 {
-                    fb = OneDimensionalFunction(b);
+                    fb = OneDimensionalFunction(b,info);
                     gamma_opt = b;
                 }
                 else
                 {
                     double new_b = (gammatop - b) + gammabot;
-                    fb = OneDimensionalFunction(new_b);
+                    fb = OneDimensionalFunction(new_b,info);
                     gamma_opt = new_b;
                 }
             }
@@ -134,7 +134,7 @@ namespace ActiveSet
         ///<param name="tol"> tolerance</param>
         ///<param name="stopifpos"> stop if the function becomes positive if 1</param>
         public static double PathMin(OneD OneDimensionalFunction, double gammabot,
-                                       double gammatop, double tol, int stopifpos)
+                                       double gammatop, double tol, int stopifpos, object info = null)
         {
             //	Based on routine in "Numerical Recipes in C" page 301.
             double ax = gammabot, bx = 0.5, cx = gammatop, ret_val;
@@ -148,7 +148,7 @@ namespace ActiveSet
 
             x = w = v = bx;
 
-            fw = OneDimensionalFunction(x);
+            fw = OneDimensionalFunction(x, info);
             basek = Math.Abs(fw); if (fw < 0) { fw = fv = fx = -1; } else { fw = fv = fx = 1; }
             if (basek == 0)
             {
@@ -195,7 +195,7 @@ namespace ActiveSet
                     d = (e = (x >= xm ? a - x : b - x)) * BlasLike.lm_golden_ratio;
                 }
                 u = (Math.Abs(d) >= tol1 ? x + d : x + BlasLike.dsign(tol1, d));
-                fu = OneDimensionalFunction(u) / basek;
+                fu = OneDimensionalFunction(u, info) / basek;
                 ret_val = u;
                 if ((stopifpos * fu) > 0) break;
                 if (fu <= fx)
