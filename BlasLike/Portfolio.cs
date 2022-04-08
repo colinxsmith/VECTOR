@@ -139,8 +139,8 @@ namespace Portfolio
                     utility = PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref basketnow, ref tradesnow, false);
                     ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
                 }
-                L = (double[])oldL.Clone();
-                U = (double[])oldU.Clone();
+                BlasLike.dcopyvec(L.Length,oldL,L);
+                BlasLike.dcopyvec(U.Length,oldU,U);
                 DropKeep[] overall = new DropKeep[0];
                 if (back != 6 && basket >= basketnow && trades >= tradesnow)
                 {
@@ -163,13 +163,13 @@ namespace Portfolio
                 {
                     ColourConsole.WriteEmbeddedColourLine($"[magenta]INTERIM BASKET[/magenta][green] {interimBasket}[/green]");
                     ColourConsole.WriteEmbeddedColourLine($"[darkcyan]INTERIM TRADES[/darkcyan][green] {interimTrades}[/green]");
-                    if (basketnow > basket)
+                    if ((twoside && !fast) || basketnow > basket)
                         for (var i = interimBasket; i < w.Length; ++i)
                         {
                             var ii = order[i];
                             L[ii] = U[ii] = 0;
                         }
-                    if (tradesnow > trades)
+                    if ((twoside) || tradesnow > trades)
                     {
                         done = 0;
                         for (var i = w.Length - 1; i >= interimTrades - done; --i)
@@ -185,8 +185,8 @@ namespace Portfolio
                     while (back == 6)
                     {
                         fast = false;
-                        L = (double[])oldL.Clone();
-                        U = (double[])oldU.Clone();
+                BlasLike.dcopyvec(L.Length,oldL,L);
+                BlasLike.dcopyvec(U.Length,oldU,U);
                         interimBasket = basketnow - 1;
                         interimTrades = tradesnow - 1;
                         if (interimBasket < basket) interimBasket = basket;
@@ -251,8 +251,8 @@ namespace Portfolio
                     BlasLike.dcopyvec(n, wback, w);
                     utility = PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref basketnow, ref tradesnow, false);
                     ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
-                    L = (double[])oldL.Clone();
-                    U = (double[])oldU.Clone();
+                BlasLike.dcopyvec(L.Length,oldL,L);
+                BlasLike.dcopyvec(U.Length,oldU,U);
                     if (fast) interimBasket = (int)Math.Floor(basketnow * scale + (1.0 - scale) * basket);
                     else interimBasket = basketnow - 1;
                     if (fast) interimTrades = (int)Math.Floor(tradesnow * scale + (1.0 - scale) * trades);
@@ -281,6 +281,8 @@ namespace Portfolio
                         }
                     if (same) ColourConsole.WriteEmbeddedColourLine($"[cyan]DROPPING ORDER DID NOT CHANGE THIS TIME[/cyan]");
                 }
+                BlasLike.dcopyvec(L.Length,oldL,L);
+                BlasLike.dcopyvec(U.Length,oldU,U);
                 if (back != 6 && basketnow <= basket && tradesnow <= trades)
                 {
                     Array.Resize(ref overall, overall.Length + 1);
