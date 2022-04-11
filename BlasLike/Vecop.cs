@@ -17,6 +17,7 @@ namespace Blas
         public static double lm_rsafe_range = 1.7976931348623143e+308;
         public static double lm_rootmin = Math.Sqrt(lm_min);
         public static double lm_rooteps = Math.Sqrt(lm_eps);
+        public static double lm_golden_ratio = 0.3819660112501051;
         public unsafe static void daxpy(int n, double da, double* dx,
             int incx, double* dy, int incy)
         {

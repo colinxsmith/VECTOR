@@ -7,7 +7,7 @@ using Portfolio;
 using Microsoft.Win32;
 
 namespace UseBlas
-{
+{///<summary>Holder for dropped portfolio results<sumary>
     class Program
     {
         static unsafe void Main(string[] args)
@@ -1185,15 +1185,14 @@ namespace UseBlas
                 opt.GainLossSetUp(n, tlen, DATA, names, R, lambda, useIP);
             }
             {
-                var filename = "costlog";
-                Console.WriteLine("BUY/SELL");
+                var filename = "costlogC";
+                Console.WriteLine("BUY/SELL and LONG/SHORT");
                 double[] SV = null, FC = null, FL = null, L = null, U = null, alpha = null, initial = null, A = null;
                 double[] buy = null, sell = null, bench = null, Q = null, A_abs = null, Abs_U = null, Abs_L = null;
                 double gamma, delta, kappa, value, valuel, rmin, rmax;
                 int n, nfac, m, nabs, mabs;
                 int[] I_A = null;
                 string[] names;
-
                 using (var buysell = new InputSomeData())
                 {
                     buysell.doubleFields = "Q SV FC FL L U alpha initial A buy sell gamma delta kappa bench value valuel rmin rmax Abs_U Abs_L A_abs";
@@ -1240,13 +1239,40 @@ namespace UseBlas
                     Abs_L = buysell.mapDouble["Abs_L"];
                     I_A = buysell.mapInt["I_A"];
                 }
-                /*    L[0] = -0.017583279913421082;
+                /*   L[0] = -0.017583279913421082;
                       U[0] = -0.017583279913421082;
                       L[n - 10] = 0;//-1e-3;
                       U[n - 10] = 0;//1e-3;
                       L[n - 20] = 0;//-1e-3;
                       U[n - 20] = 0;//1e-3;*/
-                bool useIp = false;
+                bool useIp = true;
+                var basket = 396;
+                var trades = 10;//390;//200;
+                useIp = false;
+                Portfolio.Portfolio.INFO sendInput = new Portfolio.Portfolio.INFO();
+                sendInput.n = n;
+                sendInput.m = m;
+                sendInput.nfac = nfac;
+                sendInput.A = A;
+                sendInput.L = L;
+                sendInput.U = U; sendInput.delta = delta;
+                sendInput.value = value;
+                sendInput.valuel = valuel;
+                sendInput.rmin = rmin;
+                sendInput.rmax = rmax;
+                sendInput.alpha = alpha;
+                sendInput.initial = initial;
+                sendInput.buy = buy;
+                sendInput.sell = sell;
+                sendInput.names = names;
+                sendInput.useIP = useIp;
+                sendInput.nabs = nabs;
+                sendInput.A_abs = A_abs;
+                sendInput.L_abs = Abs_L;
+                sendInput.U_abs = Abs_U;
+                sendInput.mabs = mabs;
+                sendInput.I_a = I_A;
+                sendInput.bench = bench;
                 if (nfac > -1)
                 {
                     FPortfolio opt = new FPortfolio("");
@@ -1255,26 +1281,18 @@ namespace UseBlas
                     opt.FC = FC;
                     opt.nfac = nfac;
                     opt.bench = bench;
-                    opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                     alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
-                    var w = new double[n];
-                    var gradient = new double[n];
-                    BlasLike.dcopyvec(n, opt.wback, w);
-                    var utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient);
-                    ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
+                    var targetRisk = 0.02;
+                    sendInput.target = targetRisk;
+                    opt.DropRisk(basket, trades, targetRisk, sendInput);
                 }
                 else
                 {
                     Portfolio.Portfolio opt = new Portfolio.Portfolio("");
                     opt.Q = Q;
                     opt.bench = bench;
-                    opt.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                     alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
-                    var w = new double[n];
-                    var gradient = new double[n];
-                    BlasLike.dcopyvec(n, opt.wback, w);
-                    var utility = opt.PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient);
-                    ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
+                    var targetRisk = 0.1;
+                    sendInput.target = targetRisk;
+                    opt.DropRisk(basket, trades, targetRisk, sendInput);
                 }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
