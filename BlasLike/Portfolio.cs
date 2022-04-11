@@ -9,6 +9,98 @@ namespace Portfolio
 {
     public class Portfolio
     {
+        public class INFO
+        {
+            public int n; public int m; public int nfac; public double[] A; public double[] L; public double[] U; public
+               double delta; public double value; public double valuel; public
+             double rmin; public double rmax; public double[] alpha; public double[] initial; public double[] buy; public double[] sell; public
+             string[] names; public bool useIP; public int nabs; public double[] A_abs; public double[] L_abs; public double[] U_abs; public
+             int mabs; public int[] I_a;
+            public double kappa = 0.5;
+            public double[] bench;
+            public double target;
+            public int back = -1;
+        }
+        ///<summary> A function that returns risk - target risk. Use with Solve1D to do risk constraint</summary>
+        ///<param name="gam">guess for gamma (for return risk utility) or (gamma and kappa for cost risk utility)</param>
+        ///<param name="info">object for passing other information</param>
+        public double CalcRisk(double gam, object info)
+        {
+            INFO vars = (INFO)info;
+            vars.back = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, vars.L, vars.U, gam, gam, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
+                     alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a);
+            double[] www = (double[])wback.Clone();
+            if (vars.bench != null) BlasLike.dsubvec(vars.n, www, vars.bench, www);
+            var fix =nfixed;
+            nfixed = 0;
+            var backr = Math.Sqrt(Variance(www)) - vars.target;
+            nfixed = fix;
+            return backr;
+        }
+
+        ///<summary>Utility function that tries to drop assets to give desired basket and/or number of trades and also apply a risk constraint</summary>
+        ///<param name="basket">Desired number of non zero assets</param>
+        ///<param name="trades">Desired number of non zero trades</param>
+        ///<param name="info">object for passing other information</param>
+        ///<param name="targetRisk">Desired risk</param>
+        public void DropRisk(int basket, int trades, double targetRisk, object info)
+        {
+            var baskethere = 0;
+            var tradeshere = 0;
+            var sendInput = (Portfolio.INFO)info;
+            var newgamma = ActiveSet.Optimise.Solve1D(CalcRisk, 0, 1, 0, sendInput);
+            var back = sendInput.back;
+            if (newgamma > 10 || sendInput.back == 6) ColourConsole.WriteError("Infeasible target risk");
+            else
+            {
+                kappa = gamma = newgamma;
+                var riskh = CalcRisk(gamma, sendInput) + targetRisk;
+                back = sendInput.back;
+                if (back != 6) ColourConsole.WriteEmbeddedColourLine($"[green]risk for multiplier {gamma,20:e12} is[/green]\t[yellow]{riskh,20:e12}[/yellow]\t[cyan]target risk {targetRisk}[/cyan]");
+                else ColourConsole.WriteError("INFEASIBLE");
+                sendInput.useIP = false;
+                back = BasicOptimisation(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
+                 alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a);
+                var w = new double[sendInput.n];
+                var gradient = new double[sendInput.n];
+                BlasLike.dcopyvec(sendInput.n, wback, w);
+                var utility = PortfolioUtility(sendInput.n, gamma, kappa, sendInput.buy, sendInput.sell, sendInput.alpha, w, gradient, ref baskethere, ref tradeshere);
+                ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
+                if (back != 6) back = Dropper(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
+                     alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, basket, baskethere, trades, tradeshere);
+                if (back == 6) ColourConsole.WriteError("INFEASIBLE");
+                BlasLike.dcopyvec(sendInput.n, wback, w);
+                if (back != 6)
+                {
+                    BoundsSetToSign(sendInput.n, sendInput.L, sendInput.U, sendInput.initial, w, true);
+                    //Try to get the risk constraint correct if possible
+                    newgamma = ActiveSet.Optimise.Solve1D(CalcRisk, 0, 1, 0, sendInput);
+                    if (newgamma > 10 || sendInput.back == 6) ColourConsole.WriteError("Infeasible target risk");
+                    else
+                    {
+                        kappa = gamma = newgamma; riskh = CalcRisk(gamma, sendInput) + targetRisk;
+                        ColourConsole.WriteEmbeddedColourLine($"[green]risk for multiplier {gamma,20:e12} is[/green]\t[yellow]{riskh,20:e12}[/yellow]\t[cyan]target risk {targetRisk}[/cyan]");
+                    }
+                    if (newgamma > 10) newgamma = gamma;
+                    back = sendInput.back;
+                    if (back == 6) ColourConsole.WriteError("INFEASIBLE");
+                    else
+                    {
+                        kappa = gamma = newgamma;
+                        sendInput.useIP = true;
+                        BasicOptimisation(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
+                         alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a);
+                        w = new double[sendInput.n];
+                        gradient = new double[sendInput.n];
+                        BlasLike.dcopyvec(sendInput.n, wback, w);
+                        utility = PortfolioUtility(sendInput.n, gamma, kappa, sendInput.buy, sendInput.sell, sendInput.alpha, w, gradient, ref baskethere, ref tradeshere);
+                        ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
+                    }
+                }
+            }
+        }
+
+        ///<summary>object for passing other information for risk constrained optimisation via goal seek method</summary>
         public class DropKeep
         {
             ///<summary>Utility for weights in w</summary>
@@ -139,8 +231,8 @@ namespace Portfolio
                     utility = PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref basketnow, ref tradesnow, false);
                     ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
                 }
-                BlasLike.dcopyvec(L.Length,oldL,L);
-                BlasLike.dcopyvec(U.Length,oldU,U);
+                BlasLike.dcopyvec(L.Length, oldL, L);
+                BlasLike.dcopyvec(U.Length, oldU, U);
                 DropKeep[] overall = new DropKeep[0];
                 if (back != 6 && basket >= basketnow && trades >= tradesnow)
                 {
@@ -185,8 +277,8 @@ namespace Portfolio
                     while (back == 6)
                     {
                         fast = false;
-                BlasLike.dcopyvec(L.Length,oldL,L);
-                BlasLike.dcopyvec(U.Length,oldU,U);
+                        BlasLike.dcopyvec(L.Length, oldL, L);
+                        BlasLike.dcopyvec(U.Length, oldU, U);
                         interimBasket = basketnow - 1;
                         interimTrades = tradesnow - 1;
                         if (interimBasket < basket) interimBasket = basket;
@@ -251,8 +343,8 @@ namespace Portfolio
                     BlasLike.dcopyvec(n, wback, w);
                     utility = PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref basketnow, ref tradesnow, false);
                     ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
-                BlasLike.dcopyvec(L.Length,oldL,L);
-                BlasLike.dcopyvec(U.Length,oldU,U);
+                    BlasLike.dcopyvec(L.Length, oldL, L);
+                    BlasLike.dcopyvec(U.Length, oldU, U);
                     if (fast) interimBasket = (int)Math.Floor(basketnow * scale + (1.0 - scale) * basket);
                     else interimBasket = basketnow - 1;
                     if (fast) interimTrades = (int)Math.Floor(tradesnow * scale + (1.0 - scale) * trades);
@@ -281,8 +373,8 @@ namespace Portfolio
                         }
                     if (same) ColourConsole.WriteEmbeddedColourLine($"[cyan]DROPPING ORDER DID NOT CHANGE THIS TIME[/cyan]");
                 }
-                BlasLike.dcopyvec(L.Length,oldL,L);
-                BlasLike.dcopyvec(U.Length,oldU,U);
+                BlasLike.dcopyvec(L.Length, oldL, L);
+                BlasLike.dcopyvec(U.Length, oldU, U);
                 if (back != 6 && basketnow <= basket && tradesnow <= trades)
                 {
                     Array.Resize(ref overall, overall.Length + 1);
