@@ -36,8 +36,33 @@ namespace Portfolio
             public int count;
             public bool success;
         }
+        public double RoundInnerUtil(object info)
+        {
+            OptParamRound OP = (OptParamRound)info;
+            INFO sendInput = (INFO)OP.MoreInfo;
+            var w = new double[sendInput.n];
+            var gradient = new double[sendInput.n];
+            BlasLike.dcopyvec(sendInput.n, wback, w);
+            int baskethere = -1, tradeshere = -1;
+            return PortfolioUtility(sendInput.n, gamma, kappa, sendInput.buy, sendInput.sell, sendInput.alpha, w, gradient, ref baskethere, ref tradeshere,false);
+        }
+        public int RoundInnerOpt(object info)
+        {
+            OptParamRound OP = (OptParamRound)info;
+            INFO vars = (INFO)OP.MoreInfo;
+            double[] minholdlot = OP.minholdlot;
+            double[] mintradelot = OP.mintradelot;
+            OP.minholdlot = null;
+            OP.mintradelot = null;
+            OP.back = BACK = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, vars.L, vars.U, gamma, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
+                             alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a);
+            BlasLike.dcopyvec(vars.n,wback,OP.x);
+            return BACK;
+        }
         public delegate double UFUNC(int n, double gamma, double kappa, double[] buy, double[] sell, double[] alpha, double[] w, double[] gradient, ref int basket, ref int trades, bool print = true, double thresh = 1E-14);
         public delegate void GFUNC(int n, double[] w, double[] g);
+        public delegate int FUNCGEN(object i);
+        public delegate double UTILGEN(object i);
         public delegate int OFUNC(int n, int m, int nfac, double[] A, double[] L, double[] U, double gamma, double kappa, double delta, double value, double valuel, double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell, string[] names, bool useIP = true, int nabs = 0, double[] A_abs = null, double[] L_abs = null, double[] U_abs = null, int mabs = 0, int[] I_a = null);
         public class OptParamRound
         {
@@ -45,8 +70,8 @@ namespace Portfolio
             public int m;
             public double[] x;
             public double[] grad;
-            public UFUNC UtilityFunc;
-            public OFUNC OptFunc;//This must set back member
+            public UTILGEN UtilityFunc;
+            public FUNCGEN OptFunc;//This must set back member
             public GFUNC GradFunc;
             public object MoreInfo;
             public double[] lower;
@@ -196,7 +221,7 @@ namespace Portfolio
             }
             return n - bad;
         }
-        public void treenext(ref roundstep rstep, double[] initial, double[] minlot,
+        public void treenext(roundstep rstep, double[] initial, double[] minlot,
                                 double[] sizelot, bool passedfromthresh = false, double[] thresh = null)
         {
             OptParamRound info = rstep.info;
@@ -703,10 +728,10 @@ namespace Portfolio
             {
                 ColourConsole.WriteEmbeddedColourLine($"[yellow]stage {next.count}[/yellow][green] {rstep.nround} rounded[/green]");
                 //		_ASSERT(next.count<7);
-                treenext(ref next, initial, minlot, sizelot, passedfromthresh, thresh);
+                treenext(next, initial, minlot, sizelot, passedfromthresh, thresh);
             }
         }
-        public bool treestart(ref OptParamRound info, bool passedfromthresh, double[] initial, double[] minlot,
+        public bool treestart(OptParamRound info, bool passedfromthresh, double[] initial, double[] minlot,
                         double[] sizelot, double[] roundw, double[] thresh = null)
         {
             int i;
@@ -734,7 +759,7 @@ namespace Portfolio
             BlasLike.dcopyvec(n, x, next.w);
             BlasLike.dcopyvec(m + n, next.kL, next.L);
             BlasLike.dcopyvec(m + n, next.kU, next.U);
-            treenext(ref next, initial, minlot, sizelot, passedfromthresh, thresh);//すぎの木
+            treenext(next, initial, minlot, sizelot, passedfromthresh, thresh);//すぎの木
             start = next;
             prev = null;
             while (next != null)
@@ -777,22 +802,22 @@ namespace Portfolio
         }
 
         public void Rounding(int basket, int trades, double[] initial, double[] minlot,
-                                double[] sizelot, double[] roundw, double[] minholdlot, double[] mintradelot)
+                                double[] sizelot, double[] roundw, double[] minholdlot, double[] mintradelot, object info)
         {
             OptParamRound Op = new OptParamRound();
+            Op.MoreInfo = info;
             Op.basket = basket;
             Op.trades = trades;
-            Op.lower = L;
-            Op.m = m;
-            Op.MoreInfo = this;
-            Op.n = n;
-            Op.OptFunc = BasicOptimisation;
-            Op.upper = U;
-            Op.UtilityFunc = PortfolioUtility;
+            Op.lower = ((INFO)info).L;
+            Op.m = ((INFO)info).m;
+            Op.n = ((INFO)info).n;
+            Op.OptFunc = RoundInnerOpt;
+            Op.upper = ((INFO)info).U;
+            Op.UtilityFunc = RoundInnerUtil;
             Op.x = wback;
             Op.minholdlot = minholdlot;
             Op.mintradelot = mintradelot;
-            if (treestart(ref Op, false, initial, minlot, sizelot, roundw)) { BACK = 0; }
+            if (treestart(Op, false, initial, minlot, sizelot, roundw)) { BACK = 0; ((INFO)info).back = BACK; }
         }
 
         public class INFO
@@ -2177,7 +2202,7 @@ namespace Portfolio
             //            ActiveSet.Optimise.printV("optimal weights", WW, n);
             if (buysellI > 0 || longshortI > 0)
             {
-                if (Math.Abs(shortside + shortsideS) > BlasLike.lm_eps * 10)
+                if (Math.Abs(shortside + shortsideS) > BlasLike.lm_rooteps*2)
                     back = 6;
                 if (Math.Abs(utility - utilityA) > BlasLike.lm_rooteps)
                     back = 6;
