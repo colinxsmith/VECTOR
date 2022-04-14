@@ -44,7 +44,7 @@ namespace Portfolio
             var gradient = new double[sendInput.n];
             BlasLike.dcopyvec(sendInput.n, wback, w);
             int baskethere = -1, tradeshere = -1;
-            return PortfolioUtility(sendInput.n, gamma, kappa, sendInput.buy, sendInput.sell, sendInput.alpha, w, gradient, ref baskethere, ref tradeshere,false);
+            return PortfolioUtility(sendInput.n, gamma, kappa, sendInput.buy, sendInput.sell, sendInput.alpha, w, gradient, ref baskethere, ref tradeshere, false);
         }
         public int RoundInnerOpt(object info)
         {
@@ -54,9 +54,9 @@ namespace Portfolio
             double[] mintradelot = OP.mintradelot;
             OP.minholdlot = null;
             OP.mintradelot = null;
-            OP.back = BACK = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, vars.L, vars.U, gamma, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
+            OP.back = BACK = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, OP.lower, OP.upper, gamma, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
                              alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a);
-            BlasLike.dcopyvec(vars.n,wback,OP.x);
+            BlasLike.dcopyvec(vars.n, wback, OP.x);
             return BACK;
         }
         public delegate double UFUNC(int n, double gamma, double kappa, double[] buy, double[] sell, double[] alpha, double[] w, double[] gradient, ref int basket, ref int trades, bool print = true, double thresh = 1E-14);
@@ -220,6 +220,57 @@ namespace Portfolio
                 if (badi) bad++;
             }
             return n - bad;
+        }///<summary>Check how well x is rounded</summary>
+         ///<param name="n">Number of assets</param>
+         ///<param name="x">Rounded weights</param>
+         ///<param name="initial">Initial weights</param>
+         ///<param name="minlot">Bottom "ladder rung"</param>
+         ///<param name="sizelot">Other "ladder rungs"</param>
+         ///<param name="shake">Output shake[i] = -1 if asset i is rounded, otherwise i"</param>
+        public int roundcheck(int n, double[] x, double[] initial, double[] minlot, double[] sizelot, int[] shake)
+        {
+            var nround = 0;
+            for (var i = 0; i < n; ++i)
+            {
+                var init = initial != null ? initial[i] : 0;
+                var dd = 0L;
+                double nwL, nwU;
+                if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
+                {
+                    dd = (long)digitisei(x[i], init, minlot[i], sizelot[i]);
+                    if (x[i] > init)
+                    {
+                        nwL = digit2w(x[i], init, dd, minlot[i], sizelot[i]);
+                        nwU = digit2w(x[i], init, dd + 1, minlot[i], sizelot[i]);
+                    }
+                    else
+                    {
+                        nwL = digit2w(x[i], init, dd - 1, minlot[i], sizelot[i]);
+                        nwU = digit2w(x[i], init, dd, minlot[i], sizelot[i]);
+                    }
+                    if (Math.Abs(x[i] - nwL) < round_eps || Math.Abs(x[i] - nwU) < round_eps || Math.Abs(x[i] - init) < BlasLike.lm_eps)
+                    {
+                        shake[i] = -1;
+                        nround++;
+                    }
+                    else shake[i] = i;
+                }
+                else if (minlot != null && minlot[i] > BlasLike.lm_eps)
+                {
+                    if (Math.Abs(x[i] - init) >= minlot[i] || Math.Abs(x[i] - init) < BlasLike.lm_eps)
+                    {
+                        shake[i] = -1;
+                        nround++;
+                    }
+                    else shake[i] = i;
+                }
+                else
+                {
+                    shake[i] = -1;
+                    nround++;
+                }
+            }
+            return nround;
         }
         public void treenext(roundstep rstep, double[] initial, double[] minlot,
                                 double[] sizelot, bool passedfromthresh = false, double[] thresh = null)
@@ -227,7 +278,7 @@ namespace Portfolio
             OptParamRound info = rstep.info;
             int n = info.n;
             int m = info.m;
-            int firstlim = n/*(n<100)?n:5*/, roundy = n;
+            int firstlim = (n < 100) ? n : 7, roundy = n;
             int stuck;
             double[] x = info.x;//,c=info.c,H=info.H;
             double[] bound_error = new double[n];
@@ -478,7 +529,7 @@ namespace Portfolio
                         nwL = digit2w(x[i], init, dd - 1, minlot[i], sizelot[i]);
                         nwU = digit2w(x[i], init, dd, minlot[i], sizelot[i]);
                     }
-                    if (Math.Abs(x[i] - nwL) < round_eps || Math.Abs(x[i] - nwU) < round_eps || x[i] == init)
+                    if (Math.Abs(x[i] - nwL) < round_eps || Math.Abs(x[i] - nwU) < round_eps || Math.Abs(x[i] - init) < BlasLike.lm_eps)
                     {
                         bound_error[i] = i;
                         rstep.nround++;
@@ -501,9 +552,9 @@ namespace Portfolio
                 }
                 else
                 {
-                    if (thresh != null || Math.Abs(x[i]) >= thresh[i] || x[i] == 0)
+                    if ((thresh != null && Math.Abs(x[i]) >= thresh[i]) || Math.Abs(x[i]) < BlasLike.lm_eps)
                     {
-                        if (Math.Abs(x[i] - init) >= minlot[i] || x[i] == init)
+                        if (Math.Abs(x[i] - init) >= minlot[i] || Math.Abs(x[i] - init) < BlasLike.lm_eps)
                         {
                             bound_error[i] = i;
                             rstep.nround++;
@@ -578,7 +629,7 @@ namespace Portfolio
                         }
                     }
                     //info.AddLog((char*)"closeness %d %e %e %e\n",i,x[i]-nwL,x[i]-nwU,x[i]);
-                    if (Math.Abs(x[i] - nwL) < round_eps || Math.Abs(x[i] - nwU) < round_eps || x[i] == init)
+                    if (Math.Abs(x[i] - nwL) < round_eps || Math.Abs(x[i] - nwU) < round_eps || Math.Abs(x[i] - init) < BlasLike.lm_eps)
                     {
                         continue;
                         //				break;
@@ -632,9 +683,9 @@ namespace Portfolio
                 else
                 {
                     i = next.bound_order[j];
-                    if (thresh != null || Math.Abs(x[i]) >= thresh[i] || x[i] == 0)
+                    if ((thresh != null && Math.Abs(x[i]) >= thresh[i]) || Math.Abs(x[i]) < BlasLike.lm_eps)
                     {
-                        if (!(rstep.nround == n && Math.Abs(Math.Abs(x[i] - init) - minlot[i]) < BlasLike.lm_eps8) && ((Math.Abs(x[i] - init) >= Math.Abs(minlot[i]) || x[i] == init)))
+                        if (!(rstep.nround == n && Math.Abs(Math.Abs(x[i] - init) - minlot[i]) < BlasLike.lm_eps8) && ((Math.Abs(x[i] - init) >= Math.Abs(minlot[i]) || Math.Abs(x[i] - init) < BlasLike.lm_eps)))
                         {
                             continue;
                         }
@@ -696,19 +747,19 @@ namespace Portfolio
                     }
                     else if (Math.Abs(minlot[i]) - Math.Abs(x[i] - init) < Math.Abs(x[i] - init) * switch1)
                     {
-                        if (Math.Abs(minlot[i]) - Math.Abs(x[i] - init) < Math.Abs(x[i] - init) * switch1 && Math.Abs(thresh[i]) - Math.Abs(x[i]) < Math.Abs(x[i]) * switch1)
+                        if (Math.Abs(minlot[i]) - Math.Abs(x[i] - init) < Math.Abs(x[i] - init) * switch1 && (thresh != null && Math.Abs(thresh[i]) - Math.Abs(x[i]) < Math.Abs(x[i]) * switch1))
                         {
                             if (x[i] - init > 0)
-                                next.L[i] = Math.Max(Math.Min(rstep.kU[i], Math.Max(thresh[i], minlot[i] + init)), rstep.kL[i]);
+                                next.L[i] = Math.Max(Math.Min(rstep.kU[i], Math.Max(thresh != null ? thresh[i] : 0, minlot[i] + init)), rstep.kL[i]);
                             else
-                                next.U[i] = Math.Min(Math.Max(rstep.kL[i], Math.Min(-thresh[i], -minlot[i] + init)), rstep.kU[i]);
+                                next.U[i] = Math.Min(Math.Max(rstep.kL[i], Math.Min(thresh != null ? -thresh[i] : 0, -minlot[i] + init)), rstep.kU[i]);
                         }
                         else
                         {
                             if (x[i] - init > 0)
-                                next.L[i] = Math.Max(Math.Min(rstep.kU[i], Math.Max(thresh[i], init)), rstep.kL[i]);
+                                next.L[i] = Math.Max(Math.Min(rstep.kU[i], Math.Max(thresh != null ? thresh[i] : 0, init)), rstep.kL[i]);
                             else
-                                next.U[i] = Math.Min(Math.Max(rstep.kL[i], Math.Min(-thresh[i], init)), rstep.kU[i]);
+                                next.U[i] = Math.Min(Math.Max(rstep.kL[i], Math.Min(thresh != null ? -thresh[i] : 0, init)), rstep.kU[i]);
                         }
                     }
                     else
@@ -808,15 +859,26 @@ namespace Portfolio
             Op.MoreInfo = info;
             Op.basket = basket;
             Op.trades = trades;
-            Op.lower = ((INFO)info).L;
+            Op.lower = (double[])((INFO)info).L.Clone();
             Op.m = ((INFO)info).m;
             Op.n = ((INFO)info).n;
             Op.OptFunc = RoundInnerOpt;
-            Op.upper = ((INFO)info).U;
+            Op.upper = (double[])((INFO)info).U.Clone();
             Op.UtilityFunc = RoundInnerUtil;
-            Op.x = wback;
+            Op.x = (double[])wback.Clone();
             Op.minholdlot = minholdlot;
             Op.mintradelot = mintradelot;
+            var ffi = 0;
+            for (var i = 0; i < Op.n; ++i)
+            {
+                if (Op.lower[i] == Op.upper[i])
+                {
+                    minlot[i] = 0;
+                    sizelot[i] = 0;
+                    ffi++;
+                }
+            }
+            if (ffi > 0) ColourConsole.WriteEmbeddedColourLine($"[cyan]Changed lot for[/cyan] [red]{ffi}[/red][cyan] lots due to fixed bounds[/cyan]");
             if (treestart(Op, false, initial, minlot, sizelot, roundw)) { BACK = 0; ((INFO)info).back = BACK; }
         }
 
@@ -1443,8 +1505,8 @@ namespace Portfolio
                 BlasLike.dsetvec(WW.Length, 1.0 / n, WW);
                 for (var i = 0; i < n; ++i)
                 {
-                    WW[i + n] = initial[i] == 0 ? 0 : Math.Max(0, (initial[i] - 1.0 / n));
-                    if (bothsellbuy) WW[i + 2 * n] = initial[i] == 0 ? 0 : Math.Max(0, -(initial[i] - 1.0 / n));
+                    WW[i + n] = Math.Abs(initial[i]) < BlasLike.lm_eps ? 0 : Math.Max(0, (initial[i] - 1.0 / n));
+                    if (bothsellbuy) WW[i + 2 * n] = Math.Abs(initial[i]) < BlasLike.lm_eps ? 0 : Math.Max(0, -(initial[i] - 1.0 / n));
                 }
                 this.initial = initial;
                 this.w = WW;
@@ -1457,8 +1519,8 @@ namespace Portfolio
                 BlasLike.dsetvec(WW.Length, 1.0 / n, WW);
                 for (var i = 0; i < n; ++i)
                 {
-                    WW[i + n] = initial[i] == 0 ? 0 : Math.Max(0, (initial[i] - 1.0 / n));
-                    if (bothsellbuy) WW[i + 2 * n] = initial[i] == 0 ? 0 : Math.Max(0, -(initial[i] - 1.0 / n));
+                    WW[i + n] = Math.Abs(initial[i]) < BlasLike.lm_eps ? 0 : Math.Max(0, (initial[i] - 1.0 / n));
+                    if (bothsellbuy) WW[i + 2 * n] = Math.Abs(initial[i]) < BlasLike.lm_eps ? 0 : Math.Max(0, -(initial[i] - 1.0 / n));
                 }
                 this.w = WW;
                 WriteInputs("./optinput2");
@@ -1642,7 +1704,7 @@ namespace Portfolio
                 if (useLS && 0 > L[i] && 0 < U[i])
                 {
                     longshortI++;
-                    if (buysellI > 0 && initial[i] == 0) longshortbuysell++;
+                    if (buysellI > 0 && Math.Abs(initial[i]) < BlasLike.lm_eps) longshortbuysell++;
                 }
             }
             var longshortbuysellIndex = new int[longshortbuysell];
@@ -1662,7 +1724,7 @@ namespace Portfolio
                 if (buysellvars && (initial[i] > L[i] && initial[i] < U[i])) buysellIndex[buysellI++] = i;
                 if (useLS && 0 > L[i] && 0 < U[i])
                 {
-                    if (buysellI > 0 && initial[i] == 0) longshortbuysellIndex[longshortbuysell++] = i;
+                    if (buysellI > 0 && Math.Abs(initial[i]) < BlasLike.lm_eps) longshortbuysellIndex[longshortbuysell++] = i;
                     else longshortIndex[longshortI++] = i;
                 }
             }
@@ -2006,7 +2068,7 @@ namespace Portfolio
                 for (var i = 0; i < buysellI; ++i)
                 {
                     var ind = buysellIndex[i];
-                    WW[i + n] = initial[ind] == 0 ? 0 : Math.Max(0, (initial[ind] - WW[ind]));
+                    WW[i + n] = Math.Abs(initial[ind]) < BlasLike.lm_eps ? 0 : Math.Max(0, (initial[ind] - WW[ind]));
                 }
                 for (var i = 0; i < longshortI; ++i)
                 {
@@ -2202,7 +2264,7 @@ namespace Portfolio
             //            ActiveSet.Optimise.printV("optimal weights", WW, n);
             if (buysellI > 0 || longshortI > 0)
             {
-                if (Math.Abs(shortside + shortsideS) > BlasLike.lm_rooteps*2)
+                if (Math.Abs(shortside + shortsideS) > BlasLike.lm_rooteps * 2)
                     back = 6;
                 if (Math.Abs(utility - utilityA) > BlasLike.lm_rooteps)
                     back = 6;

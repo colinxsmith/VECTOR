@@ -1246,11 +1246,12 @@ namespace UseBlas
                       L[n - 20] = 0;//-1e-3;
                       U[n - 20] = 0;//1e-3;*/
                 bool useIp = true;
-                var minlot=new double[n];
-                var sizelot=new double[n];
-                var roundw=new double[n];
-                BlasLike.dsetvec(n,1e-5,minlot);
-                BlasLike.dsetvec(n,1e-4,sizelot);
+                var minlot = new double[n];
+                var sizelot = new double[n];
+                var roundw = new double[n];
+                var shake = new int[n];
+                BlasLike.dsetvec(n, 1e-3, minlot);
+                BlasLike.dsetvec(n, 1e-4, sizelot);
                 var basket = 396;
                 var trades = 10;//390;//200;
                 useIp = false;
@@ -1289,7 +1290,7 @@ namespace UseBlas
                     var targetRisk = 0.02;
                     sendInput.target = targetRisk;
                     opt.DropRisk(basket, trades, targetRisk, sendInput);
-                    opt.Rounding(basket,trades,initial,minlot,sizelot,roundw,null,null,sendInput);
+                    opt.Rounding(basket, trades, initial, minlot, sizelot, roundw, null, null, sendInput);
                 }
                 else
                 {
@@ -1298,10 +1299,15 @@ namespace UseBlas
                     opt.bench = bench;
                     var targetRisk = 0.1;
                     sendInput.target = targetRisk;
-                    opt.CalcRisk(0.5,sendInput);
+                    opt.CalcRisk(0.5, sendInput);
                     opt.DropRisk(basket, trades, targetRisk, sendInput);
-                    sendInput.useIP=false;
-                    opt.Rounding(basket,trades,initial,minlot,sizelot,roundw,null,null,sendInput);
+                    sendInput.useIP = false;
+                    opt.Rounding(basket, trades, initial, minlot, sizelot, roundw, null, null, sendInput);
+                    opt.roundcheck(n, roundw, initial, minlot, sizelot, shake);
+                    foreach (var i in shake)
+                    {
+                        if (i != -1) ColourConsole.WriteEmbeddedColourLine($"[green]{names[i]}[/green][red] was not rounded properly![/red]");
+                    }
                 }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
