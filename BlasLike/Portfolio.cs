@@ -2118,7 +2118,7 @@ namespace Portfolio
             for (var i = 0; i < n; ++i)
             {
                 var cc = 0;
-                if (longshortIndex_inverse[i] == -1 && UU[i] < 0)
+                if ((longshortIndex_inverse[i] == -1 || longshortbuysellIndex_inverse[i] ==-1)&& UU[i] < 0)
                     shortsideS -= WW[i];
                 if ((cc = longshortbuysellIndex_inverse[i]) != -1)
                     shortsideS += WW[buysellIndex_inverse[i] + n];
