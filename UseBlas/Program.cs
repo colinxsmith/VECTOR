@@ -1250,7 +1250,7 @@ namespace UseBlas
                 var sizelot = new double[n];
                 var roundw = new double[n];
                 var shake = new int[n];
-                BlasLike.dsetvec(n, 1e-3, minlot);
+                BlasLike.dsetvec(n, 1e-4, minlot);
                 BlasLike.dsetvec(n, 1e-4, sizelot);
                 var basket = 396;
                 var trades = 10;//390;//200;
@@ -1299,8 +1299,9 @@ namespace UseBlas
                     opt.bench = bench;
                     var targetRisk = 0.1;
                     sendInput.target = targetRisk;
+                    opt.gamma = opt.kappa = 0.5;
                     opt.CalcRisk(0.5, sendInput);
-                    opt.DropRisk(basket, trades, targetRisk, sendInput);
+                    // opt.DropRisk(basket, trades, targetRisk, sendInput);
                     sendInput.useIP = false;
                     opt.Rounding(basket, trades, initial, minlot, sizelot, roundw, null, null, sendInput);
                     opt.roundcheck(n, roundw, initial, minlot, sizelot, shake);
