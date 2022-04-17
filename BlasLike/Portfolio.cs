@@ -279,7 +279,7 @@ namespace Portfolio
             OptParamRound info = rstep.info;
             int n = info.n;
             int m = info.m;
-            int firstlim = (n < 100) ? n : n, roundy = n;
+            int firstlim = (n < 100) ? n : 7, roundy = n;
             int stuck;
             double[] x = info.x;//,c=info.c,H=info.H;
             double[] bound_error = new double[n];
