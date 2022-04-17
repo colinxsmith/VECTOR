@@ -206,16 +206,17 @@ namespace Portfolio
                             kk = (long)((Math.Abs(w[i] - init) - minlot[i]) / sizelot[i]);
                             if (Math.Abs(kk * sizelot[i] + minlot[i] - Math.Abs(w[i] - init)) > eps)
                             {
-                                badi = true;
+                                badi = true;ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red]{L[i]} {w[i]} {U[i]}");
                             }
                         }
                         else if (Math.Abs(w[i] - init) - Math.Abs(minlot[i]) < -eps && Math.Abs(w[i] - init) > eps)
-                            badi = true;
+                            {badi = true;ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red]{L[i]} {w[i]} {U[i]}");}
                     }
                 }
+                if (L[i] == U[i]) continue;
                 if (w[i] < L[i] - BlasLike.lm_eps8 || w[i] > U[i] + BlasLike.lm_eps8)
                 {
-                    badi = true;
+                    badi = true;ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red]{L[i]} {w[i]} {U[i]}");
                 }
                 if (badi) bad++;
             }
@@ -278,7 +279,7 @@ namespace Portfolio
             OptParamRound info = rstep.info;
             int n = info.n;
             int m = info.m;
-            int firstlim = (n < 100) ? n : 7, roundy = n;
+            int firstlim = (n < 100) ? n : n, roundy = n;
             int stuck;
             double[] x = info.x;//,c=info.c,H=info.H;
             double[] bound_error = new double[n];
@@ -565,7 +566,8 @@ namespace Portfolio
                     }
                     else
                     {
-                        bound_error[i] = n + Math.Max(Math.Abs(x[i]), (Math.Abs(x[i] - init)));
+                        if (rstep.kL[i] == rstep.kU[i]) { rstep.nround++; bound_error[i] = i; }
+                        else bound_error[i] = n + Math.Max(Math.Abs(x[i]), (Math.Abs(x[i] - init)));
                     }
                 }
             }
@@ -879,6 +881,11 @@ namespace Portfolio
                 }
             }
             if (ffi > 0) ColourConsole.WriteEmbeddedColourLine($"[cyan]Changed lot for[/cyan] [red]{ffi}[/red][cyan] lots due to fixed bounds[/cyan]");
+            for (var i = 0; i < Op.n; ++i)
+            {
+                if (Op.lower[i] >= 0 && minlot[i] >= Op.lower[i]) { ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {Op.lower[i]}[/green][red] due to minlot of {minlot[i]}[/red]"); Op.lower[i] = minlot[i]; }
+                if (Op.upper[i] <= 0 && -minlot[i] <= Op.upper[i]) { ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {Op.upper[i]}[/green][red] due to minlot of {-minlot[i]}[/red]"); Op.upper[i] = -minlot[i]; }
+            }
             if (treestart(Op, false, initial, minlot, sizelot, roundw)) { BACK = 0; ((INFO)info).back = BACK; }
         }
 
