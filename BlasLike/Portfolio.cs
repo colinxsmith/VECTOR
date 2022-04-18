@@ -206,17 +206,17 @@ namespace Portfolio
                             kk = (long)((Math.Abs(w[i] - init) - minlot[i]) / sizelot[i]);
                             if (Math.Abs(kk * sizelot[i] + minlot[i] - Math.Abs(w[i] - init)) > eps)
                             {
-                                badi = true;ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red]{L[i]} {w[i]} {U[i]}");
+                                badi = true;ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red] {L[i]} (w-init) {w[i]-init} {kk} {U[i]}");
                             }
                         }
                         else if (Math.Abs(w[i] - init) - Math.Abs(minlot[i]) < -eps && Math.Abs(w[i] - init) > eps)
-                            {badi = true;ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red]{L[i]} {w[i]} {U[i]}");}
+                            {badi = true;ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red] {L[i]} (w-init) {w[i]-init} base {U[i]}");}
                     }
                 }
                 if (L[i] == U[i]) continue;
                 if (w[i] < L[i] - BlasLike.lm_eps8 || w[i] > U[i] + BlasLike.lm_eps8)
                 {
-                    badi = true;ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red]{L[i]} {w[i]} {U[i]}");
+                    badi = true;ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red] {L[i]} (w) {w[i]} {U[i]}");
                 }
                 if (badi) bad++;
             }
@@ -578,7 +578,7 @@ namespace Portfolio
             ColourConsole.WriteEmbeddedColourLine($"[green]then  nround=[/green][cyan]{rstep.nround}[/cyan]");
             Ordering.Order.getorder(n, bound_error, next.bound_order, null);//printorder(n,next.bound_order);
                                                                             //	for(j=rstep.nround;j<min(n/4+rstep.nround,n);++j)
-            roundy = Math.Max(((int)(rstep.nround * .5 + n * .5)), (rstep.nround + 1));
+            roundy = n;//Math.Max(((int)(rstep.nround * .5 + n * .5)), (rstep.nround + 1));
             //	stuck=(rstep.prev&&(rstep.prev.nround==rstep.nround))?true:false;
             stuck = 0; roundstuck = rstep;
             while (roundstuck.prev != null && (roundstuck.prev.nround == roundstuck.nround))
