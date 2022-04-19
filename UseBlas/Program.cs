@@ -1185,7 +1185,7 @@ namespace UseBlas
                 opt.GainLossSetUp(n, tlen, DATA, names, R, lambda, useIP);
             }
             {
-                var filename = "costlogC";
+                var filename = "costlog";
                 Console.WriteLine("BUY/SELL and LONG/SHORT");
                 double[] SV = null, FC = null, FL = null, L = null, U = null, alpha = null, initial = null, A = null;
                 double[] buy = null, sell = null, bench = null, Q = null, A_abs = null, Abs_U = null, Abs_L = null;
@@ -1250,7 +1250,7 @@ namespace UseBlas
                 var sizelot = new double[n];
                 var roundw = new double[n];
                 var shake = new int[n];
-                BlasLike.dsetvec(n, 1e-6, minlot);
+                BlasLike.dsetvec(n, 1e-4, minlot);
                 BlasLike.dsetvec(n, 1e-4, sizelot);
                 var basket = 396;
                 var trades = 10;//390;//200;
@@ -1289,8 +1289,16 @@ namespace UseBlas
                     opt.bench = bench;
                     var targetRisk = 0.02;
                     sendInput.target = targetRisk;
-                    opt.DropRisk(basket, trades, targetRisk, sendInput);
+                    opt.CalcRisk(0.5, sendInput);
+                    opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
+                    // opt.DropRisk(basket, trades, targetRisk, sendInput);
+                    sendInput.useIP = false;
                     opt.Rounding(basket, trades, initial, minlot, sizelot, roundw, null, null, sendInput);
+                    opt.roundcheck(n, roundw, initial, minlot, sizelot, shake);
+                    foreach (var i in shake)
+                    {
+                        if (i != -1) ColourConsole.WriteEmbeddedColourLine($"[green]{names[i]}[/green][red] was not rounded properly! {roundw[i],26:e16}[/red]");
+                    }
                 }
                 else
                 {
@@ -1301,14 +1309,14 @@ namespace UseBlas
                     sendInput.target = targetRisk;
                     opt.gamma = opt.kappa = 0.5;
                     opt.CalcRisk(0.5, sendInput);
-                    opt.BoundsSetToSign(n,sendInput.L,sendInput.U,initial,opt.wback);
+                    opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
                     // opt.DropRisk(basket, trades, targetRisk, sendInput);
                     sendInput.useIP = false;
                     opt.Rounding(basket, trades, initial, minlot, sizelot, roundw, null, null, sendInput);
                     opt.roundcheck(n, roundw, initial, minlot, sizelot, shake);
                     foreach (var i in shake)
                     {
-                        if (i != -1) ColourConsole.WriteEmbeddedColourLine($"[green]{names[i]}[/green][red] was not rounded properly![/red]");
+                        if (i != -1) ColourConsole.WriteEmbeddedColourLine($"[green]{names[i]}[/green][red] was not rounded properly! {roundw[i],26:e16}[/red]");
                     }
                 }
             }

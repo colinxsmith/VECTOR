@@ -206,17 +206,17 @@ namespace Portfolio
                             kk = (long)((Math.Abs(w[i] - init) - minlot[i]) / sizelot[i]);
                             if (Math.Abs(kk * sizelot[i] + minlot[i] - Math.Abs(w[i] - init)) > eps)
                             {
-                                badi = true;ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red] {L[i]} (w-init) {w[i]-init} {kk} {U[i]}");
+                                badi = true; ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red] {L[i]} (w-init) {w[i] - init} {kk} {U[i]}");
                             }
                         }
                         else if (Math.Abs(w[i] - init) - Math.Abs(minlot[i]) < -eps && Math.Abs(w[i] - init) > eps)
-                            {badi = true;ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red] {L[i]} (w-init) {w[i]-init} base {U[i]}");}
+                        { badi = true; ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red] {L[i]} (w-init) {w[i] - init} base {U[i]}"); }
                     }
                 }
                 if (L[i] == U[i]) continue;
                 if (w[i] < L[i] - BlasLike.lm_eps8 || w[i] > U[i] + BlasLike.lm_eps8)
                 {
-                    badi = true;ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red] {L[i]} (w) {w[i]} {U[i]}");
+                    badi = true; ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red] {L[i]} (w) {w[i]} {U[i]}");
                 }
                 if (badi) bad++;
             }
@@ -277,9 +277,10 @@ namespace Portfolio
                                 double[] sizelot, bool passedfromthresh = false, double[] thresh = null)
         {
             OptParamRound info = rstep.info;
+            int maxstage = 20;
             int n = info.n;
             int m = info.m;
-            int firstlim = (n < 100) ? n : 7, roundy = n;
+            int firstlim = (n < 100) ? n : n, roundy = n;
             int stuck;
             double[] x = info.x;//,c=info.c,H=info.H;
             double[] bound_error = new double[n];
@@ -773,14 +774,14 @@ namespace Portfolio
                     }
                 }
             }
+            if (/*rstep.nround >= n - 3 &&*/ next.count > maxstage && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
             if (rstep.nround == n && next.count == 2 && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
             if (!next.success && rstep.nround == n && rstep.back <= 1)
                 next.success = true;
-            if (rstep.nround == n && passedfromthresh && next.count > 20) { rstep.util = info.UtilityFunc(info); return; }
+            if (rstep.nround == n && passedfromthresh && next.count > maxstage) { rstep.util = info.UtilityFunc(info); return; }
             if ((rstep.nround < n && next.count < (firstlim * 2) && !next.success) || (next.count < firstlim/*&&info.TimeOptData==0*/))
             {
                 ColourConsole.WriteEmbeddedColourLine($"[yellow]stage {next.count}[/yellow][green] {rstep.nround} rounded[/green]");
-                //		_ASSERT(next.count<7);
                 treenext(next, initial, minlot, sizelot, passedfromthresh, thresh);
             }
         }
@@ -815,8 +816,10 @@ namespace Portfolio
             treenext(next, initial, minlot, sizelot, passedfromthresh, thresh);//すぎの木
             start = next;
             prev = null;
+            var bestround = 0;
             while (next != null)
             {
+                bestround = Math.Max(bestround, next.nround);
                 prev = next;
                 next = next.next;
             }
@@ -828,7 +831,7 @@ namespace Portfolio
                 BlasLike.dcopyvec(n, prev.prev.w, roundw);
                 ColourConsole.WriteEmbeddedColourLine($"[green]{prev.prev.nround} Rounded at level[/green]\t[yellow]{prev.prev.count}[/yellow]");
             }
-            if (prev.nround == n && prev.back < 2)
+            if (prev.nround == bestround && prev.back < 2)
             {
                 BlasLike.dcopyvec(n, prev.w, roundw);
                 ulow = prev.util;
@@ -841,7 +844,7 @@ namespace Portfolio
                 {
                     BlasLike.dcopyvec(n, prev.w, roundw); nround = prev.nround;
                 }
-                if (prev.nround == n && ulow > prev.util && prev.back < 2)
+                if (prev.nround == bestround && ulow > prev.util && prev.back < 2)
                 {
                     BlasLike.dcopyvec(n, prev.w, roundw);
                     ulow = prev.util;
@@ -870,6 +873,7 @@ namespace Portfolio
             Op.x = (double[])wback.Clone();
             Op.minholdlot = minholdlot;
             Op.mintradelot = mintradelot;
+            Op.initial = initial;
             var ffi = 0;
             for (var i = 0; i < Op.n; ++i)
             {
@@ -881,11 +885,11 @@ namespace Portfolio
                 }
             }
             if (ffi > 0) ColourConsole.WriteEmbeddedColourLine($"[cyan]Changed lot for[/cyan] [red]{ffi}[/red][cyan] lots due to fixed bounds[/cyan]");
-            for (var i = 0; i < Op.n; ++i)
-            {
-                if (Op.lower[i] >= 0 && minlot[i] >= Op.lower[i]) { ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {Op.lower[i]}[/green][red] due to minlot of {minlot[i]}[/red]"); Op.lower[i] = minlot[i]; }
-                if (Op.upper[i] <= 0 && -minlot[i] <= Op.upper[i]) { ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {Op.upper[i]}[/green][red] due to minlot of {-minlot[i]}[/red]"); Op.upper[i] = -minlot[i]; }
-            }
+            /* for (var i = 0; i < Op.n; ++i) //Provides a good test, but not needed
+             {
+                 if (Op.lower[i] > 0 && minlot[i] >= Op.lower[i] - initial[i]) { ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {Op.lower[i]}[/green][red] due to minlot of {minlot[i]}[/red]"); Op.lower[i] = minlot[i]; }
+                 if (Op.upper[i] < 0 && -minlot[i] <= Op.upper[i] - initial[i]) { ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {Op.upper[i]}[/green][red] due to minlot of {-minlot[i]}[/red]"); Op.upper[i] = -minlot[i]; }
+             }*/
             if (treestart(Op, false, initial, minlot, sizelot, roundw)) { BACK = 0; ((INFO)info).back = BACK; }
         }
 
