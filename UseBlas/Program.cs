@@ -1293,7 +1293,24 @@ namespace UseBlas
                     opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
                     // opt.DropRisk(basket, trades, targetRisk, sendInput);
                     sendInput.useIP = false;
-                    opt.Rounding(basket, trades, initial, minlot, sizelot, roundw, null, null, sendInput);
+                 //   opt.Rounding(basket, trades, initial, minlot, sizelot, roundw, null, null, sendInput);
+                FPortfolio.KeepBest KB=new FPortfolio.KeepBest(n, sendInput.back, 0, BlasLike.lm_max, 0);
+                double[] naive=(double[])opt.wback.Clone();
+                     FPortfolio.   OptParamRound Op = new  FPortfolio. OptParamRound();
+            Op.MoreInfo = sendInput;
+            Op.basket = basket;
+            Op.trades = trades;
+            Op.lower = sendInput.L;
+            Op.m = m;
+            Op.n = n;
+            Op.OptFunc = opt.RoundInnerOpt;
+            Op.upper = sendInput.U;
+            Op.UtilityFunc = opt.RoundInnerUtil;
+            Op.x = (double[])opt.wback.Clone();
+            Op.minholdlot = null;
+            Op.mintradelot = null;
+            Op.initial = initial;
+                 opt.roundopt(Op,KB,L,U,L,U,initial,minlot,sizelot,0,naive,0,null,BlasLike.lm_max,true,null,null);
                     opt.roundcheck(n, roundw, initial, minlot, sizelot, shake);
                     foreach (var i in shake)
                     {
