@@ -96,7 +96,7 @@ namespace Portfolio
         }
         double unround = 1e60;
         double round_eps = BlasLike.lm_eps8;
-        double digitisei(double w, double initial, double minl, double sizl, double minlb = 0.0)
+        public double digitisei(double w, double initial, double minl, double sizl, double minlb = 0.0)
         {
             double ww = w - initial;
             double wa = Math.Abs(ww);
@@ -150,7 +150,7 @@ namespace Portfolio
             }
             return digit;
         }
-        double digit2w(double w, double initial, double d, double minl, double sizl, double minlb = 0.0)
+        public double digit2w(double w, double initial, double d, double minl, double sizl, double minlb = 0.0)
         {
             d = check_digit(d);
             //Find nearest integer to d[i] (from digitise) and work out corresponding weight
@@ -774,7 +774,7 @@ namespace Portfolio
                     }
                 }
             }
-            if (/*rstep.nround >= n - 3 &&*/ next.count > maxstage && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
+            if (rstep.nround >= n - 3 && next.count > maxstage && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
             if (rstep.nround == n && next.count == 2 && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
             if (!next.success && rstep.nround == n && rstep.back <= 1)
                 next.success = true;
@@ -885,11 +885,25 @@ namespace Portfolio
                 }
             }
             if (ffi > 0) ColourConsole.WriteEmbeddedColourLine($"[cyan]Changed lot for[/cyan] [red]{ffi}[/red][cyan] lots due to fixed bounds[/cyan]");
-            /* for (var i = 0; i < Op.n; ++i) //Provides a good test, but not needed
-             {
-                 if (Op.lower[i] > 0 && minlot[i] >= Op.lower[i] - initial[i]) { ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {Op.lower[i]}[/green][red] due to minlot of {minlot[i]}[/red]"); Op.lower[i] = minlot[i]; }
-                 if (Op.upper[i] < 0 && -minlot[i] <= Op.upper[i] - initial[i]) { ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {Op.upper[i]}[/green][red] due to minlot of {-minlot[i]}[/red]"); Op.upper[i] = -minlot[i]; }
-             }*/
+            for (var i = 0; i < Op.n; ++i)
+            {
+                if (Op.lower[i] == Op.upper[i]) continue;
+                var init = initial != null ? initial[i] : 0.0;
+                if (Op.lower[i] > init)
+                {
+                    var dd = (long)digitisei(Op.lower[i], init, minlot[i], sizelot[i]);
+                    var newL = digit2w(Op.lower[i], init, dd+1, minlot[i], sizelot[i]);
+                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {Op.lower[i]}[/green][red] to {newL}[/red]");
+                    Op.lower[i] = newL;
+                }
+                else if (Op.upper[i] < init)
+                {
+                    var dd = (long)digitisei(Op.upper[i], init, minlot[i], sizelot[i]);
+                    var newU = digit2w(Op.upper[i], init, dd-1, minlot[i], sizelot[i]);
+                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {Op.upper[i]}[/green][red] to {newU}[/red]");
+                    Op.upper[i] = newU;
+                }
+            }
             if (treestart(Op, false, initial, minlot, sizelot, roundw)) { BACK = 0; ((INFO)info).back = BACK; }
         }
 
