@@ -67,6 +67,18 @@ namespace Portfolio
         {
             double rounderror = BlasLike.lm_eps8;
             OptParamRound OP = (OptParamRound)info;
+            var ffi = 0;
+            for (var i = 0; i < OP.n; ++i)
+            {
+                if (OP.lower[i] == OP.upper[i])
+                {
+                    minlot[i] = 0;
+                    sizelot[i] = 0;
+                    ffi++;
+                }
+            }
+            if (ffi > 0) ColourConsole.WriteEmbeddedColourLine($"[cyan]Changed lot for[/cyan] [red]{ffi}[/red][cyan] lots due to fixed bounds[/cyan]");
+            
             int n = OP.n;
             int m = OP.m;
             double[] lower = OP.lower;
@@ -124,23 +136,26 @@ namespace Portfolio
                 if (minlot1 == null)
                 {
                     for (kk = 0; kk < n; ++kk)
-                    {
+                    {if(OP.lower[kk]==OP.upper[kk])continue;
                         init = initial != null ? initial[kk] : 0;
                         score[kk] = Math.Abs(Math.Abs(x[kk] - init) - minlot[kk]) / minlot[kk];
+                        if(Math.Abs(x[kk] - init)<score_test)score[kk]=0;
                     }
                 }
                 else
                 {
                     for (kk = 0; kk < n; ++kk)
-                    {
+                    {if(OP.lower[kk]==OP.upper[kk])continue;
                         init = initial != null ? initial[kk] : 0;
                         if (Math.Abs(minlot[kk]) > BlasLike.lm_eps8)
                         {
                             score[kk] = Math.Abs(x[kk] - minlot[kk]) / Math.Abs(minlot[kk]);
+                        if(Math.Abs(x[kk] - init)<score_test)score[kk]=0;
                         }
                         if (Math.Abs(minlot1[kk]) > BlasLike.lm_eps8 && score[kk] >= score_test)
                         {
                             score[kk] = Math.Abs(x[kk] - minlot1[kk]) / Math.Abs(minlot1[kk]);
+                        if(Math.Abs(x[kk] - init)<score_test)score[kk]=0;
                         }
                         if (Math.Abs(minlot[kk]) <= BlasLike.lm_eps8 && Math.Abs(minlot1[kk]) <= BlasLike.lm_eps8)
                         {
@@ -152,7 +167,7 @@ namespace Portfolio
                 }
                 //		RoundOrder(n,&score[0],&ovec[0],&dropbad[0]);
                 for (kk = 0; kk < n; ++kk)
-                {
+                {if(OP.lower[kk]==OP.upper[kk]){nround++;continue;}
                     //			kbranch=ovec[kk];
                     kbranch = kk; dd = -1;
                     init = initial != null ? initial[kbranch] : 0;
@@ -377,7 +392,7 @@ namespace Portfolio
                                         }
                                     }*/
                     }
-                    ColourConsole.WriteEmbeddedColourLine("[red]{nround}[/red] rounded at stage [green]{stage}[/green] [cyan](out of {n}) utility {utility}[/cyan]");
+                    ColourConsole.WriteEmbeddedColourLine($"[red]{nround}[/red] rounded at stage [green]{stage}[/green] [cyan](out of {n}) utility {utility}[/cyan]");
                     if (firsttime) BlasLike.dcopyvec(n, x, KB.first);
 
                     if (nround == KB.nround && Math.Abs(utility - KB.utility) <= BlasLike.lm_eps)
@@ -405,7 +420,7 @@ namespace Portfolio
                         bool doopt = false;
                         double dw;
                         for (kbranch = 0; kbranch < n; ++kbranch)
-                        {
+                        {if(OP.lower[kbranch]==OP.upper[kbranch])continue;
                             init = initial != null ? initial[kbranch] : 0; dd = -1;
                             sizl = sizelot != null ? sizelot[kbranch] : 0;
                             minl1 = minlot1 != null ? minlot1[kbranch] : 0;
@@ -517,7 +532,7 @@ namespace Portfolio
                         else ColourConsole.WriteEmbeddedColourLine($"[green]Stage {stage} New start after infeasibility with {more} steps.[/green]");
                         bad = false;
                         for (kbranch = 0; kbranch < n; ++kbranch)
-                        {
+                        {if(OP.lower[kbranch]==OP.upper[kbranch]){continue;}
                             if (x[kbranch] > U[kbranch])
                             {
                                 ColourConsole.WriteEmbeddedColourLine($"bounds on {kbranch} [red]{x[kbranch]}[/red] [green]({L[kbranch]},{U[kbranch]}[/green])");
@@ -540,7 +555,7 @@ namespace Portfolio
                         doreorder = false;
                         doit = 0;
                         for (kbranch = 0; kbranch < n; ++kbranch)
-                        {
+                        {if(OP.lower[kbranch]==OP.upper[kbranch]){continue;}
                             init = initial != null ? initial[kbranch] : 0;
                             sizl = sizelot != null ? sizelot[kbranch] : 0;
                             minl1 = minlot1 != null ? minlot1[kbranch] : 0;
@@ -560,7 +575,7 @@ namespace Portfolio
                         else
                             breakno = breakmax;
                         for (kk = 0; kk < n; ++kk)
-                        {
+                        {if(OP.lower[kk]==OP.upper[kk]){continue;}
                             kbranch = doreorder ? updownorder[kk] : kk; dd = -1;
                             init = initial != null ? initial[kbranch] : 0;
                             sizl = sizelot != null ? sizelot[kbranch] : 0;
@@ -837,6 +852,7 @@ namespace Portfolio
                 else if (wa < minl) { digit = 0/*wa/minl*/; }
                 else if (sizl < BlasLike.lm_eps) { digit = unround; }
                 else if (wa >= minl) { digit = one + (wa - minl) / sizl; }
+                digit=Math.Floor(digit);
                 if (ww < 0) { digit = -digit; }
             }
             else
@@ -860,8 +876,7 @@ namespace Portfolio
 
                 digit = check_digit(digit);
             }
-
-            return digit;
+return digit;
         }
         double check_digit(double digit)
         {
