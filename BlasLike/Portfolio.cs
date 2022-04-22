@@ -841,6 +841,208 @@ namespace Portfolio
             ColourConsole.WriteEmbeddedColourLine($"[green]{nround}[/green]\t[yellow]stocks were rounded properly[/yellow]");
             return back;
         }
+public void Thresh(object info,double[] initial,double[] minlot,
+						double[] roundw,double[] minlot1)
+{
+	OptParamRound OP=(OptParamRound)info;
+	int n=OP.n;
+	int m=OP.m;
+	double[] lower=OP.lower;
+	double[] upper=OP.upper;
+	double[] Lkeep=new double[n+m],Ukeep=new double[n+m],naive=new double[n];
+    double[] LL=new double[0];
+    double[] UU=new double[0];
+	KeepBest KB(n);
+	dcopyvec(n,OP.x,KB.w);
+	KB.printstream=OP.Getlogprint();
+BlasLike.	dcopyvec(n+m,lower,Lkeep);
+BlasLike.	dcopyvec(n+m,upper,Ukeep);
+	bool changed=false;
+	int i,nround;
+	int back=0;
+	bool bad=false;
+	for(i=0;i<n;++i)
+	{
+		double init=initial!=null?initial[i]:0;
+		if(upper[i] +BlasLike.lm_eps8 < minlot[i]+init) 
+		{
+			if(init<upper[i]){upper[i]=Math.Min(upper[i],(Math.Max(init,lower[i])));changed=true;}
+			else if (init>upper[i]){upper[i]=Math.Min(upper[i],(Math.Max(init-minlot[i],lower[i])));changed=true;}
+		}
+		if(lower[i] -BlasLike.lm_eps8 > init-minlot[i]) 
+		{
+			if(init>lower[i]){lower[i]=Math.Max(lower[i],(Math.Min(init,upper[i])));changed=true;}
+			else if(init < lower[i]){lower[i]=Math.Max(lower[i],(Math.Min(init+minlot[i],upper[i])));changed=true;}
+		}
+		if(lower[i]>upper[i])bad=true;
+	}
+	if(minlot1!=null)
+	{
+		for(i=0;i<n;++i)
+		{
+			double init=initial!=null?initial[i]:0;
+			if(upper[i] +BlasLike.lm_eps8 < minlot1[i]) 
+			{
+				if(0<upper[i]){upper[i]=Math.Min(upper[i],(Math.Max(0,lower[i])));changed=true;}
+				else if(0>upper[i]){upper[i]=Math.Min(upper[i],(Math.Max(-minlot1[i],lower[i])));changed=true;}
+			}
+			if(lower[i] -BlasLike.lm_eps8 > -minlot1[i]) 
+			{
+				if(0>lower[i]){lower[i]=Math.Max(lower[i],(Math.Min(0,upper[i])));changed=true;}
+				else if(0<lower[i]){lower[i]=Math.Max(lower[i],(Math.Min(minlot1[i],upper[i])));changed=true;}
+			}
+			if(init!=0&&(init-minlot[i]) < -minlot1[i]&&lower[i] -BlasLike.lm_eps8>Math.Min((init-minlot[i]),-minlot1[i]))
+			{
+				if(minlot1[i]>init){lower[i]=Math.Max(lower[i],Math.Max(init+minlot[i],minlot1[i]));changed=true;}
+				else{lower[i]=Math.Max(lower[i],init);changed=true;}
+			}
+			if(init!=0&&(init-minlot[i]) < -minlot1[i]&&upper[i] +BlasLike.lm_eps8<Math.Max(init+minlot[i],minlot1[i]))
+			{
+				if(-minlot1[i]<init){upper[i]=Math.Min(upper[i],Math.Min((init-minlot[i]),-minlot1[i]));changed=true;}
+				else{upper[i]=Math.Min(upper[i],init);changed=true;}
+			}
+			if(lower[i]>upper[i])bad=true;
+		}
+	}
+	if(changed)
+	{
+		ColourConsole.WriteInfo($"Changed bounds due to high threshold and reoptimise");
+        Array.Resize(ref LL,n+m);
+        Array.Resize(ref UU,n+m);
+	BlasLike.	dcopyvec(n+m,Lkeep,LL);
+		BlasLike.	dcopyvec(n+m,Ukeep,UU);
+		BlasLike.	dcopyvec(n+m,lower,Lkeep);
+	BlasLike.		dcopyvec(n+m,upper,Ukeep);
+	}
+	if(!bad)
+	{
+		OP.OptFunc(info);
+		back=OP.back;
+		if(back<2)
+		{
+			if(minlot1!=null)
+			{
+				if(treestart(OP,true,initial,minlot,0,KB.w)){OP.back=0;}
+			BlasLike.	dcopyvec(n,KB.w,roundw);
+			}
+			else
+			{
+				threshopt(OP,KB,lower,upper,&Lkeep[0],&Ukeep[0],initial,minlot,0,&naive[0],minlot1);
+			BlasLike.	dcopyvec(n,KB.w,roundw);
+			BlasLike.		dcopyvec(n,KB.w,OP.x);//To get U1 correct!
+//				if(treestart(OP,true,initial,minlot,0,KB.w,minlot1)){OP.back=0;}
+//				dcopyvec(n,KB.w,roundw);
+			}
+			nround=thresh_check(n,roundw,initial,&Lkeep[0],&Ukeep[0],minlot,minlot1,rounderror);
+			if(nround!=n)OP.back=2;//Infeasible
+		}
+		double U1=OP.UtilityFunc(info);
+		OP.AddLog((char*)"Start from optimum back=%d U=%20.8f\n",OP.back,U1);
+		if(initial!=null)
+		{
+			if(LL!=null)
+			{
+			BlasLike.	dcopyvec(n+m,LL,lower);
+			BlasLike.	dcopyvec(n+m,UU,upper);
+			}
+			else
+			{
+			BlasLike.	dcopyvec(n+m,Lkeep,lower);
+			BlasLike.	dcopyvec(n+m,Ukeep,upper);
+			}
+			for(i=0;i<n;++i)
+			{
+				lower[i]=Math.Max((initial[i]-1e-8),lower[i]);
+				upper[i]=Math.Min((initial[i]+1e-8),upper[i]);
+				if(lower[i]>upper[i])bad=true;
+			}
+			if(!bad)OP.OptFunc(info);
+		BlasLike.	dcopyvec(n+m,Lkeep,lower);
+		BlasLike.	dcopyvec(n+m,Ukeep,upper);
+//			OP.AddLog((char*)"back %d bad %d\n",OP.back,bad);
+			if(!bad && OP.back<2)
+			{
+//			OP.AddLog((char*)"back %d bad %d\n",OP.back,bad);
+		BlasLike.		dcopyvec(n,initial,OP.x);
+				if(minlot!=null)
+				{
+					if(treestart(OP,true,initial,minlot,0,KB.w)){OP.back=0;}
+				}
+				else
+				{
+					threshopt(info,KB,lower,upper,&Lkeep[0],&Ukeep[0],initial,minlot,0,&naive[0],minlot1);
+//					if(treestart(OP,true,initial,minlot,0,KB.w,minlot1)){OP.back=0;}
+				}
+				nround=thresh_check(n,KB.w,initial,&Lkeep[0],&Ukeep[0],minlot,minlot1,rounderror);
+				if(nround!=n)OP.back=2;//Infeasible
+				dcopyvec(n,KB.w,OP.x);//To get U2 correct!
+				double U2=OP.UtilityFunc(info);
+				OP.AddLog((char*)"Start from initial back=%d U=%20.8f\n",OP.back,U2);
+				if(U2>U1||OP.back>1)
+				{
+			BlasLike.		dcopyvec(n,roundw,OP.x);
+			BlasLike.		dcopyvec(n,roundw,KB.w);
+					OP.back=0;
+				}
+				else
+				{
+					back=OP.back;
+				}
+			}
+			else
+			{
+				OP.back=back;
+		BlasLike.		dcopyvec(n,roundw,OP.x);
+		BlasLike.		dcopyvec(n,roundw,KB.w);
+				bad=false;
+			}
+		}
+	}
+	if(LL!=null)//We musn't lose the original bounds
+	{
+BlasLike.		dcopyvec(n+m,&LL[0],lower);
+BlasLike.		dcopyvec(n+m,&UU[0],upper);
+	}
+	else
+	{
+BlasLike.		dcopyvec(n+m,&Lkeep[0],lower);
+BlasLike.		dcopyvec(n+m,&Ukeep[0],upper);
+	}
+	if(bad)
+	{
+		OP.back=2;return;
+	}
+	if(KB.back!=-1)KB.Message();
+BlasLike.	dcopyvec(n,KB.w,roundw);
+	if(OP.back==25)OP.back=0;
+	if(OP.back<2)
+	{
+		double compromise =BlasLike. lm_rooteps; bad = false;
+		for(i=0;i<n;++i)
+		{
+			double init=initial!=null?initial[i]:0;
+			if(Math.Abs(Math.Abs(roundw[i])-Math.Abs(round_weight(roundw[i],init,minlot[i],0))) > compromise && Math.Abs(Math.Abs(roundw[i]-init)-minlot[i])>compromise)
+			{
+				if (init!=0) { OP.AddLog((char*)"Threshold constraint failed for trade %d; threshold is %e\n", i + 1, roundw[i] - init);  }
+				else { OP.AddLog((char*)"Threshold constraint failed for stock %d; threshold is %e\n", i + 1, roundw[i] - init);  }
+				if (init!=0) { printf((char*)"Threshold constraint failed for trade %d; threshold is %e\n", i + 1, roundw[i] - init); bad = true; }
+				else { printf((char*)"Threshold constraint failed for stock %d; threshold is %e\n", i + 1, roundw[i] - init); bad = true; }
+			}
+			if(minlot1!=null&&Math.Abs(Math.Abs(roundw[i])-Math.Abs(round_weight(roundw[i],0,minlot1[i],0))) > compromise && Math.Abs(Math.Abs(roundw[i])-minlot1[i])>compromise)
+			{
+				OP.AddLog((char*)"Threshold constraint failed for stock %d; threshold is %e\n", i + 1, roundw[i]);
+				printf((char*)"Threshold constraint failed for stock %d; threshold is %e\n", i + 1, roundw[i]); bad = true;
+			}
+		}
+		nround=thresh_check(n,roundw,initial,lower,upper,minlot,minlot1,rounderror);
+		OP.AddLog((char*)"first  check %d\n",nround);
+		nround=thresh_check(n,roundw,initial,lower,upper,minlot,minlot1,compromise);
+		OP.AddLog((char*)"second check %d\n",nround);
+	}
+	if(bad)OP.back=2;
+}
+
+
 
         public void Rounding(int basket, int trades, double[] initial, double[] minlot,
                                 double[] sizelot, double[] roundw, double[] minholdlot, double[] mintradelot, object info)
