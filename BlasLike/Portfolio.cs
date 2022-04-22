@@ -96,43 +96,28 @@ namespace Portfolio
         }
         double unround = 1e60;
         double round_eps = BlasLike.lm_eps8;
-        public double digitisei(double w, double initial, double minl, double sizl, double minlb = 0.0)
+        ///<summary>Return the position of w in the roundlot ladder. If this is a whole number, then w is on a rung</summary>
+        ///<param name="w">weight</param>
+        ///<param name="initial">initial weight</param>
+        ///<param name="minl">minimum lot</param>
+        ///<param name="sizl">subsequent lot</param>
+        public double digitisei(double w, double initial, double minl, double sizl)
         {
             double ww = w - initial;
             double wa = Math.Abs(ww);
-            double digit = 0, one = 1.0, p5 = 0.5;
-            if (minlb == 0)
-            {
-                if (wa < BlasLike.lm_eps) { digit = 0; }
-                else if (wa < minl) { digit = 0/*wa/minl*/; }
-                else if (sizl < BlasLike.lm_eps) { digit = unround; }
-                else if (wa >= minl) { digit = one + (wa - minl) / sizl; }
-                if (ww < 0) { digit = -digit; }
-            }
-            else
-            {//This isn't right or needed!
-                if (ww < minl && ww > minlb)
-                {
-                    double init_check = (minl + minlb) * p5;
-                    if (Math.Abs(init_check - initial) < 1e-15)
-                    {
-                        digit = initial;
-                    }
-                    else if (Math.Abs(init_check) < 1e-15)
-                    {
-                        digit = 0;
-                    }
-                }
-                else { digit = unround; }
-            }
+            double digit = 0, one = 1.0;
+            if (wa < BlasLike.lm_eps) { digit = 0; }
+            else if (wa < minl) { digit = 0/*wa/minl*/; }
+            else if (sizl < BlasLike.lm_eps) { digit = unround; }
+            else if (wa >= minl) { digit = one + (wa - minl) / sizl; }
+            if (ww < 0) { digit = -digit; }
             if (Math.Abs(digit) != unround)
             {
-
                 digit = check_digit(digit);
             }
-
             return digit;
         }
+        ///<summary>Return a whole number if digit is whole number plus/minus something very small</summary>
         double check_digit(double digit)
         {
             double delta = Math.Abs(Math.Abs(digit - (long)(digit)) - 1);
@@ -182,9 +167,9 @@ namespace Portfolio
             return roundw;
         }
 
-        double round_weight(double x, double initial, double minl, double sizel, double minlb = 0.0)
+        double round_weight(double x, double initial, double minl, double sizel)
         {
-            return digit2w(x, initial, digitisei(x, initial, minl, sizel, minlb), minl, sizel, minlb);
+            return digit2w(x, initial, digitisei(x, initial, minl, sizel), minl, sizel);
         }
         public int round_check(int n, double[] w, double[] initial, double[] L, double[] U, double[] minlot, double[] sizelot, double eps = 0.0)
         {
@@ -892,14 +877,28 @@ namespace Portfolio
                 if (Op.lower[i] > init)
                 {
                     var dd = (long)digitisei(Op.lower[i], init, minlot[i], sizelot[i]);
-                    var newL = digit2w(Op.lower[i], init, dd+1, minlot[i], sizelot[i]);
+                    var newL = digit2w(Op.lower[i], init, dd + 1, minlot[i], sizelot[i]);
                     ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {Op.lower[i]}[/green][red] to {newL}[/red]");
                     Op.lower[i] = newL;
                 }
                 else if (Op.upper[i] < init)
                 {
                     var dd = (long)digitisei(Op.upper[i], init, minlot[i], sizelot[i]);
-                    var newU = digit2w(Op.upper[i], init, dd-1, minlot[i], sizelot[i]);
+                    var newU = digit2w(Op.upper[i], init, dd - 1, minlot[i], sizelot[i]);
+                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {Op.upper[i]}[/green][red] to {newU}[/red]");
+                    Op.upper[i] = newU;
+                }
+                else if (Op.lower[i] == init)//Probably does nothing
+                {
+                    var dd = (long)digitisei(Op.lower[i], init, minlot[i], sizelot[i]);
+                    var newL = digit2w(Op.lower[i], init, dd, minlot[i], sizelot[i]);
+                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {Op.lower[i]}[/green][red] to {newL}[/red]");
+                    Op.lower[i] = newL;
+                }
+                else if (Op.upper[i] == init)//Probably does nothing
+                {
+                    var dd = (long)digitisei(Op.upper[i], init, minlot[i], sizelot[i]);
+                    var newU = digit2w(Op.upper[i], init, dd, minlot[i], sizelot[i]);
                     ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {Op.upper[i]}[/green][red] to {newU}[/red]");
                     Op.upper[i] = newU;
                 }
