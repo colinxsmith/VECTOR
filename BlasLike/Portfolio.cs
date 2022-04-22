@@ -18,6 +18,49 @@ namespace Portfolio
                 a[i] = p;
             }
         }
+        public class KeepBest
+        {
+            public int back;
+            public int nround;
+            public int n;
+            public int stage;
+            public int stuck;
+            public double[] w;
+            public double[] oldw;
+            public double[] first;
+            public double utility;
+            public bool print;
+            public KeepBest(int n, int back=-1,int nround=0,double util=0,int stage=0)
+            {
+                if(util==0)util=BlasLike.lm_max;
+                this.back = back;
+                this.nround = nround;
+                this.utility = util;
+                this.n = n;
+                this.stage = stage;
+                w = new double[n];
+                oldw = new double[n];
+                first = new double[n];
+                stuck = 0;
+                print = true;
+            }
+            public void Setw(double[] w, int back, int nround, double utility, int stage)
+            {
+                BlasLike.dcopyvec(n, w, this.w);
+                this.back = back;
+                this.utility = utility;
+                this.nround = nround;
+                this.stage = stage;
+            }
+            public void Message()
+            {
+                if (print)
+                {
+                    ColourConsole.WriteEmbeddedColourLine($"[red]code {back},[/red] [green]utility {utility},[/green] [cyan]number rounded {nround}[/cyan]");
+                }
+            }
+        }
+        
         public class roundstep
         {
             public double util;
@@ -852,7 +895,7 @@ public void Thresh(object info,double[] initial,double[] minlot,
 	double[] Lkeep=new double[n+m],Ukeep=new double[n+m],naive=new double[n];
     double[] LL=new double[0];
     double[] UU=new double[0];
-	KeepBest KB(n);
+	KeepBest KB=new   KeepBest(n);
 	dcopyvec(n,OP.x,KB.w);
 	KB.printstream=OP.Getlogprint();
 BlasLike.	dcopyvec(n+m,lower,Lkeep);
