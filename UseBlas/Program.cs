@@ -1255,7 +1255,15 @@ namespace UseBlas
                 var basket = 396;
                 var trades = 10;//390;//200;
                 useIp = false;
-                Portfolio.Portfolio.INFO sendInput = new Portfolio.Portfolio.INFO();
+                Portfolio.Portfolio.OptParamRound Op=new Portfolio.Portfolio.OptParamRound();
+                Portfolio.Portfolio.INFO sendInput = new Portfolio.Portfolio.INFO();           Op.basket = basket;
+            Op.trades = trades;
+            Op.lower = L;
+            Op.m =m;
+            Op.n = n;
+            Op.upper = U;
+            Op.minholdlot = null;
+            Op.mintradelot = null;
                 sendInput.n = n;
                 sendInput.m = m;
                 sendInput.nfac = nfac;
@@ -1293,8 +1301,10 @@ namespace UseBlas
                     opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
                     // opt.DropRisk(basket, trades, targetRisk, sendInput);
                     sendInput.useIP = false;
-                    opt.Rounding(basket, trades, initial, minlot, sizelot, roundw, null, null, sendInput);
-                    opt.roundcheck(n, roundw, initial, minlot, sizelot, shake);
+                    //opt.Rounding(basket, trades, initial, minlot, sizelot, roundw, null, null, sendInput);
+                    //opt.roundcheck(n, roundw, initial, minlot, sizelot, shake);
+                    Op.x=opt.wback;
+                    opt.Thresh(Op,initial,minlot,roundw,null);
                     foreach (var i in shake)
                     {
                         if (i != -1) ColourConsole.WriteEmbeddedColourLine($"[green]{names[i]}[/green][red] was not rounded properly! {roundw[i],26:e16}[/red]");

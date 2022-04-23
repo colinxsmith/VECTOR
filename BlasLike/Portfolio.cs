@@ -180,7 +180,7 @@ namespace Portfolio
         }
         public double digit2w(double w, double initial, double d, double minl, double sizl, double minlb = 0.0)
         {
-            d = check_digit(d);
+            if (Math.Abs(d) != unround)d = check_digit(d);
             //Find nearest integer to d[i] (from digitise) and work out corresponding weight
             double roundw = w, p5 = 0.5;
             long p = 0, lone = 1;
@@ -1594,6 +1594,55 @@ public void Thresh(object info,double[] initial,double[] minlot,
 						double[] roundw,double[] minlot1)
 {double rounderror=BlasLike.	lm_eps8;
 	OptParamRound OP=(OptParamRound)info;
+            OP.OptFunc = RoundInnerOpt;
+            OP.UtilityFunc = RoundInnerUtil;
+ int i;
+            OP.initial = initial;
+            var ffi = 0;
+            for ( i = 0; i < OP.n; ++i)
+            {
+                if (OP.lower[i] == OP.upper[i])
+                {
+                    minlot[i] = 0;
+                    ffi++;
+                }
+            }
+            if (ffi > 0) ColourConsole.WriteEmbeddedColourLine($"[cyan]Changed lot for[/cyan] [red]{ffi}[/red][cyan] lots due to fixed bounds[/cyan]");
+            for (i = 0; i < OP.n; ++i)
+            {
+                if (OP.lower[i] == OP.upper[i]) continue;
+                var init = initial != null ? initial[i] : 0.0;
+                if (OP.lower[i] > init)
+                {
+                    var dd = (long)digitisei(OP.lower[i], init, minlot[i], 0);
+                    if(Math.Abs(dd)==unround)continue;
+                    var newL = digit2w(OP.lower[i], init, dd + 1, minlot[i], 0);
+                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {OP.lower[i]}[/green][red] to {newL}[/red]");
+                    OP.lower[i] = newL;
+                }
+                else if (OP.upper[i] < init)
+                {
+                    var dd = (long)digitisei(OP.upper[i], init, minlot[i], 0);
+                    if(Math.Abs(dd)==unround)continue;
+                    var newU = digit2w(OP.upper[i], init, dd - 1, minlot[i], 0);
+                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {OP.upper[i]}[/green][red] to {newU}[/red]");
+                    OP.upper[i] = newU;
+                }
+                else if (OP.lower[i] == init)//Probably does nothing
+                {
+                    var dd = (long)digitisei(OP.lower[i], init, minlot[i], 0);
+                    var newL = digit2w(OP.lower[i], init, dd, minlot[i], 0);
+                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {OP.lower[i]}[/green][red] to {newL}[/red]");
+                    OP.lower[i] = newL;
+                }
+                else if (OP.upper[i] == init)//Probably does nothing
+                {
+                    var dd = (long)digitisei(OP.upper[i], init, minlot[i], 0);
+                    var newU = digit2w(OP.upper[i], init, dd, minlot[i], 0);
+                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {OP.upper[i]}[/green][red] to {newU}[/red]");
+                    OP.upper[i] = newU;
+                }
+            }
 	int n=OP.n;
 	int m=OP.m;
 	double[] lower=OP.lower;
@@ -1607,7 +1656,7 @@ BlasLike.	dcopyvec(n,OP.x,KB.w);
 BlasLike.	dcopyvec(n+m,lower,Lkeep);
 BlasLike.	dcopyvec(n+m,upper,Ukeep);
 	bool changed=false;
-	int i,nround;
+	int nround;
 	int back=0;
 	bool bad=false;
 	for(i=0;i<n;++i)
