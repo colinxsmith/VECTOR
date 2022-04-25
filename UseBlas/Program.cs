@@ -1250,7 +1250,8 @@ namespace UseBlas
                 var sizelot = new double[n];
                 var roundw = new double[n];
                 var shake = new int[n];
-                BlasLike.dsetvec(n, 1e-4, minlot);
+                for(var i=0;i<n;++i)shake[i]=-1;
+                BlasLike.dsetvec(n, 1e-5, minlot);
                 BlasLike.dsetvec(n, 1e-4, sizelot);
                 var basket = 396;
                 var trades = 10;//390;//200;
@@ -1298,13 +1299,14 @@ namespace UseBlas
                     var targetRisk = 0.02;
                     sendInput.target = targetRisk;
                     opt.CalcRisk(0.5, sendInput);
-                    opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
+                   // opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
                     // opt.DropRisk(basket, trades, targetRisk, sendInput);
                     sendInput.useIP = false;
                     //opt.Rounding(basket, trades, initial, minlot, sizelot, roundw, null, null, sendInput);
                     //opt.roundcheck(n, roundw, initial, minlot, sizelot, shake);
                     Op.x=opt.wback;
-                    opt.Thresh(Op,initial,minlot,roundw,null);
+                    Op.MoreInfo=sendInput;
+                    opt.Thresh(Op,initial,minlot,roundw,minlot);
                     foreach (var i in shake)
                     {
                         if (i != -1) ColourConsole.WriteEmbeddedColourLine($"[green]{names[i]}[/green][red] was not rounded properly! {roundw[i],26:e16}[/red]");

@@ -1614,21 +1614,16 @@ public void Thresh(object info,double[] initial,double[] minlot,
                 var init = initial != null ? initial[i] : 0.0;
                 if (OP.lower[i] > init)
                 {
-                    var dd = (long)digitisei(OP.lower[i], init, minlot[i], 0);
-                    if(Math.Abs(dd)==unround)continue;
-                    var newL = digit2w(OP.lower[i], init, dd + 1, minlot[i], 0);
-                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {OP.lower[i]}[/green][red] to {newL}[/red]");
-                    OP.lower[i] = newL;
+                    if(OP.lower[i]<minlot[i]+init){
+                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {OP.lower[i]}[/green][red] to {minlot[i]+init}[/red]");
+                    OP.lower[i]=minlot[i]+init;}
                 }
                 else if (OP.upper[i] < init)
-                {
-                    var dd = (long)digitisei(OP.upper[i], init, minlot[i], 0);
-                    if(Math.Abs(dd)==unround)continue;
-                    var newU = digit2w(OP.upper[i], init, dd - 1, minlot[i], 0);
-                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {OP.upper[i]}[/green][red] to {newU}[/red]");
-                    OP.upper[i] = newU;
+                {if (OP.upper[i] >-minlot[i]+init){
+                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {OP.upper[i]}[/green][red] to {-minlot[i]+init}[/red]");
+                    OP.upper[i]=-minlot[i]+init;}
                 }
-                else if (OP.lower[i] == init)//Probably does nothing
+              /*  else if (OP.lower[i] == init)//Probably does nothing
                 {
                     var dd = (long)digitisei(OP.lower[i], init, minlot[i], 0);
                     var newL = digit2w(OP.lower[i], init, dd, minlot[i], 0);
@@ -1641,7 +1636,7 @@ public void Thresh(object info,double[] initial,double[] minlot,
                     var newU = digit2w(OP.upper[i], init, dd, minlot[i], 0);
                     ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {OP.upper[i]}[/green][red] to {newU}[/red]");
                     OP.upper[i] = newU;
-                }
+                }*/
             }
 	int n=OP.n;
 	int m=OP.m;
@@ -1661,16 +1656,24 @@ BlasLike.	dcopyvec(n+m,upper,Ukeep);
 	bool bad=false;
 	for(i=0;i<n;++i)
 	{
-		double init=initial!=null?initial[i]:0;
+		double init=initial!=null?initial[i]:0,newb;
 		if(upper[i] +BlasLike.lm_eps8 < minlot[i]+init) 
 		{
-			if(init<upper[i]){upper[i]=Math.Min(upper[i],(Math.Max(init,lower[i])));changed=true;}
-			else if (init>upper[i]){upper[i]=Math.Min(upper[i],(Math.Max(init-minlot[i],lower[i])));changed=true;}
+			if(init<upper[i]){newb=Math.Min(upper[i],(Math.Max(init,lower[i])));changed=true;
+            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+            upper[i]=newb;}
+			else if (init>upper[i]){newb=Math.Min(upper[i],(Math.Max(init-minlot[i],lower[i])));
+            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+            changed=true;upper[i]=newb;}
 		}
 		if(lower[i] -BlasLike.lm_eps8 > init-minlot[i]) 
 		{
-			if(init>lower[i]){lower[i]=Math.Max(lower[i],(Math.Min(init,upper[i])));changed=true;}
-			else if(init < lower[i]){lower[i]=Math.Max(lower[i],(Math.Min(init+minlot[i],upper[i])));changed=true;}
+			if(init>lower[i]){newb=Math.Max(lower[i],(Math.Min(init,upper[i])));changed=true;
+            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+            lower[i]=newb;}
+			else if(init < lower[i]){newb=Math.Max(lower[i],(Math.Min(init+minlot[i],upper[i])));changed=true;
+            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+            lower[i]=newb;}
 		}
 		if(lower[i]>upper[i])bad=true;
 	}
@@ -1678,26 +1681,42 @@ BlasLike.	dcopyvec(n+m,upper,Ukeep);
 	{
 		for(i=0;i<n;++i)
 		{
-			double init=initial!=null?initial[i]:0;
+			double init=initial!=null?initial[i]:0,newb;
 			if(upper[i] +BlasLike.lm_eps8 < minlot1[i]) 
 			{
-				if(0<upper[i]){upper[i]=Math.Min(upper[i],(Math.Max(0,lower[i])));changed=true;}
-				else if(0>upper[i]){upper[i]=Math.Min(upper[i],(Math.Max(-minlot1[i],lower[i])));changed=true;}
+				if(0<upper[i]){newb=Math.Min(upper[i],(Math.Max(0,lower[i])));changed=true;
+            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+            upper[i]=newb;}
+				else if(0>upper[i]){newb=Math.Min(upper[i],(Math.Max(-minlot1[i],lower[i])));changed=true;
+            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+            upper[i]=newb;}
 			}
 			if(lower[i] -BlasLike.lm_eps8 > -minlot1[i]) 
 			{
-				if(0>lower[i]){lower[i]=Math.Max(lower[i],(Math.Min(0,upper[i])));changed=true;}
-				else if(0<lower[i]){lower[i]=Math.Max(lower[i],(Math.Min(minlot1[i],upper[i])));changed=true;}
+				if(0>lower[i]){newb=Math.Max(lower[i],(Math.Min(0,upper[i])));changed=true;
+            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+            lower[i]=newb;}
+				else if(0<lower[i]){newb=Math.Max(lower[i],(Math.Min(minlot1[i],upper[i])));changed=true;
+            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+            lower[i]=newb;}
 			}
 			if(init!=0&&(init-minlot[i]) < -minlot1[i]&&lower[i] -BlasLike.lm_eps8>Math.Min((init-minlot[i]),-minlot1[i]))
 			{
-				if(minlot1[i]>init){lower[i]=Math.Max(lower[i],Math.Max(init+minlot[i],minlot1[i]));changed=true;}
-				else{lower[i]=Math.Max(lower[i],init);changed=true;}
+				if(minlot1[i]>init){newb=Math.Max(lower[i],Math.Max(init+minlot[i],minlot1[i]));changed=true;
+            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+            lower[i]=newb;}
+				else{newb=Math.Max(lower[i],init);changed=true;
+            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+            lower[i]=newb;}
 			}
 			if(init!=0&&(init-minlot[i]) < -minlot1[i]&&upper[i] +BlasLike.lm_eps8<Math.Max(init+minlot[i],minlot1[i]))
 			{
-				if(-minlot1[i]<init){upper[i]=Math.Min(upper[i],Math.Min((init-minlot[i]),-minlot1[i]));changed=true;}
-				else{upper[i]=Math.Min(upper[i],init);changed=true;}
+				if(-minlot1[i]<init){newb=Math.Min(upper[i],Math.Min((init-minlot[i]),-minlot1[i]));changed=true;
+            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+            upper[i]=newb;}
+				else{newb=Math.Min(upper[i],init);changed=true;
+            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+            upper[i]=newb;}
 			}
 			if(lower[i]>upper[i])bad=true;
 		}
