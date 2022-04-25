@@ -1299,7 +1299,7 @@ namespace UseBlas
                     var targetRisk = 0.02;
                     sendInput.target = targetRisk;
                     opt.CalcRisk(0.5, sendInput);
-                   // opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
+                    opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
                     // opt.DropRisk(basket, trades, targetRisk, sendInput);
                     sendInput.useIP = false;
                     //opt.Rounding(basket, trades, initial, minlot, sizelot, roundw, null, null, sendInput);
@@ -1307,6 +1307,7 @@ namespace UseBlas
                     Op.x=opt.wback;
                     Op.MoreInfo=sendInput;
                     opt.Thresh(Op,initial,minlot,roundw,minlot);
+                    opt.thresh_check(n, roundw, initial, L, U, minlot, minlot, BlasLike.lm_eps8,shake);
                     foreach (var i in shake)
                     {
                         if (i != -1) ColourConsole.WriteEmbeddedColourLine($"[green]{names[i]}[/green][red] was not rounded properly! {roundw[i],26:e16}[/red]");

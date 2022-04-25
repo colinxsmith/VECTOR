@@ -30,9 +30,9 @@ namespace Portfolio
             public double[] first;
             public double utility;
             public bool print;
-            public KeepBest(int n, int back=-1,int nround=0,double util=0,int stage=0)
+            public KeepBest(int n, int back = -1, int nround = 0, double util = 0, int stage = 0)
             {
-                if(util==0)util=BlasLike.lm_max;
+                if (util == 0) util = BlasLike.lm_max;
                 this.back = back;
                 this.nround = nround;
                 this.utility = util;
@@ -60,7 +60,7 @@ namespace Portfolio
                 }
             }
         }
-        
+
         public class roundstep
         {
             public double util;
@@ -97,9 +97,38 @@ namespace Portfolio
             double[] mintradelot = OP.mintradelot;
             OP.minholdlot = null;
             OP.mintradelot = null;
+            if (minholdlot != null && mintradelot != null)
+            {
+                double[] w = new double[n];
+                Thresh(OP, vars.initial, mintradelot, w, minholdlot); vars.back = (OP.back == 2 ? 6 : OP.back);
+                BlasLike.dcopyvec(vars.n, w, wback);
+            }
+            else if (minholdlot != null)
+            {
+                double[] w = new double[n];
+                Thresh(OP, null, minholdlot, w, null); vars.back = (OP.back == 2 ? 6 : OP.back);
+                BlasLike.dcopyvec(vars.n, w, wback);
+            }
+            else if (mintradelot != null)
+            {
+                double[] w = new double[n];
+                Thresh(OP, vars.initial, mintradelot, w, null); vars.back = (OP.back == 2 ? 6 : OP.back);
+                BlasLike.dcopyvec(vars.n, w, wback);
+            }
             OP.back = BACK = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, OP.lower, OP.upper, gamma, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
                              alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a);
-            BlasLike.dcopyvec(vars.n, wback, OP.x);
+
+            if (BACK == 0)
+            {
+                int i;
+                for (i = 0; i < vars.n; ++i)
+                {
+                    if (Math.Abs(wback[i] - vars.L[i]) < 1e-7)
+                        wback[i] = vars.L[i];
+                    else if (Math.Abs(wback[i] - vars.U[i]) < 1e-7)
+                        wback[i] = vars.U[i];
+                }
+            }
             return BACK;
         }
         public delegate double UFUNC(int n, double gamma, double kappa, double[] buy, double[] sell, double[] alpha, double[] w, double[] gradient, ref int basket, ref int trades, bool print = true, double thresh = 1E-14);
@@ -180,7 +209,7 @@ namespace Portfolio
         }
         public double digit2w(double w, double initial, double d, double minl, double sizl, double minlb = 0.0)
         {
-            if (Math.Abs(d) != unround)d = check_digit(d);
+            if (Math.Abs(d) != unround) d = check_digit(d);
             //Find nearest integer to d[i] (from digitise) and work out corresponding weight
             double roundw = w, p5 = 0.5;
             long p = 0, lone = 1;
@@ -884,726 +913,730 @@ namespace Portfolio
             ColourConsole.WriteEmbeddedColourLine($"[green]{nround}[/green]\t[yellow]stocks were rounded properly[/yellow]");
             return back;
         }
-public int thresh_check(int n,double[] w,double[] initial,double[] L,double[] U,double[] min_trade,double[] min_hold=null,double eps=0)
-{if(eps==0)eps=BlasLike.lm_rooteps;
-	int i,bad;
-	bool badi;
-	double init;
-	for(i=0,bad=0;i<n;++i)
-	{
-		init=initial!=null?initial[i]:0;
-		badi=false;
-		if(Math.Abs(Math.Abs(w[i])-Math.Abs(round_weight(w[i],init,min_trade[i],0))) > eps && Math.Abs(Math.Abs(w[i]-init)-min_trade[i])>eps)
-		{
-			badi=true;
-		}
-		if(min_hold!=null&&Math.Abs(Math.Abs(w[i])-Math.Abs(round_weight(w[i],0,min_hold[i],0))) > eps && Math.Abs(Math.Abs(w[i])-min_hold[i])>eps)
-		{
-			badi=true;
-		}
-		if(w[i]<L[i]-BlasLike. lm_eps8||w[i]>U[i]+BlasLike. lm_eps8)
-		{
-			badi=true;
-		}
-		if(badi)bad++;
-	}
-	return n-bad;
-}
+        public int thresh_check(int n, double[] w, double[] initial, double[] L, double[] U, double[] min_trade, double[] min_hold = null, double eps = 0,int []shake=null)
+        {
+            if (eps == 0) eps = BlasLike.lm_rooteps;
+            int i, bad;
+            bool badi;
+            double init;
+            for (i = 0, bad = 0; i < n; ++i)
+            {
+                init = initial != null ? initial[i] : 0;
+                badi = false;
+                if (Math.Abs(Math.Abs(w[i]) - Math.Abs(round_weight(w[i], init, min_trade[i], 0))) > eps && Math.Abs(Math.Abs(w[i] - init) - min_trade[i]) > eps)
+                {
+                    badi = true;if(shake!=null)shake[i]=i;
+                }
+                if (min_hold != null && Math.Abs(Math.Abs(w[i]) - Math.Abs(round_weight(w[i], 0, min_hold[i], 0))) > eps && Math.Abs(Math.Abs(w[i]) - min_hold[i]) > eps)
+                {
+                    badi = true;if(shake!=null)shake[i]=i;
+                }
+                if (w[i] < L[i] - BlasLike.lm_eps8 || w[i] > U[i] + BlasLike.lm_eps8)
+                {
+                    badi = true;if(shake!=null)shake[i]=i;
+                }
+                if (badi) bad++;
+            }
+            return n - bad;
+        }
 
-public int threshopt(object info,KeepBest KB,double[] L,
-						double[] U,double[] Lfirst,double[] Ufirst,double[] initial,
-						double[] minlot,int stage,double[] naive,double[] minlot1=null,
-						int rounded=0,double oldutil=0,bool nopt=false)
-{double rounderror=BlasLike.	lm_eps8;
-	OptParamRound OP=(OptParamRound)info;
-	int n=OP.n;
-	int m=OP.m;
-	double[] lower=OP.lower;
-	double[] upper=OP.upper;
-	double[] x=OP.x;
-	double[] updowntest=new double[0];
-	int [] updownorder=new int[0];
-	byte[] updownbad=new byte[0];
-	double score_test=BlasLike.lm_eps;
-//	if(stage>5)score_test*=1.0/stage;
-	if(OP.back>1)return OP.back;
-	bool firsttime=(L==lower);
-	double utility;
-	int nround=0;
-	double[] Lnext=new double[0];
-	double[] Unext=new double[0];
+        public int threshopt(object info, KeepBest KB, double[] L,
+                                double[] U, double[] Lfirst, double[] Ufirst, double[] initial,
+                                double[] minlot, int stage, double[] naive, double[] minlot1 = null,
+                                int rounded = 0, double oldutil = 0, bool nopt = false)
+        {
+            double rounderror = BlasLike.lm_eps8;
+            OptParamRound OP = (OptParamRound)info;
+            int n = OP.n;
+            int m = OP.m;
+            double[] lower = OP.lower;
+            double[] upper = OP.upper;
+            double[] x = OP.x;
+            double[] updowntest = new double[0];
+            int[] updownorder = new int[0];
+            byte[] updownbad = new byte[0];
+            double score_test = BlasLike.lm_eps;
+            //	if(stage>5)score_test*=1.0/stage;
+            if (OP.back > 1) return OP.back;
+            bool firsttime = (L == lower);
+            double utility;
+            int nround = 0;
+            double[] Lnext = new double[0];
+            double[] Unext = new double[0];
 
-	if(firsttime)
-	{
-        Array.Resize(ref Lnext,n+m);
-        Array.Resize(ref Unext,n+m);
-		L=Lnext;
-		U=Unext;
-	BlasLike.	dcopyvec(n+m,lower,L);
-	BlasLike.	dcopyvec(n+m,upper,U);
-		utility=OP.UtilityFunc(info);
-	}
-	else
-	{
-	BlasLike.	dcopyvec(n+m,L,lower);
-	BlasLike.		dcopyvec(n+m,U,upper);
-		if(!nopt){OP.OptFunc(info);}
-		else{ColourConsole.WriteInfo($"Did not need to optimise here");}
-		utility=OP.UtilityFunc(info);
-	}
+            if (firsttime)
+            {
+                Array.Resize(ref Lnext, n + m);
+                Array.Resize(ref Unext, n + m);
+                L = Lnext;
+                U = Unext;
+                BlasLike.dcopyvec(n + m, lower, L);
+                BlasLike.dcopyvec(n + m, upper, U);
+                utility = OP.UtilityFunc(info);
+            }
+            else
+            {
+                BlasLike.dcopyvec(n + m, L, lower);
+                BlasLike.dcopyvec(n + m, U, upper);
+                if (!nopt) { OP.OptFunc(info); }
+                else { ColourConsole.WriteInfo($"Did not need to optimise here"); }
+                utility = OP.UtilityFunc(info);
+            }
 
-/*
-	{
-		FILE*INTERDATA=fopen((char*)"interdata",(char*)"a");
-		if(INTERDATA)
-		{
-			fprintf(INTERDATA,(char*)"++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++%d\n",OP.back);
-			for(int i=0;i<n;++i)
-			{
-				fprintf(INTERDATA,(char*)"%3d %30.16e %30.16e %30.16e\n",i+1,lower[i],x[i],upper[i]);
-			}
-			fclose(INTERDATA);
-		}
-	}
-*/
-	int kbranch=-11111,kk;
-	double dd=-1,init,nw;//sizl,minl1,minl3,minl4;
-	double breakpoint=1;
-	double breduce=.8;
-	int doit=0,maxset=20;
-	bool doreorder=false;
+            /*
+                {
+                    FILE*INTERDATA=fopen((char*)"interdata",(char*)"a");
+                    if(INTERDATA)
+                    {
+                        fprintf(INTERDATA,(char*)"++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++%d\n",OP.back);
+                        for(int i=0;i<n;++i)
+                        {
+                            fprintf(INTERDATA,(char*)"%3d %30.16e %30.16e %30.16e\n",i+1,lower[i],x[i],upper[i]);
+                        }
+                        fclose(INTERDATA);
+                    }
+                }
+            */
+            int kbranch = -11111, kk;
+            double dd = -1, init, nw;//sizl,minl1,minl3,minl4;
+            double breakpoint = 1;
+            double breduce = .8;
+            int doit = 0, maxset = 20;
+            bool doreorder = false;
 
-	bool ok=false;
-	if(OP.back <= 1)
-	{
-		nround=0;
-		ok=true;
-	BlasLike.	dcopyvec(n,x,KB.oldw);
-//		std::valarray<double>score(n);
-//		score=lm_max;
-//		for(kk=0;kk<n;++kk)
-//		{
-//			init=initial?initial[kk]:0;
-//			score[kk]=Math.Abs(Math.Abs(x[kk]-init)-minlot[kk])/minlot[kk];
-//		}
-		for(kk=0;kk<n;++kk)
-		{
-			kbranch=kk;dd=-1;
-			init=initial!=null?initial[kbranch]:0;
-/*			if(score[kbranch]<score_test&&(Math.Abs(x[kbranch]-init)<minlot[kbranch]))
-			{
-//					printf((char*)"Discarding %-.8e %-.8e score %-.8e this time\n",x[kbranch]-init,minlot[kbranch],score[kbranch]);
-				if(score[kbranch]<1e-15)nround++;
-				continue;
-			}*/
-			if(Math.Abs(x[kbranch]-init) <= minlot[kbranch]+rounderror && (minlot1!=null&&Math.Abs(x[kbranch])<=minlot1[kbranch]+rounderror))
-			{
-/*				dd=digitisei(x[kbranch],init,minlot[kbranch],0,0);
-				nw=naive[kbranch]=digit2w(x[kbranch],init,dd,minlot[kbranch],0,0);
-				if(Math.Abs(nw)<minlot1[kbranch])
-				{*/
-					if(x[kbranch]>0){nw=naive[kbranch]=Math.Max((digit2w(x[kbranch],init,1,minlot[kbranch],0,0)),(digit2w(x[kbranch],0,1,minlot1[kbranch],0,0)));}
-					else{nw=naive[kbranch]=Math.Min((digit2w(x[kbranch],init,-1,minlot[kbranch],0,0)),(digit2w(x[kbranch],0,1,minlot1[kbranch],0,0)));}
-//				}
-				if(nw < Lfirst[kbranch] -BlasLike.	lm_eps)
-				{
-					naive[kbranch]=digit2w(x[kbranch],init,dd+1,minlot[kbranch],0,0);
-					ColourConsole.WriteEmbeddedColourLine($"Rounded weight increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch]-nw}[/magenta])\n");
-				}
-				else if(nw > Ufirst[kbranch] + BlasLike. lm_eps)
-				{
-					naive[kbranch]=digit2w(x[kbranch],init,dd-1,minlot[kbranch],0,0);
-					ColourConsole.WriteEmbeddedColourLine($"Rounded weight decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch]-nw}[/red])\n");
-				}
-			}
-			else if(Math.Abs(x[kbranch]-init) <= minlot[kbranch]+rounderror)
-			{
-				dd=digitisei(x[kbranch],init,minlot[kbranch],0);
-				nw=naive[kbranch]=digit2w(x[kbranch],init,dd,minlot[kbranch],0,0);
-				if(minlot1!=null&&Math.Abs(nw)<minlot1[kbranch])
-				{
-					if(x[kbranch]>0){nw=naive[kbranch]=Math.Max((digit2w(x[kbranch],init,1,minlot[kbranch],0,0)),(digit2w(x[kbranch],0,1,minlot1[kbranch],0,0)));}
-					else{nw=naive[kbranch]=Math.Min((digit2w(x[kbranch],init,-1,minlot[kbranch],0,0)),(digit2w(x[kbranch],0,-1,minlot1[kbranch],0,0)));}
-				}
-				if(nw < Lfirst[kbranch] -BlasLike. lm_eps)
-				{
-					naive[kbranch]=digit2w(x[kbranch],init,dd+1,minlot[kbranch],0,0);
-					ColourConsole.WriteEmbeddedColourLine($"Rounded weight increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch]-nw}[/magenta])\n");
-				}
-				else if(nw > Ufirst[kbranch] + BlasLike. lm_eps)
-				{
-					naive[kbranch]=digit2w(x[kbranch],init,dd-1,minlot[kbranch],0,0);
-					ColourConsole.WriteEmbeddedColourLine($"Rounded weight decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch]-nw}[/red])\n");
-				}
-			}
-			else if(minlot1!=null&&Math.Abs(x[kbranch])<=minlot1[kbranch]+rounderror)
-			{
-				dd=digitisei(x[kbranch],0,minlot1[kbranch],0);
-				nw=naive[kbranch]=digit2w(x[kbranch],0,dd,minlot1[kbranch],0,0);
-				if(Math.Abs(nw-init)<minlot[kbranch])
-				{
-					if(x[kbranch]>0){nw=naive[kbranch]=Math.Max((digit2w(x[kbranch],init,1,minlot[kbranch],0,0)),(digit2w(x[kbranch],0,1,minlot1[kbranch],0,0)));}
-					else{nw=naive[kbranch]=Math.Min((digit2w(x[kbranch],init,-1,minlot[kbranch],0,0)),(digit2w(x[kbranch],0,-1,minlot1[kbranch],0,0)));}
-				}
-				if(nw < Lfirst[kbranch] - BlasLike. lm_eps)
-				{
-					naive[kbranch]=digit2w(x[kbranch],0,dd+1,minlot1[kbranch],0,0);
-					ColourConsole.WriteEmbeddedColourLine($"Rounded weight increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch]-nw}[/magenta])\n");
-				}
-				else if(nw > Ufirst[kbranch] + BlasLike. lm_eps)
-				{
-					naive[kbranch]=digit2w(x[kbranch],0,dd-1,minlot1[kbranch],0,0);
-					ColourConsole.WriteEmbeddedColourLine($"Rounded weight decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch]-nw}[/red])\n");
-				}
-			}
-			else
-			{
-				nw=naive[kbranch]=x[kbranch];
-			}
+            bool ok = false;
+            if (OP.back <= 1)
+            {
+                nround = 0;
+                ok = true;
+                BlasLike.dcopyvec(n, x, KB.oldw);
+                //		std::valarray<double>score(n);
+                //		score=lm_max;
+                //		for(kk=0;kk<n;++kk)
+                //		{
+                //			init=initial?initial[kk]:0;
+                //			score[kk]=Math.Abs(Math.Abs(x[kk]-init)-minlot[kk])/minlot[kk];
+                //		}
+                for (kk = 0; kk < n; ++kk)
+                {
+                    kbranch = kk; dd = -1;
+                    init = initial != null ? initial[kbranch] : 0;
+                    /*			if(score[kbranch]<score_test&&(Math.Abs(x[kbranch]-init)<minlot[kbranch]))
+                                {
+                    //					printf((char*)"Discarding %-.8e %-.8e score %-.8e this time\n",x[kbranch]-init,minlot[kbranch],score[kbranch]);
+                                    if(score[kbranch]<1e-15)nround++;
+                                    continue;
+                                }*/
+                    if (Math.Abs(x[kbranch] - init) <= minlot[kbranch] + rounderror && (minlot1 != null && Math.Abs(x[kbranch]) <= minlot1[kbranch] + rounderror))
+                    {
+                        /*				dd=digitisei(x[kbranch],init,minlot[kbranch],0,0);
+                                        nw=naive[kbranch]=digit2w(x[kbranch],init,dd,minlot[kbranch],0,0);
+                                        if(Math.Abs(nw)<minlot1[kbranch])
+                                        {*/
+                        if (x[kbranch] > 0) { nw = naive[kbranch] = Math.Max((digit2w(x[kbranch], init, 1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, 1, minlot1[kbranch], 0, 0))); }
+                        else { nw = naive[kbranch] = Math.Min((digit2w(x[kbranch], init, -1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, 1, minlot1[kbranch], 0, 0))); }
+                        //				}
+                        if (nw < Lfirst[kbranch] - BlasLike.lm_eps)
+                        {
+                            naive[kbranch] = digit2w(x[kbranch], init, dd + 1, minlot[kbranch], 0, 0);
+                            ColourConsole.WriteEmbeddedColourLine($"Rounded weight increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])\n");
+                        }
+                        else if (nw > Ufirst[kbranch] + BlasLike.lm_eps)
+                        {
+                            naive[kbranch] = digit2w(x[kbranch], init, dd - 1, minlot[kbranch], 0, 0);
+                            ColourConsole.WriteEmbeddedColourLine($"Rounded weight decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])\n");
+                        }
+                    }
+                    else if (Math.Abs(x[kbranch] - init) <= minlot[kbranch] + rounderror)
+                    {
+                        dd = digitisei(x[kbranch], init, minlot[kbranch], 0);
+                        nw = naive[kbranch] = digit2w(x[kbranch], init, dd, minlot[kbranch], 0, 0);
+                        if (minlot1 != null && Math.Abs(nw) < minlot1[kbranch])
+                        {
+                            if (x[kbranch] > 0) { nw = naive[kbranch] = Math.Max((digit2w(x[kbranch], init, 1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, 1, minlot1[kbranch], 0, 0))); }
+                            else { nw = naive[kbranch] = Math.Min((digit2w(x[kbranch], init, -1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, -1, minlot1[kbranch], 0, 0))); }
+                        }
+                        if (nw < Lfirst[kbranch] - BlasLike.lm_eps)
+                        {
+                            naive[kbranch] = digit2w(x[kbranch], init, dd + 1, minlot[kbranch], 0, 0);
+                            ColourConsole.WriteEmbeddedColourLine($"Rounded weight increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])\n");
+                        }
+                        else if (nw > Ufirst[kbranch] + BlasLike.lm_eps)
+                        {
+                            naive[kbranch] = digit2w(x[kbranch], init, dd - 1, minlot[kbranch], 0, 0);
+                            ColourConsole.WriteEmbeddedColourLine($"Rounded weight decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])\n");
+                        }
+                    }
+                    else if (minlot1 != null && Math.Abs(x[kbranch]) <= minlot1[kbranch] + rounderror)
+                    {
+                        dd = digitisei(x[kbranch], 0, minlot1[kbranch], 0);
+                        nw = naive[kbranch] = digit2w(x[kbranch], 0, dd, minlot1[kbranch], 0, 0);
+                        if (Math.Abs(nw - init) < minlot[kbranch])
+                        {
+                            if (x[kbranch] > 0) { nw = naive[kbranch] = Math.Max((digit2w(x[kbranch], init, 1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, 1, minlot1[kbranch], 0, 0))); }
+                            else { nw = naive[kbranch] = Math.Min((digit2w(x[kbranch], init, -1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, -1, minlot1[kbranch], 0, 0))); }
+                        }
+                        if (nw < Lfirst[kbranch] - BlasLike.lm_eps)
+                        {
+                            naive[kbranch] = digit2w(x[kbranch], 0, dd + 1, minlot1[kbranch], 0, 0);
+                            ColourConsole.WriteEmbeddedColourLine($"Rounded weight increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])\n");
+                        }
+                        else if (nw > Ufirst[kbranch] + BlasLike.lm_eps)
+                        {
+                            naive[kbranch] = digit2w(x[kbranch], 0, dd - 1, minlot1[kbranch], 0, 0);
+                            ColourConsole.WriteEmbeddedColourLine($"Rounded weight decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])\n");
+                        }
+                    }
+                    else
+                    {
+                        nw = naive[kbranch] = x[kbranch];
+                    }
 
-			
-			if(x[kbranch]<(naive[kbranch]-rounderror))
-			{
-				ok=false;
-				if(naive[kbranch]!=Lfirst[kbranch])
-				{
-					L[kbranch]=naive[kbranch];
-//					U[kbranch]=Ufirst[kbranch];
-				}
-				else
-					U[kbranch]=Math.Min(Ufirst[kbranch],naive[kbranch]);
-				if(Math.Abs(minlot[kbranch])>Math.Abs(init))
-				{
-					if(init>0)
-					{
-						L[kbranch]=Math.Min(Ufirst[kbranch],Math.Max(Lfirst[kbranch],naive[kbranch]));
-					}
-					else
-					{
-						U[kbranch]=Math.Max(Lfirst[kbranch],Math.Min(Ufirst[kbranch],naive[kbranch]));
-					}
-				}
-			}
-			else if(x[kbranch]>(naive[kbranch]+rounderror))
-			{
-				ok=false;
-				if(naive[kbranch]!=Ufirst[kbranch])
-				{
-					U[kbranch]=naive[kbranch];
-//					L[kbranch]=Lfirst[kbranch];
-				}
-				else
-					L[kbranch]=Math.Max(Lfirst[kbranch],naive[kbranch]);
-				if(Math.Abs(minlot[kbranch])>Math.Abs(init))
-				{
-					if(init>0)
-					{
-						L[kbranch]=Math.Min(Ufirst[kbranch],Math.Max(Lfirst[kbranch],naive[kbranch]));
-					}
-					else
-					{
-						U[kbranch]=Math.Max(Lfirst[kbranch],Math.Min(Ufirst[kbranch],naive[kbranch]));
-					}
-				}
-			}
-			else nround++;
 
-			if(Math.Abs(Math.Abs(dd-(long)(dd))-1)< BlasLike. lm_rooteps)
-			{
-				ColourConsole.WriteEmbeddedColourLine($"minlot---- kbranch {kbranch} [green]{dd} {(long)dd}[/green]\tLUxn [cyan]{L[kbranch]}[/cyan] [yellow]{x[kbranch]} {naive[kbranch]}[/yellow] [cyan]{U[kbranch]}[/cyan]");
-                                                                   			}
+                    if (x[kbranch] < (naive[kbranch] - rounderror))
+                    {
+                        ok = false;
+                        if (naive[kbranch] != Lfirst[kbranch])
+                        {
+                            L[kbranch] = naive[kbranch];
+                            //					U[kbranch]=Ufirst[kbranch];
+                        }
+                        else
+                            U[kbranch] = Math.Min(Ufirst[kbranch], naive[kbranch]);
+                        if (Math.Abs(minlot[kbranch]) > Math.Abs(init))
+                        {
+                            if (init > 0)
+                            {
+                                L[kbranch] = Math.Min(Ufirst[kbranch], Math.Max(Lfirst[kbranch], naive[kbranch]));
+                            }
+                            else
+                            {
+                                U[kbranch] = Math.Max(Lfirst[kbranch], Math.Min(Ufirst[kbranch], naive[kbranch]));
+                            }
+                        }
+                    }
+                    else if (x[kbranch] > (naive[kbranch] + rounderror))
+                    {
+                        ok = false;
+                        if (naive[kbranch] != Ufirst[kbranch])
+                        {
+                            U[kbranch] = naive[kbranch];
+                            //					L[kbranch]=Lfirst[kbranch];
+                        }
+                        else
+                            L[kbranch] = Math.Max(Lfirst[kbranch], naive[kbranch]);
+                        if (Math.Abs(minlot[kbranch]) > Math.Abs(init))
+                        {
+                            if (init > 0)
+                            {
+                                L[kbranch] = Math.Min(Ufirst[kbranch], Math.Max(Lfirst[kbranch], naive[kbranch]));
+                            }
+                            else
+                            {
+                                U[kbranch] = Math.Max(Lfirst[kbranch], Math.Min(Ufirst[kbranch], naive[kbranch]));
+                            }
+                        }
+                    }
+                    else nround++;
 
-			if(L[kbranch]>U[kbranch])
-			{
-				if(L[kbranch]<=Ufirst[kbranch])U[kbranch]=Ufirst[kbranch];
-				else if(U[kbranch]>=Lfirst[kbranch])L[kbranch]=Lfirst[kbranch];
-				else
-				{
-					U[kbranch]=Ufirst[kbranch];
-					L[kbranch]=Lfirst[kbranch];
-				}
-			}
-		}
-		ColourConsole.WriteEmbeddedColourLine($"[green]{nround}[/green] rounded at stage [green]{stage} (out of {n})[/green] utility [magenta]{utility}[/magenta] change [magenta]{utility-oldutil}[/magenta]");
-		nround=thresh_check(n,x,initial,Lfirst,Ufirst,minlot,minlot1,rounderror);
-		ColourConsole.WriteEmbeddedColourLine($"[green]{nround}[/green] rounded at stage [green]{stage} (out of {n})[/green] utility [magenta]{utility}[/magenta] change [magenta]{utility-oldutil}[/magenta]");
-		if(firsttime) BlasLike. dcopyvec(n,x,KB.first);
+                    if (Math.Abs(Math.Abs(dd - (long)(dd)) - 1) < BlasLike.lm_rooteps)
+                    {
+                        ColourConsole.WriteEmbeddedColourLine($"minlot---- kbranch {kbranch} [green]{dd} {(long)dd}[/green]\tLUxn [cyan]{L[kbranch]}[/cyan] [yellow]{x[kbranch]} {naive[kbranch]}[/yellow] [cyan]{U[kbranch]}[/cyan]");
+                    }
 
-		if(nround==KB.nround && Math.Abs(utility-KB.utility)<= BlasLike. lm_eps)
-			KB.stuck++;
-		if(KB.nround < nround)
-		{
-			KB.Setw(x,OP.back,nround,utility,stage);
-			KB.Message();KB.stuck=0;
-		}
-		else if(KB.nround==nround && utility < KB.utility)
-		{
-			KB.Setw(x,OP.back,nround,utility,stage);
-			KB.Message();KB.stuck=0;
-		}
+                    if (L[kbranch] > U[kbranch])
+                    {
+                        if (L[kbranch] <= Ufirst[kbranch]) U[kbranch] = Ufirst[kbranch];
+                        else if (U[kbranch] >= Lfirst[kbranch]) L[kbranch] = Lfirst[kbranch];
+                        else
+                        {
+                            U[kbranch] = Ufirst[kbranch];
+                            L[kbranch] = Lfirst[kbranch];
+                        }
+                    }
+                }
+                ColourConsole.WriteEmbeddedColourLine($"[green]{nround}[/green] rounded at stage [green]{stage} (out of {n})[/green] utility [magenta]{utility}[/magenta] change [magenta]{utility - oldutil}[/magenta]");
+                nround = thresh_check(n, x, initial, Lfirst, Ufirst, minlot, minlot1, rounderror);
+                ColourConsole.WriteEmbeddedColourLine($"[green]{nround}[/green] rounded at stage [green]{stage} (out of {n})[/green] utility [magenta]{utility}[/magenta] change [magenta]{utility - oldutil}[/magenta]");
+                if (firsttime) BlasLike.dcopyvec(n, x, KB.first);
 
-		if(nround==rounded && Math.Abs(utility-oldutil)<= BlasLike. lm_eps)
-			ok=true;
-//		if(KB.stuck>0)ok=1;
-		//printf((char*)"stuck %d line %d nround %d %d\n",KB.stuck,__LINE__,KB.nround,nround);
-		if(!ok && stage<KB.stage+5)
-			threshopt(info,KB,L,U,Lfirst,Ufirst,initial,minlot,
-			stage+1,naive,minlot1,nround,utility,false);
-		else if(ok && stage<KB.stage+5 && nround<n)
-		{
-			ColourConsole.WriteEmbeddedColourLine($"End of branch; [green]stage {stage}[/green]");
-			bool doopt=false;
-		Array.Resize(ref	updowntest,n);
-		Array.Resize(ref	updownorder,n);
-		Array.Resize(ref	updownbad,n);
+                if (nround == KB.nround && Math.Abs(utility - KB.utility) <= BlasLike.lm_eps)
+                    KB.stuck++;
+                if (KB.nround < nround)
+                {
+                    KB.Setw(x, OP.back, nround, utility, stage);
+                    KB.Message(); KB.stuck = 0;
+                }
+                else if (KB.nround == nround && utility < KB.utility)
+                {
+                    KB.Setw(x, OP.back, nround, utility, stage);
+                    KB.Message(); KB.stuck = 0;
+                }
 
-			for(var i=0;i<n;++i)updownbad[i]=(byte)0;
-			double []keephere=new double[n];
-		BlasLike.	dcopyvec(n,x,keephere);
-			doreorder=false;
-			doit=0;
-			double LL=BlasLike.lm_max,UU=BlasLike.lm_max;
-			while(doit<(int)n)
-			{
-			BlasLike.	dcopyvec(n,keephere,x);
-				if(doit!=0)
-				{
-					for(kbranch=0;kbranch<n;++kbranch)
-					{
-						init=initial!=null?initial[kbranch]:0;
-						if(Math.Abs(x[kbranch]-init) <= minlot[kbranch]+rounderror&&(minlot1!=null&&Math.Abs(x[kbranch]) <= minlot1[kbranch]+rounderror))
-						{
-							updowntest[kbranch]=10+(Math.Abs(x[kbranch]-init)/minlot[kbranch])+(Math.Abs(x[kbranch])/minlot1[kbranch]);
-							doreorder=true;
-						}
-						else if(Math.Abs(x[kbranch]-init) <= minlot[kbranch]+rounderror)
-						{
-							updowntest[kbranch]=10+Math.Abs(x[kbranch]-init)/minlot[kbranch];
-							doreorder=true;
-						}
-						else if(minlot1!=null&&Math.Abs(x[kbranch]) <= minlot1[kbranch]+rounderror)
-						{
-							updowntest[kbranch]=10+Math.Abs(x[kbranch])/minlot1[kbranch];
-							doreorder=true;
-						}
-						else
-							updowntest[kbranch]=Math.Abs(x[kbranch])+Math.Abs(x[kbranch]-init);
-					}
-				}
-				if(doreorder)Ordering.Order.  getorder(n,updowntest,updownorder,updownbad,0);
-				for(kk=doit;kk<n;++kk)
-				{
-					kbranch=doreorder?updownorder[kk]:kk;
-					init=initial!=null?initial[kbranch]:0;
-					LL=Lfirst[kbranch];
-					UU=Ufirst[kbranch];
-					if(Math.Abs(x[kbranch]-init) <= minlot[kbranch]+rounderror&&(minlot1!=null&&Math.Abs(x[kbranch]) <= minlot1[kbranch]+rounderror))
-					{
-						if(Math.Abs(x[kbranch]-init) < Math.Abs(x[kbranch]))
-						{
-							if(x[kbranch]>0)
-							{
-/*								naive[kbranch]=Math.Max((digit2w(x[kbranch],0,digitisei(x[kbranch],0,minlot1[kbranch],0,0),minlot1[kbranch],0,0)),(digit2w(x[kbranch],init,digitisei(x[kbranch],init,minlot[kbranch],0,0),minlot[kbranch],0,0)));
-								L[kbranch]=Math.Max(Math.Min(Ufirst[kbranch],naive[kbranch]),Lfirst[kbranch]);
-								U[kbranch]=Ufirst[kbranch];*/
-								naive[kbranch]=digit2w(x[kbranch],0,0 ,minlot1[kbranch],0,0);
-								L[kbranch]=Math.Max(Math.Min(Ufirst[kbranch],naive[kbranch]),Lfirst[kbranch]);
-								U[kbranch]=Ufirst[kbranch];
-								doopt=true;doit=kk;break;
-							}
-							else if(x[kbranch]<0)
-							{
-/*								naive[kbranch]=Math.Min((digit2w(x[kbranch],0,digitisei(x[kbranch],0,minlot1[kbranch],0,0),minlot1[kbranch],0,0)),(digit2w(x[kbranch],init,digitisei(x[kbranch],init,minlot[kbranch],0,0),minlot[kbranch],0,0)));
-								L[kbranch]=Lfirst[kbranch];
-								U[kbranch]=Math.Min(Math.Max(Lfirst[kbranch],naive[kbranch]),Ufirst[kbranch]);*/
-								naive[kbranch]=digit2w(x[kbranch],0,0 ,minlot1[kbranch],0,0);
-								L[kbranch]=Lfirst[kbranch];
-								U[kbranch]=Math.Min(Math.Max(Lfirst[kbranch],naive[kbranch]),Ufirst[kbranch]);
-								doopt=true;doit=kk;break;
-							}
-						}
-						else
-						{
-							if(x[kbranch]>init)
-							{
-								naive[kbranch]=digit2w(x[kbranch],init,0 ,minlot[kbranch],0,0);
-								L[kbranch]=Math.Max(Math.Min(Ufirst[kbranch],naive[kbranch]),Lfirst[kbranch]);
-								U[kbranch]=Ufirst[kbranch];
-							}
-							else if(x[kbranch]<init)
-							{
-								naive[kbranch]=digit2w(x[kbranch],init,0 ,minlot[kbranch],0,0);
-								L[kbranch]=Lfirst[kbranch];
-								U[kbranch]=Math.Min(Math.Max(Lfirst[kbranch],naive[kbranch]),Ufirst[kbranch]);
-							}
-							
-							doopt=true;doit=kk;break;
-						}
-					}
-					else if(Math.Abs(x[kbranch]-init) <= minlot[kbranch]+rounderror)
-					{
-						dd=digitisei(x[kbranch],init,minlot[kbranch],0);
-						if(x[kbranch]>init)
-						{
-							naive[kbranch]=digit2w(x[kbranch],init,dd+1,minlot[kbranch],0,0);
-							L[kbranch]=Math.Max(Math.Min(Ufirst[kbranch],naive[kbranch]),Lfirst[kbranch]);
-							U[kbranch]=Ufirst[kbranch];
-						}
-						else if(x[kbranch]<init)
-						{
-							naive[kbranch]=digit2w(x[kbranch],init,dd-1,minlot[kbranch],0,0);
-							L[kbranch]=Lfirst[kbranch];
-							U[kbranch]=Math.Min(Math.Max(Lfirst[kbranch],naive[kbranch]),Ufirst[kbranch]);
-						}
-						
-						doopt=true;doit=kk;break;
-					}
-					else if(minlot1!=null&&Math.Abs(x[kbranch]) <= minlot1[kbranch]+rounderror)
-					{
-						dd=digitisei(x[kbranch],0,minlot1[kbranch],0);
-						if(x[kbranch]>0)
-						{
-							naive[kbranch]=digit2w(x[kbranch],0,dd+1,minlot1[kbranch],0,0);
-							L[kbranch]=Math.Max(Math.Min(Ufirst[kbranch],naive[kbranch]),Lfirst[kbranch]);
-							U[kbranch]=Ufirst[kbranch];
-						}
-						else if(x[kbranch]<0)
-						{
-							naive[kbranch]=digit2w(x[kbranch],0,dd-1,minlot1[kbranch],0,0);
-							L[kbranch]=Lfirst[kbranch];
-							U[kbranch]=Math.Min(Math.Max(Lfirst[kbranch],naive[kbranch]),Ufirst[kbranch]);
-						}
-						
-						doopt=true;doit=kk;break;
-					}
-					else
-						naive[kbranch]=x[kbranch];
-				}
-				if(doopt)
-				{
-				BlasLike.	dcopyvec(n+m,L,lower);
-				BlasLike.	dcopyvec(n+m,U,upper);
-					OP.OptFunc(info);
-					if(OP.back<1) 
-					{
-						ColourConsole.WriteInfo($"================================= BREAK AWAY +++++++++++++++++++++++++++++++++++++");
-						break;
-					}
-					else
-					{
-						L[kbranch]=LL;
-						U[kbranch]=UU;
-						doit++;
-					}
-				}
-			}
-			if(doopt)
-				threshopt(info,KB,L,U,Lfirst,Ufirst,initial,minlot,stage+1,
-				naive,minlot1,nround,utility,OP.back<1);
-			else
-			{
-				ColourConsole.WriteEmbeddedColourLine($"[green]No re-opt stage {stage}[/green]");
-			}
-		}
-	}
+                if (nround == rounded && Math.Abs(utility - oldutil) <= BlasLike.lm_eps)
+                    ok = true;
+                //		if(KB.stuck>0)ok=1;
+                //printf((char*)"stuck %d line %d nround %d %d\n",KB.stuck,__LINE__,KB.nround,nround);
+                if (!ok && stage < KB.stage + 5)
+                    threshopt(info, KB, L, U, Lfirst, Ufirst, initial, minlot,
+                    stage + 1, naive, minlot1, nround, utility, false);
+                else if (ok && stage < KB.stage + 5 && nround < n)
+                {
+                    ColourConsole.WriteEmbeddedColourLine($"End of branch; [green]stage {stage}[/green]");
+                    bool doopt = false;
+                    Array.Resize(ref updowntest, n);
+                    Array.Resize(ref updownorder, n);
+                    Array.Resize(ref updownbad, n);
 
-	if(OP.back>1)
-	{
-		int more=1,breakno=0,breakmax=10;
-		bool bad=true;
-		while(bad && (more>0||breakno<breakmax))
-		{
-			if(more==1)ColourConsole.WriteEmbeddedColourLine($"Stage [red]{stage}[/red] New start after infeasibility with [cyan]{more}[/cyan] step");
-			else ColourConsole.WriteEmbeddedColourLine($"Stage [red]{stage}[/red] New start after infeasibility with [cyan]{more}[/cyan] steps");
-			bad=false;
-			for(kbranch=0;kbranch<n;++kbranch)
-			{
-				if(x[kbranch] > U[kbranch])
-				{
-					ColourConsole.WriteEmbeddedColourLine($"bounds on {kbranch} {x[kbranch]} ([red]{L[kbranch]},{U[kbranch]}[/red])");
-				}
-				else if(x[kbranch] < L[kbranch] || x[kbranch] > U[kbranch])
-				{
-					ColourConsole.WriteEmbeddedColourLine($"bounds on {kbranch} {x[kbranch]} ([red]{L[kbranch]},{U[kbranch]}[/red])");
-				}
-				if(L[kbranch]==U[kbranch])
-				{
-					L[kbranch]=Lfirst[kbranch];
-					U[kbranch]=Ufirst[kbranch];
-				}
-			}
+                    for (var i = 0; i < n; ++i) updownbad[i] = (byte)0;
+                    double[] keephere = new double[n];
+                    BlasLike.dcopyvec(n, x, keephere);
+                    doreorder = false;
+                    doit = 0;
+                    double LL = BlasLike.lm_max, UU = BlasLike.lm_max;
+                    while (doit < (int)n)
+                    {
+                        BlasLike.dcopyvec(n, keephere, x);
+                        if (doit != 0)
+                        {
+                            for (kbranch = 0; kbranch < n; ++kbranch)
+                            {
+                                init = initial != null ? initial[kbranch] : 0;
+                                if (Math.Abs(x[kbranch] - init) <= minlot[kbranch] + rounderror && (minlot1 != null && Math.Abs(x[kbranch]) <= minlot1[kbranch] + rounderror))
+                                {
+                                    updowntest[kbranch] = 10 + (Math.Abs(x[kbranch] - init) / minlot[kbranch]) + (Math.Abs(x[kbranch]) / minlot1[kbranch]);
+                                    doreorder = true;
+                                }
+                                else if (Math.Abs(x[kbranch] - init) <= minlot[kbranch] + rounderror)
+                                {
+                                    updowntest[kbranch] = 10 + Math.Abs(x[kbranch] - init) / minlot[kbranch];
+                                    doreorder = true;
+                                }
+                                else if (minlot1 != null && Math.Abs(x[kbranch]) <= minlot1[kbranch] + rounderror)
+                                {
+                                    updowntest[kbranch] = 10 + Math.Abs(x[kbranch]) / minlot1[kbranch];
+                                    doreorder = true;
+                                }
+                                else
+                                    updowntest[kbranch] = Math.Abs(x[kbranch]) + Math.Abs(x[kbranch] - init);
+                            }
+                        }
+                        if (doreorder) Ordering.Order.getorder(n, updowntest, updownorder, updownbad, 0);
+                        for (kk = doit; kk < n; ++kk)
+                        {
+                            kbranch = doreorder ? updownorder[kk] : kk;
+                            init = initial != null ? initial[kbranch] : 0;
+                            LL = Lfirst[kbranch];
+                            UU = Ufirst[kbranch];
+                            if (Math.Abs(x[kbranch] - init) <= minlot[kbranch] + rounderror && (minlot1 != null && Math.Abs(x[kbranch]) <= minlot1[kbranch] + rounderror))
+                            {
+                                if (Math.Abs(x[kbranch] - init) < Math.Abs(x[kbranch]))
+                                {
+                                    if (x[kbranch] > 0)
+                                    {
+                                        /*								naive[kbranch]=Math.Max((digit2w(x[kbranch],0,digitisei(x[kbranch],0,minlot1[kbranch],0,0),minlot1[kbranch],0,0)),(digit2w(x[kbranch],init,digitisei(x[kbranch],init,minlot[kbranch],0,0),minlot[kbranch],0,0)));
+                                                                        L[kbranch]=Math.Max(Math.Min(Ufirst[kbranch],naive[kbranch]),Lfirst[kbranch]);
+                                                                        U[kbranch]=Ufirst[kbranch];*/
+                                        naive[kbranch] = digit2w(x[kbranch], 0, 0, minlot1[kbranch], 0, 0);
+                                        L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], naive[kbranch]), Lfirst[kbranch]);
+                                        U[kbranch] = Ufirst[kbranch];
+                                        doopt = true; doit = kk; break;
+                                    }
+                                    else if (x[kbranch] < 0)
+                                    {
+                                        /*								naive[kbranch]=Math.Min((digit2w(x[kbranch],0,digitisei(x[kbranch],0,minlot1[kbranch],0,0),minlot1[kbranch],0,0)),(digit2w(x[kbranch],init,digitisei(x[kbranch],init,minlot[kbranch],0,0),minlot[kbranch],0,0)));
+                                                                        L[kbranch]=Lfirst[kbranch];
+                                                                        U[kbranch]=Math.Min(Math.Max(Lfirst[kbranch],naive[kbranch]),Ufirst[kbranch]);*/
+                                        naive[kbranch] = digit2w(x[kbranch], 0, 0, minlot1[kbranch], 0, 0);
+                                        L[kbranch] = Lfirst[kbranch];
+                                        U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], naive[kbranch]), Ufirst[kbranch]);
+                                        doopt = true; doit = kk; break;
+                                    }
+                                }
+                                else
+                                {
+                                    if (x[kbranch] > init)
+                                    {
+                                        naive[kbranch] = digit2w(x[kbranch], init, 0, minlot[kbranch], 0, 0);
+                                        L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], naive[kbranch]), Lfirst[kbranch]);
+                                        U[kbranch] = Ufirst[kbranch];
+                                    }
+                                    else if (x[kbranch] < init)
+                                    {
+                                        naive[kbranch] = digit2w(x[kbranch], init, 0, minlot[kbranch], 0, 0);
+                                        L[kbranch] = Lfirst[kbranch];
+                                        U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], naive[kbranch]), Ufirst[kbranch]);
+                                    }
 
-            
-		Array.Resize(ref	updowntest,n);
-		Array.Resize(ref	updownorder,n);
-		Array.Resize(ref	updownbad,n);
+                                    doopt = true; doit = kk; break;
+                                }
+                            }
+                            else if (Math.Abs(x[kbranch] - init) <= minlot[kbranch] + rounderror)
+                            {
+                                dd = digitisei(x[kbranch], init, minlot[kbranch], 0);
+                                if (x[kbranch] > init)
+                                {
+                                    naive[kbranch] = digit2w(x[kbranch], init, dd + 1, minlot[kbranch], 0, 0);
+                                    L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], naive[kbranch]), Lfirst[kbranch]);
+                                    U[kbranch] = Ufirst[kbranch];
+                                }
+                                else if (x[kbranch] < init)
+                                {
+                                    naive[kbranch] = digit2w(x[kbranch], init, dd - 1, minlot[kbranch], 0, 0);
+                                    L[kbranch] = Lfirst[kbranch];
+                                    U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], naive[kbranch]), Ufirst[kbranch]);
+                                }
 
-			for(var i=0;i<n;++i)updownbad[i]=(byte)0;
-			doreorder=false;
-			doit=0;
-			for(kbranch=0;kbranch<n;++kbranch)
-			{
-				init=initial!=null?initial[kbranch]:0;
-				if(Math.Abs(KB.oldw[kbranch]-init) <= minlot[kbranch]+rounderror&&(minlot1!=null&&Math.Abs(KB.oldw[kbranch]) <= minlot1[kbranch]+rounderror))
-				{
-					updowntest[kbranch]=10+(Math.Abs(KB.oldw[kbranch]-init)/minlot[kbranch])+(Math.Abs(KB.oldw[kbranch])/minlot1[kbranch]);
-					doreorder=false;
-				}
-				else if(Math.Abs(KB.oldw[kbranch]-init) <= minlot[kbranch]+rounderror)
-				{
-					updowntest[kbranch]=10+Math.Abs(KB.oldw[kbranch]-init)/minlot[kbranch];
-					doreorder=true;
-				}
-				else if(minlot1!=null&&Math.Abs(KB.oldw[kbranch]) <= minlot1[kbranch]+rounderror)
-				{
-					updowntest[kbranch]=10+Math.Abs(KB.oldw[kbranch])/minlot1[kbranch];
-					doreorder=true;
-				}
-				else
-					updowntest[kbranch]=Math.Abs(KB.oldw[kbranch])+Math.Abs(KB.oldw[kbranch]-init);
-			}
+                                doopt = true; doit = kk; break;
+                            }
+                            else if (minlot1 != null && Math.Abs(x[kbranch]) <= minlot1[kbranch] + rounderror)
+                            {
+                                dd = digitisei(x[kbranch], 0, minlot1[kbranch], 0);
+                                if (x[kbranch] > 0)
+                                {
+                                    naive[kbranch] = digit2w(x[kbranch], 0, dd + 1, minlot1[kbranch], 0, 0);
+                                    L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], naive[kbranch]), Lfirst[kbranch]);
+                                    U[kbranch] = Ufirst[kbranch];
+                                }
+                                else if (x[kbranch] < 0)
+                                {
+                                    naive[kbranch] = digit2w(x[kbranch], 0, dd - 1, minlot1[kbranch], 0, 0);
+                                    L[kbranch] = Lfirst[kbranch];
+                                    U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], naive[kbranch]), Ufirst[kbranch]);
+                                }
 
-			if(doreorder)
-			{
-			Ordering.Order.	getorder(n,updowntest,updownorder,updownbad,0);breakno++;
-			}
-			else
-				breakno=breakmax;
-			for(kk=0;kk<n;++kk)
-			{
-				kbranch=doreorder?updownorder[kk]:kk;
-				init=initial!=null?initial[kbranch]:0;
-				if(Math.Abs(KB.oldw[kbranch]-init) <= minlot[kbranch]+rounderror&&(minlot1!=null&&Math.Abs(KB.oldw[kbranch]) <= minlot1[kbranch]+rounderror))
-				{
-					if(init>minlot1[kbranch])
-					{
-						if(KB.oldw[kbranch]>0){naive[kbranch]=Math.Max((digit2w(KB.oldw[kbranch],init,0,minlot[kbranch],0,0)),(digit2w(KB.oldw[kbranch],0,0,minlot1[kbranch],0,0)));}
-						else{naive[kbranch]=Math.Min((digit2w(KB.oldw[kbranch],init,0,minlot[kbranch],0,0)),(digit2w(KB.oldw[kbranch],0,0,minlot1[kbranch],0,0)));}
-						if(Ufirst[kbranch] <= minlot[kbranch])
-						{
-							L[kbranch]=Math.Max(Math.Min(Ufirst[kbranch],init),Lfirst[kbranch]);
-							U[kbranch]=Math.Min(Math.Max(Lfirst[kbranch],init),Ufirst[kbranch]);
-						}
-						else if(Lfirst[kbranch] >= minlot[kbranch])
-						{
-							L[kbranch]=Math.Max(Math.Min(Ufirst[kbranch],init),Lfirst[kbranch]);
-							U[kbranch]=Math.Min(Math.Max(Lfirst[kbranch],init),Ufirst[kbranch]);
-						}
-						else if(Math.Abs(KB.oldw[kbranch]-init) <= minlot[kbranch]*breakpoint)
-						{
-							L[kbranch]=Math.Max(naive[kbranch],Lfirst[kbranch]);
-							U[kbranch]=Math.Min(naive[kbranch],Ufirst[kbranch]);doit++;
-						}
-						else if(doit>maxset)
-						{
-							//	AddLog((char*)"Enough resets %d\n",doit);
-							continue;
-						}
-						else if(KB.oldw[kbranch]-init > minlot[kbranch]*breakpoint)
-						{
-							L[kbranch]=Math.Max(naive[kbranch],Lfirst[kbranch]);
-							U[kbranch]=Ufirst[kbranch];doit++;
-						}
-						else if(KB.oldw[kbranch]-init < -minlot[kbranch]*breakpoint)
-						{
-							L[kbranch]=Lfirst[kbranch];doit++;
-							U[kbranch]=Math.Min(naive[kbranch],Ufirst[kbranch]);
-						}
-						if(L[kbranch]>U[kbranch])
-						{
-							bad=true;break;
-						}
-					}
-					else
-					{
-						dd=digitisei(KB.oldw[kbranch],0,minlot1[kbranch],0);
-						naive[kbranch]=digit2w(KB.oldw[kbranch],0,dd,minlot1[kbranch],0,0);
-						if(Ufirst[kbranch] <= minlot1[kbranch])
-						{
-							L[kbranch]=Math.Max(Math.Min(Ufirst[kbranch],0),Lfirst[kbranch]);
-							U[kbranch]=Math.Min(Math.Max(Lfirst[kbranch],0),Ufirst[kbranch]);
-						}
-						else if(Lfirst[kbranch] >= minlot1[kbranch])
-						{
-							L[kbranch]=Math.Max(Math.Min(Ufirst[kbranch],0),Lfirst[kbranch]);
-							U[kbranch]=Math.Min(Math.Max(Lfirst[kbranch],0),Ufirst[kbranch]);
-						}
-						else if(Math.Abs(KB.oldw[kbranch]) <= minlot1[kbranch]*breakpoint)
-						{
-							L[kbranch]=Math.Max(naive[kbranch],Lfirst[kbranch]);
-							U[kbranch]=Math.Min(naive[kbranch],Ufirst[kbranch]);doit++;
-						}
-						else if(doit>maxset)
-						{
-							//	AddLog((char*)"Enough resets %d\n",doit);
-							continue;
-						}
-						else if(KB.oldw[kbranch] > minlot1[kbranch]*breakpoint)
-						{
-							L[kbranch]=Math.Max(naive[kbranch],Lfirst[kbranch]);
-							U[kbranch]=Ufirst[kbranch];doit++;
-						}
-						else if(KB.oldw[kbranch] < -minlot1[kbranch]*breakpoint)
-						{
-							L[kbranch]=Lfirst[kbranch];doit++;
-							U[kbranch]=Math.Min(naive[kbranch],Ufirst[kbranch]);
-						}
-						if(L[kbranch]>U[kbranch])
-						{
-							bad=true;break;
-						}
-					}
+                                doopt = true; doit = kk; break;
+                            }
+                            else
+                                naive[kbranch] = x[kbranch];
+                        }
+                        if (doopt)
+                        {
+                            BlasLike.dcopyvec(n + m, L, lower);
+                            BlasLike.dcopyvec(n + m, U, upper);
+                            OP.OptFunc(info);
+                            if (OP.back < 1)
+                            {
+                                ColourConsole.WriteInfo($"================================= BREAK AWAY +++++++++++++++++++++++++++++++++++++");
+                                break;
+                            }
+                            else
+                            {
+                                L[kbranch] = LL;
+                                U[kbranch] = UU;
+                                doit++;
+                            }
+                        }
+                    }
+                    if (doopt)
+                        threshopt(info, KB, L, U, Lfirst, Ufirst, initial, minlot, stage + 1,
+                        naive, minlot1, nround, utility, OP.back < 1);
+                    else
+                    {
+                        ColourConsole.WriteEmbeddedColourLine($"[green]No re-opt stage {stage}[/green]");
+                    }
+                }
+            }
 
-				}
-				else if(minlot1!=null&&Math.Abs(KB.oldw[kbranch]) <= minlot1[kbranch]+rounderror)
-				{
-					dd=digitisei(KB.oldw[kbranch],0,minlot1[kbranch],0);
-					if(dd==0&&Math.Abs(KB.oldw[kbranch]) > minlot1[kbranch]*breakpoint)
-					{
-						if(KB.oldw[kbranch]>init)dd++;
-						if(KB.oldw[kbranch]<init)dd--;
-					}
-					naive[kbranch]=digit2w(KB.oldw[kbranch],0,dd,minlot1[kbranch],0,0);
-					if(Ufirst[kbranch] <= minlot1[kbranch])
-					{
-						L[kbranch]=Math.Max(Math.Min(Ufirst[kbranch],0),Lfirst[kbranch]);
-						U[kbranch]=Math.Min(Math.Max(Lfirst[kbranch],0),Ufirst[kbranch]);
-					}
-					else if(Lfirst[kbranch] >= minlot1[kbranch])
-					{
-						L[kbranch]=Math.Max(Math.Min(Ufirst[kbranch],0),Lfirst[kbranch]);
-						U[kbranch]=Math.Min(Math.Max(Lfirst[kbranch],0),Ufirst[kbranch]);
-					}
-					else if(Math.Abs(KB.oldw[kbranch]) <= minlot1[kbranch]*breakpoint)
-					{
-						if(Lfirst[kbranch]>=0)
-						{
-							L[kbranch]=Math.Max(naive[kbranch],Lfirst[kbranch]);
-							U[kbranch]=Math.Max(Lfirst[kbranch],Math.Min(naive[kbranch],Ufirst[kbranch]));doit++;
-						}
-						else
-						{
-							L[kbranch]=Math.Min(Ufirst[kbranch],Math.Max(naive[kbranch],Lfirst[kbranch]));
-							U[kbranch]=Math.Min(naive[kbranch],Ufirst[kbranch]);doit++;
-						}
-					}
-					else if(doit>maxset)
-					{
-					//	AddLog((char*)"Enough resets %d\n",doit);
-						continue;
-					}
-					else if(KB.oldw[kbranch] > minlot1[kbranch]*breakpoint)
-					{
-						L[kbranch]=Math.Max(naive[kbranch],Lfirst[kbranch]);
-						U[kbranch]=Ufirst[kbranch];doit++;
-					}
-					else if(KB.oldw[kbranch] < -minlot1[kbranch]*breakpoint)
-					{
-						L[kbranch]=Lfirst[kbranch];doit++;
-						U[kbranch]=Math.Min(naive[kbranch],Ufirst[kbranch]);
-					}
-					if(L[kbranch]>U[kbranch])
-					{
-						bad=true;break;
-					}
-				}
-				else if(Math.Abs(KB.oldw[kbranch]-init) <= minlot[kbranch]+rounderror)
-				{
-					dd=digitisei(KB.oldw[kbranch],init,minlot[kbranch],0);
-					if(dd==0&&Math.Abs(KB.oldw[kbranch]-init) > minlot[kbranch]*breakpoint)
-					{
-						if(KB.oldw[kbranch]>init)dd++;
-						if(KB.oldw[kbranch]<init)dd--;
-					}
-					naive[kbranch]=digit2w(KB.oldw[kbranch],init,dd,minlot[kbranch],0,0);
-					if(Ufirst[kbranch] <= minlot[kbranch])
-					{
-						L[kbranch]=Math.Max(Math.Min(Ufirst[kbranch],init),Lfirst[kbranch]);
-						U[kbranch]=Math.Min(Math.Max(Lfirst[kbranch],init),Ufirst[kbranch]);
-					}
-					else if(Lfirst[kbranch] >= minlot[kbranch])
-					{
-						L[kbranch]=Math.Max(Math.Min(Ufirst[kbranch],init),Lfirst[kbranch]);
-						U[kbranch]=Math.Min(Math.Max(Lfirst[kbranch],init),Ufirst[kbranch]);
-					}
-					else if(Math.Abs(KB.oldw[kbranch]-init) <= minlot[kbranch]*breakpoint)
-					{
-						if(Lfirst[kbranch]>=0)
-						{
-							L[kbranch]=Math.Max(naive[kbranch],Lfirst[kbranch]);
-							U[kbranch]=Math.Max(Lfirst[kbranch],Math.Min(naive[kbranch],Ufirst[kbranch]));doit++;
-						}
-						else
-						{
-							L[kbranch]=Math.Min(Ufirst[kbranch],Math.Max(naive[kbranch],Lfirst[kbranch]));
-							U[kbranch]=Math.Min(naive[kbranch],Ufirst[kbranch]);doit++;
-						}
-					}
-/*					else if(doit>maxset)
-					{
-					//	AddLog((char*)"Enough resets %d\n",doit);
-						continue;
-					}*/
-					else if(KB.oldw[kbranch]-init > minlot[kbranch]*breakpoint)
-					{
-						L[kbranch]=Math.Max(naive[kbranch],Lfirst[kbranch]);
-						U[kbranch]=Ufirst[kbranch];doit++;
-					}
-					else if(KB.oldw[kbranch]-init < -minlot[kbranch]*breakpoint)
-					{
-						L[kbranch]=Lfirst[kbranch];doit++;
-						U[kbranch]=Math.Min(naive[kbranch],Ufirst[kbranch]);
-					}
-					if(L[kbranch]>U[kbranch])
-					{
-						bad=true;break;
-					}
-				}
-				else
-					naive[kbranch]=KB.oldw[kbranch];
-			}
-			more--;
-			if(bad) break;
-		BlasLike.	dcopyvec(n+m,L,lower);
-		BlasLike.	dcopyvec(n+m,U,upper);
-			OP.OptFunc(info);
-			if(OP.back>1) 
-			{
-				bad=true;
-				if(doreorder)
-				{
-					breakpoint*=breduce;
-					ColourConsole.WriteEmbeddedColourLine($"\t\t*** [cyan]{breakno}[/cyan] Breakpoint now [magenta]{breakpoint}[/magenta] ***");
-					if(breakno<breakmax)more++;
-				}
-				//printf((char*)"breakpoint %f line %d\n",breakpoint,__LINE__);
-			}
-		}
-		if(OP.back<=1)
-		{
-			ColourConsole.WriteEmbeddedColourLine($"Successful new start found for stage {stage}");
-			OP.back=threshopt(info,KB,L,U,Lfirst,Ufirst,initial,minlot,stage,
-				naive,minlot1,nround,utility,true);
-		}
-		else {ColourConsole.WriteError($"Could not find new start\n");OP.back=25;}
-	}
-	return OP.back;
-}
+            if (OP.back > 1)
+            {
+                int more = 1, breakno = 0, breakmax = 10;
+                bool bad = true;
+                while (bad && (more > 0 || breakno < breakmax))
+                {
+                    if (more == 1) ColourConsole.WriteEmbeddedColourLine($"Stage [red]{stage}[/red] New start after infeasibility with [cyan]{more}[/cyan] step");
+                    else ColourConsole.WriteEmbeddedColourLine($"Stage [red]{stage}[/red] New start after infeasibility with [cyan]{more}[/cyan] steps");
+                    bad = false;
+                    for (kbranch = 0; kbranch < n; ++kbranch)
+                    {
+                        if (x[kbranch] > U[kbranch])
+                        {
+                            ColourConsole.WriteEmbeddedColourLine($"bounds on {kbranch} {x[kbranch]} ([red]{L[kbranch]},{U[kbranch]}[/red])");
+                        }
+                        else if (x[kbranch] < L[kbranch] || x[kbranch] > U[kbranch])
+                        {
+                            ColourConsole.WriteEmbeddedColourLine($"bounds on {kbranch} {x[kbranch]} ([red]{L[kbranch]},{U[kbranch]}[/red])");
+                        }
+                        if (L[kbranch] == U[kbranch])
+                        {
+                            L[kbranch] = Lfirst[kbranch];
+                            U[kbranch] = Ufirst[kbranch];
+                        }
+                    }
 
-public void Thresh(object info,double[] initial,double[] minlot,
-						double[] roundw,double[] minlot1)
-{double rounderror=BlasLike.	lm_eps8;
-	OptParamRound OP=(OptParamRound)info;
+
+                    Array.Resize(ref updowntest, n);
+                    Array.Resize(ref updownorder, n);
+                    Array.Resize(ref updownbad, n);
+
+                    for (var i = 0; i < n; ++i) updownbad[i] = (byte)0;
+                    doreorder = false;
+                    doit = 0;
+                    for (kbranch = 0; kbranch < n; ++kbranch)
+                    {
+                        init = initial != null ? initial[kbranch] : 0;
+                        if (Math.Abs(KB.oldw[kbranch] - init) <= minlot[kbranch] + rounderror && (minlot1 != null && Math.Abs(KB.oldw[kbranch]) <= minlot1[kbranch] + rounderror))
+                        {
+                            updowntest[kbranch] = 10 + (Math.Abs(KB.oldw[kbranch] - init) / minlot[kbranch]) + (Math.Abs(KB.oldw[kbranch]) / minlot1[kbranch]);
+                            doreorder = false;
+                        }
+                        else if (Math.Abs(KB.oldw[kbranch] - init) <= minlot[kbranch] + rounderror)
+                        {
+                            updowntest[kbranch] = 10 + Math.Abs(KB.oldw[kbranch] - init) / minlot[kbranch];
+                            doreorder = true;
+                        }
+                        else if (minlot1 != null && Math.Abs(KB.oldw[kbranch]) <= minlot1[kbranch] + rounderror)
+                        {
+                            updowntest[kbranch] = 10 + Math.Abs(KB.oldw[kbranch]) / minlot1[kbranch];
+                            doreorder = true;
+                        }
+                        else
+                            updowntest[kbranch] = Math.Abs(KB.oldw[kbranch]) + Math.Abs(KB.oldw[kbranch] - init);
+                    }
+
+                    if (doreorder)
+                    {
+                        Ordering.Order.getorder(n, updowntest, updownorder, updownbad, 0); breakno++;
+                    }
+                    else
+                        breakno = breakmax;
+                    for (kk = 0; kk < n; ++kk)
+                    {
+                        kbranch = doreorder ? updownorder[kk] : kk;
+                        init = initial != null ? initial[kbranch] : 0;
+                        if (Math.Abs(KB.oldw[kbranch] - init) <= minlot[kbranch] + rounderror && (minlot1 != null && Math.Abs(KB.oldw[kbranch]) <= minlot1[kbranch] + rounderror))
+                        {
+                            if (init > minlot1[kbranch])
+                            {
+                                if (KB.oldw[kbranch] > 0) { naive[kbranch] = Math.Max((digit2w(KB.oldw[kbranch], init, 0, minlot[kbranch], 0, 0)), (digit2w(KB.oldw[kbranch], 0, 0, minlot1[kbranch], 0, 0))); }
+                                else { naive[kbranch] = Math.Min((digit2w(KB.oldw[kbranch], init, 0, minlot[kbranch], 0, 0)), (digit2w(KB.oldw[kbranch], 0, 0, minlot1[kbranch], 0, 0))); }
+                                if (Ufirst[kbranch] <= minlot[kbranch])
+                                {
+                                    L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], init), Lfirst[kbranch]);
+                                    U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], init), Ufirst[kbranch]);
+                                }
+                                else if (Lfirst[kbranch] >= minlot[kbranch])
+                                {
+                                    L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], init), Lfirst[kbranch]);
+                                    U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], init), Ufirst[kbranch]);
+                                }
+                                else if (Math.Abs(KB.oldw[kbranch] - init) <= minlot[kbranch] * breakpoint)
+                                {
+                                    L[kbranch] = Math.Max(naive[kbranch], Lfirst[kbranch]);
+                                    U[kbranch] = Math.Min(naive[kbranch], Ufirst[kbranch]); doit++;
+                                }
+                                else if (doit > maxset)
+                                {
+                                    //	AddLog((char*)"Enough resets %d\n",doit);
+                                    continue;
+                                }
+                                else if (KB.oldw[kbranch] - init > minlot[kbranch] * breakpoint)
+                                {
+                                    L[kbranch] = Math.Max(naive[kbranch], Lfirst[kbranch]);
+                                    U[kbranch] = Ufirst[kbranch]; doit++;
+                                }
+                                else if (KB.oldw[kbranch] - init < -minlot[kbranch] * breakpoint)
+                                {
+                                    L[kbranch] = Lfirst[kbranch]; doit++;
+                                    U[kbranch] = Math.Min(naive[kbranch], Ufirst[kbranch]);
+                                }
+                                if (L[kbranch] > U[kbranch])
+                                {
+                                    bad = true; break;
+                                }
+                            }
+                            else
+                            {
+                                dd = digitisei(KB.oldw[kbranch], 0, minlot1[kbranch], 0);
+                                naive[kbranch] = digit2w(KB.oldw[kbranch], 0, dd, minlot1[kbranch], 0, 0);
+                                if (Ufirst[kbranch] <= minlot1[kbranch])
+                                {
+                                    L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], 0), Lfirst[kbranch]);
+                                    U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], 0), Ufirst[kbranch]);
+                                }
+                                else if (Lfirst[kbranch] >= minlot1[kbranch])
+                                {
+                                    L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], 0), Lfirst[kbranch]);
+                                    U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], 0), Ufirst[kbranch]);
+                                }
+                                else if (Math.Abs(KB.oldw[kbranch]) <= minlot1[kbranch] * breakpoint)
+                                {
+                                    L[kbranch] = Math.Max(naive[kbranch], Lfirst[kbranch]);
+                                    U[kbranch] = Math.Min(naive[kbranch], Ufirst[kbranch]); doit++;
+                                }
+                                else if (doit > maxset)
+                                {
+                                    //	AddLog((char*)"Enough resets %d\n",doit);
+                                    continue;
+                                }
+                                else if (KB.oldw[kbranch] > minlot1[kbranch] * breakpoint)
+                                {
+                                    L[kbranch] = Math.Max(naive[kbranch], Lfirst[kbranch]);
+                                    U[kbranch] = Ufirst[kbranch]; doit++;
+                                }
+                                else if (KB.oldw[kbranch] < -minlot1[kbranch] * breakpoint)
+                                {
+                                    L[kbranch] = Lfirst[kbranch]; doit++;
+                                    U[kbranch] = Math.Min(naive[kbranch], Ufirst[kbranch]);
+                                }
+                                if (L[kbranch] > U[kbranch])
+                                {
+                                    bad = true; break;
+                                }
+                            }
+
+                        }
+                        else if (minlot1 != null && Math.Abs(KB.oldw[kbranch]) <= minlot1[kbranch] + rounderror)
+                        {
+                            dd = digitisei(KB.oldw[kbranch], 0, minlot1[kbranch], 0);
+                            if (dd == 0 && Math.Abs(KB.oldw[kbranch]) > minlot1[kbranch] * breakpoint)
+                            {
+                                if (KB.oldw[kbranch] > init) dd++;
+                                if (KB.oldw[kbranch] < init) dd--;
+                            }
+                            naive[kbranch] = digit2w(KB.oldw[kbranch], 0, dd, minlot1[kbranch], 0, 0);
+                            if (Ufirst[kbranch] <= minlot1[kbranch])
+                            {
+                                L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], 0), Lfirst[kbranch]);
+                                U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], 0), Ufirst[kbranch]);
+                            }
+                            else if (Lfirst[kbranch] >= minlot1[kbranch])
+                            {
+                                L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], 0), Lfirst[kbranch]);
+                                U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], 0), Ufirst[kbranch]);
+                            }
+                            else if (Math.Abs(KB.oldw[kbranch]) <= minlot1[kbranch] * breakpoint)
+                            {
+                                if (Lfirst[kbranch] >= 0)
+                                {
+                                    L[kbranch] = Math.Max(naive[kbranch], Lfirst[kbranch]);
+                                    U[kbranch] = Math.Max(Lfirst[kbranch], Math.Min(naive[kbranch], Ufirst[kbranch])); doit++;
+                                }
+                                else
+                                {
+                                    L[kbranch] = Math.Min(Ufirst[kbranch], Math.Max(naive[kbranch], Lfirst[kbranch]));
+                                    U[kbranch] = Math.Min(naive[kbranch], Ufirst[kbranch]); doit++;
+                                }
+                            }
+                            else if (doit > maxset)
+                            {
+                                //	AddLog((char*)"Enough resets %d\n",doit);
+                                continue;
+                            }
+                            else if (KB.oldw[kbranch] > minlot1[kbranch] * breakpoint)
+                            {
+                                L[kbranch] = Math.Max(naive[kbranch], Lfirst[kbranch]);
+                                U[kbranch] = Ufirst[kbranch]; doit++;
+                            }
+                            else if (KB.oldw[kbranch] < -minlot1[kbranch] * breakpoint)
+                            {
+                                L[kbranch] = Lfirst[kbranch]; doit++;
+                                U[kbranch] = Math.Min(naive[kbranch], Ufirst[kbranch]);
+                            }
+                            if (L[kbranch] > U[kbranch])
+                            {
+                                bad = true; break;
+                            }
+                        }
+                        else if (Math.Abs(KB.oldw[kbranch] - init) <= minlot[kbranch] + rounderror)
+                        {
+                            dd = digitisei(KB.oldw[kbranch], init, minlot[kbranch], 0);
+                            if (dd == 0 && Math.Abs(KB.oldw[kbranch] - init) > minlot[kbranch] * breakpoint)
+                            {
+                                if (KB.oldw[kbranch] > init) dd++;
+                                if (KB.oldw[kbranch] < init) dd--;
+                            }
+                            naive[kbranch] = digit2w(KB.oldw[kbranch], init, dd, minlot[kbranch], 0, 0);
+                            if (Ufirst[kbranch] <= minlot[kbranch])
+                            {
+                                L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], init), Lfirst[kbranch]);
+                                U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], init), Ufirst[kbranch]);
+                            }
+                            else if (Lfirst[kbranch] >= minlot[kbranch])
+                            {
+                                L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], init), Lfirst[kbranch]);
+                                U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], init), Ufirst[kbranch]);
+                            }
+                            else if (Math.Abs(KB.oldw[kbranch] - init) <= minlot[kbranch] * breakpoint)
+                            {
+                                if (Lfirst[kbranch] >= 0)
+                                {
+                                    L[kbranch] = Math.Max(naive[kbranch], Lfirst[kbranch]);
+                                    U[kbranch] = Math.Max(Lfirst[kbranch], Math.Min(naive[kbranch], Ufirst[kbranch])); doit++;
+                                }
+                                else
+                                {
+                                    L[kbranch] = Math.Min(Ufirst[kbranch], Math.Max(naive[kbranch], Lfirst[kbranch]));
+                                    U[kbranch] = Math.Min(naive[kbranch], Ufirst[kbranch]); doit++;
+                                }
+                            }
+                            /*					else if(doit>maxset)
+                                                {
+                                                //	AddLog((char*)"Enough resets %d\n",doit);
+                                                    continue;
+                                                }*/
+                            else if (KB.oldw[kbranch] - init > minlot[kbranch] * breakpoint)
+                            {
+                                L[kbranch] = Math.Max(naive[kbranch], Lfirst[kbranch]);
+                                U[kbranch] = Ufirst[kbranch]; doit++;
+                            }
+                            else if (KB.oldw[kbranch] - init < -minlot[kbranch] * breakpoint)
+                            {
+                                L[kbranch] = Lfirst[kbranch]; doit++;
+                                U[kbranch] = Math.Min(naive[kbranch], Ufirst[kbranch]);
+                            }
+                            if (L[kbranch] > U[kbranch])
+                            {
+                                bad = true; break;
+                            }
+                        }
+                        else
+                            naive[kbranch] = KB.oldw[kbranch];
+                    }
+                    more--;
+                    if (bad) break;
+                    BlasLike.dcopyvec(n + m, L, lower);
+                    BlasLike.dcopyvec(n + m, U, upper);
+                    OP.OptFunc(info);
+                    if (OP.back > 1)
+                    {
+                        bad = true;
+                        if (doreorder)
+                        {
+                            breakpoint *= breduce;
+                            ColourConsole.WriteEmbeddedColourLine($"\t\t*** [cyan]{breakno}[/cyan] Breakpoint now [magenta]{breakpoint}[/magenta] ***");
+                            if (breakno < breakmax) more++;
+                        }
+                        //printf((char*)"breakpoint %f line %d\n",breakpoint,__LINE__);
+                    }
+                }
+                if (OP.back <= 1)
+                {
+                    ColourConsole.WriteEmbeddedColourLine($"Successful new start found for stage {stage}");
+                    OP.back = threshopt(info, KB, L, U, Lfirst, Ufirst, initial, minlot, stage,
+                        naive, minlot1, nround, utility, true);
+                }
+                else { ColourConsole.WriteError($"Could not find new start\n"); OP.back = 25; }
+            }
+            return OP.back;
+        }
+
+        public void Thresh(object info, double[] initial, double[] minlot,
+                                double[] roundw, double[] minlot1)
+        {
+            double rounderror = BlasLike.lm_eps8;
+            OptParamRound OP = (OptParamRound)info;
             OP.OptFunc = RoundInnerOpt;
             OP.UtilityFunc = RoundInnerUtil;
- int i;
+            int i;
             OP.initial = initial;
             var ffi = 0;
-            for ( i = 0; i < OP.n; ++i)
+            for (i = 0; i < OP.n; ++i)
             {
                 if (OP.lower[i] == OP.upper[i])
                 {
                     minlot[i] = 0;
+                    if (minlot1 != null) minlot1[i] = 0;
                     ffi++;
                 }
             }
@@ -1614,250 +1647,291 @@ public void Thresh(object info,double[] initial,double[] minlot,
                 var init = initial != null ? initial[i] : 0.0;
                 if (OP.lower[i] > init)
                 {
-                    if(OP.lower[i]<minlot[i]+init){
-                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {OP.lower[i]}[/green][red] to {minlot[i]+init}[/red]");
-                    OP.lower[i]=minlot[i]+init;}
+                    if (OP.lower[i] < minlot[i] + init)
+                    {
+                        ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {OP.lower[i]}[/green][red] to {minlot[i] + init}[/red]");
+                        OP.lower[i] = minlot[i] + init;
+                    }
                 }
                 else if (OP.upper[i] < init)
-                {if (OP.upper[i] >-minlot[i]+init){
-                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {OP.upper[i]}[/green][red] to {-minlot[i]+init}[/red]");
-                    OP.upper[i]=-minlot[i]+init;}
-                }
-              /*  else if (OP.lower[i] == init)//Probably does nothing
                 {
-                    var dd = (long)digitisei(OP.lower[i], init, minlot[i], 0);
-                    var newL = digit2w(OP.lower[i], init, dd, minlot[i], 0);
-                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {OP.lower[i]}[/green][red] to {newL}[/red]");
-                    OP.lower[i] = newL;
+                    if (OP.upper[i] > -minlot[i] + init)
+                    {
+                        ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {OP.upper[i]}[/green][red] to {-minlot[i] + init}[/red]");
+                        OP.upper[i] = -minlot[i] + init;
+                    }
                 }
-                else if (OP.upper[i] == init)//Probably does nothing
-                {
-                    var dd = (long)digitisei(OP.upper[i], init, minlot[i], 0);
-                    var newU = digit2w(OP.upper[i], init, dd, minlot[i], 0);
-                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {OP.upper[i]}[/green][red] to {newU}[/red]");
-                    OP.upper[i] = newU;
-                }*/
+                /*  else if (OP.lower[i] == init)//Probably does nothing
+                  {
+                      var dd = (long)digitisei(OP.lower[i], init, minlot[i], 0);
+                      var newL = digit2w(OP.lower[i], init, dd, minlot[i], 0);
+                      ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {OP.lower[i]}[/green][red] to {newL}[/red]");
+                      OP.lower[i] = newL;
+                  }
+                  else if (OP.upper[i] == init)//Probably does nothing
+                  {
+                      var dd = (long)digitisei(OP.upper[i], init, minlot[i], 0);
+                      var newU = digit2w(OP.upper[i], init, dd, minlot[i], 0);
+                      ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {OP.upper[i]}[/green][red] to {newU}[/red]");
+                      OP.upper[i] = newU;
+                  }*/
             }
-	int n=OP.n;
-	int m=OP.m;
-	double[] lower=OP.lower;
-	double[] upper=OP.upper;
-	double[] Lkeep=new double[n+m],Ukeep=new double[n+m],naive=new double[n];
-    double[] LL=new double[0];
-    double[] UU=new double[0];
-    KeepBest KB=new KeepBest(n);
-    
-BlasLike.	dcopyvec(n,OP.x,KB.w);
-BlasLike.	dcopyvec(n+m,lower,Lkeep);
-BlasLike.	dcopyvec(n+m,upper,Ukeep);
-	bool changed=false;
-	int nround;
-	int back=0;
-	bool bad=false;
-	for(i=0;i<n;++i)
-	{
-		double init=initial!=null?initial[i]:0,newb;
-		if(upper[i] +BlasLike.lm_eps8 < minlot[i]+init) 
-		{
-			if(init<upper[i]){newb=Math.Min(upper[i],(Math.Max(init,lower[i])));changed=true;
-            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
-            upper[i]=newb;}
-			else if (init>upper[i]){newb=Math.Min(upper[i],(Math.Max(init-minlot[i],lower[i])));
-            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
-            changed=true;upper[i]=newb;}
-		}
-		if(lower[i] -BlasLike.lm_eps8 > init-minlot[i]) 
-		{
-			if(init>lower[i]){newb=Math.Max(lower[i],(Math.Min(init,upper[i])));changed=true;
-            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
-            lower[i]=newb;}
-			else if(init < lower[i]){newb=Math.Max(lower[i],(Math.Min(init+minlot[i],upper[i])));changed=true;
-            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
-            lower[i]=newb;}
-		}
-		if(lower[i]>upper[i])bad=true;
-	}
-	if(minlot1!=null)
-	{
-		for(i=0;i<n;++i)
-		{
-			double init=initial!=null?initial[i]:0,newb;
-			if(upper[i] +BlasLike.lm_eps8 < minlot1[i]) 
-			{
-				if(0<upper[i]){newb=Math.Min(upper[i],(Math.Max(0,lower[i])));changed=true;
-            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
-            upper[i]=newb;}
-				else if(0>upper[i]){newb=Math.Min(upper[i],(Math.Max(-minlot1[i],lower[i])));changed=true;
-            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
-            upper[i]=newb;}
-			}
-			if(lower[i] -BlasLike.lm_eps8 > -minlot1[i]) 
-			{
-				if(0>lower[i]){newb=Math.Max(lower[i],(Math.Min(0,upper[i])));changed=true;
-            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
-            lower[i]=newb;}
-				else if(0<lower[i]){newb=Math.Max(lower[i],(Math.Min(minlot1[i],upper[i])));changed=true;
-            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
-            lower[i]=newb;}
-			}
-			if(init!=0&&(init-minlot[i]) < -minlot1[i]&&lower[i] -BlasLike.lm_eps8>Math.Min((init-minlot[i]),-minlot1[i]))
-			{
-				if(minlot1[i]>init){newb=Math.Max(lower[i],Math.Max(init+minlot[i],minlot1[i]));changed=true;
-            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
-            lower[i]=newb;}
-				else{newb=Math.Max(lower[i],init);changed=true;
-            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
-            lower[i]=newb;}
-			}
-			if(init!=0&&(init-minlot[i]) < -minlot1[i]&&upper[i] +BlasLike.lm_eps8<Math.Max(init+minlot[i],minlot1[i]))
-			{
-				if(-minlot1[i]<init){newb=Math.Min(upper[i],Math.Min((init-minlot[i]),-minlot1[i]));changed=true;
-            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
-            upper[i]=newb;}
-				else{newb=Math.Min(upper[i],init);changed=true;
-            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
-            upper[i]=newb;}
-			}
-			if(lower[i]>upper[i])bad=true;
-		}
-	}
-	if(changed)
-	{
-		ColourConsole.WriteInfo($"Changed bounds due to high threshold and reoptimise");
-        Array.Resize(ref LL,n+m);
-        Array.Resize(ref UU,n+m);
-	BlasLike.	dcopyvec(n+m,Lkeep,LL);
-		BlasLike.	dcopyvec(n+m,Ukeep,UU);
-		BlasLike.	dcopyvec(n+m,lower,Lkeep);
-	BlasLike.		dcopyvec(n+m,upper,Ukeep);
-	}
-	if(!bad)
-	{
-		OP.OptFunc(info);
-		back=OP.back;
-		if(back<2)
-		{
-			if(minlot1!=null)
-			{
-				if(treestart(OP,true,initial,minlot,null,KB.w)){OP.back=0;}
-			BlasLike.	dcopyvec(n,KB.w,roundw);
-			}
-			else
-			{
-				threshopt(OP,KB,lower,upper,Lkeep,Ukeep,initial,minlot,0,naive,minlot1);
-			BlasLike.	dcopyvec(n,KB.w,roundw);
-			BlasLike.		dcopyvec(n,KB.w,OP.x);//To get U1 correct!
-//				if(treestart(OP,true,initial,minlot,0,KB.w,minlot1)){OP.back=0;}
-//				dcopyvec(n,KB.w,roundw);
-			}
-			nround=thresh_check(n,roundw,initial,Lkeep,Ukeep,minlot,minlot1,rounderror);
-			if(nround!=n)OP.back=2;//Infeasible
-		}
-		double U1=OP.UtilityFunc(info);
-		ColourConsole.WriteEmbeddedColourLine($"Start from optimum back={OP.back} U={U1}");
-		if(initial!=null)
-		{
-			if(LL!=null)
-			{
-			BlasLike.	dcopyvec(n+m,LL,lower);
-			BlasLike.	dcopyvec(n+m,UU,upper);
-			}
-			else
-			{
-			BlasLike.	dcopyvec(n+m,Lkeep,lower);
-			BlasLike.	dcopyvec(n+m,Ukeep,upper);
-			}
-			for(i=0;i<n;++i)
-			{
-				lower[i]=Math.Max((initial[i]-1e-8),lower[i]);
-				upper[i]=Math.Min((initial[i]+1e-8),upper[i]);
-				if(lower[i]>upper[i])bad=true;
-			}
-			if(!bad)OP.OptFunc(info);
-		BlasLike.	dcopyvec(n+m,Lkeep,lower);
-		BlasLike.	dcopyvec(n+m,Ukeep,upper);
-//			OP.AddLog((char*)"back %d bad %d\n",OP.back,bad);
-			if(!bad && OP.back<2)
-			{
-//			OP.AddLog((char*)"back %d bad %d\n",OP.back,bad);
-		BlasLike.		dcopyvec(n,initial,OP.x);
-				if(minlot!=null)
-				{
-					if(treestart(OP,true,initial,minlot,null,KB.w)){OP.back=0;}
-				}
-				else
-				{
-					threshopt(info,KB,lower,upper,Lkeep,Ukeep,initial,minlot,0,naive,minlot1);
-//					if(treestart(OP,true,initial,minlot,0,KB.w,minlot1)){OP.back=0;}
-				}
-				nround=thresh_check(n,KB.w,initial,Lkeep,Ukeep,minlot,minlot1,rounderror);
-				if(nround!=n)OP.back=2;//Infeasible
-		BlasLike.		dcopyvec(n,KB.w,OP.x);//To get U2 correct!
-				double U2=OP.UtilityFunc(info);
-				ColourConsole.WriteEmbeddedColourLine($"Start from initial back={OP.back} U={U2}\n");
-				if(U2>U1||OP.back>1)
-				{
-			BlasLike.		dcopyvec(n,roundw,OP.x);
-			BlasLike.		dcopyvec(n,roundw,KB.w);
-					OP.back=0;
-				}
-				else
-				{
-					back=OP.back;
-				}
-			}
-			else
-			{
-				OP.back=back;
-		BlasLike.		dcopyvec(n,roundw,OP.x);
-		BlasLike.		dcopyvec(n,roundw,KB.w);
-				bad=false;
-			}
-		}
-	}
-	if(LL!=null)//We musn't lose the original bounds
-	{
-BlasLike.		dcopyvec(n+m,LL,lower);
-BlasLike.		dcopyvec(n+m,UU,upper);
-	}
-	else
-	{
-BlasLike.		dcopyvec(n+m,Lkeep,lower);
-BlasLike.		dcopyvec(n+m,Ukeep,upper);
-	}
-	if(bad)
-	{
-		OP.back=2;return;
-	}
-	if(KB.back!=-1)KB.Message();
-BlasLike.	dcopyvec(n,KB.w,roundw);
-	if(OP.back==25)OP.back=0;
-	if(OP.back<2)
-	{
-		double compromise =BlasLike. lm_rooteps; bad = false;
-		for(i=0;i<n;++i)
-		{
-			double init=initial!=null?initial[i]:0;
-			if(Math.Abs(Math.Abs(roundw[i])-Math.Abs(round_weight(roundw[i],init,minlot[i],0))) > compromise && Math.Abs(Math.Abs(roundw[i]-init)-minlot[i])>compromise)
-			{
-				if (init!=0) { ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for trade {i+1}; threshold is {roundw[i] - init}\n");  }
-				else { ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for trade {i+1}; threshold is {roundw[i] - init}\n");  }
-				if (init!=0) { ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for trade {i+1}; threshold is {roundw[i] - init}\n"); bad = true; }
-				else { ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for trade {i+1}; threshold is {roundw[i] - init}\n");bad = true; }
-			}
-			if(minlot1!=null&&Math.Abs(Math.Abs(roundw[i])-Math.Abs(round_weight(roundw[i],0,minlot1[i],0))) > compromise && Math.Abs(Math.Abs(roundw[i])-minlot1[i])>compromise)
-			{
-				ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for stock {i+1}; threshold is {roundw[i]}");
-				bad = true;
-			}
-		}
-		nround=thresh_check(n,roundw,initial,lower,upper,minlot,minlot1,rounderror);
-		ColourConsole.WriteEmbeddedColourLine($"[blue]first  check {nround}[/blue]");
-		nround=thresh_check(n,roundw,initial,lower,upper,minlot,minlot1,compromise);
-		ColourConsole.WriteEmbeddedColourLine($"[cyan]secound  check {nround}[/cyan]");
-	}
-	if(bad)OP.back=2;
-}
+            int n = OP.n;
+            int m = OP.m;
+            double[] lower = OP.lower;
+            double[] upper = OP.upper;
+            double[] Lkeep = new double[n + m], Ukeep = new double[n + m], naive = new double[n];
+            double[] LL = new double[0];
+            double[] UU = new double[0];
+            KeepBest KB = new KeepBest(n);
+
+            BlasLike.dcopyvec(n, OP.x, KB.w);
+            BlasLike.dcopyvec(n + m, lower, Lkeep);
+            BlasLike.dcopyvec(n + m, upper, Ukeep);
+            bool changed = false;
+            int nround;
+            int back = 0;
+            bool bad = false;
+            for (i = 0; i < n; ++i)
+            {
+                double init = initial != null ? initial[i] : 0, newb;
+                if (upper[i] + BlasLike.lm_eps8 < minlot[i] + init)
+                {
+                    if (init < upper[i])
+                    {
+                        newb = Math.Min(upper[i], (Math.Max(init, lower[i]))); changed = true;
+                        ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                        upper[i] = newb;
+                    }
+                    else if (init > upper[i])
+                    {
+                        newb = Math.Min(upper[i], (Math.Max(init - minlot[i], lower[i])));
+                        ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                        changed = true; upper[i] = newb;
+                    }
+                }
+                if (lower[i] - BlasLike.lm_eps8 > init - minlot[i])
+                {
+                    if (init > lower[i])
+                    {
+                        newb = Math.Max(lower[i], (Math.Min(init, upper[i]))); changed = true;
+                        ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                        lower[i] = newb;
+                    }
+                    else if (init < lower[i])
+                    {
+                        newb = Math.Max(lower[i], (Math.Min(init + minlot[i], upper[i]))); changed = true;
+                        ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                        lower[i] = newb;
+                    }
+                }
+                if (lower[i] > upper[i]) bad = true;
+            }
+            if (minlot1 != null)
+            {
+                for (i = 0; i < n; ++i)
+                {
+                    double init = initial != null ? initial[i] : 0, newb;
+                    if (upper[i] + BlasLike.lm_eps8 < minlot1[i])
+                    {
+                        if (0 < upper[i])
+                        {
+                            newb = Math.Min(upper[i], (Math.Max(0, lower[i]))); changed = true;
+                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                            upper[i] = newb;
+                        }
+                        else if (0 > upper[i])
+                        {
+                            newb = Math.Min(upper[i], (Math.Max(-minlot1[i], lower[i]))); changed = true;
+                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                            upper[i] = newb;
+                        }
+                    }
+                    if (lower[i] - BlasLike.lm_eps8 > -minlot1[i])
+                    {
+                        if (0 > lower[i])
+                        {
+                            newb = Math.Max(lower[i], (Math.Min(0, upper[i]))); changed = true;
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                            lower[i] = newb;
+                        }
+                        else if (0 < lower[i])
+                        {
+                            newb = Math.Max(lower[i], (Math.Min(minlot1[i], upper[i]))); changed = true;
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                            lower[i] = newb;
+                        }
+                    }
+                    if (init != 0 && (init - minlot[i]) < -minlot1[i] && lower[i] - BlasLike.lm_eps8 > Math.Min((init - minlot[i]), -minlot1[i]))
+                    {
+                        if (minlot1[i] > init)
+                        {
+                            newb = Math.Max(lower[i], Math.Max(init + minlot[i], minlot1[i])); changed = true;
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                            lower[i] = newb;
+                        }
+                        else
+                        {
+                            newb = Math.Max(lower[i], init); changed = true;
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                            lower[i] = newb;
+                        }
+                    }
+                    if (init != 0 && (init - minlot[i]) < -minlot1[i] && upper[i] + BlasLike.lm_eps8 < Math.Max(init + minlot[i], minlot1[i]))
+                    {
+                        if (-minlot1[i] < init)
+                        {
+                            newb = Math.Min(upper[i], Math.Min((init - minlot[i]), -minlot1[i])); changed = true;
+                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                            upper[i] = newb;
+                        }
+                        else
+                        {
+                            newb = Math.Min(upper[i], init); changed = true;
+                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                            upper[i] = newb;
+                        }
+                    }
+                    if (lower[i] > upper[i]) bad = true;
+                }
+            }
+            if (changed)
+            {
+                ColourConsole.WriteInfo($"Changed bounds due to high threshold and reoptimise");
+                Array.Resize(ref LL, n + m);
+                Array.Resize(ref UU, n + m);
+                BlasLike.dcopyvec(n + m, Lkeep, LL);
+                BlasLike.dcopyvec(n + m, Ukeep, UU);
+                BlasLike.dcopyvec(n + m, lower, Lkeep);
+                BlasLike.dcopyvec(n + m, upper, Ukeep);
+            }
+            if (!bad)
+            {
+                OP.OptFunc(info);
+                back = OP.back;
+                if (back < 2)
+                {
+                    if (minlot1 == null)
+                    {
+                        if (treestart(OP, true, initial, minlot, null, KB.w)) { OP.back = 0; }
+                        BlasLike.dcopyvec(n, KB.w, roundw);
+                    }
+                    else
+                    {
+                        threshopt(OP, KB, lower, upper, Lkeep, Ukeep, initial, minlot, 0, naive, minlot1);
+                        BlasLike.dcopyvec(n, KB.w, roundw);
+                        BlasLike.dcopyvec(n, KB.w, OP.x);//To get U1 correct!
+                                                         //				if(treestart(OP,true,initial,minlot,0,KB.w,minlot1)){OP.back=0;}
+                                                         //				dcopyvec(n,KB.w,roundw);
+                    }
+                    nround = thresh_check(n, roundw, initial, Lkeep, Ukeep, minlot, minlot1, rounderror);
+                    if (nround != n) OP.back = 2;//Infeasible
+                }
+                double U1 = OP.UtilityFunc(info);
+                ColourConsole.WriteEmbeddedColourLine($"Start from optimum back={OP.back} U={U1}");
+                if (initial != null)
+                {
+                    if (LL != null)
+                    {
+                        BlasLike.dcopyvec(n + m, LL, lower);
+                        BlasLike.dcopyvec(n + m, UU, upper);
+                    }
+                    else
+                    {
+                        BlasLike.dcopyvec(n + m, Lkeep, lower);
+                        BlasLike.dcopyvec(n + m, Ukeep, upper);
+                    }
+                    for (i = 0; i < n; ++i)
+                    {if(lower[i]==upper[i])continue;
+                        lower[i] = Math.Max((initial[i] - 1e-8), lower[i]);
+                        upper[i] = Math.Min((initial[i] + 1e-8), upper[i]);
+                        if (lower[i] > upper[i]) bad = true;
+                    }
+                    if (!bad) OP.OptFunc(info);
+                    BlasLike.dcopyvec(n + m, Lkeep, lower);
+                    BlasLike.dcopyvec(n + m, Ukeep, upper);
+                    //			OP.AddLog((char*)"back %d bad %d\n",OP.back,bad);
+                    if (!bad && OP.back < 2)
+                    {
+                        //			OP.AddLog((char*)"back %d bad %d\n",OP.back,bad);
+                        BlasLike.dcopyvec(n, initial, OP.x);
+                        if (minlot != null)
+                        {
+                            if (treestart(OP, true, initial, minlot, null, KB.w)) { OP.back = 0; }
+                        }
+                        else
+                        {
+                            threshopt(info, KB, lower, upper, Lkeep, Ukeep, initial, minlot, 0, naive, minlot1);
+                            //					if(treestart(OP,true,initial,minlot,0,KB.w,minlot1)){OP.back=0;}
+                        }
+                        nround = thresh_check(n, KB.w, initial, Lkeep, Ukeep, minlot, minlot1, rounderror);
+                        if (nround != n) OP.back = 2;//Infeasible
+                        BlasLike.dcopyvec(n, KB.w, OP.x);//To get U2 correct!
+                        double U2 = OP.UtilityFunc(info);
+                        ColourConsole.WriteEmbeddedColourLine($"Start from initial back={OP.back} U={U2}\n");
+                        if (U2 > U1 || OP.back > 1)
+                        {
+                            BlasLike.dcopyvec(n, roundw, OP.x);
+                            BlasLike.dcopyvec(n, roundw, KB.w);
+                            OP.back = 0;
+                        }
+                        else
+                        {
+                            back = OP.back;
+                        }
+                    }
+                    else
+                    {
+                        OP.back = back;
+                        BlasLike.dcopyvec(n, roundw, OP.x);
+                        BlasLike.dcopyvec(n, roundw, KB.w);
+                        bad = false;
+                    }
+                }
+            }
+            if (LL != null)//We musn't lose the original bounds
+            {
+                BlasLike.dcopyvec(n + m, LL, lower);
+                BlasLike.dcopyvec(n + m, UU, upper);
+            }
+            else
+            {
+                BlasLike.dcopyvec(n + m, Lkeep, lower);
+                BlasLike.dcopyvec(n + m, Ukeep, upper);
+            }
+            if (bad)
+            {
+                OP.back = 2; return;
+            }
+            if (KB.back != -1) KB.Message();
+            BlasLike.dcopyvec(n, KB.w, roundw);
+            if (OP.back == 25) OP.back = 0;
+            if (OP.back < 2)
+            {
+                double compromise = BlasLike.lm_rooteps; bad = false;
+                for (i = 0; i < n; ++i)
+                {
+                    double init = initial != null ? initial[i] : 0;
+                    if (Math.Abs(Math.Abs(roundw[i]) - Math.Abs(round_weight(roundw[i], init, minlot[i], 0))) > compromise && Math.Abs(Math.Abs(roundw[i] - init) - minlot[i]) > compromise)
+                    {
+                        if (init != 0) { ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for trade {i + 1}; threshold is {roundw[i] - init}\n"); }
+                        else { ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for trade {i + 1}; threshold is {roundw[i] - init}\n"); }
+                        if (init != 0) { ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for trade {i + 1}; threshold is {roundw[i] - init}\n"); bad = true; }
+                        else { ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for trade {i + 1}; threshold is {roundw[i] - init}\n"); bad = true; }
+                    }
+                    if (minlot1 != null && Math.Abs(Math.Abs(roundw[i]) - Math.Abs(round_weight(roundw[i], 0, minlot1[i], 0))) > compromise && Math.Abs(Math.Abs(roundw[i]) - minlot1[i]) > compromise)
+                    {
+                        ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for stock {i + 1}; threshold is {roundw[i]}");
+                        bad = true;
+                    }
+                }
+                nround = thresh_check(n, roundw, initial, lower, upper, minlot, minlot1, rounderror);
+                ColourConsole.WriteEmbeddedColourLine($"[blue]first  check {nround}[/blue]");
+                nround = thresh_check(n, roundw, initial, lower, upper, minlot, minlot1, compromise);
+                ColourConsole.WriteEmbeddedColourLine($"[cyan]secound  check {nround}[/cyan]");
+            }
+            if (bad) OP.back = 2;
+        }
 
 
 
