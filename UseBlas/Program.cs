@@ -1251,7 +1251,7 @@ namespace UseBlas
                 var roundw = new double[n];
                 var shake = new int[n];
                 for(var i=0;i<n;++i)shake[i]=-1;
-                BlasLike.dsetvec(n, 1e-5, minlot);
+                BlasLike.dsetvec(n, 1e-4, minlot);
                 BlasLike.dsetvec(n, 1e-4, sizelot);
                 var basket = 396;
                 var trades = 10;//390;//200;

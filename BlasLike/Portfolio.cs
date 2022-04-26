@@ -115,9 +115,13 @@ namespace Portfolio
                 Thresh(OP, vars.initial, mintradelot, w, null); vars.back = (OP.back == 2 ? 6 : OP.back);
                 BlasLike.dcopyvec(vars.n, w, wback);
             }
-            OP.back = BACK = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, OP.lower, OP.upper, gamma, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
-                             alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a);
-
+            else
+            {
+                OP.back = BACK = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, OP.lower, OP.upper, gamma, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
+                              alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a);
+            }
+            OP.minholdlot = minholdlot;
+            OP.mintradelot = mintradelot;
             if (BACK == 0)
             {
                 int i;
@@ -913,7 +917,7 @@ namespace Portfolio
             ColourConsole.WriteEmbeddedColourLine($"[green]{nround}[/green]\t[yellow]stocks were rounded properly[/yellow]");
             return back;
         }
-        public int thresh_check(int n, double[] w, double[] initial, double[] L, double[] U, double[] min_trade, double[] min_hold = null, double eps = 0,int []shake=null)
+        public int thresh_check(int n, double[] w, double[] initial, double[] L, double[] U, double[] min_trade, double[] min_hold = null, double eps = 0, int[] shake = null)
         {
             if (eps == 0) eps = BlasLike.lm_rooteps;
             int i, bad;
@@ -925,15 +929,15 @@ namespace Portfolio
                 badi = false;
                 if (Math.Abs(Math.Abs(w[i]) - Math.Abs(round_weight(w[i], init, min_trade[i], 0))) > eps && Math.Abs(Math.Abs(w[i] - init) - min_trade[i]) > eps)
                 {
-                    badi = true;if(shake!=null)shake[i]=i;
+                    badi = true; if (shake != null) shake[i] = i;
                 }
                 if (min_hold != null && Math.Abs(Math.Abs(w[i]) - Math.Abs(round_weight(w[i], 0, min_hold[i], 0))) > eps && Math.Abs(Math.Abs(w[i]) - min_hold[i]) > eps)
                 {
-                    badi = true;if(shake!=null)shake[i]=i;
+                    badi = true; if (shake != null) shake[i] = i;
                 }
                 if (w[i] < L[i] - BlasLike.lm_eps8 || w[i] > U[i] + BlasLike.lm_eps8)
                 {
-                    badi = true;if(shake!=null)shake[i]=i;
+                    badi = true; if (shake != null) shake[i] = i;
                 }
                 if (badi) bad++;
             }
@@ -1020,6 +1024,7 @@ namespace Portfolio
                 for (kk = 0; kk < n; ++kk)
                 {
                     kbranch = kk; dd = -1;
+                    if (Math.Abs(x[kbranch]) < BlasLike.lm_eps) x[kbranch] = 0;
                     init = initial != null ? initial[kbranch] : 0;
                     /*			if(score[kbranch]<score_test&&(Math.Abs(x[kbranch]-init)<minlot[kbranch]))
                                 {
@@ -1034,17 +1039,18 @@ namespace Portfolio
                                         if(Math.Abs(nw)<minlot1[kbranch])
                                         {*/
                         if (x[kbranch] > 0) { nw = naive[kbranch] = Math.Max((digit2w(x[kbranch], init, 1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, 1, minlot1[kbranch], 0, 0))); }
-                        else { nw = naive[kbranch] = Math.Min((digit2w(x[kbranch], init, -1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, 1, minlot1[kbranch], 0, 0))); }
+                        else if (x[kbranch] < 0) { nw = naive[kbranch] = Math.Min((digit2w(x[kbranch], init, -1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, 1, minlot1[kbranch], 0, 0))); }
+                        else { nw = naive[kbranch] = Math.Min((digit2w(x[kbranch], init, 0, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, 0, minlot1[kbranch], 0, 0))); }
                         //				}
                         if (nw < Lfirst[kbranch] - BlasLike.lm_eps)
                         {
                             naive[kbranch] = digit2w(x[kbranch], init, dd + 1, minlot[kbranch], 0, 0);
-                            ColourConsole.WriteEmbeddedColourLine($"Rounded weight increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])\n");
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])\n");
                         }
                         else if (nw > Ufirst[kbranch] + BlasLike.lm_eps)
                         {
                             naive[kbranch] = digit2w(x[kbranch], init, dd - 1, minlot[kbranch], 0, 0);
-                            ColourConsole.WriteEmbeddedColourLine($"Rounded weight decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])\n");
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])\n");
                         }
                     }
                     else if (Math.Abs(x[kbranch] - init) <= minlot[kbranch] + rounderror)
@@ -1054,17 +1060,18 @@ namespace Portfolio
                         if (minlot1 != null && Math.Abs(nw) < minlot1[kbranch])
                         {
                             if (x[kbranch] > 0) { nw = naive[kbranch] = Math.Max((digit2w(x[kbranch], init, 1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, 1, minlot1[kbranch], 0, 0))); }
-                            else { nw = naive[kbranch] = Math.Min((digit2w(x[kbranch], init, -1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, -1, minlot1[kbranch], 0, 0))); }
+                            else if (x[kbranch] < 0) { nw = naive[kbranch] = Math.Min((digit2w(x[kbranch], init, -1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, -1, minlot1[kbranch], 0, 0))); }
+                            else { nw = naive[kbranch] = Math.Min((digit2w(x[kbranch], init, 0, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, 0, minlot1[kbranch], 0, 0))); }
                         }
                         if (nw < Lfirst[kbranch] - BlasLike.lm_eps)
                         {
                             naive[kbranch] = digit2w(x[kbranch], init, dd + 1, minlot[kbranch], 0, 0);
-                            ColourConsole.WriteEmbeddedColourLine($"Rounded weight increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])\n");
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])\n");
                         }
                         else if (nw > Ufirst[kbranch] + BlasLike.lm_eps)
                         {
                             naive[kbranch] = digit2w(x[kbranch], init, dd - 1, minlot[kbranch], 0, 0);
-                            ColourConsole.WriteEmbeddedColourLine($"Rounded weight decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])\n");
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])\n");
                         }
                     }
                     else if (minlot1 != null && Math.Abs(x[kbranch]) <= minlot1[kbranch] + rounderror)
@@ -1074,17 +1081,18 @@ namespace Portfolio
                         if (Math.Abs(nw - init) < minlot[kbranch])
                         {
                             if (x[kbranch] > 0) { nw = naive[kbranch] = Math.Max((digit2w(x[kbranch], init, 1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, 1, minlot1[kbranch], 0, 0))); }
-                            else { nw = naive[kbranch] = Math.Min((digit2w(x[kbranch], init, -1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, -1, minlot1[kbranch], 0, 0))); }
+                            else if (x[kbranch] < 0) { nw = naive[kbranch] = Math.Min((digit2w(x[kbranch], init, -1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, -1, minlot1[kbranch], 0, 0))); }
+                            else { nw = naive[kbranch] = Math.Min((digit2w(x[kbranch], init, 0, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, 0, minlot1[kbranch], 0, 0))); }
                         }
                         if (nw < Lfirst[kbranch] - BlasLike.lm_eps)
                         {
                             naive[kbranch] = digit2w(x[kbranch], 0, dd + 1, minlot1[kbranch], 0, 0);
-                            ColourConsole.WriteEmbeddedColourLine($"Rounded weight increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])\n");
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])\n");
                         }
                         else if (nw > Ufirst[kbranch] + BlasLike.lm_eps)
                         {
                             naive[kbranch] = digit2w(x[kbranch], 0, dd - 1, minlot1[kbranch], 0, 0);
-                            ColourConsole.WriteEmbeddedColourLine($"Rounded weight decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])\n");
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])\n");
                         }
                     }
                     else
@@ -1842,7 +1850,8 @@ namespace Portfolio
                         BlasLike.dcopyvec(n + m, Ukeep, upper);
                     }
                     for (i = 0; i < n; ++i)
-                    {if(lower[i]==upper[i])continue;
+                    {
+                        if (lower[i] == upper[i]) continue;
                         lower[i] = Math.Max((initial[i] - 1e-8), lower[i]);
                         upper[i] = Math.Min((initial[i] + 1e-8), upper[i]);
                         if (lower[i] > upper[i]) bad = true;
@@ -1914,14 +1923,11 @@ namespace Portfolio
                     double init = initial != null ? initial[i] : 0;
                     if (Math.Abs(Math.Abs(roundw[i]) - Math.Abs(round_weight(roundw[i], init, minlot[i], 0))) > compromise && Math.Abs(Math.Abs(roundw[i] - init) - minlot[i]) > compromise)
                     {
-                        if (init != 0) { ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for trade {i + 1}; threshold is {roundw[i] - init}\n"); }
-                        else { ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for trade {i + 1}; threshold is {roundw[i] - init}\n"); }
-                        if (init != 0) { ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for trade {i + 1}; threshold is {roundw[i] - init}\n"); bad = true; }
-                        else { ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for trade {i + 1}; threshold is {roundw[i] - init}\n"); bad = true; }
+                        ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for trade [green]{names[i]}[/green]; threshold is [cyan]{roundw[i] - init}[/cyan]"); bad = true;
                     }
                     if (minlot1 != null && Math.Abs(Math.Abs(roundw[i]) - Math.Abs(round_weight(roundw[i], 0, minlot1[i], 0))) > compromise && Math.Abs(Math.Abs(roundw[i]) - minlot1[i]) > compromise)
                     {
-                        ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for stock {i + 1}; threshold is {roundw[i]}");
+                        ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for stock [green]{names[i]}[/green]; threshold is [cyan]{roundw[i]}[/cyan]");
                         bad = true;
                     }
                 }
@@ -3234,6 +3240,10 @@ namespace Portfolio
             var shortsideS = -extraShort;
             for (var i = 0; i < n; ++i)
             {
+                if (Math.Abs(WW[i] - L[i]) < BlasLike.lm_eps)
+                    WW[i] = L[i];
+                else if (Math.Abs(WW[i] - U[i]) < BlasLike.lm_eps)
+                    WW[i] = U[i];
                 var cc = 0;
                 if ((longshortIndex_inverse[i] == -1 || longshortbuysellIndex_inverse[i] == -1) && UU[i] <= 0)
                     shortsideS -= WW[i];
