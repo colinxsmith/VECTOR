@@ -1857,15 +1857,18 @@ namespace Portfolio
                         BlasLike.dcopyvec(n + m, Lkeep, lower);
                         BlasLike.dcopyvec(n + m, Ukeep, upper);
                     }
-            /*        for (i = 0; i < n; ++i)
+                  for (i = 0; i < n; ++i)
                     {
                         if (lower[i] == upper[i]) continue;
                         if((initial[i]<=upper[i])&&(initial[i]>=lower[i])){
                         lower[i] = Math.Max((initial[i] - 1e-8), lower[i]);
                         upper[i] = Math.Min((initial[i] + 1e-8), upper[i]);}
+                        else{
+                 bad=true;           
+                        }
                         if (lower[i] > upper[i])
                          bad = true;
-                    }*/
+                    }
                     if (!bad) OP.OptFunc(info);
                     BlasLike.dcopyvec(n + m, Lkeep, lower);
                     BlasLike.dcopyvec(n + m, Ukeep, upper);
