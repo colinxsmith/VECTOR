@@ -117,6 +117,12 @@ namespace Portfolio
             }
             else
             {
+                for(var i=0;i<vars.n;++i)
+                {
+                    if(OP.lower[i]>OP.upper[i]){
+                        ColourConsole.WriteEmbeddedColourLine($"BAD bounds for {i} [red]{OP.lower[i]} {OP.upper[i]}[/red]  [magenta]{vars.initial[i]}[/magenta]");
+                    }
+                }
                 OP.back = BACK = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, OP.lower, OP.upper, gamma, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
                               alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a);
             }
@@ -127,10 +133,10 @@ namespace Portfolio
                 int i;
                 for (i = 0; i < vars.n; ++i)
                 {
-                    if (Math.Abs(wback[i] - vars.L[i]) < 1e-7)
-                        wback[i] = vars.L[i];
-                    else if (Math.Abs(wback[i] - vars.U[i]) < 1e-7)
-                        wback[i] = vars.U[i];
+                    if (Math.Abs(wback[i] - OP.lower[i]) < 1e-7)
+                        wback[i] = OP.lower[i];
+                    else if (Math.Abs(wback[i] - OP.upper[i]) < 1e-7)
+                        wback[i] = OP.upper[i];
                 }
             }
             return BACK;
@@ -355,6 +361,7 @@ namespace Portfolio
                 //	rstep.util=info.utility_base(n,x,c,H);
                 rstep.util = info.UtilityFunc(info);
                 rstep.back = info.back;
+                BlasLike.dcopyvec(n,wback,x);
                 BlasLike.dcopyvec(n, x, rstep.w);
                 BlasLike.dcopyvec(m + n, rstep.kL, info.lower);
                 BlasLike.dcopyvec(m + n, rstep.kU, info.upper);
@@ -839,7 +846,7 @@ namespace Portfolio
             if (rstep.nround == n && next.count == 2 && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
             if (!next.success && rstep.nround == n && rstep.back <= 1)
                 next.success = true;
-            if (rstep.nround == n && passedfromthresh && next.count > maxstage) { rstep.util = info.UtilityFunc(info); return; }
+            if (next.success&& passedfromthresh && next.count > maxstage) { rstep.util = info.UtilityFunc(info); return; }
             if ((rstep.nround < n && next.count < (firstlim * 2) && !next.success) || (next.count < firstlim/*&&info.TimeOptData==0*/))
             {
                 ColourConsole.WriteEmbeddedColourLine($"[yellow]stage {next.count}[/yellow][green] {rstep.nround} rounded[/green]");
@@ -1708,13 +1715,13 @@ namespace Portfolio
                     if (init < upper[i])
                     {
                         newb = Math.Min(upper[i], (Math.Max(init, lower[i]))); changed = true;
-                        ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+   if(upper[i]!=newb)                     ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
                         upper[i] = newb;
                     }
                     else if (init > upper[i])
                     {
                         newb = Math.Min(upper[i], (Math.Max(init - minlot[i], lower[i])));
-                        ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+   if(upper[i]!=newb)                     ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
                         changed = true; upper[i] = newb;
                     }
                 }
@@ -1723,13 +1730,13 @@ namespace Portfolio
                     if (init > lower[i])
                     {
                         newb = Math.Max(lower[i], (Math.Min(init, upper[i]))); changed = true;
-                        ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+        if(lower[i]!=newb)                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
                         lower[i] = newb;
                     }
                     else if (init < lower[i])
                     {
                         newb = Math.Max(lower[i], (Math.Min(init + minlot[i], upper[i]))); changed = true;
-                        ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+         if(lower[i]!=newb)               ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
                         lower[i] = newb;
                     }
                 }
@@ -1745,13 +1752,13 @@ namespace Portfolio
                         if (0 < upper[i])
                         {
                             newb = Math.Min(upper[i], (Math.Max(0, lower[i]))); changed = true;
-                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+      if(upper[i]!=newb)                      ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
                             upper[i] = newb;
                         }
                         else if (0 > upper[i])
                         {
                             newb = Math.Min(upper[i], (Math.Max(-minlot1[i], lower[i]))); changed = true;
-                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+         if(upper[i]!=newb)                   ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
                             upper[i] = newb;
                         }
                     }
@@ -1760,13 +1767,13 @@ namespace Portfolio
                         if (0 > lower[i])
                         {
                             newb = Math.Max(lower[i], (Math.Min(0, upper[i]))); changed = true;
-                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+           if(lower[i]!=newb)                 ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
                             lower[i] = newb;
                         }
                         else if (0 < lower[i])
                         {
                             newb = Math.Max(lower[i], (Math.Min(minlot1[i], upper[i]))); changed = true;
-                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+          if(lower[i]!=newb)                  ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
                             lower[i] = newb;
                         }
                     }
@@ -1775,13 +1782,13 @@ namespace Portfolio
                         if (minlot1[i] > init)
                         {
                             newb = Math.Max(lower[i], Math.Max(init + minlot[i], minlot1[i])); changed = true;
-                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+          if(lower[i]!=newb)                  ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
                             lower[i] = newb;
                         }
                         else
                         {
                             newb = Math.Max(lower[i], init); changed = true;
-                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+         if(lower[i]!=newb)                   ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
                             lower[i] = newb;
                         }
                     }
@@ -1790,13 +1797,13 @@ namespace Portfolio
                         if (-minlot1[i] < init)
                         {
                             newb = Math.Min(upper[i], Math.Min((init - minlot[i]), -minlot1[i])); changed = true;
-                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+        if(upper[i]!=newb)                   ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
                             upper[i] = newb;
                         }
                         else
                         {
                             newb = Math.Min(upper[i], init); changed = true;
-                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+        if(upper[i]!=newb)                    ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
                             upper[i] = newb;
                         }
                     }
@@ -1819,6 +1826,7 @@ namespace Portfolio
                 back = OP.back;
                 if (back < 2)
                 {
+                BlasLike.dcopyvec(n,wback,OP.x);
                     if (minlot1 == null)
                     {
                         if (treestart(OP, true, initial, minlot, null, KB.w)) { OP.back = 0; }
@@ -1849,13 +1857,15 @@ namespace Portfolio
                         BlasLike.dcopyvec(n + m, Lkeep, lower);
                         BlasLike.dcopyvec(n + m, Ukeep, upper);
                     }
-                    for (i = 0; i < n; ++i)
+            /*        for (i = 0; i < n; ++i)
                     {
                         if (lower[i] == upper[i]) continue;
+                        if((initial[i]<=upper[i])&&(initial[i]>=lower[i])){
                         lower[i] = Math.Max((initial[i] - 1e-8), lower[i]);
-                        upper[i] = Math.Min((initial[i] + 1e-8), upper[i]);
-                        if (lower[i] > upper[i]) bad = true;
-                    }
+                        upper[i] = Math.Min((initial[i] + 1e-8), upper[i]);}
+                        if (lower[i] > upper[i])
+                         bad = true;
+                    }*/
                     if (!bad) OP.OptFunc(info);
                     BlasLike.dcopyvec(n + m, Lkeep, lower);
                     BlasLike.dcopyvec(n + m, Ukeep, upper);
@@ -1934,7 +1944,7 @@ namespace Portfolio
                 nround = thresh_check(n, roundw, initial, lower, upper, minlot, minlot1, rounderror);
                 ColourConsole.WriteEmbeddedColourLine($"[blue]first  check {nround}[/blue]");
                 nround = thresh_check(n, roundw, initial, lower, upper, minlot, minlot1, compromise);
-                ColourConsole.WriteEmbeddedColourLine($"[cyan]secound  check {nround}[/cyan]");
+                ColourConsole.WriteEmbeddedColourLine($"[cyan]second  check {nround}[/cyan]");
             }
             if (bad) OP.back = 2;
         }
