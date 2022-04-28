@@ -1189,8 +1189,8 @@ namespace UseBlas
                 Console.WriteLine("BUY/SELL and LONG/SHORT");
                 double[] SV = null, FC = null, FL = null, L = null, U = null, alpha = null, initial = null, A = null;
                 double[] buy = null, sell = null, bench = null, Q = null, A_abs = null, Abs_U = null, Abs_L = null;
-                double gamma, delta, kappa, value, valuel, rmin, rmax,min_holding,min_trade;
-                double[]minhold=new double[0],mintrade=new double[0];
+                double gamma, delta, kappa, value, valuel, rmin, rmax, min_holding, min_trade;
+                double[] minhold = new double[0], mintrade = new double[0];
                 int n, nfac, m, nabs, mabs;
                 int[] I_A = null;
                 string[] names;
@@ -1239,8 +1239,8 @@ namespace UseBlas
                     Abs_U = buysell.mapDouble["Abs_U"];
                     Abs_L = buysell.mapDouble["Abs_L"];
                     I_A = buysell.mapInt["I_A"];
-                    min_holding=buysell.mapDouble["min_holding"][0];
-                    min_trade=buysell.mapDouble["min_trade"][0];
+                    min_holding = buysell.mapDouble["min_holding"][0];
+                    min_trade = buysell.mapDouble["min_trade"][0];
                 }
                 /*   L[0] = -0.017583279913421082;
                       U[0] = -0.017583279913421082;
@@ -1253,29 +1253,33 @@ namespace UseBlas
                 var sizelot = new double[n];
                 var roundw = new double[n];
                 var shake = new int[n];
-                for(var i=0;i<n;++i)shake[i]=-1;
+                for (var i = 0; i < n; ++i) shake[i] = -1;
                 BlasLike.dsetvec(n, 3e-5, minlot);
                 BlasLike.dsetvec(n, 1e-4, sizelot);
-                if(min_holding>=0){
-                    minhold=new double[n];
-                    BlasLike.dsetvec(n,min_holding,minhold);
-                }else minhold=null;
-                if(min_trade>=0){
-                    mintrade=new double[n];
-                    BlasLike.dsetvec(n,min_trade,mintrade);
-                }else mintrade=null;
+                if (min_holding >= 0)
+                {
+                    minhold = new double[n];
+                    BlasLike.dsetvec(n, min_holding, minhold);
+                }
+                else minhold = null;
+                if (min_trade >= 0)
+                {
+                    mintrade = new double[n];
+                    BlasLike.dsetvec(n, min_trade, mintrade);
+                }
+                else mintrade = null;
                 var basket = 396;
                 var trades = 10;//390;//200;
                 useIp = false;
-                Portfolio.Portfolio.OptParamRound Op=new Portfolio.Portfolio.OptParamRound();
-                Portfolio.Portfolio.INFO sendInput = new Portfolio.Portfolio.INFO();           Op.basket = basket;
-            Op.trades = trades;
-            Op.lower = L;
-            Op.m =m;
-            Op.n = n;
-            Op.upper = U;
-            Op.minholdlot = null;
-            Op.mintradelot = null;
+                Portfolio.Portfolio.OptParamRound Op = new Portfolio.Portfolio.OptParamRound();
+                Portfolio.Portfolio.INFO sendInput = new Portfolio.Portfolio.INFO(); Op.basket = basket;
+                Op.trades = trades;
+                Op.lower = L;
+                Op.m = m;
+                Op.n = n;
+                Op.upper = U;
+                Op.minholdlot = null;
+                Op.mintradelot = null;
                 sendInput.n = n;
                 sendInput.m = m;
                 sendInput.nfac = nfac;
@@ -1315,13 +1319,17 @@ namespace UseBlas
                     sendInput.useIP = false;
                     //opt.Rounding(basket, trades, initial, minlot, sizelot, roundw, null, null, sendInput);
                     //opt.roundcheck(n, roundw, initial, minlot, sizelot, shake);
-                    Op.x=opt.wback;
-                    Op.MoreInfo=sendInput;
-                    opt.Thresh(Op,mintrade==null?null:initial,mintrade==null?minhold:mintrade,roundw,mintrade==null?null:minhold);
-                    opt.thresh_check(n, roundw, mintrade==null?null:initial, L, U, mintrade==null?minhold:mintrade, mintrade==null?null:minhold, BlasLike.lm_eps8,shake);
+                    Op.x = opt.wback;
+                    Op.MoreInfo = sendInput;
+                    opt.Thresh(Op, mintrade == null ? null : initial, mintrade == null ? minhold : mintrade, roundw, mintrade == null ? null : minhold);
+                    opt.thresh_check(n, roundw, mintrade == null ? null : initial, L, U, mintrade == null ? minhold : mintrade, mintrade == null ? null : minhold, BlasLike.lm_eps8, shake);
                     foreach (var i in shake)
                     {
-                        if (i != -1) ColourConsole.WriteEmbeddedColourLine($"[green]{names[i]}[/green][red] was not rounded properly! {roundw[i],26:e16}[/red]");
+                        if (i != -1)
+                        {
+                            var init = mintrade == null ? 0 : initial[i];
+                            ColourConsole.WriteEmbeddedColourLine($"[green]{names[i]}[/green] ([cyan]{i,5}[/cyan])[red] was not rounded properly! weight {roundw[i],26:e16} (trade{roundw[i] - init,26:e16})[/red]");
+                        }
                     }
                 }
                 else

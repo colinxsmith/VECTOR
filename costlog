@@ -79,7 +79,7 @@ revise
 costs
 1
 min_holding
-4.5e-5
+1e-4
 min_trade
 2e-5
 ls
