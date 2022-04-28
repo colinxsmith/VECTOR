@@ -1718,34 +1718,34 @@ namespace Portfolio
                 {
                     if (init < upper[i])
                     {
-                        newb = Math.Min(upper[i], (Math.Max(init, lower[i]))); changed = true;
-                        if (upper[i] != newb)
+                        newb = Math.Min(upper[i], (Math.Max(init, lower[i]))); 
+                        if (upper[i] != newb){changed = true;
                             ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
-                        upper[i] = newb;
+                        upper[i] = newb;}
                     }
                     else if (init > upper[i])
                     {
                         newb = Math.Min(upper[i], (Math.Max(init - minlot[i], lower[i])));
-                        if (upper[i] != newb)
+                        if (upper[i] != newb){
                             ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
-                        changed = true; upper[i] = newb;
+                        changed = true; upper[i] = newb;}
                     }
                 }
                 if (lower[i] - BlasLike.lm_eps8 > init - minlot[i])
                 {
                     if (init > lower[i])
                     {
-                        newb = Math.Max(lower[i], (Math.Min(init, upper[i]))); changed = true;
-                        if (lower[i] != newb)
+                        newb = Math.Max(lower[i], (Math.Min(init, upper[i]))); 
+                        if (lower[i] != newb){changed = true;
                             ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
-                        lower[i] = newb;
+                        lower[i] = newb;}
                     }
                     else if (init < lower[i])
                     {
-                        newb = Math.Max(lower[i], (Math.Min(init + minlot[i], upper[i]))); changed = true;
-                        if (lower[i] != newb)
+                        newb = Math.Max(lower[i], (Math.Min(init + minlot[i], upper[i])));
+                        if (lower[i] != newb){ changed = true;
                             ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
-                        lower[i] = newb;
+                        lower[i] = newb;}
                     }
                 }
                 if (lower[i] > upper[i]) bad = true;
@@ -1759,16 +1759,16 @@ namespace Portfolio
                     {
                         if (0 < upper[i])
                         {
-                            newb = Math.Min(upper[i], (Math.Max(0, lower[i]))); changed = true;
-                            if (upper[i] != newb)
+                            newb = Math.Min(upper[i], (Math.Max(0, lower[i]))); 
+                            if (upper[i] != newb){changed = true;
                                 ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
-                            upper[i] = newb;
+                            upper[i] = newb;}
                         }
                         else if (0 > upper[i])
                         {
-                            newb = Math.Min(upper[i], (Math.Max(-minlot1[i], lower[i]))); changed = true;
+                            newb = Math.Min(upper[i], (Math.Max(-minlot1[i], lower[i]))); 
                             if (upper[i] != newb)
-                            {
+                            {changed = true;
                                 ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
                                 upper[i] = newb;
                                 if (upper[i] - init < -minlot[i])
@@ -1783,16 +1783,16 @@ namespace Portfolio
                     {
                         if (0 > lower[i])
                         {
-                            newb = Math.Max(lower[i], (Math.Min(0, upper[i]))); changed = true;
-                            if (lower[i] != newb)
+                            newb = Math.Max(lower[i], (Math.Min(0, upper[i]))); 
+                            if (lower[i] != newb){changed = true;
                                 ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
-                            lower[i] = newb;
+                            lower[i] = newb;}
                         }
                         else if (0 < lower[i])
                         {
-                            newb = Math.Max(lower[i], (Math.Min(minlot1[i], upper[i]))); changed = true;
+                            newb = Math.Max(lower[i], (Math.Min(minlot1[i], upper[i]))); 
                             if (lower[i] != newb)
-                            {
+                            {changed = true;
                                 ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
                                 lower[i] = newb;
                                 if (lower[i] - init < minlot[i])
@@ -1807,34 +1807,34 @@ namespace Portfolio
                     {
                         if (minlot1[i] > init)
                         {
-                            newb = Math.Max(lower[i], Math.Max(init + minlot[i], minlot1[i])); changed = true;
-                            if (lower[i] != newb)
+                            newb = Math.Max(lower[i], Math.Max(init + minlot[i], minlot1[i])); 
+                            if (lower[i] != newb){changed = true;
                                 ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
-                            lower[i] = newb;
+                            lower[i] = newb;}
                         }
                         else
                         {
-                            newb = Math.Max(lower[i], init); changed = true;
-                            if (lower[i] != newb)
+                            newb = Math.Max(lower[i], init); 
+                            if (lower[i] != newb){changed = true;
                                 ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
-                            lower[i] = newb;
+                            lower[i] = newb;}
                         }
                     }
                     if (init != 0 && (init - minlot[i]) < -minlot1[i] && upper[i] + BlasLike.lm_eps8 < Math.Max(init + minlot[i], minlot1[i]))
                     {
                         if (-minlot1[i] < init)
                         {
-                            newb = Math.Min(upper[i], Math.Min((init - minlot[i]), -minlot1[i])); changed = true;
-                            if (upper[i] != newb)
-                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
-                            upper[i] = newb;
+                            newb = Math.Min(upper[i], Math.Min((init - minlot[i]), -minlot1[i])); 
+                            if (upper[i] != newb){changed = true;
+                                                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                            upper[i] = newb;}
                         }
                         else
                         {
-                            newb = Math.Min(upper[i], init); changed = true;
-                            if (upper[i] != newb)
+                            newb = Math.Min(upper[i], init); 
+                            if (upper[i] != newb){changed = true;
                                 ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
-                            upper[i] = newb;
+                            upper[i] = newb;}
                         }
                     }
                     if (lower[i] > upper[i]) bad = true;
