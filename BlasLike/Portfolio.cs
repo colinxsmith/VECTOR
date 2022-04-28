@@ -2015,6 +2015,140 @@ namespace Portfolio
                 }
             }
             if (ffi > 0) ColourConsole.WriteEmbeddedColourLine($"[cyan]Changed lot for[/cyan] [red]{ffi}[/red][cyan] lots due to fixed bounds[/cyan]");
+            bool bad = false,changed;
+            var lower=Op.lower;
+            var upper=Op.upper;
+            var minlot1=minholdlot;
+            for (var i = 0; i < Op.n; ++i)
+            {
+                double init = initial != null ? initial[i] : 0, newb;
+                if (upper[i] + BlasLike.lm_eps8 < minlot[i] + init)
+                {
+                    if (init < upper[i])
+                    {
+                        newb = Math.Min(upper[i], (Math.Max(init, lower[i]))); 
+                        if (upper[i] != newb){changed = true;
+                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                        upper[i] = newb;}
+                    }
+                    else if (init > upper[i])
+                    {
+                        newb = Math.Min(upper[i], (Math.Max(init - minlot[i], lower[i])));
+                        if (upper[i] != newb){
+                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                        changed = true; upper[i] = newb;}
+                    }
+                }
+                if (lower[i] - BlasLike.lm_eps8 > init - minlot[i])
+                {
+                    if (init > lower[i])
+                    {
+                        newb = Math.Max(lower[i], (Math.Min(init, upper[i]))); 
+                        if (lower[i] != newb){changed = true;
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                        lower[i] = newb;}
+                    }
+                    else if (init < lower[i])
+                    {
+                        newb = Math.Max(lower[i], (Math.Min(init + minlot[i], upper[i])));
+                        if (lower[i] != newb){ changed = true;
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                        lower[i] = newb;}
+                    }
+                }
+                if (lower[i] > upper[i]) bad = true;
+            }
+            if (minlot1 != null)
+            {
+                for (var i = 0; i < Op.n; ++i)
+                {
+                    double init = initial != null ? initial[i] : 0, newb;
+                    if (upper[i] + BlasLike.lm_eps8 < minlot1[i])
+                    {
+                        if (0 < upper[i])
+                        {
+                            newb = Math.Min(upper[i], (Math.Max(0, lower[i]))); 
+                            if (upper[i] != newb){changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                            upper[i] = newb;}
+                        }
+                        else if (0 > upper[i])
+                        {
+                            newb = Math.Min(upper[i], (Math.Max(-minlot1[i], lower[i]))); 
+                            if (upper[i] != newb)
+                            {changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                                upper[i] = newb;
+                                if (upper[i] - init < -minlot[i])
+                                {
+                                    upper[i] = Math.Min(upper[i], (Math.Max(-minlot[i] + init, lower[i])));
+                                    ColourConsole.WriteEmbeddedColourLine($"[red]Decrease {names[i]} further to [/red][magenta]{upper[i]}[/magenta]");
+                                }
+                            }
+                        }
+                    }
+                    if (lower[i] - BlasLike.lm_eps8 > -minlot1[i])
+                    {
+                        if (0 > lower[i])
+                        {
+                            newb = Math.Max(lower[i], (Math.Min(0, upper[i]))); 
+                            if (lower[i] != newb){changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                            lower[i] = newb;}
+                        }
+                        else if (0 < lower[i])
+                        {
+                            newb = Math.Max(lower[i], (Math.Min(minlot1[i], upper[i]))); 
+                            if (lower[i] != newb)
+                            {changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                                lower[i] = newb;
+                                if (lower[i] - init < minlot[i])
+                                {
+                                    lower[i] = Math.Max(lower[i], (Math.Min(minlot[i] + init, upper[i])));
+                                    ColourConsole.WriteEmbeddedColourLine($"[green]Increase {names[i]} further to [/green][darkgreen]{lower[i]}[/darkgreen]");
+                                }
+                            }
+                        }
+                    }
+                    if (init != 0 && (init - minlot[i]) < -minlot1[i] && lower[i] - BlasLike.lm_eps8 > Math.Min((init - minlot[i]), -minlot1[i]))
+                    {
+                        if (minlot1[i] > init)
+                        {
+                            newb = Math.Max(lower[i], Math.Max(init + minlot[i], minlot1[i])); 
+                            if (lower[i] != newb){changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                            lower[i] = newb;}
+                        }
+                        else
+                        {
+                            newb = Math.Max(lower[i], init); 
+                            if (lower[i] != newb){changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                            lower[i] = newb;}
+                        }
+                    }
+                    if (init != 0 && (init - minlot[i]) < -minlot1[i] && upper[i] + BlasLike.lm_eps8 < Math.Max(init + minlot[i], minlot1[i]))
+                    {
+                        if (-minlot1[i] < init)
+                        {
+                            newb = Math.Min(upper[i], Math.Min((init - minlot[i]), -minlot1[i])); 
+                            if (upper[i] != newb){changed = true;
+                                                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                            upper[i] = newb;}
+                        }
+                        else
+                        {
+                            newb = Math.Min(upper[i], init); 
+                            if (upper[i] != newb){changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                            upper[i] = newb;}
+                        }
+                    }
+                    if (lower[i] > upper[i]) bad = true;
+                }
+            }
+        
             for (var i = 0; i < Op.n; ++i)
             {
                 if (Op.lower[i] == Op.upper[i]) continue;
