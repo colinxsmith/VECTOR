@@ -204,7 +204,7 @@ namespace Portfolio
         }
         ///<summary>Return a whole number if digit is whole number plus/minus something very small</summary>
         double check_digit(double digit)
-        {
+        {if(Math.Abs(digit)<BlasLike.lm_eps)return 0.0;
             double delta = Math.Abs(Math.Abs(digit - (long)(digit)) - 1);
             if (delta <= (BlasLike.lm_rooteps))
             {
@@ -314,10 +314,13 @@ namespace Portfolio
                         nwL = digit2w(x[i], init, dd, minlot[i], sizelot[i]);
                         nwU = digit2w(x[i], init, dd + 1, minlot[i], sizelot[i]);
                     }
-                    else
+                    else if(x[i] < init)
                     {
                         nwL = digit2w(x[i], init, dd - 1, minlot[i], sizelot[i]);
                         nwU = digit2w(x[i], init, dd, minlot[i], sizelot[i]);
+                    }
+                    else{
+                        nwL=nwU=digit2w(x[i], init, 0, minlot[i], sizelot[i]);
                     }
                     if (Math.Abs(x[i] - nwL) < round_eps || Math.Abs(x[i] - nwU) < round_eps || Math.Abs(x[i] - init) < BlasLike.lm_eps)
                     {
@@ -427,10 +430,14 @@ namespace Portfolio
                                         nwL = digit2w(rstep.prev.w[i], init, dd, minlot[i], sizelot[i]);
                                         nwU = digit2w(rstep.prev.w[i], init, dd + 1, minlot[i], sizelot[i]);
                                     }
-                                    else
+                                    else if (rstep.prev.w[i] < init)
                                     {
                                         nwL = digit2w(rstep.prev.w[i], init, dd - 1, minlot[i], sizelot[i]);
                                         nwU = digit2w(rstep.prev.w[i], init, dd, minlot[i], sizelot[i]);
+                                    }
+                                    else 
+                                    {
+                                        nwL = nwU=digit2w(rstep.prev.w[i], init, 0, minlot[i], sizelot[i]);
                                     }
                                 }
                                 else if (rstep.prev.w[i] >= init)
@@ -456,10 +463,14 @@ namespace Portfolio
                                         nwL = digit2w(rstep.prev.w[i], init, dd, minlot[i], sizelot[i]);
                                         nwU = digit2w(rstep.prev.w[i], init, dd + 1, minlot[i], sizelot[i]);
                                     }
-                                    else
+                                    else if (rstep.prev.w[i] < init)
                                     {
                                         nwL = digit2w(rstep.prev.w[i], init, dd - 1, minlot[i], sizelot[i]);
                                         nwU = digit2w(rstep.prev.w[i], init, dd, minlot[i], sizelot[i]);
+                                    }
+                                    else
+                                    {
+                                        nwL = nwU=digit2w(rstep.prev.w[i], init, 0, minlot[i], sizelot[i]);
                                     }
                                 }
                                 else if (rstep.prev.w[i] >= init)
@@ -503,10 +514,14 @@ namespace Portfolio
                                     nwL = Math.Max((digit2w(wuse, init, dd - 1, minlot[i], sizelot[i])), rstep.kL[i]);
                                     nwU = Math.Min((digit2w(wuse, init, dd + 1, minlot[i], sizelot[i])), rstep.kU[i]);
                                 }
-                                else
+                                else if (wuse > init)
                                 {
                                     nwL = Math.Max((digit2w(wuse, init, dd - 1, minlot[i], sizelot[i])), rstep.kL[i]);
                                     nwU = Math.Min((digit2w(wuse, init, dd + 1, minlot[i], sizelot[i])), rstep.kU[i]);
+                                }
+                                else
+                                {
+                                    nwL = nwU=Math.Max((digit2w(wuse, init, 0, minlot[i], sizelot[i])), rstep.kL[i]);
                                 }
                             }
                             else if (wuse >= init)
@@ -597,10 +612,14 @@ namespace Portfolio
                         nwL = digit2w(x[i], init, dd, minlot[i], sizelot[i]);
                         nwU = digit2w(x[i], init, dd + 1, minlot[i], sizelot[i]);
                     }
-                    else
+                    else if (x[i] < init)
                     {
                         nwL = digit2w(x[i], init, dd - 1, minlot[i], sizelot[i]);
                         nwU = digit2w(x[i], init, dd, minlot[i], sizelot[i]);
+                    }
+                    else 
+                    {
+                        nwL = nwU=digit2w(x[i], init, 0, minlot[i], sizelot[i]);
                     }
                     if (Math.Abs(x[i] - nwL) < round_eps || Math.Abs(x[i] - nwU) < round_eps || Math.Abs(x[i] - init) < BlasLike.lm_eps)
                     {
@@ -608,9 +627,9 @@ namespace Portfolio
                         rstep.nround++;
                         continue;
                     }
-                    if ((nwU - (x[i])) / (x[i] - nwL) < switch1)
+                    if (((nwU - (x[i])) / (x[i] - nwL)) < switch1)
                     {
-                        if (nwU >= rstep.L[i])
+                        if (nwU >= rstep.L[i] && nwU <= rstep.kU[i])
                             bound_error[i] = n + nwU - (x[i]);
                         else
                             bound_error[i] = n + x[i] - nwL;
@@ -684,7 +703,7 @@ namespace Portfolio
                             nwU = digit2w(x[i], init, dd + 1 + (long)stuck, minlot[i], sizelot[i]);
                         }
                     }
-                    else
+                    else if(x[i] < init)
                     {
                         if (!(j % 2 != 0 && next.count % 2 != 0))
                         {
@@ -702,7 +721,12 @@ namespace Portfolio
                             nwU = digit2w(x[i], init, dd, minlot[i], sizelot[i]);
                         }
                     }
-                    //info.AddLog((char*)"closeness %d %e %e %e\n",i,x[i]-nwL,x[i]-nwU,x[i]);
+                        else
+                        {
+                            nwL = digit2w(x[i], init, -stuck, minlot[i], sizelot[i]);
+                            nwL = digit2w(x[i], init, 0, minlot[i], sizelot[i]);
+                        }
+                    //info.AddLog((char*)"closeness %d %e %e %e",i,x[i]-nwL,x[i]-nwU,x[i]);
                     if (Math.Abs(x[i] - nwL) < round_eps || Math.Abs(x[i] - nwU) < round_eps || Math.Abs(x[i] - init) < BlasLike.lm_eps)
                     {
                         continue;
@@ -719,7 +743,7 @@ namespace Portfolio
                                 next.U[i] = Math.Max(rstep.kL[i], Math.Min(nwL, rstep.U[i]));
                             }*/
                     }
-                    else if ((nwU - (x[i])) / (x[i] - nwL) < switch1)
+                    else if (((nwU - (x[i])) / (x[i] - nwL)) < switch1)
                     {
                         if (nwU >= rstep.L[i] && nwU <= rstep.kU[i])
                             next.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.L[i]));
@@ -750,9 +774,9 @@ namespace Portfolio
                             next.U[i] = Math.Max(rstep.kL[i], Math.Min(init, rstep.kU[i]));
                             next.L[i] = rstep.kL[i];
                         }
-                        //printf((char*)"bound problem\n");
+                        //printf((char*)"bound problem");
                     }
-                    //			printf((char*)"%3d %20.8e %20.8e %20.8e trade %20.8e\n",i,next.L[i],next.U[i],x[i],x[i]-init);
+                    //			printf((char*)"%3d %20.8e %20.8e %20.8e trade %20.8e",i,next.L[i],next.U[i],x[i],x[i]-init);
                 }
                 else
                 {
@@ -1002,10 +1026,10 @@ namespace Portfolio
                     FILE*INTERDATA=fopen((char*)"interdata",(char*)"a");
                     if(INTERDATA)
                     {
-                        fprintf(INTERDATA,(char*)"++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++%d\n",OP.back);
+                        fprintf(INTERDATA,(char*)"++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++%d",OP.back);
                         for(int i=0;i<n;++i)
                         {
-                            fprintf(INTERDATA,(char*)"%3d %30.16e %30.16e %30.16e\n",i+1,lower[i],x[i],upper[i]);
+                            fprintf(INTERDATA,(char*)"%3d %30.16e %30.16e %30.16e",i+1,lower[i],x[i],upper[i]);
                         }
                         fclose(INTERDATA);
                     }
@@ -1039,7 +1063,7 @@ namespace Portfolio
                     init = initial != null ? initial[kbranch] : 0;
                     /*			if(score[kbranch]<score_test&&(Math.Abs(x[kbranch]-init)<minlot[kbranch]))
                                 {
-                    //					printf((char*)"Discarding %-.8e %-.8e score %-.8e this time\n",x[kbranch]-init,minlot[kbranch],score[kbranch]);
+                    //					printf((char*)"Discarding %-.8e %-.8e score %-.8e this time",x[kbranch]-init,minlot[kbranch],score[kbranch]);
                                     if(score[kbranch]<1e-15)nround++;
                                     continue;
                                 }*/
@@ -1056,12 +1080,12 @@ namespace Portfolio
                         if (nw < Lfirst[kbranch] - BlasLike.lm_eps)
                         {
                             naive[kbranch] = digit2w(x[kbranch], init, 1, minlot[kbranch], 0, 0);
-                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])\n");
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])");
                         }
                         else if (nw > Ufirst[kbranch] + BlasLike.lm_eps)
                         {
                             naive[kbranch] = digit2w(x[kbranch], init, -1, minlot[kbranch], 0, 0);
-                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])\n");
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])");
                         }
                     }
                     else if (Math.Abs(x[kbranch] - init) <= minlot[kbranch] + rounderror)
@@ -1077,12 +1101,12 @@ namespace Portfolio
                         if (nw < Lfirst[kbranch] - BlasLike.lm_eps)
                         {
                             naive[kbranch] = digit2w(x[kbranch], init, dd + 1, minlot[kbranch], 0, 0);
-                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])\n");
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])");
                         }
                         else if (nw > Ufirst[kbranch] + BlasLike.lm_eps)
                         {
                             naive[kbranch] = digit2w(x[kbranch], init, dd - 1, minlot[kbranch], 0, 0);
-                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])\n");
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])");
                         }
                     }
                     else if (minlot1 != null && Math.Abs(x[kbranch]) <= minlot1[kbranch] + rounderror)
@@ -1098,12 +1122,12 @@ namespace Portfolio
                         if (nw < Lfirst[kbranch] - BlasLike.lm_eps)
                         {
                             naive[kbranch] = digit2w(x[kbranch], 0, dd + 1, minlot1[kbranch], 0, 0);
-                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])\n");
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])");
                         }
                         else if (nw > Ufirst[kbranch] + BlasLike.lm_eps)
                         {
                             naive[kbranch] = digit2w(x[kbranch], 0, dd - 1, minlot1[kbranch], 0, 0);
-                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])\n");
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])");
                         }
                     }
                     else
@@ -1195,7 +1219,7 @@ namespace Portfolio
                 if (nround == rounded && Math.Abs(utility - oldutil) <= BlasLike.lm_eps)
                     ok = true;
                 //		if(KB.stuck>0)ok=1;
-                //printf((char*)"stuck %d line %d nround %d %d\n",KB.stuck,__LINE__,KB.nround,nround);
+                //printf((char*)"stuck %d line %d nround %d %d",KB.stuck,__LINE__,KB.nround,nround);
                 if (!ok && stage < KB.stage + 5)
                     threshopt(info, KB, L, U, Lfirst, Ufirst, initial, minlot,
                     stage + 1, naive, minlot1, nround, utility, false);
@@ -1446,7 +1470,7 @@ namespace Portfolio
                                 }
                                 else if (doit > maxset)
                                 {
-                                    //	AddLog((char*)"Enough resets %d\n",doit);
+                                    //	AddLog((char*)"Enough resets %d",doit);
                                     continue;
                                 }
                                 else if (KB.oldw[kbranch] - init > minlot[kbranch] * breakpoint)
@@ -1485,7 +1509,7 @@ namespace Portfolio
                                 }
                                 else if (doit > maxset)
                                 {
-                                    //	AddLog((char*)"Enough resets %d\n",doit);
+                                    //	AddLog((char*)"Enough resets %d",doit);
                                     continue;
                                 }
                                 else if (KB.oldw[kbranch] > minlot1[kbranch] * breakpoint)
@@ -1539,7 +1563,7 @@ namespace Portfolio
                             }
                             else if (doit > maxset)
                             {
-                                //	AddLog((char*)"Enough resets %d\n",doit);
+                                //	AddLog((char*)"Enough resets %d",doit);
                                 continue;
                             }
                             else if (KB.oldw[kbranch] > minlot1[kbranch] * breakpoint)
@@ -1591,7 +1615,7 @@ namespace Portfolio
                             }
                             /*					else if(doit>maxset)
                                                 {
-                                                //	AddLog((char*)"Enough resets %d\n",doit);
+                                                //	AddLog((char*)"Enough resets %d",doit);
                                                     continue;
                                                 }*/
                             else if (KB.oldw[kbranch] - init > minlot[kbranch] * breakpoint)
@@ -1626,7 +1650,7 @@ namespace Portfolio
                             ColourConsole.WriteEmbeddedColourLine($"\t\t*** [cyan]{breakno}[/cyan] Breakpoint now [magenta]{breakpoint}[/magenta] ***");
                             if (breakno < breakmax) more++;
                         }
-                        //printf((char*)"breakpoint %f line %d\n",breakpoint,__LINE__);
+                        //printf((char*)"breakpoint %f line %d",breakpoint,__LINE__);
                     }
                 }
                 if (OP.back <= 1)
@@ -1635,7 +1659,7 @@ namespace Portfolio
                     OP.back = threshopt(info, KB, L, U, Lfirst, Ufirst, initial, minlot, stage,
                         naive, minlot1, nround, utility, true);
                 }
-                else { ColourConsole.WriteError($"Could not find new start\n"); OP.back = 25; }
+                else { ColourConsole.WriteError($"Could not find new start"); OP.back = 25; }
             }
             return OP.back;
         }
@@ -1905,10 +1929,10 @@ namespace Portfolio
                     if (!bad) OP.OptFunc(info);
                     BlasLike.dcopyvec(n + m, Lkeep, lower);
                     BlasLike.dcopyvec(n + m, Ukeep, upper);
-                    //			OP.AddLog((char*)"back %d bad %d\n",OP.back,bad);
+                    //			OP.AddLog((char*)"back %d bad %d",OP.back,bad);
                     if (!bad && OP.back < 2)
                     {
-                        //			OP.AddLog((char*)"back %d bad %d\n",OP.back,bad);
+                        //			OP.AddLog((char*)"back %d bad %d",OP.back,bad);
                         BlasLike.dcopyvec(n, initial, OP.x);
                         if (minlot != null)
                         {
@@ -1923,7 +1947,7 @@ namespace Portfolio
                         if (nround != n) OP.back = 2;//Infeasible
                         BlasLike.dcopyvec(n, KB.w, OP.x);//To get U2 correct!
                         double U2 = OP.UtilityFunc(info);
-                        ColourConsole.WriteEmbeddedColourLine($"Start from initial back={OP.back} U={U2}\n");
+                        ColourConsole.WriteEmbeddedColourLine($"Start from initial back={OP.back} U={U2}");
                         if (U2 > U1 || OP.back > 1)
                         {
                             BlasLike.dcopyvec(n, roundw, OP.x);
@@ -2015,12 +2039,15 @@ namespace Portfolio
                 }
             }
             if (ffi > 0) ColourConsole.WriteEmbeddedColourLine($"[cyan]Changed lot for[/cyan] [red]{ffi}[/red][cyan] lots due to fixed bounds[/cyan]");
-            bool bad = false,changed;
+            bool bad = false,changed=false;
             var lower=Op.lower;
             var upper=Op.upper;
+            var Lkeep=(double[])lower.Clone();
+            var Ukeep=(double[])upper.Clone();
             var minlot1=minholdlot;
             for (var i = 0; i < Op.n; ++i)
             {
+                if (Op.lower[i] == Op.upper[i]) continue;
                 double init = initial != null ? initial[i] : 0, newb;
                 if (upper[i] + BlasLike.lm_eps8 < minlot[i] + init)
                 {
@@ -2062,6 +2089,7 @@ namespace Portfolio
             {
                 for (var i = 0; i < Op.n; ++i)
                 {
+                if (Op.lower[i] == Op.upper[i]) continue;
                     double init = initial != null ? initial[i] : 0, newb;
                     if (upper[i] + BlasLike.lm_eps8 < minlot1[i])
                     {
@@ -2158,31 +2186,42 @@ namespace Portfolio
                     var dd = (long)digitisei(Op.lower[i], init, minlot[i], sizelot[i]);
                     var newL = digit2w(Op.lower[i], init, dd + 1, minlot[i], sizelot[i]);
                     ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {Op.lower[i]}[/green][red] to {newL}[/red]");
-                    Op.lower[i] = newL;
+                    Op.lower[i] = newL;changed=true;
                 }
                 else if (Op.upper[i] < init)
                 {
                     var dd = (long)digitisei(Op.upper[i], init, minlot[i], sizelot[i]);
                     var newU = digit2w(Op.upper[i], init, dd - 1, minlot[i], sizelot[i]);
                     ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {Op.upper[i]}[/green][red] to {newU}[/red]");
-                    Op.upper[i] = newU;
+                    Op.upper[i] = newU;changed=true;
                 }
-                else if (Op.lower[i] == init)//Probably does nothing
+ /*               else if (Op.lower[i] == init)//Probably does nothing
                 {
                     var dd = (long)digitisei(Op.lower[i], init, minlot[i], sizelot[i]);
                     var newL = digit2w(Op.lower[i], init, dd, minlot[i], sizelot[i]);
                     ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {Op.lower[i]}[/green][red] to {newL}[/red]");
-                    Op.lower[i] = newL;
+                    Op.lower[i] = newL;changed=true;
                 }
                 else if (Op.upper[i] == init)//Probably does nothing
                 {
                     var dd = (long)digitisei(Op.upper[i], init, minlot[i], sizelot[i]);
                     var newU = digit2w(Op.upper[i], init, dd, minlot[i], sizelot[i]);
                     ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {Op.upper[i]}[/green][red] to {newU}[/red]");
-                    Op.upper[i] = newU;
-                }
+                    Op.upper[i] = newU;changed=true;
+                }*/
+                if (lower[i] > upper[i])
+                 bad = true;
             }
-            if (treestart(Op, false, initial, minlot, sizelot, roundw)) { BACK = 0; ((INFO)info).back = BACK; }
+            if (changed)
+            {
+                ColourConsole.WriteInfo($"Changed bounds due to high threshold and reoptimise");
+            }
+            if(!bad)if (treestart(Op, false, initial, minlot, sizelot, roundw)) { BACK = 0; ((INFO)info).back = BACK; }
+            else ColourConsole.WriteError("Bound problem after reset");
+if(changed){
+    BlasLike.dcopyvec(lower.Length,Lkeep,lower);
+    BlasLike.dcopyvec(upper.Length,Ukeep,upper);
+}
         }
 
         public class INFO
