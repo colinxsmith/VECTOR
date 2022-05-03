@@ -142,6 +142,7 @@ namespace Portfolio
                         wback[i] = OP.upper[i];
                 }
             }
+            Debug.Assert(OP.x==wback);
             return BACK;
         }
         public delegate double UFUNC(int n, double gamma, double kappa, double[] buy, double[] sell, double[] alpha, double[] w, double[] gradient, ref int basket, ref int trades, bool print = true, double thresh = 1E-14);
@@ -355,7 +356,6 @@ namespace Portfolio
             int m = info.m;
             int firstlim = (n < 100) ? n : n, roundy = n;
             int stuck;
-            double[] x = info.x;//,c=info.c,H=info.H;
             double[] bound_error = new double[n];
 
             if (rstep.prev != null)
@@ -367,8 +367,8 @@ namespace Portfolio
                 //	rstep.util=info.utility_base(n,x,c,H);
                 rstep.util = info.UtilityFunc(info);
                 rstep.back = info.back;
-                BlasLike.dcopyvec(n, wback, x);
-                BlasLike.dcopyvec(n, x, rstep.w);
+              if(info.x!=wback)  BlasLike.dcopyvec(n, wback, info.x);
+                BlasLike.dcopyvec(n, info.x, rstep.w);
                 BlasLike.dcopyvec(m + n, rstep.kL, info.lower);
                 BlasLike.dcopyvec(m + n, rstep.kU, info.upper);
             }
@@ -592,9 +592,9 @@ namespace Portfolio
                         rstep.L[i] = rstep.U[i];
                         rstep.U[i] = rstep.kU[i];
                     }
-                    BlasLike.dcopyvec(n, rstep.w, x);
+                    BlasLike.dcopyvec(n, rstep.w, info.x);
                 }
-                BlasLike.dcopyvec(n, x, rstep.w);
+                BlasLike.dcopyvec(n, info.x, rstep.w);
                 BlasLike.dcopyvec(m + n, rstep.kL, info.lower);
                 BlasLike.dcopyvec(m + n, rstep.kU, info.upper);
             }
@@ -606,70 +606,70 @@ namespace Portfolio
                 init = initial != null ? initial[i] : 0; dd = 0;
                 if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
                 {
-                    dd = (long)digitisei(x[i], init, minlot[i], sizelot[i]);
-                    if (x[i] > init)
+                    dd = (long)digitisei(info.x[i], init, minlot[i], sizelot[i]);
+                    if (info.x[i] > init)
                     {
-                        nwL = digit2w(x[i], init, dd, minlot[i], sizelot[i]);
-                        nwU = digit2w(x[i], init, dd + 1, minlot[i], sizelot[i]);
+                        nwL = digit2w(info.x[i], init, dd, minlot[i], sizelot[i]);
+                        nwU = digit2w(info.x[i], init, dd + 1, minlot[i], sizelot[i]);
                     }
-                    else if (x[i] < init)
+                    else if (info.x[i] < init)
                     {
-                        nwL = digit2w(x[i], init, dd - 1, minlot[i], sizelot[i]);
-                        nwU = digit2w(x[i], init, dd, minlot[i], sizelot[i]);
+                        nwL = digit2w(info.x[i], init, dd - 1, minlot[i], sizelot[i]);
+                        nwU = digit2w(info.x[i], init, dd, minlot[i], sizelot[i]);
                     }
                     else 
                     {
-                        nwL = nwU=digit2w(x[i], init, 0, minlot[i], sizelot[i]);
+                        nwL = nwU=digit2w(info.x[i], init, 0, minlot[i], sizelot[i]);
                     }
-                    if (Math.Abs(x[i] - nwL) < round_eps || Math.Abs(x[i] - nwU) < round_eps || Math.Abs(x[i] - init) < BlasLike.lm_eps)
+                    if (Math.Abs(info.x[i] - nwL) < round_eps || Math.Abs(info.x[i] - nwU) < round_eps || Math.Abs(info.x[i] - init) < BlasLike.lm_eps)
                     {
                         bound_error[i] = i;
                         rstep.nround++;
                         continue;
                     }
-                    if (((nwU - (x[i])) / (x[i] - nwL)) < switch1)
+                    if (((nwU - (info.x[i])) / (info.x[i] - nwL)) < switch1)
                     {
                         if (nwU >= rstep.L[i] && nwU <= rstep.kU[i])
-                            bound_error[i] = n + nwU - (x[i]);
+                            bound_error[i] = n + nwU - (info.x[i]);
                         else
-                            bound_error[i] = n + x[i] - nwL;
+                            bound_error[i] = n + info.x[i] - nwL;
                     }
                     else
                     {
                         if (nwL <= rstep.U[i])
-                            bound_error[i] = n + x[i] - nwL;
+                            bound_error[i] = n + info.x[i] - nwL;
                         else
-                            bound_error[i] = n + nwU - (x[i]);
+                            bound_error[i] = n + nwU - (info.x[i]);
                     }
                 }
                 else
                 {
-                    if ((thresh != null && Math.Abs(x[i]) >= thresh[i]) || Math.Abs(x[i]) < BlasLike.lm_eps)
+                    if ((thresh != null && Math.Abs(info.x[i]) >= thresh[i]) || Math.Abs(info.x[i]) < BlasLike.lm_eps)
                     {
-                        if (Math.Abs(x[i] - init) >= minlot[i] || Math.Abs(x[i] - init) < BlasLike.lm_eps)
+                        if (Math.Abs(info.x[i] - init) >= minlot[i] || Math.Abs(info.x[i] - init) < BlasLike.lm_eps)
                         {
                             bound_error[i] = i;
                             rstep.nround++;
                             continue;
                         }
                         else
-                            bound_error[i] = n + Math.Abs(x[i] - init);
+                            bound_error[i] = n + Math.Abs(info.x[i] - init);
                     }
                     else
                     {
                         if (rstep.kL[i] == rstep.kU[i]) { rstep.nround++; bound_error[i] = i; }
-                        else bound_error[i] = n + Math.Max(Math.Abs(x[i]), (Math.Abs(x[i] - init)));
+                        else bound_error[i] = n + Math.Max(Math.Abs(info.x[i]), (Math.Abs(info.x[i] - init)));
                     }
                 }
             }
             ColourConsole.WriteEmbeddedColourLine($"[green]first nround=[/green][cyan]{rstep.nround}[/cyan]");
-            /*if(!sizelot)rstep.nround=thresh_check(n,x,initial,rstep.kL,rstep.kU,minlot,0,round_eps);
+            /*if(!sizelot)rstep.nround=thresh_check(n,info.x,initial,rstep.kL,rstep.kU,minlot,0,round_eps);
             else*/
-            rstep.nround = round_check(n, x, initial, rstep.kL, rstep.kU, minlot, sizelot, round_eps);
+            rstep.nround = round_check(n, info.x, initial, rstep.kL, rstep.kU, minlot, sizelot, round_eps);
             ColourConsole.WriteEmbeddedColourLine($"[green]then  nround=[/green][cyan]{rstep.nround}[/cyan]");
-            Ordering.Order.getorder(n, bound_error, next.bound_order, null);//printorder(n,next.bound_order);
+            Ordering.Order.getorder(n, bound_error, next.bound_order, null);//printorder(n,neinfo.xt.bound_order);
                                                                             //	for(j=rstep.nround;j<min(n/4+rstep.nround,n);++j)
-            roundy = n;//Math.Max(((int)(rstep.nround * .5 + n * .5)), (rstep.nround + 1));
+            roundy = Math.Max(((int)(rstep.nround * .5 + n * .5)), (rstep.nround + 1));
             //	stuck=(rstep.prev&&(rstep.prev.nround==rstep.nround))?true:false;
             stuck = 0; roundstuck = rstep;
             while (roundstuck.prev != null && (roundstuck.prev.nround == roundstuck.nround))
@@ -684,55 +684,65 @@ namespace Portfolio
                 init = initial != null ? initial[i] : 0;
                 if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
                 {
-                    dd = (long)digitisei(x[i], init, minlot[i], sizelot[i]);
-                    if (x[i] > init)
+                    dd = (long)digitisei(info.x[i], init, minlot[i], sizelot[i]);
+                    if (info.x[i] > init)
                     {
                         if (!(j % 2 != 0 && next.count % 2 != 0))
                         {
-                            nwL = digit2w(x[i], init, dd - 1, minlot[i], sizelot[i]);
-                            nwU = digit2w(x[i], init, dd + (long)stuck, minlot[i], sizelot[i]);
-                            if (nwL < rstep.kL[i])
+                            nwL = digit2w(info.x[i], init, dd, minlot[i], sizelot[i]);
+                            nwU = digit2w(info.x[i], init, dd +1+ (long)stuck, minlot[i], sizelot[i]);
+                            if (nwL >info.x[i])
                             {
-                                nwL = digit2w(x[i], init, dd, minlot[i], sizelot[i]);
-                                nwU = digit2w(x[i], init, dd + 1 + (long)stuck, minlot[i], sizelot[i]);
+                                nwL = digit2w(info.x[i], init, dd+1, minlot[i], sizelot[i]);
+                                nwU = digit2w(info.x[i], init, dd + 2 + (long)stuck, minlot[i], sizelot[i]);
+                            }
+                            else if (nwU <info.x[i])
+                            {
+                                nwL = digit2w(info.x[i], init, dd-1, minlot[i], sizelot[i]);
+                                nwU = digit2w(info.x[i], init, dd + (long)stuck, minlot[i], sizelot[i]);
                             }
                         }
                         else
                         {
-                            nwL = digit2w(x[i], init, dd, minlot[i], sizelot[i]);
-                            nwU = digit2w(x[i], init, dd + 1 + (long)stuck, minlot[i], sizelot[i]);
+                            nwL = digit2w(info.x[i], init, dd, minlot[i], sizelot[i]);
+                            nwU = digit2w(info.x[i], init, dd + 1 + (long)stuck, minlot[i], sizelot[i]);
                         }
                     }
-                    else if(x[i] < init)
+                    else if(info.x[i] < init)
                     {
                         if (!(j % 2 != 0 && next.count % 2 != 0))
                         {
-                            nwL = digit2w(x[i], init, dd - (long)stuck, minlot[i], sizelot[i]);
-                            nwU = digit2w(x[i], init, dd + 1, minlot[i], sizelot[i]);
-                            if (nwU > rstep.kU[i])
+                            nwL = digit2w(info.x[i], init, dd - 1-(long)stuck, minlot[i], sizelot[i]);
+                            nwU = digit2w(info.x[i], init, dd , minlot[i], sizelot[i]);
+                            if (nwL >info.x[i])
                             {
-                                nwL = digit2w(x[i], init, dd - 1 - (long)stuck, minlot[i], sizelot[i]);
-                                nwU = digit2w(x[i], init, dd, minlot[i], sizelot[i]);
+                                nwL = digit2w(info.x[i], init, dd - 2 - (long)stuck, minlot[i], sizelot[i]);
+                                nwU = digit2w(info.x[i], init, dd-1, minlot[i], sizelot[i]);
+                            }
+                            else if (nwU <info.x[i])
+                            {
+                                nwL = digit2w(info.x[i], init, dd  - (long)stuck, minlot[i], sizelot[i]);
+                                nwU = digit2w(info.x[i], init, dd+1, minlot[i], sizelot[i]);
                             }
                         }
                         else
                         {
-                            nwL = digit2w(x[i], init, dd - 1 - (long)stuck, minlot[i], sizelot[i]);
-                            nwU = digit2w(x[i], init, dd, minlot[i], sizelot[i]);
+                            nwL = digit2w(info.x[i], init, dd - 1 - (long)stuck, minlot[i], sizelot[i]);
+                            nwU = digit2w(info.x[i], init, dd, minlot[i], sizelot[i]);
                         }
                     }
                         else
                         {
-                            nwL = digit2w(x[i], init, -stuck, minlot[i], sizelot[i]);
-                            nwL = digit2w(x[i], init, 0, minlot[i], sizelot[i]);
+                            nwL = digit2w(info.x[i], init, -stuck, minlot[i], sizelot[i]);
+                            nwL = digit2w(info.x[i], init, 0, minlot[i], sizelot[i]);
                         }
-                    //info.AddLog((char*)"closeness %d %e %e %e",i,x[i]-nwL,x[i]-nwU,x[i]);
-                    if (Math.Abs(x[i] - nwL) < round_eps || Math.Abs(x[i] - nwU) < round_eps || Math.Abs(x[i] - init) < BlasLike.lm_eps)
+                    //info.AddLog((char*)"closeness %d %e %e %e",i,info.x[i]-nwL,info.x[i]-nwU,info.x[i]);
+                    if (Math.Abs(info.x[i] - nwL) < round_eps || Math.Abs(info.x[i] - nwU) < round_eps || Math.Abs(info.x[i] - init) < BlasLike.lm_eps)
                     {
                         continue;
                         //				break;
                     }
-                    if (Math.Abs((nwU - (x[i])) - (x[i] - nwL)) < BlasLike.lm_rooteps)
+                    if (Math.Abs((nwU - (info.x[i])) - (info.x[i] - nwL)) < BlasLike.lm_rooteps)
                     {
                         if (false && !(j % 2 != 0 && next.count % 2 != 0))
                         {
@@ -743,7 +753,7 @@ namespace Portfolio
                                 next.U[i] = Math.Max(rstep.kL[i], Math.Min(nwL, rstep.U[i]));
                             }*/
                     }
-                    else if (((nwU - (x[i])) / (x[i] - nwL)) < switch1)
+                    else if (((nwU - (info.x[i])) / (info.x[i] - nwL)) < switch1)
                     {
                         if (nwU >= rstep.L[i] && nwU <= rstep.kU[i])
                             next.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.L[i]));
@@ -759,12 +769,12 @@ namespace Portfolio
                     }
                     if (next.U[i] < next.L[i])
                     {
-                        if (x[i] > init)
+                        if (info.x[i] > init)
                         {
                             next.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.kL[i]));
                             next.U[i] = rstep.kU[i];
                         }
-                        else if (x[i] < init)
+                        else if (info.x[i] < init)
                         {
                             next.U[i] = Math.Max(rstep.kL[i], Math.Min(nwL, rstep.kU[i]));
                             next.L[i] = rstep.kL[i];
@@ -781,15 +791,15 @@ namespace Portfolio
                 else
                 {
                     i = next.bound_order[j];
-                    if ((thresh != null && Math.Abs(x[i]) >= thresh[i]) || Math.Abs(x[i]) < BlasLike.lm_eps)
+                    if ((thresh != null && Math.Abs(info.x[i]) >= thresh[i]) || Math.Abs(info.x[i]) < BlasLike.lm_eps)
                     {
-                        if (!(rstep.nround == n && Math.Abs(Math.Abs(x[i] - init) - minlot[i]) < BlasLike.lm_eps8) && ((Math.Abs(x[i] - init) >= Math.Abs(minlot[i]) || Math.Abs(x[i] - init) < BlasLike.lm_eps)))
+                        if (!(rstep.nround == n && Math.Abs(Math.Abs(info.x[i] - init) - minlot[i]) < BlasLike.lm_eps8) && ((Math.Abs(info.x[i] - init) >= Math.Abs(minlot[i]) || Math.Abs(info.x[i] - init) < BlasLike.lm_eps)))
                         {
                             continue;
                         }
-                        if (Math.Abs(minlot[i]) - Math.Abs(x[i] - init) < Math.Abs(x[i] - init) * switch1)
+                        if (Math.Abs(minlot[i]) - Math.Abs(info.x[i] - init) < Math.Abs(info.x[i] - init) * switch1)
                         {
-                            if (x[i] - init > 0)
+                            if (info.x[i] - init > 0)
                             {
                                 next.L[i] = Math.Max(Math.Min(rstep.kU[i], minlot[i] + init), rstep.kL[i]);
                                 next.L[i] = Math.Min(next.U[i], next.L[i]);
@@ -805,17 +815,17 @@ namespace Portfolio
                             next.U[i] = Math.Min(Math.Max(rstep.kL[i], init), rstep.kU[i]);
                             next.L[i] = Math.Max(Math.Min(rstep.kU[i], init), rstep.kL[i]);
                         }
-                        if (rstep.nround == n && Math.Abs(Math.Abs(x[i] - init) - minlot[i]) < BlasLike.lm_eps8 && rstep.can_repeat[i] != 0)
+                        if (rstep.nround == n && Math.Abs(Math.Abs(info.x[i] - init) - minlot[i]) < BlasLike.lm_eps8 && rstep.can_repeat[i] != 0)
                         {
                             if (rstep.can_repeat[i] == 3)
                             {
                                 rstep.can_repeat[i]--;
-                                if (rstep.kL[i] < init + BlasLike.lm_eps8 && x[i] > init)
+                                if (rstep.kL[i] < init + BlasLike.lm_eps8 && info.x[i] > init)
                                 {
                                     next.L[i] = init + minlot[i];//rstep.kL[i] next time
                                     next.U[i] = Math.Min(init + minlot[i], rstep.kU[i]);
                                 }
-                                else if (rstep.kU[i] > init - BlasLike.lm_eps8 && x[i] < init)
+                                else if (rstep.kU[i] > init - BlasLike.lm_eps8 && info.x[i] < init)
                                 {
                                     next.U[i] = init - minlot[i];//rstep.kU[i] next time
                                     next.L[i] = Math.Max(rstep.kL[i], init - minlot[i]);
@@ -824,12 +834,12 @@ namespace Portfolio
                             else if (rstep.can_repeat[i] == 2)
                             {
                                 rstep.can_repeat[i]--;
-                                if (rstep.kL[i] < init + BlasLike.lm_eps8 && x[i] > init)
+                                if (rstep.kL[i] < init + BlasLike.lm_eps8 && info.x[i] > init)
                                 {
                                     next.L[i] = init + minlot[i];//rstep.kL[i] next time
                                     next.U[i] = rstep.kU[i];
                                 }
-                                else if (rstep.kU[i] > init - BlasLike.lm_eps8 && x[i] < init)
+                                else if (rstep.kU[i] > init - BlasLike.lm_eps8 && info.x[i] < init)
                                 {
                                     next.U[i] = init - minlot[i];//rstep.kU[i] next time
                                     next.L[i] = rstep.kL[i];
@@ -843,18 +853,18 @@ namespace Portfolio
                             }
                         }
                     }
-                    else if (Math.Abs(minlot[i]) - Math.Abs(x[i] - init) < Math.Abs(x[i] - init) * switch1)
+                    else if (Math.Abs(minlot[i]) - Math.Abs(info.x[i] - init) < Math.Abs(info.x[i] - init) * switch1)
                     {
-                        if (Math.Abs(minlot[i]) - Math.Abs(x[i] - init) < Math.Abs(x[i] - init) * switch1 && (thresh != null && Math.Abs(thresh[i]) - Math.Abs(x[i]) < Math.Abs(x[i]) * switch1))
+                        if (Math.Abs(minlot[i]) - Math.Abs(info.x[i] - init) < Math.Abs(info.x[i] - init) * switch1 && (thresh != null && Math.Abs(thresh[i]) - Math.Abs(info.x[i]) < Math.Abs(info.x[i]) * switch1))
                         {
-                            if (x[i] - init > 0)
+                            if (info.x[i] - init > 0)
                                 next.L[i] = Math.Max(Math.Min(rstep.kU[i], Math.Max(thresh != null ? thresh[i] : 0, minlot[i] + init)), rstep.kL[i]);
                             else
                                 next.U[i] = Math.Min(Math.Max(rstep.kL[i], Math.Min(thresh != null ? -thresh[i] : 0, -minlot[i] + init)), rstep.kU[i]);
                         }
                         else
                         {
-                            if (x[i] - init > 0)
+                            if (info.x[i] - init > 0)
                                 next.L[i] = Math.Max(Math.Min(rstep.kU[i], Math.Max(thresh != null ? thresh[i] : 0, init)), rstep.kL[i]);
                             else
                                 next.U[i] = Math.Min(Math.Max(rstep.kL[i], Math.Min(thresh != null ? -thresh[i] : 0, init)), rstep.kU[i]);
@@ -862,7 +872,7 @@ namespace Portfolio
                     }
                     else
                     {
-                        if (x[i] - init > 0)
+                        if (info.x[i] - init > 0)
                             next.L[i] = Math.Max(Math.Min(rstep.kU[i], 0), rstep.kL[i]);
                         else
                             next.U[i] = Math.Min(Math.Max(rstep.kL[i], 0), rstep.kU[i]);
@@ -886,7 +896,6 @@ namespace Portfolio
             int i;
             int n = info.n;
             int m = info.m;
-            double[] x = info.x;//At the start this is the unrounded optimal solution
             roundstep next = new roundstep();
             roundstep start, prev;
             next.can_repeat = new int[n];
@@ -905,7 +914,7 @@ namespace Portfolio
             next.prev = null;
             next.info = info;
             next.back = info.back;
-            BlasLike.dcopyvec(n, x, next.w);
+            BlasLike.dcopyvec(n, info.x, next.w);
             BlasLike.dcopyvec(m + n, next.kL, next.L);
             BlasLike.dcopyvec(m + n, next.kU, next.U);
             treenext(next, initial, minlot, sizelot, passedfromthresh, thresh);//すぎの木
@@ -989,7 +998,6 @@ namespace Portfolio
             int m = OP.m;
             double[] lower = OP.lower;
             double[] upper = OP.upper;
-            double[] x = OP.x;
             double[] updowntest = new double[0];
             int[] updownorder = new int[0];
             byte[] updownbad = new byte[0];
@@ -1047,7 +1055,7 @@ namespace Portfolio
             {
                 nround = 0;
                 ok = true;
-                BlasLike.dcopyvec(n, x, KB.oldw);
+                BlasLike.dcopyvec(n, OP.x, KB.oldw);
                 //		std::valarray<double>score(n);
                 //		score=lm_max;
                 //		for(kk=0;kk<n;++kk)
@@ -1059,7 +1067,7 @@ namespace Portfolio
                 {
                     var i = kk;
                     kbranch = kk; dd = -1;
-                    if (Math.Abs(x[kbranch]) < BlasLike.lm_eps) x[kbranch] = 0;
+                    if (Math.Abs(OP.x[kbranch]) < BlasLike.lm_eps) OP.x[kbranch] = 0;
                     init = initial != null ? initial[kbranch] : 0;
                     /*			if(score[kbranch]<score_test&&(Math.Abs(x[kbranch]-init)<minlot[kbranch]))
                                 {
@@ -1067,76 +1075,76 @@ namespace Portfolio
                                     if(score[kbranch]<1e-15)nround++;
                                     continue;
                                 }*/
-                    if (Math.Abs(x[kbranch] - init) <= minlot[kbranch] + rounderror && (minlot1 != null && Math.Abs(x[kbranch]) <= minlot1[kbranch] + rounderror))
+                    if (Math.Abs(OP.x[kbranch] - init) <= minlot[kbranch] + rounderror && (minlot1 != null && Math.Abs(OP.x[kbranch]) <= minlot1[kbranch] + rounderror))
                     {
-                        /*				dd=digitisei(x[kbranch],init,minlot[kbranch],0,0);
-                                        nw=naive[kbranch]=digit2w(x[kbranch],init,dd,minlot[kbranch],0,0);
+                        /*				dd=digitisei(OP.x[kbranch],init,minlot[kbranch],0,0);
+                                        nw=naive[kbranch]=digit2w(OP.x[kbranch],init,dd,minlot[kbranch],0,0);
                                         if(Math.Abs(nw)<minlot1[kbranch])
                                         {*/
-                        if (x[kbranch] > 0) { nw = naive[kbranch] = Math.Max((digit2w(x[kbranch], init, x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, 1, minlot1[kbranch], 0, 0))); }
-                        else if (x[kbranch] < 0) { nw = naive[kbranch] = Math.Min((digit2w(x[kbranch], init, x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, -1, minlot1[kbranch], 0, 0))); }
-                        else { nw = naive[kbranch] = Math.Min((digit2w(x[kbranch], init, x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, 0, minlot1[kbranch], 0, 0))); }
+                        if (OP.x[kbranch] > 0) { nw = naive[kbranch] = Math.Max((digit2w(OP.x[kbranch], init, OP.x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(OP.x[kbranch], 0, 1, minlot1[kbranch], 0, 0))); }
+                        else if (OP.x[kbranch] < 0) { nw = naive[kbranch] = Math.Min((digit2w(OP.x[kbranch], init, OP.x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(OP.x[kbranch], 0, -1, minlot1[kbranch], 0, 0))); }
+                        else { nw = naive[kbranch] = Math.Min((digit2w(OP.x[kbranch], init, OP.x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(OP.x[kbranch], 0, 0, minlot1[kbranch], 0, 0))); }
                         //				}
                         if (nw < Lfirst[kbranch] - BlasLike.lm_eps)
                         {
-                            naive[kbranch] = digit2w(x[kbranch], init, 1, minlot[kbranch], 0, 0);
+                            naive[kbranch] = digit2w(OP.x[kbranch], init, 1, minlot[kbranch], 0, 0);
                             ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])");
                         }
                         else if (nw > Ufirst[kbranch] + BlasLike.lm_eps)
                         {
-                            naive[kbranch] = digit2w(x[kbranch], init, -1, minlot[kbranch], 0, 0);
+                            naive[kbranch] = digit2w(OP.x[kbranch], init, -1, minlot[kbranch], 0, 0);
                             ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])");
                         }
                     }
-                    else if (Math.Abs(x[kbranch] - init) <= minlot[kbranch] + rounderror)
+                    else if (Math.Abs(OP.x[kbranch] - init) <= minlot[kbranch] + rounderror)
                     {
-                        dd = digitisei(x[kbranch], init, minlot[kbranch], 0);
-                        nw = naive[kbranch] = digit2w(x[kbranch], init, dd, minlot[kbranch], 0, 0);
+                        dd = digitisei(OP.x[kbranch], init, minlot[kbranch], 0);
+                        nw = naive[kbranch] = digit2w(OP.x[kbranch], init, dd, minlot[kbranch], 0, 0);
                         if (minlot1 != null && Math.Abs(nw) < minlot1[kbranch])
                         {
-                            if (x[kbranch] > 0) { nw = naive[kbranch] = Math.Max((digit2w(x[kbranch], init, x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, 1, minlot1[kbranch], 0, 0))); }
-                            else if (x[kbranch] < 0) { nw = naive[kbranch] = Math.Min((digit2w(x[kbranch], init, x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, -1, minlot1[kbranch], 0, 0))); }
-                            else { nw = naive[kbranch] = Math.Min((digit2w(x[kbranch], init, x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, 0, minlot1[kbranch], 0, 0))); }
+                            if (OP.x[kbranch] > 0) { nw = naive[kbranch] = Math.Max((digit2w(OP.x[kbranch], init, OP.x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(OP.x[kbranch], 0, 1, minlot1[kbranch], 0, 0))); }
+                            else if (OP.x[kbranch] < 0) { nw = naive[kbranch] = Math.Min((digit2w(OP.x[kbranch], init, OP.x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(OP.x[kbranch], 0, -1, minlot1[kbranch], 0, 0))); }
+                            else { nw = naive[kbranch] = Math.Min((digit2w(OP.x[kbranch], init, OP.x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(OP.x[kbranch], 0, 0, minlot1[kbranch], 0, 0))); }
                         }
                         if (nw < Lfirst[kbranch] - BlasLike.lm_eps)
                         {
-                            naive[kbranch] = digit2w(x[kbranch], init, dd + 1, minlot[kbranch], 0, 0);
+                            naive[kbranch] = digit2w(OP.x[kbranch], init, dd + 1, minlot[kbranch], 0, 0);
                             ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])");
                         }
                         else if (nw > Ufirst[kbranch] + BlasLike.lm_eps)
                         {
-                            naive[kbranch] = digit2w(x[kbranch], init, dd - 1, minlot[kbranch], 0, 0);
+                            naive[kbranch] = digit2w(OP.x[kbranch], init, dd - 1, minlot[kbranch], 0, 0);
                             ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])");
                         }
                     }
-                    else if (minlot1 != null && Math.Abs(x[kbranch]) <= minlot1[kbranch] + rounderror)
+                    else if (minlot1 != null && Math.Abs(OP.x[kbranch]) <= minlot1[kbranch] + rounderror)
                     {
-                        dd = digitisei(x[kbranch], 0, minlot1[kbranch], 0);
-                        nw = naive[kbranch] = digit2w(x[kbranch], 0, dd, minlot1[kbranch], 0, 0);
+                        dd = digitisei(OP.x[kbranch], 0, minlot1[kbranch], 0);
+                        nw = naive[kbranch] = digit2w(OP.x[kbranch], 0, dd, minlot1[kbranch], 0, 0);
                         if (Math.Abs(nw - init) < minlot[kbranch])
                         {
-                            if (x[kbranch] > 0) { nw = naive[kbranch] = Math.Max((digit2w(x[kbranch], init, x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, 1, minlot1[kbranch], 0, 0))); }
-                            else if (x[kbranch] < 0) { nw = naive[kbranch] = Math.Min((digit2w(x[kbranch], init, x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, -1, minlot1[kbranch], 0, 0))); }
-                            else { nw = naive[kbranch] = Math.Min((digit2w(x[kbranch], init, 0, minlot[kbranch], 0, 0)), (digit2w(x[kbranch], 0, x[kbranch] - init > 0 ? 1 : -1, minlot1[kbranch], 0, 0))); }
+                            if (OP.x[kbranch] > 0) { nw = naive[kbranch] = Math.Max((digit2w(OP.x[kbranch], init, OP.x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(OP.x[kbranch], 0, 1, minlot1[kbranch], 0, 0))); }
+                            else if (OP.x[kbranch] < 0) { nw = naive[kbranch] = Math.Min((digit2w(OP.x[kbranch], init, OP.x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(OP.x[kbranch], 0, -1, minlot1[kbranch], 0, 0))); }
+                            else { nw = naive[kbranch] = Math.Min((digit2w(OP.x[kbranch], init, 0, minlot[kbranch], 0, 0)), (digit2w(OP.x[kbranch], 0, OP.x[kbranch] - init > 0 ? 1 : -1, minlot1[kbranch], 0, 0))); }
                         }
                         if (nw < Lfirst[kbranch] - BlasLike.lm_eps)
                         {
-                            naive[kbranch] = digit2w(x[kbranch], 0, dd + 1, minlot1[kbranch], 0, 0);
+                            naive[kbranch] = digit2w(OP.x[kbranch], 0, dd + 1, minlot1[kbranch], 0, 0);
                             ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])");
                         }
                         else if (nw > Ufirst[kbranch] + BlasLike.lm_eps)
                         {
-                            naive[kbranch] = digit2w(x[kbranch], 0, dd - 1, minlot1[kbranch], 0, 0);
+                            naive[kbranch] = digit2w(OP.x[kbranch], 0, dd - 1, minlot1[kbranch], 0, 0);
                             ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])");
                         }
                     }
                     else
                     {
-                        nw = naive[kbranch] = x[kbranch];
+                        nw = naive[kbranch] = OP.x[kbranch];
                     }
 
 
-                    if (x[kbranch] < (naive[kbranch] - rounderror))
+                    if (OP.x[kbranch] < (naive[kbranch] - rounderror))
                     {
                         ok = false;
                         if (naive[kbranch] != Lfirst[kbranch])
@@ -1158,7 +1166,7 @@ namespace Portfolio
                             }
                         }
                     }
-                    else if (x[kbranch] > (naive[kbranch] + rounderror))
+                    else if (OP.x[kbranch] > (naive[kbranch] + rounderror))
                     {
                         ok = false;
                         if (naive[kbranch] != Ufirst[kbranch])
@@ -1184,7 +1192,7 @@ namespace Portfolio
 
                     if (Math.Abs(Math.Abs(dd - (long)(dd)) - 1) < BlasLike.lm_rooteps)
                     {
-                        ColourConsole.WriteEmbeddedColourLine($"minlot---- kbranch {kbranch} [green]{dd} {(long)dd}[/green]\tLUxn [cyan]{L[kbranch]}[/cyan] [yellow]{x[kbranch]} {naive[kbranch]}[/yellow] [cyan]{U[kbranch]}[/cyan]");
+                        ColourConsole.WriteEmbeddedColourLine($"minlot---- kbranch {kbranch} [green]{dd} {(long)dd}[/green]\tLUxn [cyan]{L[kbranch]}[/cyan] [yellow]{OP.x[kbranch]} {naive[kbranch]}[/yellow] [cyan]{U[kbranch]}[/cyan]");
                     }
 
                     if (L[kbranch] > U[kbranch])
@@ -1199,20 +1207,20 @@ namespace Portfolio
                     }
                 }
                 ColourConsole.WriteEmbeddedColourLine($"[green]{nround}[/green] rounded at stage [green]{stage} (out of {n})[/green] utility [magenta]{utility}[/magenta] change [magenta]{utility - oldutil}[/magenta]");
-                nround = thresh_check(n, x, initial, Lfirst, Ufirst, minlot, minlot1, rounderror);
+                nround = thresh_check(n, OP.x, initial, Lfirst, Ufirst, minlot, minlot1, rounderror);
                 ColourConsole.WriteEmbeddedColourLine($"[green]{nround}[/green] rounded at stage [green]{stage} (out of {n})[/green] utility [magenta]{utility}[/magenta] change [magenta]{utility - oldutil}[/magenta]");
-                if (firsttime) BlasLike.dcopyvec(n, x, KB.first);
+                if (firsttime) BlasLike.dcopyvec(n, OP.x, KB.first);
 
                 if (nround == KB.nround && Math.Abs(utility - KB.utility) <= BlasLike.lm_eps)
                     KB.stuck++;
                 if (KB.nround < nround)
                 {
-                    KB.Setw(x, OP.back, nround, utility, stage);
+                    KB.Setw(OP.x, OP.back, nround, utility, stage);
                     KB.Message(); KB.stuck = 0;
                 }
                 else if (KB.nround == nround && utility < KB.utility)
                 {
-                    KB.Setw(x, OP.back, nround, utility, stage);
+                    KB.Setw(OP.x, OP.back, nround, utility, stage);
                     KB.Message(); KB.stuck = 0;
                 }
 
@@ -1233,35 +1241,35 @@ namespace Portfolio
 
                     for (var i = 0; i < n; ++i) updownbad[i] = (byte)0;
                     double[] keephere = new double[n];
-                    BlasLike.dcopyvec(n, x, keephere);
+                    BlasLike.dcopyvec(n, OP.x, keephere);
                     doreorder = false;
                     doit = 0;
                     double LL = BlasLike.lm_max, UU = BlasLike.lm_max;
                     while (doit < (int)n)
                     {
-                        BlasLike.dcopyvec(n, keephere, x);
+                        BlasLike.dcopyvec(n, keephere, OP.x);
                         if (doit != 0)
                         {
                             for (kbranch = 0; kbranch < n; ++kbranch)
                             {
                                 init = initial != null ? initial[kbranch] : 0;
-                                if (Math.Abs(x[kbranch] - init) <= minlot[kbranch] + rounderror && (minlot1 != null && Math.Abs(x[kbranch]) <= minlot1[kbranch] + rounderror))
+                                if (Math.Abs(OP.x[kbranch] - init) <= minlot[kbranch] + rounderror && (minlot1 != null && Math.Abs(OP.x[kbranch]) <= minlot1[kbranch] + rounderror))
                                 {
-                                    updowntest[kbranch] = 10 + (Math.Abs(x[kbranch] - init) / minlot[kbranch]) + (Math.Abs(x[kbranch]) / minlot1[kbranch]);
+                                    updowntest[kbranch] = 10 + (Math.Abs(OP.x[kbranch] - init) / minlot[kbranch]) + (Math.Abs(OP.x[kbranch]) / minlot1[kbranch]);
                                     doreorder = true;
                                 }
-                                else if (Math.Abs(x[kbranch] - init) <= minlot[kbranch] + rounderror)
+                                else if (Math.Abs(OP.x[kbranch] - init) <= minlot[kbranch] + rounderror)
                                 {
-                                    updowntest[kbranch] = 10 + Math.Abs(x[kbranch] - init) / minlot[kbranch];
+                                    updowntest[kbranch] = 10 + Math.Abs(OP.x[kbranch] - init) / minlot[kbranch];
                                     doreorder = true;
                                 }
-                                else if (minlot1 != null && Math.Abs(x[kbranch]) <= minlot1[kbranch] + rounderror)
+                                else if (minlot1 != null && Math.Abs(OP.x[kbranch]) <= minlot1[kbranch] + rounderror)
                                 {
-                                    updowntest[kbranch] = 10 + Math.Abs(x[kbranch]) / minlot1[kbranch];
+                                    updowntest[kbranch] = 10 + Math.Abs(OP.x[kbranch]) / minlot1[kbranch];
                                     doreorder = true;
                                 }
                                 else
-                                    updowntest[kbranch] = Math.Abs(x[kbranch]) + Math.Abs(x[kbranch] - init);
+                                    updowntest[kbranch] = Math.Abs(OP.x[kbranch]) + Math.Abs(OP.x[kbranch] - init);
                             }
                         }
                         if (doreorder) Ordering.Order.getorder(n, updowntest, updownorder, updownbad, 0);
@@ -1271,26 +1279,26 @@ namespace Portfolio
                             init = initial != null ? initial[kbranch] : 0;
                             LL = Lfirst[kbranch];
                             UU = Ufirst[kbranch];
-                            if (Math.Abs(x[kbranch] - init) <= minlot[kbranch] + rounderror && (minlot1 != null && Math.Abs(x[kbranch]) <= minlot1[kbranch] + rounderror))
+                            if (Math.Abs(OP.x[kbranch] - init) <= minlot[kbranch] + rounderror && (minlot1 != null && Math.Abs(OP.x[kbranch]) <= minlot1[kbranch] + rounderror))
                             {
-                                if (Math.Abs(x[kbranch] - init) < Math.Abs(x[kbranch]))
+                                if (Math.Abs(OP.x[kbranch] - init) < Math.Abs(OP.x[kbranch]))
                                 {
-                                    if (x[kbranch] > 0)
+                                    if (OP.x[kbranch] > 0)
                                     {
                                         /*								naive[kbranch]=Math.Max((digit2w(x[kbranch],0,digitisei(x[kbranch],0,minlot1[kbranch],0,0),minlot1[kbranch],0,0)),(digit2w(x[kbranch],init,digitisei(x[kbranch],init,minlot[kbranch],0,0),minlot[kbranch],0,0)));
                                                                         L[kbranch]=Math.Max(Math.Min(Ufirst[kbranch],naive[kbranch]),Lfirst[kbranch]);
                                                                         U[kbranch]=Ufirst[kbranch];*/
-                                        naive[kbranch] = digit2w(x[kbranch], 0, 0, minlot1[kbranch], 0, 0);
+                                        naive[kbranch] = digit2w(OP.x[kbranch], 0, 0, minlot1[kbranch], 0, 0);
                                         L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], naive[kbranch]), Lfirst[kbranch]);
                                         U[kbranch] = Ufirst[kbranch];
                                         doopt = true; doit = kk; break;
                                     }
-                                    else if (x[kbranch] < 0)
+                                    else if (OP.x[kbranch] < 0)
                                     {
                                         /*								naive[kbranch]=Math.Min((digit2w(x[kbranch],0,digitisei(x[kbranch],0,minlot1[kbranch],0,0),minlot1[kbranch],0,0)),(digit2w(x[kbranch],init,digitisei(x[kbranch],init,minlot[kbranch],0,0),minlot[kbranch],0,0)));
                                                                         L[kbranch]=Lfirst[kbranch];
                                                                         U[kbranch]=Math.Min(Math.Max(Lfirst[kbranch],naive[kbranch]),Ufirst[kbranch]);*/
-                                        naive[kbranch] = digit2w(x[kbranch], 0, 0, minlot1[kbranch], 0, 0);
+                                        naive[kbranch] = digit2w(OP.x[kbranch], 0, 0, minlot1[kbranch], 0, 0);
                                         L[kbranch] = Lfirst[kbranch];
                                         U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], naive[kbranch]), Ufirst[kbranch]);
                                         doopt = true; doit = kk; break;
@@ -1298,15 +1306,15 @@ namespace Portfolio
                                 }
                                 else
                                 {
-                                    if (x[kbranch] > init)
+                                    if (OP.x[kbranch] > init)
                                     {
-                                        naive[kbranch] = digit2w(x[kbranch], init, 0, minlot[kbranch], 0, 0);
+                                        naive[kbranch] = digit2w(OP.x[kbranch], init, 0, minlot[kbranch], 0, 0);
                                         L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], naive[kbranch]), Lfirst[kbranch]);
                                         U[kbranch] = Ufirst[kbranch];
                                     }
-                                    else if (x[kbranch] < init)
+                                    else if (OP.x[kbranch] < init)
                                     {
-                                        naive[kbranch] = digit2w(x[kbranch], init, 0, minlot[kbranch], 0, 0);
+                                        naive[kbranch] = digit2w(OP.x[kbranch], init, 0, minlot[kbranch], 0, 0);
                                         L[kbranch] = Lfirst[kbranch];
                                         U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], naive[kbranch]), Ufirst[kbranch]);
                                     }
@@ -1314,36 +1322,36 @@ namespace Portfolio
                                     doopt = true; doit = kk; break;
                                 }
                             }
-                            else if (Math.Abs(x[kbranch] - init) <= minlot[kbranch] + rounderror)
+                            else if (Math.Abs(OP.x[kbranch] - init) <= minlot[kbranch] + rounderror)
                             {
-                                dd = digitisei(x[kbranch], init, minlot[kbranch], 0);
-                                if (x[kbranch] > init)
+                                dd = digitisei(OP.x[kbranch], init, minlot[kbranch], 0);
+                                if (OP.x[kbranch] > init)
                                 {
-                                    naive[kbranch] = digit2w(x[kbranch], init, dd + 1, minlot[kbranch], 0, 0);
+                                    naive[kbranch] = digit2w(OP.x[kbranch], init, dd + 1, minlot[kbranch], 0, 0);
                                     L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], naive[kbranch]), Lfirst[kbranch]);
                                     U[kbranch] = Ufirst[kbranch];
                                 }
-                                else if (x[kbranch] < init)
+                                else if (OP.x[kbranch] < init)
                                 {
-                                    naive[kbranch] = digit2w(x[kbranch], init, dd - 1, minlot[kbranch], 0, 0);
+                                    naive[kbranch] = digit2w(OP.x[kbranch], init, dd - 1, minlot[kbranch], 0, 0);
                                     L[kbranch] = Lfirst[kbranch];
                                     U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], naive[kbranch]), Ufirst[kbranch]);
                                 }
 
                                 doopt = true; doit = kk; break;
                             }
-                            else if (minlot1 != null && Math.Abs(x[kbranch]) <= minlot1[kbranch] + rounderror)
+                            else if (minlot1 != null && Math.Abs(OP.x[kbranch]) <= minlot1[kbranch] + rounderror)
                             {
-                                dd = digitisei(x[kbranch], 0, minlot1[kbranch], 0);
-                                if (x[kbranch] > 0)
+                                dd = digitisei(OP.x[kbranch], 0, minlot1[kbranch], 0);
+                                if (OP.x[kbranch] > 0)
                                 {
-                                    naive[kbranch] = digit2w(x[kbranch], 0, dd + 1, minlot1[kbranch], 0, 0);
+                                    naive[kbranch] = digit2w(OP.x[kbranch], 0, dd + 1, minlot1[kbranch], 0, 0);
                                     L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], naive[kbranch]), Lfirst[kbranch]);
                                     U[kbranch] = Ufirst[kbranch];
                                 }
-                                else if (x[kbranch] < 0)
+                                else if (OP.x[kbranch] < 0)
                                 {
-                                    naive[kbranch] = digit2w(x[kbranch], 0, dd - 1, minlot1[kbranch], 0, 0);
+                                    naive[kbranch] = digit2w(OP.x[kbranch], 0, dd - 1, minlot1[kbranch], 0, 0);
                                     L[kbranch] = Lfirst[kbranch];
                                     U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], naive[kbranch]), Ufirst[kbranch]);
                                 }
@@ -1351,7 +1359,7 @@ namespace Portfolio
                                 doopt = true; doit = kk; break;
                             }
                             else
-                                naive[kbranch] = x[kbranch];
+                                naive[kbranch] = OP.x[kbranch];
                         }
                         if (doopt)
                         {
@@ -1392,13 +1400,13 @@ namespace Portfolio
                     bad = false;
                     for (kbranch = 0; kbranch < n; ++kbranch)
                     {
-                        if (x[kbranch] > U[kbranch])
+                        if (OP.x[kbranch] > U[kbranch])
                         {
-                            ColourConsole.WriteEmbeddedColourLine($"bounds on {kbranch} {x[kbranch]} ([red]{L[kbranch]},{U[kbranch]}[/red])");
+                            ColourConsole.WriteEmbeddedColourLine($"bounds on {kbranch} {OP.x[kbranch]} ([red]{L[kbranch]},{U[kbranch]}[/red])");
                         }
-                        else if (x[kbranch] < L[kbranch] || x[kbranch] > U[kbranch])
+                        else if (OP.x[kbranch] < L[kbranch] || OP.x[kbranch] > U[kbranch])
                         {
-                            ColourConsole.WriteEmbeddedColourLine($"bounds on {kbranch} {x[kbranch]} ([red]{L[kbranch]},{U[kbranch]}[/red])");
+                            ColourConsole.WriteEmbeddedColourLine($"bounds on {kbranch} {OP.x[kbranch]} ([red]{L[kbranch]},{U[kbranch]}[/red])");
                         }
                         if (L[kbranch] == U[kbranch])
                         {
@@ -1879,7 +1887,7 @@ namespace Portfolio
                 OP.OptFunc(info);
                 back = OP.back;
                 if (back < 2)
-                {
+                {if(wback!=OP.x)
                     BlasLike.dcopyvec(n, wback, OP.x);
                     if (minlot1 == null)
                     {
@@ -1901,7 +1909,7 @@ namespace Portfolio
                 ColourConsole.WriteEmbeddedColourLine($"Start from optimum back={OP.back} U={U1}");
                 if (initial != null)
                 {
-                    if (LL != null)
+                    if (changed)
                     {
                         BlasLike.dcopyvec(n + m, LL, lower);
                         BlasLike.dcopyvec(n + m, UU, upper);
@@ -1968,7 +1976,7 @@ namespace Portfolio
                     }
                 }
             }
-            if (LL != null)//We musn't lose the original bounds
+            if (changed)//We musn't lose the original bounds
             {
                 BlasLike.dcopyvec(n + m, LL, lower);
                 BlasLike.dcopyvec(n + m, UU, upper);
@@ -2024,7 +2032,7 @@ namespace Portfolio
             Op.OptFunc = RoundInnerOpt;
             Op.upper = (double[])((INFO)info).U.Clone();
             Op.UtilityFunc = RoundInnerUtil;
-            Op.x = (double[])wback.Clone();
+            Op.x =wback;// (double[])wback.Clone();
             Op.minholdlot = minholdlot;
             Op.mintradelot = mintradelot;
             Op.initial = initial;
@@ -3470,7 +3478,7 @@ if(changed){
                     shortsideS += WW[buysellIndex_inverse[i] + n];
             }
             if (longshortI > 0) shortsideS += BlasLike.dsumvec(longshortI, WW, n + buysellI);
-            wback = new double[n + nfixed];
+            if(wback==null)wback = new double[n + nfixed];
             BlasLike.dcopyvec(n, WW, wback);
             var alphaFixed = 0.0;
             if (nfixed > 0)
