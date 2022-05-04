@@ -1189,9 +1189,9 @@ namespace UseBlas
                 Console.WriteLine("BUY/SELL and LONG/SHORT");
                 double[] SV = null, FC = null, FL = null, L = null, U = null, alpha = null, initial = null, A = null;
                 double[] buy = null, sell = null, bench = null, Q = null, A_abs = null, Abs_U = null, Abs_L = null;
-                double gamma, delta, kappa, value, valuel, rmin, rmax, min_holding, min_trade,minRisk;
+                double gamma, delta, kappa, value, valuel, rmin, rmax, min_holding, min_trade, minRisk;
                 double[] minhold = new double[0], mintrade = new double[0], min_lot = null, size_lot = null;
-                int n, nfac, m, nabs, mabs, round,basket,tradenum;
+                int n, nfac, m, nabs, mabs, round, basket, tradenum;
                 int[] I_A = null;
                 string[] names;
                 using (var buysell = new InputSomeData())
@@ -1262,19 +1262,19 @@ namespace UseBlas
                 for (var i = 0; i < n; ++i) shake[i] = -1;
                 if (round == 1)
                 {
-                    if (min_lot != null && min_lot.Length==1)
+                    if (min_lot != null && min_lot.Length == 1)
                     {
                         minlot = new double[n];
                         BlasLike.dsetvec(n, min_lot[0], minlot);
                     }
-                    else if (min_lot != null && min_lot.Length==n)
+                    else if (min_lot != null && min_lot.Length == n)
                         minlot = min_lot;
-                    if (size_lot != null && size_lot.Length==1)
+                    if (size_lot != null && size_lot.Length == 1)
                     {
                         sizelot = new double[n];
                         BlasLike.dsetvec(n, size_lot[0], sizelot);
                     }
-                    else  if (size_lot != null && size_lot.Length==n)
+                    else if (size_lot != null && size_lot.Length == n)
                         sizelot = size_lot;
                 }
                 if (min_holding >= 0)
@@ -1336,7 +1336,7 @@ namespace UseBlas
                     opt.gamma = opt.kappa = 5e-2;
                     opt.CalcRisk(opt.gamma, sendInput);
                     opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
-                   //  opt.DropRisk(basket, trades, targetRisk, sendInput);
+                    //  opt.DropRisk(basket, trades, targetRisk, sendInput);
                     sendInput.useIP = false;
                     if (round == 1)
                     {
@@ -1344,7 +1344,8 @@ namespace UseBlas
                         opt.roundcheck(n, roundw, initial, minlot, sizelot, shake);
                     }
                     else
-                    {Op.x=opt.wback;Op.MoreInfo=sendInput;
+                    {
+                        Op.x = opt.wback; Op.MoreInfo = sendInput;
                         opt.Thresh(Op, mintrade == null ? null : initial, mintrade == null ? minhold : mintrade, roundw, mintrade == null ? null : minhold);
                         opt.thresh_check(n, roundw, mintrade == null ? null : initial, L, U, mintrade == null ? minhold : mintrade, mintrade == null ? null : minhold, BlasLike.lm_eps8, shake);
                     }
@@ -1371,7 +1372,8 @@ namespace UseBlas
                         opt.roundcheck(n, roundw, initial, minlot, sizelot, shake);
                     }
                     else
-                    {Op.x=opt.wback;Op.MoreInfo=sendInput;
+                    {
+                        Op.x = opt.wback; Op.MoreInfo = sendInput;
                         opt.Thresh(Op, mintrade == null ? null : initial, mintrade == null ? minhold : mintrade, roundw, mintrade == null ? null : minhold);
                         opt.thresh_check(n, roundw, mintrade == null ? null : initial, L, U, mintrade == null ? minhold : mintrade, mintrade == null ? null : minhold, BlasLike.lm_eps8, shake);
                     }

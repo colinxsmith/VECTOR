@@ -368,7 +368,7 @@ namespace Portfolio
                 info.OptFunc(info);
                 //	rstep.util=info.utility_base(n,x,c,H);
                 rstep.util = info.UtilityFunc(info);
-                if(info.back==10)info.back=6;
+                if (info.back == 10) info.back = 6;
                 rstep.back = info.back;
                 if (info.x != wback) BlasLike.dcopyvec(n, wback, info.x);
                 BlasLike.dcopyvec(n, info.x, rstep.w);
@@ -675,51 +675,83 @@ namespace Portfolio
             roundy = Math.Max(((int)(rstep.nround * .5 + n * .5)), (rstep.nround + 1));
             //	stuck=(rstep.prev&&(rstep.prev.nround==rstep.nround))?true:false;
             stuck = 0; roundstuck = rstep;
-            while (roundstuck.prev != null && (roundstuck.prev.nround == roundstuck.nround))
+            var bestround = 0;
+            roundstep test = rstep.prev, best = null;
+            while (test != null)
+            {
+                if (bestround < test.nround)
+                {
+                    bestround = test.nround;
+                    best = test;
+                }
+                test = test.prev;
+            }
+            if (best != null && best.nround == rstep.nround)
             {
                 stuck++;
-                roundstuck = roundstuck.prev;
+                roundstuck = best;
             }
             for (j = 0; j < Math.Min(Math.Max(1, roundy), n); ++j)
             {
                 //		i=next.bound_order[n-j-1];
                 i = next.bound_order[j]; dd = 0;
+                var testw = info.x[i];
+                if (testw < rstep.kL[i])
+                    testw = rstep.kL[i];
+                else if (testw > rstep.kU[i])
+                    testw = rstep.kU[i];
                 init = initial != null ? initial[i] : 0;
                 if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
                 {
-                    dd = (long)digitisei(info.x[i], init, minlot[i], sizelot[i]);
-                    if (info.x[i] > init)
+                    dd = (long)digitisei(testw, init, minlot[i], sizelot[i]);
+                    if (testw > init)
                     {
-                        nwL = digit2w(info.x[i], init, dd, minlot[i], sizelot[i]);
-                        nwU = digit2w(info.x[i], init, dd + 1 + (long)stuck, minlot[i], sizelot[i]);
-                        if (nwU <= rstep.kL[i] || nwU < info.x[i])
+                        if (!(j % 2 != 0 && next.count % 2 != 0))
                         {
-                            nwL = digit2w(info.x[i], init, dd + 1, minlot[i], sizelot[i]);
-                            nwU = digit2w(info.x[i], init, dd + 2 + (long)stuck, minlot[i], sizelot[i]);
+                            nwL = digit2w(testw, init, dd - 1, minlot[i], sizelot[i]);
+                            nwU = digit2w(testw, init, dd + (long)stuck, minlot[i], sizelot[i]);
+                            if (nwL < rstep.kL[i])
+                            {
+                                nwL = digit2w(testw, init, dd, minlot[i], sizelot[i]);
+                                nwU = digit2w(testw, init, dd + 1 + (long)stuck, minlot[i], sizelot[i]);
+                            }
+                        }
+                        else
+                        {
+                            nwL = digit2w(testw, init, dd, minlot[i], sizelot[i]);
+                            nwU = digit2w(testw, init, dd + 1 + (long)stuck, minlot[i], sizelot[i]);
                         }
                     }
-                    else if (info.x[i] < init)
+                    else if (testw < init)
                     {
-                        nwL = digit2w(info.x[i], init, dd - 1 - (long)stuck, minlot[i], sizelot[i]);
-                        nwU = digit2w(info.x[i], init, dd, minlot[i], sizelot[i]);
-                        if (nwL >= rstep.kU[i] || nwL > info.x[i])
+                        if (!(j % 2 != 0 && next.count % 2 != 0))
                         {
-                            nwL = digit2w(info.x[i], init, dd - 2 - (long)stuck, minlot[i], sizelot[i]);
-                            nwU = digit2w(info.x[i], init, dd - 1, minlot[i], sizelot[i]);
+                            nwL = digit2w(testw, init, dd - (long)stuck, minlot[i], sizelot[i]);
+                            nwU = digit2w(testw, init, dd + 1, minlot[i], sizelot[i]);
+                            if (nwU > rstep.kU[i])
+                            {
+                                nwL = digit2w(testw, init, dd - 1 - (long)stuck, minlot[i], sizelot[i]);
+                                nwU = digit2w(testw, init, dd, minlot[i], sizelot[i]);
+                            }
+                        }
+                        else
+                        {
+                            nwL = digit2w(testw, init, dd - 1 - (long)stuck, minlot[i], sizelot[i]);
+                            nwU = digit2w(testw, init, dd, minlot[i], sizelot[i]);
                         }
                     }
                     else
                     {
-                        nwL = digit2w(info.x[i], init, -stuck, minlot[i], sizelot[i]);
-                        nwL = digit2w(info.x[i], init, 0, minlot[i], sizelot[i]);
+                        nwL = digit2w(testw, init, -(long)stuck, minlot[i], sizelot[i]);
+                        nwU = digit2w(testw, init, 0, minlot[i], sizelot[i]);
                     }
-                    //info.AddLog((char*)"closeness %d %e %e %e",i,info.x[i]-nwL,info.x[i]-nwU,info.x[i]);
-                    if (Math.Abs(info.x[i] - nwL) < round_eps || Math.Abs(info.x[i] - nwU) < round_eps || Math.Abs(info.x[i] - init) < BlasLike.lm_eps)
+                    //  ColourConsole.WriteEmbeddedColourLine($"[cyan]closeness {names[i]}[/cyan] [green]{testw-nwL}[/green] [darkgreen]{testw-nwU}[/darkgreen] [yellow]{testw}[/yellow]");
+                    if (Math.Abs(info.x[i] - nwL) < round_eps || Math.Abs(info.x[i] - nwU) < round_eps || Math.Abs(testw - init) < BlasLike.lm_eps)
                     {
                         continue;
                         //				break;
                     }
-                    if (Math.Abs((nwU - (info.x[i])) - (info.x[i] - nwL)) < BlasLike.lm_rooteps)
+                    if (Math.Abs((nwU - (testw)) - (testw - nwL)) < BlasLike.lm_rooteps)
                     {
                         if (false && !(j % 2 != 0 && next.count % 2 != 0))
                         {
@@ -730,53 +762,59 @@ namespace Portfolio
                                 next.U[i] = Math.Max(rstep.kL[i], Math.Min(nwL, rstep.U[i]));
                             }*/
                     }
-                    else if (((nwU - (info.x[i])) / (info.x[i] - nwL)) < switch1)
+                    else if (((nwU - (testw)) / (testw - nwL)) < switch1)
                     {
-                        if (nwU >= rstep.L[i] && nwU <= rstep.kU[i])
+                        if (nwU >= rstep.L[i] && nwU != rstep.kU[i])
                             next.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.L[i]));
                         else
-                            next.U[i] = Math.Max(rstep.kL[i], Math.Min(nwL, rstep.U[i]));
+                        {
+                            next.U[i] = Math.Max(rstep.kL[i], Math.Max(nwU, rstep.U[i]));
+                            next.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.kL[i]));
+                        }
                     }
                     else
                     {
-                        if (nwL <= rstep.U[i] && nwL >= rstep.kL[i])
+                        if (nwL <= rstep.U[i] && nwL != rstep.kL[i])
                             next.U[i] = Math.Max(rstep.kL[i], Math.Min(nwL, rstep.U[i]));
                         else
-                            next.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.L[i]));
+                        {
+                            next.L[i] = Math.Min(rstep.kU[i], Math.Min(nwL, rstep.L[i]));
+                            next.U[i] = Math.Max(rstep.kL[i], Math.Min(nwL, rstep.kU[i]));
+                        }
                     }
                     if (next.U[i] < next.L[i])
                     {
-                        if (info.x[i] > init)
+                        //      if (testw > init)
                         {
                             next.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.kL[i]));
                             next.U[i] = rstep.kU[i];
                         }
-                        else if (info.x[i] < init)
-                        {
-                            next.U[i] = Math.Max(rstep.kL[i], Math.Min(nwL, rstep.kU[i]));
-                            next.L[i] = rstep.kL[i];
-                        }
-                        else
-                        {
-                            next.U[i] = Math.Max(rstep.kL[i], Math.Min(init, rstep.kU[i]));
-                            next.L[i] = rstep.kL[i];
-                        }
-                        //printf((char*)"bound problem");
+                        /*      else if (testw < init)
+                              {
+                                  next.U[i] = Math.Max(rstep.kL[i], Math.Min(nwL, rstep.kU[i]));
+                                  next.L[i] = rstep.kL[i];
+                              }
+                              else
+                              {
+                                  next.U[i] = Math.Max(rstep.kL[i], Math.Min(init, rstep.kU[i]));
+                                  next.L[i] = rstep.kL[i];
+                              }*/
+                        //printf((char*)"bound problem\n");
                     }
-                    //			printf((char*)"%3d %20.8e %20.8e %20.8e trade %20.8e",i,next.L[i],next.U[i],x[i],x[i]-init);
+                    //			printf((char*)"%3d %20.8e %20.8e %20.8e trade %20.8e\n",i,next.L[i],next.U[i],x[i],x[i]-init);
                 }
                 else
                 {
                     i = next.bound_order[j];
-                    if ((thresh != null && Math.Abs(info.x[i]) >= thresh[i]) || Math.Abs(info.x[i]) < BlasLike.lm_eps)
+                    if ((thresh != null && Math.Abs(testw) >= thresh[i]) || Math.Abs(testw) < BlasLike.lm_eps)
                     {
-                        if (!(rstep.nround == n && Math.Abs(Math.Abs(info.x[i] - init) - minlot[i]) < BlasLike.lm_eps8) && ((Math.Abs(info.x[i] - init) >= Math.Abs(minlot[i]) || Math.Abs(info.x[i] - init) < BlasLike.lm_eps)))
+                        if (!(rstep.nround == n && Math.Abs(Math.Abs(testw - init) - minlot[i]) < BlasLike.lm_eps8) && ((Math.Abs(testw - init) >= Math.Abs(minlot[i]) || Math.Abs(testw - init) < BlasLike.lm_eps)))
                         {
                             continue;
                         }
-                        if (Math.Abs(minlot[i]) - Math.Abs(info.x[i] - init) < Math.Abs(info.x[i] - init) * switch1)
+                        if (Math.Abs(minlot[i]) - Math.Abs(testw - init) < Math.Abs(testw - init) * switch1)
                         {
-                            if (info.x[i] - init > 0)
+                            if (testw - init > 0)
                             {
                                 next.L[i] = Math.Max(Math.Min(rstep.kU[i], minlot[i] + init), rstep.kL[i]);
                                 next.L[i] = Math.Min(next.U[i], next.L[i]);
@@ -792,17 +830,17 @@ namespace Portfolio
                             next.U[i] = Math.Min(Math.Max(rstep.kL[i], init), rstep.kU[i]);
                             next.L[i] = Math.Max(Math.Min(rstep.kU[i], init), rstep.kL[i]);
                         }
-                        if (rstep.nround == n && Math.Abs(Math.Abs(info.x[i] - init) - minlot[i]) < BlasLike.lm_eps8 && rstep.can_repeat[i] != 0)
+                        if (rstep.nround == n && Math.Abs(Math.Abs(testw - init) - minlot[i]) < BlasLike.lm_eps8 && rstep.can_repeat[i] != 0)
                         {
                             if (rstep.can_repeat[i] == 3)
                             {
                                 rstep.can_repeat[i]--;
-                                if (rstep.kL[i] < init + BlasLike.lm_eps8 && info.x[i] > init)
+                                if (rstep.kL[i] < init + BlasLike.lm_eps8 && testw > init)
                                 {
                                     next.L[i] = init + minlot[i];//rstep.kL[i] next time
                                     next.U[i] = Math.Min(init + minlot[i], rstep.kU[i]);
                                 }
-                                else if (rstep.kU[i] > init - BlasLike.lm_eps8 && info.x[i] < init)
+                                else if (rstep.kU[i] > init - BlasLike.lm_eps8 && testw < init)
                                 {
                                     next.U[i] = init - minlot[i];//rstep.kU[i] next time
                                     next.L[i] = Math.Max(rstep.kL[i], init - minlot[i]);
@@ -811,12 +849,12 @@ namespace Portfolio
                             else if (rstep.can_repeat[i] == 2)
                             {
                                 rstep.can_repeat[i]--;
-                                if (rstep.kL[i] < init + BlasLike.lm_eps8 && info.x[i] > init)
+                                if (rstep.kL[i] < init + BlasLike.lm_eps8 && testw > init)
                                 {
                                     next.L[i] = init + minlot[i];//rstep.kL[i] next time
                                     next.U[i] = rstep.kU[i];
                                 }
-                                else if (rstep.kU[i] > init - BlasLike.lm_eps8 && info.x[i] < init)
+                                else if (rstep.kU[i] > init - BlasLike.lm_eps8 && testw < init)
                                 {
                                     next.U[i] = init - minlot[i];//rstep.kU[i] next time
                                     next.L[i] = rstep.kL[i];
@@ -830,18 +868,18 @@ namespace Portfolio
                             }
                         }
                     }
-                    else if (Math.Abs(minlot[i]) - Math.Abs(info.x[i] - init) < Math.Abs(info.x[i] - init) * switch1)
+                    else if (Math.Abs(minlot[i]) - Math.Abs(testw - init) < Math.Abs(testw - init) * switch1)
                     {
-                        if (Math.Abs(minlot[i]) - Math.Abs(info.x[i] - init) < Math.Abs(info.x[i] - init) * switch1 && (thresh != null && Math.Abs(thresh[i]) - Math.Abs(info.x[i]) < Math.Abs(info.x[i]) * switch1))
+                        if (Math.Abs(minlot[i]) - Math.Abs(testw - init) < Math.Abs(testw - init) * switch1 && (thresh != null && Math.Abs(thresh[i]) - Math.Abs(testw) < Math.Abs(testw) * switch1))
                         {
-                            if (info.x[i] - init > 0)
+                            if (testw - init > 0)
                                 next.L[i] = Math.Max(Math.Min(rstep.kU[i], Math.Max(thresh != null ? thresh[i] : 0, minlot[i] + init)), rstep.kL[i]);
                             else
                                 next.U[i] = Math.Min(Math.Max(rstep.kL[i], Math.Min(thresh != null ? -thresh[i] : 0, -minlot[i] + init)), rstep.kU[i]);
                         }
                         else
                         {
-                            if (info.x[i] - init > 0)
+                            if (testw - init > 0)
                                 next.L[i] = Math.Max(Math.Min(rstep.kU[i], Math.Max(thresh != null ? thresh[i] : 0, init)), rstep.kL[i]);
                             else
                                 next.U[i] = Math.Min(Math.Max(rstep.kL[i], Math.Min(thresh != null ? -thresh[i] : 0, init)), rstep.kU[i]);
@@ -856,7 +894,7 @@ namespace Portfolio
                     }
                 }
             }
-            if (rstep.nround >= n - 3 && next.count > maxstage && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
+            if (bestround >= n - 2 && next.count > maxstage && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
             if (rstep.nround == n && next.count == 2 && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
             if (!next.success && rstep.nround == n && rstep.back <= 1)
                 next.success = true;
