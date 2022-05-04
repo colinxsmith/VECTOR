@@ -676,15 +676,14 @@ namespace Portfolio
             //	stuck=(rstep.prev&&(rstep.prev.nround==rstep.nround))?true:false;
             stuck = 0; roundstuck = rstep;
             var bestround = 0;
-            roundstep test = rstep.prev, best = null;
-            while (test != null)
+            roundstep test = rstep, best = null;
+            while ((test = test.prev) != null)
             {
                 if (bestround < test.nround)
                 {
                     bestround = test.nround;
                     best = test;
                 }
-                test = test.prev;
             }
             if (best != null && best.nround == rstep.nround)
             {
@@ -784,24 +783,9 @@ namespace Portfolio
                     }
                     if (next.U[i] < next.L[i])
                     {
-                        //      if (testw > init)
-                        {
-                            next.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.kL[i]));
-                            next.U[i] = rstep.kU[i];
-                        }
-                        /*      else if (testw < init)
-                              {
-                                  next.U[i] = Math.Max(rstep.kL[i], Math.Min(nwL, rstep.kU[i]));
-                                  next.L[i] = rstep.kL[i];
-                              }
-                              else
-                              {
-                                  next.U[i] = Math.Max(rstep.kL[i], Math.Min(init, rstep.kU[i]));
-                                  next.L[i] = rstep.kL[i];
-                              }*/
-                        //printf((char*)"bound problem\n");
+                        next.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.kL[i]));
+                        next.U[i] = rstep.kU[i];
                     }
-                    //			printf((char*)"%3d %20.8e %20.8e %20.8e trade %20.8e\n",i,next.L[i],next.U[i],x[i],x[i]-init);
                 }
                 else
                 {
