@@ -204,7 +204,7 @@ namespace Portfolio
             return digit;
         }
         ///<summary>Return a whole number if digit is whole number plus/minus something very small</summary>
-        double check_digit(double digit)
+        public static double check_digit(double digit)
         {
             if (Math.Abs(digit) < BlasLike.lm_eps) return 0.0;
             double delta = Math.Abs(Math.Abs(digit - (long)(digit)) - 1);
