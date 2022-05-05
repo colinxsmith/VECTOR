@@ -1199,8 +1199,6 @@ namespace UseBlas
                 {
                     var topendkeep = topend;
                     topend = x;
-                    ColourConsole.WriteEmbeddedColourLine($"[green]CVAR(smin) =[/green] [yellow]{cvar(smin)}[/yellow]");
-                    ColourConsole.WriteEmbeddedColourLine($"[green]CVAR(smax) =[/green] [yellow]{cvar(smax)}[/yellow]");
                     var1 = ActiveSet.Optimise.PathMin(cvar, smin, smax, BlasLike.lm_eps8, 0);
                     var back = cvar(var1);
                     ColourConsole.WriteEmbeddedColourLine($"[yellow]Value at Risk {var1,16:E8}[/yellow], [green]Expected Tail Loss {back,16:E8}[/green] [magenta]at {topend}[/magenta]");
@@ -1222,7 +1220,7 @@ namespace UseBlas
                 //We find ETLinter2 is the same as ETL, i.e. true optimised CVAR using inferred VAR at 0.05
                 //is the same as CVAR calculated using 0.05 with the interpolated VAR from the actual 
                 //time variables above and below 0.05.
-                ColourConsole.WriteEmbeddedColourLine($"[green]CVAR({VARinter,16:E8})[/green] [darkyellow]Interpolated ETL {ETLinter2,16:E8}[/darkyellow] ([red]{ETL - ETLinter2:e16}[/red])");
+                ColourConsole.WriteEmbeddedColourLine($"[green]CVAR({VARinter,16:E8})[/green] [darkyellow]gives ETL {ETLinter2,16:E8}[/darkyellow] ([red]{ETL - ETLinter2:e16}[/red])");
 
                 //Now try LP
                 var m = tlen;
@@ -1234,17 +1232,20 @@ namespace UseBlas
                 double[] A = new double[n * m];
                 double[] c = new double[n];
                 BlasLike.dsetvec(tlen, topend, c);
-                BlasLike.dsetvec(1, 1.0 - topend * tlen, c, tlen);
+                BlasLike.dsetvec(1, 1.0, c, tlen);
                 BlasLike.dsetvec(tlen, 0, L);
                 BlasLike.dsetvec(tlen, 1, U);//1 is far too big max(s) is enough;
-                BlasLike.dsetvec(1, 0, L, tlen);
+                BlasLike.dsetvec(1, -1, L, tlen);
                 BlasLike.dsetvec(1, 1, U, tlen);
                 BlasLike.dsetvec(m, 1, U, n);
-                BlasLike.dsccopyvec(m, 1, s, L, 0, n);
+                for (var i = 0; i < m; ++i)
+                {
+                    L[n + i] = Math.Max(s[i], 0);
+                }
                 for (var i = 0; i < tlen; ++i)
                 {
                     BlasLike.dset(1, 1, A, m, i + m * i);
-                    BlasLike.dset(1, -1, A, m, i + m * tlen);
+                    BlasLike.dset(1, 1, A, m, i + m * tlen);
                 }
                 opt.n = n;
                 opt.m = m;
@@ -1252,17 +1253,25 @@ namespace UseBlas
                 opt.U = U;
                 opt.A = A;
                 opt.c = c;
-                // opt.wback = x;
                 opt.names = new string[n];
                 for (var i = 0; i < tlen; ++i)
                 {
                     opt.names[i] = "time" + (i + 1);
                 }
                 opt.names[tlen] = "VAR";
-                opt.ActiveOpt(1, x, LL);
+                BlasLike.dsetvec(n, 1.0 / n, x);
+                double back = -12;
+                bool useIP = false;
+                if (!useIP) back = opt.ActiveOpt(1, x, LL);
+                else back = opt.InteriorOpt(1e-9, x, LL);
                 var ccc = new double[m];
                 Factorise.dmxmulv(m, n, A, x, ccc);
-                var cvarLP = x[tlen] + BlasLike.dsumvec(m, ccc) * topend;
+                var cvarLP = x[tlen] + BlasLike.dsumvec(m, x) * topend;
+                var cvarLPVAR = cvar(x[tlen]);
+                ColourConsole.WriteEmbeddedColourLine($"[green]LP objective[/green]\t\t\t\t\t[darkyellow]{BlasLike.ddotvec(n, c, x),16:E8}[/darkyellow]");
+                ColourConsole.WriteEmbeddedColourLine($"[green]LP gives VAR={x[tlen],16:E8}[/green] and [darkyellow]CVAR =\t{cvarLP,16:E8}[/darkyellow]");
+                ColourConsole.WriteEmbeddedColourLine($"[green]CVAR({x[tlen],16:E8})[/green] =\t\t\t[darkyellow]{cvarLP,16:E8}[/darkyellow]");
+                return;
             }
 
             {
