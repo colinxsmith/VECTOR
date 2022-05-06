@@ -1181,8 +1181,32 @@ namespace UseBlas
                 var testw = new double[nstocks];
                 BlasLike.dsetvec(nstocks, 1.0 / nstocks, testw);
                 var s = new double[tlen];
-                double topend;
+                double topend=0.05;
+                double smax = 1, smin = -1;
                 Factorise.dmxmulv(tlen, nstocks, DATA, testw, s);
+                ///<summary>Traditional way to get VAR and CVAR</summary>
+                double varorder(ref double cvar, int include)
+                {
+                    var order = new int[tlen];
+                    var iorder = new int[tlen];
+                    Ordering.Order.getorder(tlen, s, order, null, 0, -1);
+                    for (var i = 0; i < tlen; ++i) iorder[order[i]] = i;
+                    Ordering.Order.Reorder(tlen, order, s);
+                    cvar = BlasLike.dsumvec(include, s, tlen - include) / include;
+                    Ordering.Order.Reorder(tlen, iorder, s);
+                    var back = s[order[tlen - include - 1]];
+                    return back;
+                }
+                double cvarord1 = 0, cvarord2 = 0;
+                var VARord1 = varorder(ref cvarord1, (int)(topend * tlen));
+                var cavrordo1 = cvar(VARord1);
+                var VARord2 = varorder(ref cvarord2, (int)(topend * tlen + 1));
+                var cavrordo2 = cvar(VARord2);
+
+                var VARinterord = (VARord2 - VARord1) * (topend * tlen - (double)(int)(topend * tlen)) + VARord1;
+                var ETLinterord = (cvarord2 - cvarord1) * (topend * tlen - (double)(int)(topend * tlen)) + cvarord1;
+
+                ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Traditional Method[/darkyellow]\n[green]Interpolated VAR {VARinterord,16:E8}[/green] [darkyellow]Interpolated ETL {ETLinterord,16:E8}[/darkyellow]");
                 double cvar(double X, object kk = null)
                 {
                     double r = 0;
@@ -1190,11 +1214,9 @@ namespace UseBlas
                     {
                         r += Math.Max(0, s[i] - X);
                     }
-                    var back = X + r * topend;
+                    var back = X + r / (topend * tlen);
                     return back;
                 }
-                double smax = 1, smin = -1;
-                topend = 0.05;
                 double cvar1d(double x, ref double var1)
                 {
                     var topendkeep = topend;
@@ -1215,7 +1237,8 @@ namespace UseBlas
                 var ETL2 = cvar1d(topend2, ref VAR2);
                 var VARinter = (VAR2 - VAR1) / (topend2 - topend1) * (topend - topend1) + VAR1;
                 var ETLinter = (ETL2 - ETL1) / (topend2 - topend1) * (topend - topend1) + ETL1;
-                ColourConsole.WriteEmbeddedColourLine($"[green]Interpolated VAR {VARinter,16:E8}[/green] [darkyellow]Interpolated ETL {ETLinter,16:E8}[/darkyellow]");
+                
+                ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Optimisation Method[/darkyellow]\n[green]Interpolated VAR {VARinter,16:E8}[/green] [darkyellow]Interpolated ETL {ETLinter,16:E8}[/darkyellow]");
                 var ETLinter2 = cvar(VARinter);
                 //We find ETLinter2 is the same as ETL, i.e. true optimised CVAR using inferred VAR at 0.05
                 //is the same as CVAR calculated using 0.05 with the interpolated VAR from the actual 
@@ -1231,7 +1254,7 @@ namespace UseBlas
                 double[] U = new double[n + m];
                 double[] A = new double[n * m];
                 double[] c = new double[n];
-                BlasLike.dsetvec(tlen, topend, c);
+                BlasLike.dsetvec(tlen, 1.0 / (topend * tlen), c);
                 BlasLike.dsetvec(1, 1.0, c, tlen);
                 BlasLike.dsetvec(tlen, 0, L);
                 BlasLike.dsetvec(tlen, 1, U);//1 is far too big max(s) is enough;
@@ -1266,7 +1289,7 @@ namespace UseBlas
                 else back = opt.InteriorOpt(1e-9, x, LL);
                 var ccc = new double[m];
                 Factorise.dmxmulv(m, n, A, x, ccc);
-                var cvarLP = x[tlen] + BlasLike.dsumvec(m, x) * topend;
+                var cvarLP = x[tlen] + BlasLike.dsumvec(m, x) / (topend * tlen);
                 var cvarLPVAR = cvar(x[tlen]);
                 ColourConsole.WriteEmbeddedColourLine($"[green]LP objective[/green]\t\t\t\t\t[darkyellow]{BlasLike.ddotvec(n, c, x),16:E8}[/darkyellow]");
                 ColourConsole.WriteEmbeddedColourLine($"[green]LP gives VAR={x[tlen],16:E8}[/green] and [darkyellow]CVAR =\t{cvarLP,16:E8}[/darkyellow]");
