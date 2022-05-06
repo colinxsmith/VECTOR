@@ -1181,7 +1181,7 @@ namespace UseBlas
                 var testw = new double[nstocks];
                 BlasLike.dsetvec(nstocks, 1.0 / nstocks, testw);
                 var s = new double[tlen];
-                double topend=0.05;
+                double topend = 0.05;
                 double smax = 1, smin = -1;
                 Factorise.dmxmulv(tlen, nstocks, DATA, testw, s);
                 ///<summary>Traditional way to get VAR and CVAR</summary>
@@ -1237,7 +1237,7 @@ namespace UseBlas
                 var ETL2 = cvar1d(topend2, ref VAR2);
                 var VARinter = (VAR2 - VAR1) / (topend2 - topend1) * (topend - topend1) + VAR1;
                 var ETLinter = (ETL2 - ETL1) / (topend2 - topend1) * (topend - topend1) + ETL1;
-                
+
                 ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Optimisation Method[/darkyellow]\n[green]Interpolated VAR {VARinter,16:E8}[/green] [darkyellow]Interpolated ETL {ETLinter,16:E8}[/darkyellow]");
                 var ETLinter2 = cvar(VARinter);
                 //We find ETLinter2 is the same as ETL, i.e. true optimised CVAR using inferred VAR at 0.05
