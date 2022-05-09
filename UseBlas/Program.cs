@@ -7,7 +7,13 @@ using Portfolio;
 using Microsoft.Win32;
 
 namespace UseBlas
-{///<summary>Holder for dropped portfolio results<sumary>
+{
+    class ETLpass
+    {
+        public double[] returns;
+        public int T;
+        public double inc;
+    }
     class Program
     {
         static unsafe void Main(string[] args)
@@ -1162,7 +1168,7 @@ namespace UseBlas
                 int nstocks, tlen;
                 using (var CVarData = new InputSomeData())
                 {
-                    CVarData.doubleFields = "DATA";
+                    CVarData.doubleFields = "DATA";//The DATA is LOSS i.e. - returns
                     CVarData.intFields = "n tlen";
                     CVarData.stringFields = "names";
                     try
@@ -1182,6 +1188,10 @@ namespace UseBlas
                 BlasLike.dsetvec(nstocks, 1.0 / nstocks, testw);
                 var s = new double[tlen];
                 double topend = 0.05;
+                ETLpass info = new ETLpass();
+                info.inc = topend;
+                info.T = tlen;
+                info.returns = s;
                 double smax = 1, smin = -1;
                 Factorise.dmxmulv(tlen, nstocks, DATA, testw, s);
                 ///<summary>Traditional way to get VAR and CVAR</summary>
@@ -1199,47 +1209,55 @@ namespace UseBlas
                 }
                 double cvarord1 = 0, cvarord2 = 0;
                 var VARord1 = varorder(ref cvarord1, (int)(topend * tlen));
-                var cavrordo1 = cvar(VARord1);
+                info.inc = (double)((int)(topend * tlen)) / tlen;
+                var cavrordo1 = cvar(VARord1, info);
                 var VARord2 = varorder(ref cvarord2, (int)(topend * tlen + 1));
-                var cavrordo2 = cvar(VARord2);
+                info.inc = (double)((int)(topend * tlen + 1)) / tlen;
+                var cavrordo2 = cvar(VARord2, info);
 
                 var VARinterord = (VARord2 - VARord1) * (topend * tlen - (double)(int)(topend * tlen)) + VARord1;
                 var ETLinterord = (cvarord2 - cvarord1) * (topend * tlen - (double)(int)(topend * tlen)) + cvarord1;
 
                 ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Traditional Method[/darkyellow]\n[green]Interpolated VAR {VARinterord,16:E8}[/green] [darkyellow]Interpolated ETL {ETLinterord,16:E8}[/darkyellow]");
-                double cvar(double X, object kk = null)
+                double cvar(double X, object kk)
                 {
+                    ETLpass info = (ETLpass)kk;
                     double r = 0;
-                    for (var i = 0; i < tlen; ++i)
+                    for (var i = 0; i < info.T; ++i)
                     {
                         r += Math.Max(0, s[i] - X);
                     }
-                    var back = X + r / (topend * tlen);
+                    var back = X + r / Portfolio.Portfolio.check_digit(info.inc * tlen);
                     return back;
                 }
-                double cvar1d(double x, ref double var1)
+                double cvar1d(ref double var1, object kk)
                 {
+                    ETLpass info = (ETLpass)kk;
                     var topendkeep = topend;
-                    topend = x;
-                    var1 = ActiveSet.Optimise.PathMin(cvar, smin, smax, BlasLike.lm_eps8, 0);
-                    var back = cvar(var1);
-                    ColourConsole.WriteEmbeddedColourLine($"[yellow]Value at Risk {var1,16:E8}[/yellow], [green]Expected Tail Loss {back,16:E8}[/green] [magenta]at {topend}[/magenta]");
+                    var1 = ActiveSet.Optimise.PathMin(cvar, smin, smax, BlasLike.lm_eps8, 0, kk);
+                    var back = cvar(var1, kk);
+                    ColourConsole.WriteEmbeddedColourLine($"[yellow]Value at Risk {var1,16:E8}[/yellow], [green]Expected Tail Loss {back,16:E8}[/green] [magenta]at {info.inc}[/magenta]");
                     topend = topendkeep;
                     return back;
                 }
+                ColourConsole.WriteInfo("Don't need to reorder x any more, use optimisation instead");
                 double VAR = -1;
-                var ETL = cvar1d(topend, ref VAR);
+                info.inc = topend;
+                var ETL = cvar1d(ref VAR, info);
                 var topend1 = (double)(long)((topend * tlen)) / tlen;
                 double VAR1 = -1;
-                var ETL1 = cvar1d(topend1, ref VAR1);
+                info.inc = topend1;
+                var ETL1 = cvar1d(ref VAR1, info);
                 var topend2 = (double)(long)((topend * tlen + 1)) / tlen;
                 double VAR2 = -1;
-                var ETL2 = cvar1d(topend2, ref VAR2);
-                var VARinter = (VAR2 - VAR1) / (topend2 - topend1) * (topend - topend1) + VAR1;
-                var ETLinter = (ETL2 - ETL1) / (topend2 - topend1) * (topend - topend1) + ETL1;
+                info.inc = topend2;
+                var ETL2 = cvar1d(ref VAR2, info);
+                var VARinter = (VAR2 - VAR1) * (topend - topend1) * tlen + VAR1;
+                var ETLinter = (ETL2 - ETL1) * (topend - topend1) * tlen + ETL1;
 
                 ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Optimisation Method[/darkyellow]\n[green]Interpolated VAR {VARinter,16:E8}[/green] [darkyellow]Interpolated ETL {ETLinter,16:E8}[/darkyellow]");
-                var ETLinter2 = cvar(VARinter);
+                info.inc = topend;
+                var ETLinter2 = cvar(VARinter, info);
                 //We find ETLinter2 is the same as ETL, i.e. true optimised CVAR using inferred VAR at 0.05
                 //is the same as CVAR calculated using 0.05 with the interpolated VAR from the actual 
                 //time variables above and below 0.05.
@@ -1284,16 +1302,68 @@ namespace UseBlas
                 opt.names[tlen] = "VAR";
                 BlasLike.dsetvec(n, 1.0 / n, x);
                 double back = -12;
-                bool useIP = false;
+                bool useIP = true;
                 if (!useIP) back = opt.ActiveOpt(1, x, LL);
                 else back = opt.InteriorOpt(1e-9, x, LL);
                 var ccc = new double[m];
                 Factorise.dmxmulv(m, n, A, x, ccc);
                 var cvarLP = x[tlen] + BlasLike.dsumvec(m, x) / (topend * tlen);
-                var cvarLPVAR = cvar(x[tlen]);
+                var cvarLPVAR = cvar(x[tlen], info);
                 ColourConsole.WriteEmbeddedColourLine($"[green]LP objective[/green]\t\t\t\t\t[darkyellow]{BlasLike.ddotvec(n, c, x),16:E8}[/darkyellow]");
                 ColourConsole.WriteEmbeddedColourLine($"[green]LP gives VAR={x[tlen],16:E8}[/green] and [darkyellow]CVAR =\t{cvarLP,16:E8}[/darkyellow]");
                 ColourConsole.WriteEmbeddedColourLine($"[green]CVAR({x[tlen],16:E8})[/green] =\t\t\t[darkyellow]{cvarLP,16:E8}[/darkyellow]");
+                ColourConsole.WriteInfo("Optimise to get best portfolio weights");
+                opt.n = nstocks + tlen + 1;
+                opt.m = tlen + 1;
+                opt.A = new double[opt.n * opt.m];
+                opt.L = new double[opt.n + opt.m];
+                opt.U = new double[opt.n + opt.m];
+                opt.c = new double[opt.n];
+                opt.ntrue = nstocks;
+                opt.mtrue = 1;
+                BlasLike.dsetvec(tlen, 1.0 / Portfolio.Portfolio.check_digit(info.inc * tlen), opt.c, nstocks);
+                BlasLike.dsetvec(1, 1.0, opt.c, nstocks + tlen);
+                BlasLike.dsetvec(nstocks, 0, opt.L);
+                BlasLike.dsetvec(nstocks, 1, opt.U);
+                BlasLike.dsetvec(tlen, 0, opt.L, nstocks);
+                BlasLike.dsetvec(tlen, 1, opt.U, nstocks);
+                BlasLike.dsetvec(1, -1, opt.L, nstocks + tlen);
+                BlasLike.dsetvec(1, 1, opt.U, nstocks + tlen);
+                BlasLike.dsetvec(1, 1, opt.L, opt.n);
+                BlasLike.dsetvec(1, 1, opt.U, opt.n);
+                BlasLike.dsetvec(tlen, 0, opt.L, opt.n + 1);
+                BlasLike.dsetvec(tlen, 1, opt.U, opt.n + 1);
+
+                BlasLike.dset(nstocks, 1, opt.A, opt.m);
+                for (var i = 0; i < tlen; ++i)
+                {//These constraints ensure that the optimisation variables are constrained so that (LOSS above VAR)+VAR-portfolio LOSS>=0
+                    BlasLike.dsccopy(nstocks, -1, DATA, tlen, opt.A, opt.m, i, i + 1);
+                    BlasLike.dset(1, 1, opt.A, opt.m, 1 + i + opt.m * (i + nstocks));
+                    BlasLike.dset(1, 1, opt.A, opt.m, 1 + i + opt.m * (tlen + nstocks));
+                }
+                x = new double[opt.n];
+                LL = new double[opt.n + opt.m];
+                opt.names = (string[])names.Clone();
+                Array.Resize(ref opt.names, opt.n);
+                for (var i = 0; i < tlen; ++i)
+                {
+                    opt.names[i + nstocks] = "time" + (i + 1);
+                }
+                opt.names[opt.n - 1] = "VAR";
+
+                if (!useIP) back = opt.ActiveOpt(1, x, LL);
+                else back = opt.InteriorOpt(1e-9, x, LL);
+                var VARopt = x[x.Length - 1];
+                var CVARopt = BlasLike.ddotvec(opt.n, x, opt.c);
+                var xopt = (double[])x.Clone();
+                Array.Resize(ref xopt, nstocks);
+
+                Factorise.dmxmulv(tlen, nstocks, DATA, xopt, s);
+
+                info.inc = topend;
+                var ETLcheck = cvar(VARopt, info);
+                ETL = cvar1d(ref VAR, info);
+                ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Using optimised portfolio weights[/darkyellow]\n[cyan]VAR\t{VARopt,16:E8} [/cyan] [yellow]Check using cavr1d {VAR,16:E8}[/yellow]\n[cyan]CVAR\t{CVARopt,16:E8} [/cyan] [yellow]Check using cvar1d {ETL,16:E8}[/yellow] [green]Check using cvar({VARopt,16:E8}) {ETLcheck,16:E8}[/green]");
                 return;
             }
 
