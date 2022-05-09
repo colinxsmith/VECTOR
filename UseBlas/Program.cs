@@ -1185,6 +1185,7 @@ namespace UseBlas
                     tlen = CVarData.mapInt["tlen"][0];
                 }
                 var testw = new double[nstocks];
+                BlasLike.dnegvec(DATA.Length, DATA);
                 BlasLike.dsetvec(nstocks, 1.0 / nstocks, testw);
                 var s = new double[tlen];
                 double topend = 0.05;
@@ -1225,7 +1226,7 @@ namespace UseBlas
                     double r = 0;
                     for (var i = 0; i < info.T; ++i)
                     {
-                        r += Math.Max(0, s[i] - X);
+                        r += Math.Max(0, info.returns[i] - X);
                     }
                     var back = X + r / Portfolio.Portfolio.check_digit(info.inc * tlen);
                     return back;
@@ -1302,7 +1303,7 @@ namespace UseBlas
                 opt.names[tlen] = "VAR";
                 BlasLike.dsetvec(n, 1.0 / n, x);
                 double back = -12;
-                bool useIP = true;
+                bool useIP = false;
                 if (!useIP) back = opt.ActiveOpt(1, x, LL);
                 else back = opt.InteriorOpt(1e-9, x, LL);
                 var ccc = new double[m];
