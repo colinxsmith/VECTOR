@@ -1370,7 +1370,6 @@ namespace UseBlas
                 var ETLcheck = cvar(VARopt, info);
                 ETL = cvar1d(ref VAR, info);
                 ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Using optimised portfolio weights[/darkyellow]\n[cyan]VAR\t{VARopt,16:E8} [/cyan] [yellow]Check using cavr1d {VAR,16:E8}[/yellow]\n[cyan]CVAR\t{CVARopt,16:E8} [/cyan] [yellow]Check using cvar1d {ETL,16:E8}[/yellow] [green]Check using cvar({VARopt,16:E8}) {ETLcheck,16:E8}[/green]");
-                return;
             }
 
             {

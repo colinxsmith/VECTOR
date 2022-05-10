@@ -127,7 +127,7 @@ namespace Portfolio
                     }
                 }
                 OP.back = BACK = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, OP.lower, OP.upper, gamma, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
-                              alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a);
+                              alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a,vars.tlen,vars.DATA,vars.tail,vars.targetR);
             }
             OP.minholdlot = minholdlot;
             OP.mintradelot = mintradelot;
@@ -2306,6 +2306,10 @@ namespace Portfolio
             public double[] bench;
             public double target;
             public int back = -1;
+            public int tlen=0;
+            public double[]DATA=null;
+            public double tail=0.05;
+            public double[]targetR=null;
         }
         ///<summary> A function that returns risk - target risk. Use with Solve1D to do risk constraint</summary>
         ///<param name="gam">guess for gamma (for return risk utility) or (gamma and kappa for cost risk utility)</param>
@@ -2314,7 +2318,7 @@ namespace Portfolio
         {
             INFO vars = (INFO)info;
             vars.back = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, vars.L, vars.U, gam, gam, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
-                     alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a);
+                     alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a,vars.tlen,vars.DATA,vars.tail,vars.targetR);
             double[] www = (double[])wback.Clone();
             if (vars.bench != null) BlasLike.dsubvec(vars.n, www, vars.bench, www);
             var fix = nfixed;
@@ -2346,14 +2350,14 @@ namespace Portfolio
                 else ColourConsole.WriteError("INFEASIBLE");
                 sendInput.useIP = false;
                 back = BasicOptimisation(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
-                 alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a);
+                 alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a,sendInput.tlen,sendInput.DATA,sendInput.tail,sendInput.targetR);
                 var w = new double[sendInput.n];
                 var gradient = new double[sendInput.n];
                 BlasLike.dcopyvec(sendInput.n, wback, w);
                 var utility = PortfolioUtility(sendInput.n, gamma, kappa, sendInput.buy, sendInput.sell, sendInput.alpha, w, gradient, ref baskethere, ref tradeshere);
                 ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
                 if (back != 6) back = Dropper(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
-                     alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, basket, baskethere, trades, tradeshere);
+                     alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a,sendInput.tlen,sendInput.DATA,sendInput.tail,sendInput.targetR, basket, baskethere, trades, tradeshere);
                 if (back == 6) ColourConsole.WriteError("INFEASIBLE");
                 BlasLike.dcopyvec(sendInput.n, wback, w);
                 if (back != 6)
@@ -2375,7 +2379,7 @@ namespace Portfolio
                         kappa = gamma = newgamma;
                         sendInput.useIP = true;
                         BasicOptimisation(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
-                         alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a);
+                         alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a,sendInput.tlen,sendInput.DATA,sendInput.tail,sendInput.targetR);
                         w = new double[sendInput.n];
                         gradient = new double[sendInput.n];
                         BlasLike.dcopyvec(sendInput.n, wback, w);
@@ -2466,7 +2470,7 @@ namespace Portfolio
         double gamma, double kappa, double delta, double value, double valuel,
         double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell,
         string[] names, bool useIp = true, int nabs = 0, double[] A_abs = null, double[] Abs_L = null, double[] Abs_U = null,
-        int mabs = 0, int[] I_A = null, int basket = -1, int baskethere = -1, int trades = -1, int tradeshere = -1)
+        int mabs = 0, int[] I_A = null, int tlen = 0, double[] DATA = null, double tail = 0.05, double[] targetR = null, int basket = -1, int baskethere = -1, int trades = -1, int tradeshere = -1)
         {
             if (basket < 0) { basket = n; baskethere = n; }
             if (trades < 0) { trades = n; tradeshere = n; }
@@ -2510,7 +2514,7 @@ namespace Portfolio
                     }
                 }
                 var back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                    alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
+                    alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A,tlen,DATA,tail,targetR);
                 if (back != 6)
                 {
                     BlasLike.dcopyvec(n, wback, w);
@@ -3019,11 +3023,15 @@ namespace Portfolio
         ///<param name="U_abs">array of upper bounds for absolute constraints (nabs+mabs)</param>
         ///<param name="mabs">number of absolute constraints in I_a</param>
         ///<param name="I_a">integer array, if I_a[i] = k, the i'th constraint has data from the k'th constraint in A</param>
+        ///<param name="tlen">For ETL or GAIN/LOSS, number time periods</param>
+        ///<param name="DATA">For GAIN/LOSS array length n*tlen of returns' data (-returns's data for ETL)</param>
+        ///<param name="tail">In ETL, 100*tail% defines upper tail</param>
+        ///<param name="targetR">For GAIN/LOSS, array of tlen target returns (usually all the the same)</param>
         public int BasicOptimisation(int n, int m, int nfac, double[] A, double[] L, double[] U,
         double gamma, double kappa, double delta, double value, double valuel,
         double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell,
         string[] names, bool useIP = true, int nabs = 0, double[] A_abs = null, double[] L_abs = null, double[] U_abs = null,
-        int mabs = 0, int[] I_a = null)
+        int mabs = 0, int[] I_a = null, int tlen = 0, double[] DATA = null, double tail = 0.05, double[] targetR = null)
         {
             int back;
             nfixed = 0;
@@ -3066,6 +3074,7 @@ namespace Portfolio
                 Order.Reorder(n, mainorder, U);
                 Order.Reorder(n, mainorder, alpha);
                 Order.Reorder(n, mainorder, initial);
+                if (DATA != null) Order.Reorder_gen(n, mainorder, DATA, tlen, 1, true);
                 if (bench != null) Order.Reorder(n, mainorder, bench);
                 if (buy != null) Order.Reorder(n, mainorder, buy);
                 if (sell != null) Order.Reorder(n, mainorder, sell);
@@ -3146,6 +3155,17 @@ namespace Portfolio
             for (var i = 0; i < longshortbuysell; ++i) longshortbuysellIndex_inverse[longshortbuysellIndex[i]] = i;
             var N = n + buysellI + longshortI;
             var M = m + buysellI + longshortI + (delta < 2.0 ? 1 : 0);
+            double DATAmax = 0.0, DATAmin = 0.0;
+            if (tlen > 0)
+            {
+                BlasLike.dxminmax(tlen * n, DATA, 1, ref DATAmax, ref DATAmin);
+                DATAmax *= (double)n;
+                if (targetR != null)                //ETL
+                    N += tlen + 1;
+                else                                //GAIN/LOSS
+                    N += tlen;
+                M += tlen;
+            }
             if (value > 0) M++;
             if (rmax > 0 && rmin == rmax) M++;
             else if (rmax > 0) M++;
@@ -3164,6 +3184,14 @@ namespace Portfolio
             BlasLike.dsetvec(buysellI, useIP ? BlasLike.lm_max : 1, UU, n);
             BlasLike.dsetvec(longshortI, 0, LL, n + buysellI);
             BlasLike.dsetvec(longshortI, useIP ? BlasLike.lm_max : 1, UU, n + buysellI);
+
+            BlasLike.dsetvec(tlen, 0, LL, n + buysellI + longshortI);
+            BlasLike.dsetvec(tlen, useIP ? BlasLike.lm_max : DATAmax, LL, n + buysellI + longshortI);
+            if (targetR == null)
+            {
+                BlasLike.dsetvec(1, 0, LL, n + buysellI + longshortI + tlen);
+                BlasLike.dsetvec(1, useIP ? BlasLike.lm_max : DATAmax, UU, n + buysellI + longshortI + tlen);
+            }
             //Constraints
             BlasLike.dcopyvec(m, L, LL, n, N);
             BlasLike.dcopyvec(m, U, UU, n, N);
@@ -3454,6 +3482,26 @@ namespace Portfolio
                     cnum++;
                 }
             }
+            if (tlen > 0)
+            {//Constraints for ETL or GAIN/LOSS
+                if (targetR == null) BlasLike.dsetvec(tlen, 0, LL, N + M - tlen);
+                else BlasLike.dcopyvec(tlen, targetR, LL, N + M - tlen);
+                BlasLike.dsetvec(tlen, useIP ? BlasLike.lm_max : DATAmax, UU, N + M - tlen);
+
+                for (var i = 0; i < tlen; ++i)
+                {
+                    if (targetR == null) BlasLike.dsccopy(n, -1, DATA, tlen, AA, M, i, i + M - tlen);
+                    else BlasLike.dcopy(n, DATA, tlen, AA, M, i, i + M - tlen);
+                    BlasLike.dset(1, 1, AA, M, M - tlen + i + M * (i + n));
+                    if (targetR == null) BlasLike.dset(1, 1, AA, M, M - tlen + i + M * (tlen + n));
+                    if (nfixed > 0)
+                    {
+                        var fixedReturn = BlasLike.ddot(nfixed, DATA, tlen, L, 1, i + tlen * n, n);
+                        if (targetR == null) fixedReturn = -fixedReturn;
+                        LL[N + M - tlen + i] -= fixedReturn;
+                    }
+                }
+            }
             this.names = names;
             this.L = LL;
             this.U = UU;
@@ -3565,6 +3613,7 @@ namespace Portfolio
                 Order.Reorder(n, mainorderInverse, U);
                 Order.Reorder(n, mainorderInverse, alpha);
                 Order.Reorder(n, mainorderInverse, initial);
+                if (DATA != null) Order.Reorder_gen(n, mainorderInverse, DATA, tlen, 1, true);
                 if (bench != null) Order.Reorder(n, mainorderInverse, bench);
                 if (buy != null) Order.Reorder(n, mainorderInverse, buy);
                 if (sell != null) Order.Reorder(n, mainorderInverse, sell);
