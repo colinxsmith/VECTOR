@@ -127,7 +127,7 @@ namespace Portfolio
                     }
                 }
                 OP.back = BACK = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, OP.lower, OP.upper, gamma, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
-                              alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a,vars.tlen,vars.DATA,vars.tail,vars.targetR);
+                              alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR);
             }
             OP.minholdlot = minholdlot;
             OP.mintradelot = mintradelot;
@@ -2306,10 +2306,11 @@ namespace Portfolio
             public double[] bench;
             public double target;
             public int back = -1;
-            public int tlen=0;
-            public double[]DATA=null;
-            public double tail=0.05;
-            public double[]targetR=null;
+            public int tlen = 0;
+            public double DATAlambda = 1;
+            public double[] DATA = null;
+            public double tail = 0.05;
+            public double[] targetR = null;
         }
         ///<summary> A function that returns risk - target risk. Use with Solve1D to do risk constraint</summary>
         ///<param name="gam">guess for gamma (for return risk utility) or (gamma and kappa for cost risk utility)</param>
@@ -2318,7 +2319,7 @@ namespace Portfolio
         {
             INFO vars = (INFO)info;
             vars.back = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, vars.L, vars.U, gam, gam, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
-                     alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a,vars.tlen,vars.DATA,vars.tail,vars.targetR);
+                     alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR);
             double[] www = (double[])wback.Clone();
             if (vars.bench != null) BlasLike.dsubvec(vars.n, www, vars.bench, www);
             var fix = nfixed;
@@ -2350,14 +2351,14 @@ namespace Portfolio
                 else ColourConsole.WriteError("INFEASIBLE");
                 sendInput.useIP = false;
                 back = BasicOptimisation(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
-                 alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a,sendInput.tlen,sendInput.DATA,sendInput.tail,sendInput.targetR);
+                 alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR);
                 var w = new double[sendInput.n];
                 var gradient = new double[sendInput.n];
                 BlasLike.dcopyvec(sendInput.n, wback, w);
                 var utility = PortfolioUtility(sendInput.n, gamma, kappa, sendInput.buy, sendInput.sell, sendInput.alpha, w, gradient, ref baskethere, ref tradeshere);
                 ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
                 if (back != 6) back = Dropper(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
-                     alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a,sendInput.tlen,sendInput.DATA,sendInput.tail,sendInput.targetR, basket, baskethere, trades, tradeshere);
+                     alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, basket, baskethere, trades, tradeshere);
                 if (back == 6) ColourConsole.WriteError("INFEASIBLE");
                 BlasLike.dcopyvec(sendInput.n, wback, w);
                 if (back != 6)
@@ -2379,7 +2380,7 @@ namespace Portfolio
                         kappa = gamma = newgamma;
                         sendInput.useIP = true;
                         BasicOptimisation(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
-                         alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a,sendInput.tlen,sendInput.DATA,sendInput.tail,sendInput.targetR);
+                         alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR);
                         w = new double[sendInput.n];
                         gradient = new double[sendInput.n];
                         BlasLike.dcopyvec(sendInput.n, wback, w);
@@ -2470,7 +2471,7 @@ namespace Portfolio
         double gamma, double kappa, double delta, double value, double valuel,
         double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell,
         string[] names, bool useIp = true, int nabs = 0, double[] A_abs = null, double[] Abs_L = null, double[] Abs_U = null,
-        int mabs = 0, int[] I_A = null, int tlen = 0, double[] DATA = null, double tail = 0.05, double[] targetR = null, int basket = -1, int baskethere = -1, int trades = -1, int tradeshere = -1)
+        int mabs = 0, int[] I_A = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, int basket = -1, int baskethere = -1, int trades = -1, int tradeshere = -1)
         {
             if (basket < 0) { basket = n; baskethere = n; }
             if (trades < 0) { trades = n; tradeshere = n; }
@@ -2514,7 +2515,7 @@ namespace Portfolio
                     }
                 }
                 var back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                    alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A,tlen,DATA,tail,targetR);
+                    alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda, DATA, tail, targetR);
                 if (back != 6)
                 {
                     BlasLike.dcopyvec(n, wback, w);
@@ -3031,7 +3032,7 @@ namespace Portfolio
         double gamma, double kappa, double delta, double value, double valuel,
         double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell,
         string[] names, bool useIP = true, int nabs = 0, double[] A_abs = null, double[] L_abs = null, double[] U_abs = null,
-        int mabs = 0, int[] I_a = null, int tlen = 0, double[] DATA = null, double tail = 0.05, double[] targetR = null)
+        int mabs = 0, int[] I_a = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null)
         {
             int back;
             nfixed = 0;
@@ -3160,7 +3161,7 @@ namespace Portfolio
             {
                 BlasLike.dxminmax(tlen * n, DATA, 1, ref DATAmax, ref DATAmin);
                 DATAmax *= (double)n;
-                if (targetR != null)                //ETL
+                if (targetR == null)                //ETL
                     N += tlen + 1;
                 else                                //GAIN/LOSS
                     N += tlen;
@@ -3186,7 +3187,7 @@ namespace Portfolio
             BlasLike.dsetvec(longshortI, useIP ? BlasLike.lm_max : 1, UU, n + buysellI);
 
             BlasLike.dsetvec(tlen, 0, LL, n + buysellI + longshortI);
-            BlasLike.dsetvec(tlen, useIP ? BlasLike.lm_max : DATAmax, LL, n + buysellI + longshortI);
+            BlasLike.dsetvec(tlen, useIP ? BlasLike.lm_max : DATAmax, UU, n + buysellI + longshortI);
             if (targetR == null)
             {
                 BlasLike.dsetvec(1, 0, LL, n + buysellI + longshortI + tlen);
@@ -3244,6 +3245,16 @@ namespace Portfolio
             {
                 BlasLike.dsetvec(buysellI, 0, CC, n);
             }
+            if (tlen > 0)
+            {
+                if (targetR == null)
+                {
+                    BlasLike.dsetvec(tlen, DATAlambda / check_digit(tail * tlen), CC, n + buysellI + longshortI);
+                    BlasLike.dsetvec(1, DATAlambda, CC, n + buysellI + longshortI + tlen);
+                }
+                else
+                    BlasLike.dsetvec(tlen, DATAlambda, CC, n + buysellI + longshortI);
+            }
             var cnum = m + buysellI + longshortI;
             var cnumTurn = -1;
             var forcedTurn = 0.0;
@@ -3282,8 +3293,8 @@ namespace Portfolio
                         BlasLike.dset(1, 1.0, AA, M, cnum + M * i);//sum w =sum buy+ initial + initial-sell
                 }
                 BlasLike.dset(buysellI, 2.0, AA, M, cnum + M * n);//2sum sell
-                LL[N + cnum] = BlasLike.dsumvec(n, initial) + 2 * forcedI;
-                UU[N + cnum] = 2.0 * (delta - fixedTurn) + BlasLike.dsumvec(n, initial) + 2 * forcedI;
+                LL[N + cnum] = BlasLike.dsumvec(n, initial) + 2.0 * (forcedI-fixedTurn);
+                UU[N + cnum] = 2.0 * (delta +forcedI- fixedTurn) + BlasLike.dsumvec(n, initial);
                 cnum++;
             }
             var extraLong = 0.0;
@@ -3485,20 +3496,21 @@ namespace Portfolio
             if (tlen > 0)
             {//Constraints for ETL or GAIN/LOSS
                 if (targetR == null) BlasLike.dsetvec(tlen, 0, LL, N + M - tlen);
-                else BlasLike.dcopyvec(tlen, targetR, LL, N + M - tlen);
+                else BlasLike.dcopyvec(tlen, targetR, LL, 0, N + M - tlen);
                 BlasLike.dsetvec(tlen, useIP ? BlasLike.lm_max : DATAmax, UU, N + M - tlen);
 
                 for (var i = 0; i < tlen; ++i)
-                {
-                    if (targetR == null) BlasLike.dsccopy(n, -1, DATA, tlen, AA, M, i, i + M - tlen);
-                    else BlasLike.dcopy(n, DATA, tlen, AA, M, i, i + M - tlen);
+                {//GAIN/LOSS   r[t] + max((Target - r[t]),0) >= Target
+                 //ETL          -r[t] + max((r[t] - VAR),0) >= 0
+                    if (targetR == null) BlasLike.dsccopy(n, -1, DATA, tlen, AA, M, i, i + M - tlen);//ETL has minus
+                    else BlasLike.dcopy(n, DATA, tlen, AA, M, i, i + M - tlen);//GAIN/LOSS has plus
                     BlasLike.dset(1, 1, AA, M, M - tlen + i + M * (i + n));
-                    if (targetR == null) BlasLike.dset(1, 1, AA, M, M - tlen + i + M * (tlen + n));
+                    if (targetR == null) BlasLike.dset(1, 1, AA, M, M - tlen + i + M * (tlen + n));//Get VAR for ETL
                     if (nfixed > 0)
                     {
-                        var fixedReturn = BlasLike.ddot(nfixed, DATA, tlen, L, 1, i + tlen * n, n);
-                        if (targetR == null) fixedReturn = -fixedReturn;
-                        LL[N + M - tlen + i] -= fixedReturn;
+                        var fixedReturn = BlasLike.ddot(nfixed, DATA, tlen, fixedW, 1, i + tlen * n, n);
+                        if (targetR != null) fixedReturn = -fixedReturn;
+                        LL[N + M - tlen + i] += fixedReturn;
                     }
                 }
             }
@@ -3542,7 +3554,7 @@ namespace Portfolio
                 Console.WriteLine($"back = {back}");
             }
             ColourConsole.WriteLine("_______________________________________________________________________________________________________________________", ConsoleColor.Green);
-            ColourConsole.WriteEmbeddedColourLine($"[yellow]{"Asset",12}[/yellow]\t[cyan]{"WEIGHT-INITIAL or WEIGHT",25}[/cyan]\t[red]{"SELL or SHORT",12}[/red]\t[darkcyan]{"BUY or LONG",12}[/darkcyan]\t[green]{"INITIAL or 0",12}[/green]\t\t[darkmagenta]{"LIMIT",12}[/darkmagenta]");
+            if (buysellI > 0 || longshortI > 0) ColourConsole.WriteEmbeddedColourLine($"[yellow]{"Asset",12}[/yellow]\t[cyan]{"WEIGHT-INITIAL or WEIGHT",25}[/cyan]\t[red]{"SELL or SHORT",12}[/red]\t[darkcyan]{"BUY or LONG",12}[/darkcyan]\t[green]{"INITIAL or 0",12}[/green]\t\t[darkmagenta]{"LIMIT",12}[/darkmagenta]");
             for (var i = 0; i < n; ++i)
             {
                 if (buysellvars && buysellIndex_inverse[i] != -1)
@@ -3564,6 +3576,15 @@ namespace Portfolio
                         if (WW[i] <= 0) ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i],12}[/yellow]\t[cyan]{(WW[i]),25:F8}[/cyan]\t[red]{WW[ind + n + buysellI],12:F8}[/red]\t[darkcyan]{(c1),12:F8}[/darkcyan]\t[green]{0,12:F8}[/green]\t\t[darkmagenta]{(!useIP ? (UU[ind + N + m + buysellI] - c1) : 10),12:f2}[/darkmagenta]");
                         else ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i],12}[/yellow] [cyan]{(WW[i]),25:F8}[/cyan]\t[red]{WW[ind + n + buysellI],12:F8}[/red]\t[darkcyan]{(c1),12:F8}[/darkcyan]\t[green]{0,12:F8}[/green]\t\t[darkmagenta]{(!useIP ? (UU[ind + N + m + buysellI] - c1) : 10),12:f2}[/darkmagenta]");
                     }
+                }
+            }
+            if (tlen > 0)
+            {
+                ColourConsole.WriteEmbeddedColourLine($"[yellow]{"Asset",12}[/yellow]\t[cyan]{"Time Variable W",25}[/cyan]\t[darkcyan]{"Constrained Value",12}[/darkcyan]\t\t[darkmagenta]{"UPPER LIMIT test",12}[/darkmagenta]");
+                for (var i = 0; i < tlen; ++i)
+                {
+                    var c1 = BlasLike.ddot(N, AA, M, WW, 1, M - tlen + i);
+                    ColourConsole.WriteEmbeddedColourLine($"[yellow]{"TIME " + (i + 1),12}[/yellow]\t[cyan]{(WW[i + n + buysellI + longshortI]),25:F8}[/cyan]\t[darkcyan]{(c1),12:F8}[/darkcyan]\t\t[darkmagenta]{(!useIP ? (UU[N + M - tlen + i] - c1) : 10),12:f2}[/darkmagenta]");
                 }
             }
             ColourConsole.WriteLine("_______________________________________________________________________________________________________________________", ConsoleColor.Green);
@@ -3728,7 +3749,7 @@ namespace Portfolio
                 ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio constraint {(i + 1),3}:[/magenta]\t[cyan]{ccval,20:f16}[/cyan]\t([red]{L[i + n],20:f16},{U[i + n],20:f16}[/red])");
             }
             //            ActiveSet.Optimise.printV("optimal weights", WW, n);
-            if (buysellI > 0 || longshortI > 0)
+            if (tlen==0&&(buysellI > 0 || longshortI > 0))
             {
                 if (Math.Abs(shortside + shortsideS) > BlasLike.lm_rooteps * 2)
                     back = 6;
@@ -3946,7 +3967,7 @@ namespace Portfolio
         public virtual int makeQ()
         {
             var nn = ntrue * (ntrue + 1) / 2;
-            if (Q.Length == nn)
+            if (Q != null && Q.Length == nn)
                 return 0;
             else
                 return -10;

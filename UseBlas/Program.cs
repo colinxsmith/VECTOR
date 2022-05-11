@@ -1308,7 +1308,7 @@ namespace UseBlas
                 opt.names[tlen] = "VAR";
                 BlasLike.dsetvec(n, 1.0 / n, x);
                 double back = -12;
-                bool useIP = false;
+                bool useIP = true;
                 if (!useIP) back = opt.ActiveOpt(1, x, LL);
                 else back = opt.InteriorOpt(1e-9, x, LL);
                 var ccc = new double[m];
@@ -1370,6 +1370,39 @@ namespace UseBlas
                 var ETLcheck = cvar(VARopt, info);
                 ETL = cvar1d(ref VAR, info);
                 ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Using optimised portfolio weights[/darkyellow]\n[cyan]VAR\t{VARopt,16:E8} [/cyan] [yellow]Check using cavr1d {VAR,16:E8}[/yellow]\n[cyan]CVAR\t{CVARopt,16:E8} [/cyan] [yellow]Check using cvar1d {ETL,16:E8}[/yellow] [green]Check using cvar({VARopt,16:E8}) {ETLcheck,16:E8}[/green]");
+                n=nstocks;
+                m=1;
+                L=new double[n+m];
+                U=new double[n+m];
+                A=new double[n*m];
+                var alpha=new double[n];
+                var initial=new double[n];
+                BlasLike.dsetvec(n,1.0/n,initial);
+                var delta=0.5;
+                opt.Q=null;
+                BlasLike.dsetvec(n,0,L);
+                BlasLike.dsetvec(n,1,U);
+                L[n]=U[n]=1;
+                BlasLike.dsetvec(n,1,A);
+             //   L[0]=U[0]=x[0];
+             //   L[2]=U[2]=x[2];
+                var tarR=new double[tlen];
+                BlasLike.dsetvec(tlen,0.005,tarR);
+                tarR=null;
+                back=opt.BasicOptimisation(n,m,-1,A,L,U,0.5,0.5,delta,-1,-1,-1,-1,alpha,initial,null,null,names,useIP,0,null,null,null,0,null,tlen,1.0,DATA,tail,tarR);
+                for(var i=0;i<n;i++){
+                    ColourConsole.WriteEmbeddedColourLine($"[green]{names[i],16}[/green]\t[cyan]{opt.wback[i],16:E8}[/cyan]\t[darkcyan]{x[i],16:E8}[/darkcyan]");
+                }
+                ColourConsole.WriteEmbeddedColourLine($"[green]back[/green] = [cyan]{back}[/cyan]");
+                x=(double[])opt.wback.Clone();
+                L[0]=U[0]=x[0];
+                L[2]=U[2]=x[2];
+                back=opt.BasicOptimisation(n,m,-1,A,L,U,0.5,0.5,delta,-1,-1,-1,-1,alpha,initial,null,null,names,useIP,0,null,null,null,0,null,tlen,1.0,DATA,tail,tarR);
+                for(var i=0;i<n;i++){
+                    ColourConsole.WriteEmbeddedColourLine($"[green]{names[i],16}[/green]\t[cyan]{opt.wback[i],16:E8}[/cyan]\t[darkcyan]{x[i],16:E8}[/darkcyan]");
+                }
+                ColourConsole.WriteEmbeddedColourLine($"[green]back[/green] = [cyan]{back}[/cyan]");
+        return;
             }
 
             {
