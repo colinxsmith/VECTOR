@@ -1236,6 +1236,13 @@ namespace UseBlas
                     var back = X + r / Portfolio.Portfolio.check_digit(info.inc * tlen);
                     return back;
                 }
+                double LOSS(double[] s,double[]target){
+                    double back=0;
+                    for(var i=0;i<s.Length;++i){
+                        back+=Math.Max(0.0,target[i]-s[i]);
+                    }
+                    return back;
+                }
                 double cvar1d(ref double var1, object kk)
                 {
                     ETLpass info = (ETLpass)kk;
@@ -1308,7 +1315,7 @@ namespace UseBlas
                 opt.names[tlen] = "VAR";
                 BlasLike.dsetvec(n, 1.0 / n, x);
                 double back = -12;
-                bool useIP = true;
+                bool useIP = false;
                 if (!useIP) back = opt.ActiveOpt(1, x, LL);
                 else back = opt.InteriorOpt(1e-9, x, LL);
                 var ccc = new double[m];
@@ -1386,21 +1393,77 @@ namespace UseBlas
                 BlasLike.dsetvec(n,1,A);
              //   L[0]=U[0]=x[0];
              //   L[2]=U[2]=x[2];
+             var dlambda=1e0;
                 var tarR=new double[tlen];
                 BlasLike.dsetvec(tlen,0.005,tarR);
-                tarR=null;
-                back=opt.BasicOptimisation(n,m,-1,A,L,U,0.5,0.5,delta,-1,-1,-1,-1,alpha,initial,null,null,names,useIP,0,null,null,null,0,null,tlen,1.0,DATA,tail,tarR);
+                double VARtest,ETLtest;
+                //tarR=null;
+                back=opt.BasicOptimisation(n,m,-1,A,L,U,0.5,0.5,delta,-1,-1,-1,-1,alpha,initial,null,null,names,useIP,0,null,null,null,0,null,tlen,dlambda,DATA,tail,tarR);
                 for(var i=0;i<n;i++){
                     ColourConsole.WriteEmbeddedColourLine($"[green]{names[i],16}[/green]\t[cyan]{opt.wback[i],16:E8}[/cyan]\t[darkcyan]{x[i],16:E8}[/darkcyan]");
-                }
+                }if(tarR==null){
+                                Factorise.dmxmulv(tlen, nstocks, DATA, opt.wback, info.returns);
+                                VARtest=1e1;
+                                ETLtest=cvar1d(ref VARtest,info);
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Inferred[/green] [cyan]VAR={VARtest};[/cyan] [darkcyan]CVAR={ETLtest}[/darkcyan]");
+                }else{
+                                Factorise.dmxmulv(tlen, nstocks, DATA, opt.wback, info.returns);
+                                var loss=LOSS(info.returns,tarR);
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Inferred[/green] [cyan]LOSS={loss};[/cyan]");
+                                }
+                if(back==6){
+                    ColourConsole.WriteError("NEED TO REPEAT");
+                    var Lhere=(double[])L.Clone();
+                    var Uhere=(double[])U.Clone();
+                    opt.BoundsSetToSign(n,Lhere,Uhere,initial,opt.wback);
+                back=opt.BasicOptimisation(n,m,-1,A,Lhere,Uhere,0.5,0.5,delta,-1,-1,-1,-1,alpha,initial,null,null,names,useIP,0,null,null,null,0,null,tlen,dlambda,DATA,tail,tarR);
+                               for(var i=0;i<n;i++){
+                    ColourConsole.WriteEmbeddedColourLine($"[green]{names[i],16}[/green]\t[cyan]{opt.wback[i],16:E8}[/cyan]\t[darkcyan]{x[i],16:E8}[/darkcyan]");
+               
+                                 }if(tarR==null){
+                                Factorise.dmxmulv(tlen, nstocks, DATA, opt.wback, info.returns);
+                                VARtest=1e1;
+                                ETLtest=cvar1d(ref VARtest,info);
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Inferred[/green] [cyan]VAR={VARtest};[/cyan] [darkcyan]CVAR={ETLtest}[/darkcyan]");
+                }else{
+                                Factorise.dmxmulv(tlen, nstocks, DATA, opt.wback, info.returns);
+                                var loss=LOSS(info.returns,tarR);
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Inferred[/green] [cyan]LOSS={loss};[/cyan]");
+                                }}
                 ColourConsole.WriteEmbeddedColourLine($"[green]back[/green] = [cyan]{back}[/cyan]");
                 x=(double[])opt.wback.Clone();
                 L[0]=U[0]=x[0];
                 L[2]=U[2]=x[2];
-                back=opt.BasicOptimisation(n,m,-1,A,L,U,0.5,0.5,delta,-1,-1,-1,-1,alpha,initial,null,null,names,useIP,0,null,null,null,0,null,tlen,1.0,DATA,tail,tarR);
+                back=opt.BasicOptimisation(n,m,-1,A,L,U,0.5,0.5,delta,-1,-1,-1,-1,alpha,initial,null,null,names,useIP,0,null,null,null,0,null,tlen,dlambda,DATA,tail,tarR);
                 for(var i=0;i<n;i++){
                     ColourConsole.WriteEmbeddedColourLine($"[green]{names[i],16}[/green]\t[cyan]{opt.wback[i],16:E8}[/cyan]\t[darkcyan]{x[i],16:E8}[/darkcyan]");
-                }
+                }if(tarR==null){
+                                Factorise.dmxmulv(tlen, nstocks, DATA, opt.wback, info.returns);
+                                VARtest=1e1;
+                                ETLtest=cvar1d(ref VARtest,info);
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Inferred[/green] [cyan]VAR={VARtest};[/cyan] [darkcyan]CVAR={ETLtest}[/darkcyan]");
+                }else{
+                                Factorise.dmxmulv(tlen, nstocks, DATA, opt.wback, info.returns);
+                                var loss=LOSS(info.returns,tarR);
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Inferred[/green] [cyan]LOSS={loss};[/cyan]");
+                                }if(back==6){
+                    ColourConsole.WriteError("NEED TO REPEAT");
+                    var Lhere=(double[])L.Clone();
+                    var Uhere=(double[])U.Clone();
+                    opt.BoundsSetToSign(n,Lhere,Uhere,initial,opt.wback);
+                back=opt.BasicOptimisation(n,m,-1,A,Lhere,Uhere,0.5,0.5,delta,-1,-1,-1,-1,alpha,initial,null,null,names,useIP,0,null,null,null,0,null,tlen,dlambda,DATA,tail,tarR);
+                               for(var i=0;i<n;i++){
+                    ColourConsole.WriteEmbeddedColourLine($"[green]{names[i],16}[/green]\t[cyan]{opt.wback[i],16:E8}[/cyan]\t[darkcyan]{x[i],16:E8}[/darkcyan]");
+                }if(tarR==null){
+                                Factorise.dmxmulv(tlen, nstocks, DATA, opt.wback, info.returns);
+                                VARtest=1e1;
+                                ETLtest=cvar1d(ref VARtest,info);
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Inferred[/green] [cyan]VAR={VARtest};[/cyan] [darkcyan]CVAR={ETLtest}[/darkcyan]");
+                }else{
+                                Factorise.dmxmulv(tlen, nstocks, DATA, opt.wback, info.returns);
+                                var loss=LOSS(info.returns,tarR);
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Inferred[/green] [cyan]LOSS={loss};[/cyan]");
+                                }}
                 ColourConsole.WriteEmbeddedColourLine($"[green]back[/green] = [cyan]{back}[/cyan]");
         return;
             }

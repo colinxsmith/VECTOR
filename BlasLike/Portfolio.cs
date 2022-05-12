@@ -3581,11 +3581,13 @@ namespace Portfolio
             if (tlen > 0)
             {
                 ColourConsole.WriteEmbeddedColourLine($"[yellow]{"Asset",12}[/yellow]\t[cyan]{"Time Variable W",25}[/cyan]\t[darkcyan]{"Constrained Value",12}[/darkcyan]\t\t[darkmagenta]{"UPPER LIMIT test",12}[/darkmagenta]");
+                double c1;
                 for (var i = 0; i < tlen; ++i)
                 {
-                    var c1 = BlasLike.ddot(N, AA, M, WW, 1, M - tlen + i);
+                    c1 = BlasLike.ddot(N, AA, M, WW, 1, M - tlen + i);
                     ColourConsole.WriteEmbeddedColourLine($"[yellow]{"TIME " + (i + 1),12}[/yellow]\t[cyan]{(WW[i + n + buysellI + longshortI]),25:F8}[/cyan]\t[darkcyan]{(c1),12:F8}[/darkcyan]\t\t[darkmagenta]{(!useIP ? (UU[N + M - tlen + i] - c1) : 10),12:f2}[/darkmagenta]");
                 }
+                if(targetR==null)ColourConsole.WriteEmbeddedColourLine($"[yellow]{"VAR",12}[/yellow]\t[cyan]{(WW[tlen + n + buysellI + longshortI]),25:F8}[/cyan]");
             }
             ColourConsole.WriteLine("_______________________________________________________________________________________________________________________", ConsoleColor.Green);
             if (cnumTurn != -1) ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Test Turnover constraint:[/darkyellow]\t[red]{LL[N + cnumTurn],20:f16}[/red]\t[cyan]{BlasLike.ddot(N, AA, M, WW, 1, cnumTurn),20:f16}[/cyan]\t[green]{UU[N + cnumTurn],20:f16}[/green]");
@@ -3749,16 +3751,13 @@ namespace Portfolio
                 ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio constraint {(i + 1),3}:[/magenta]\t[cyan]{ccval,20:f16}[/cyan]\t([red]{L[i + n],20:f16},{U[i + n],20:f16}[/red])");
             }
             //            ActiveSet.Optimise.printV("optimal weights", WW, n);
-            if (tlen==0&&(buysellI > 0 || longshortI > 0))
-            {
-                if (Math.Abs(shortside + shortsideS) > BlasLike.lm_rooteps * 2)
+                if(longshortI>0&& (Math.Abs(shortside + shortsideS) > BlasLike.lm_rooteps * 2))
                     back = 6;
-                if (Math.Abs(utility - utilityA) > BlasLike.lm_rooteps)
+                if (buysellI>0&&(Math.Abs(turnover*0.5 - turn2) > BlasLike.lm_rooteps))
                     back = 6;
-                if (kappa > 1e-14 && Math.Abs(cost - costA - costFixed) > BlasLike.lm_eps * 10)
+                if (buysellI>0&&kappa > 1e-14 && (Math.Abs(cost - costA - costFixed) > BlasLike.lm_eps * 10))
                     back = 6;
-            }
-            BACK = back;
+                        BACK = back;
             return back;
         }
         public void GainLossSetUp(int n, int tlen, double[] DATA, string[] names, double R, double lambda, bool useIP = true)
