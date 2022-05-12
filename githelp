@@ -1,0 +1,5 @@
+ To make a patch for main using changes in DOT6, checkout DOT6, then
+            git format-patch main --stdout >greatpat
+ this will contains all pataches, so just edit out all but the last one/s
+ then checkout main and do
+            git am greatpat

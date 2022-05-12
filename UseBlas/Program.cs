@@ -7,7 +7,13 @@ using Portfolio;
 using Microsoft.Win32;
 
 namespace UseBlas
-{///<summary>Holder for dropped portfolio results<sumary>
+{
+    class ETLpass
+    {
+        public double[] returns;
+        public int T;
+        public double inc;
+    }
     class Program
     {
         static unsafe void Main(string[] args)
@@ -1155,6 +1161,251 @@ namespace UseBlas
                 port.OptimiseTest();
             }
             {
+                ColourConsole.WriteLine("Conditional Value at Risk", ConsoleColor.DarkYellow);
+                Portfolio.Portfolio opt = new Portfolio.Portfolio("");
+                double[] DATA;
+                string[] names;
+                int nstocks, tlen;
+                using (var CVarData = new InputSomeData())
+                {
+                    CVarData.doubleFields = "DATA";//The DATA is LOSS i.e. - returns
+                    CVarData.intFields = "n tlen";
+                    CVarData.stringFields = "names";
+                    try
+                    {
+                        CVarData.Read("./GL");
+                    }
+                    catch
+                    {
+                        CVarData.Read("../GL");
+                    }
+                    DATA = CVarData.mapDouble["DATA"];
+                    names = CVarData.mapString["names"];
+                    nstocks = CVarData.mapInt["n"][0];
+                    tlen = CVarData.mapInt["tlen"][0];
+                }
+                var testw = new double[nstocks];
+                BlasLike.dnegvec(DATA.Length, DATA);
+                //double[] ox = { 0.17942402, 0.01108059, 0.01129700, 0.05966976, 0.19277110, 0.01090517, 0.22144947, 0.30223059, 0.00843431, 0.00273799 };
+                //testw = (double[])ox.Clone();
+                BlasLike.dsetvec(nstocks, 1.0 / nstocks, testw);
+                var s = new double[tlen];
+                double tail = 0.05;//confidence is (1-tail) I think, so 95% confident here
+                ETLpass info = new ETLpass();
+                info.inc = tail;
+                info.T = tlen;
+                info.returns = s;
+                double smax = 1, smin = -1;
+                Factorise.dmxmulv(tlen, nstocks, DATA, testw, s);
+                BlasLike.dxminmax(DATA.Length, DATA, 1, ref smax, ref smin);
+                smax *= (double)nstocks;
+                smin = -smax;
+                ///<summary>Traditional way to get VAR and CVAR</summary>
+                double varorder(ref double cvar, int include)
+                {
+                    var order = new int[tlen];
+                    var iorder = new int[tlen];
+                    Ordering.Order.getorder(tlen, s, order, null, 0, -1);
+                    for (var i = 0; i < tlen; ++i) iorder[order[i]] = i;
+                    Ordering.Order.Reorder(tlen, order, s);
+                    cvar = BlasLike.dsumvec(include, s, tlen - include) / include;
+                    Ordering.Order.Reorder(tlen, iorder, s);
+                    var back = s[order[tlen - include - 1]];
+                    return back;
+                }
+                double cvarord1 = 0, cvarord2 = 0;
+                var VARord1 = varorder(ref cvarord1, (int)(tail * tlen));
+                info.inc = (double)((int)(tail * tlen)) / tlen;
+                var cavrordo1 = cvar(VARord1, info);
+                var VARord2 = varorder(ref cvarord2, (int)(tail * tlen + 1));
+                info.inc = (double)((int)(tail * tlen + 1)) / tlen;
+                var cavrordo2 = cvar(VARord2, info);
+
+                var VARinterord = (VARord2 - VARord1) * (tail * tlen - (double)(int)(tail * tlen)) + VARord1;
+                var ETLinterord = (cvarord2 - cvarord1) * (tail * tlen - (double)(int)(tail * tlen)) + cvarord1;
+
+                ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Traditional Method[/darkyellow]\n[green]Interpolated VAR {VARinterord,16:E8}[/green] [darkyellow]Interpolated ETL {ETLinterord,16:E8}[/darkyellow]");
+                double cvar(double X, object kk)
+                {
+                    ETLpass info = (ETLpass)kk;
+                    double r = 0;
+                    for (var i = 0; i < info.T; ++i)
+                    {
+                        r += Math.Max(0, info.returns[i] - X);
+                    }
+                    var back = X + r / Portfolio.Portfolio.check_digit(info.inc * tlen);
+                    return back;
+                }
+                double cvar1d(ref double var1, object kk)
+                {
+                    ETLpass info = (ETLpass)kk;
+                    var tailkeep = tail;
+                    var1 = ActiveSet.Optimise.PathMin(cvar, smin, smax, BlasLike.lm_eps8, 0, kk);
+                    var back = cvar(var1, kk);
+                    ColourConsole.WriteEmbeddedColourLine($"[yellow]Value at Risk {var1,16:E8}[/yellow], [green]Expected Tail Loss {back,16:E8}[/green] [magenta]at {info.inc}[/magenta]");
+                    tail = tailkeep;
+                    return back;
+                }
+                ColourConsole.WriteInfo("Don't need to reorder x any more, use optimisation instead");
+                double VAR = -1;
+                info.inc = tail;
+                var ETL = cvar1d(ref VAR, info);
+                var tail1 = (double)(long)((tail * tlen)) / tlen;
+                double VAR1 = -1;
+                info.inc = tail1;
+                var ETL1 = cvar1d(ref VAR1, info);
+                var tail2 = (double)(long)((tail * tlen + 1)) / tlen;
+                double VAR2 = -1;
+                info.inc = tail2;
+                var ETL2 = cvar1d(ref VAR2, info);
+                var VARinter = (VAR2 - VAR1) * (tail - tail1) * tlen + VAR1;
+                var ETLinter = (ETL2 - ETL1) * (tail - tail1) * tlen + ETL1;
+
+                ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Optimisation Method[/darkyellow]\n[green]Interpolated VAR {VARinter,16:E8}[/green] [darkyellow]Interpolated ETL {ETLinter,16:E8}[/darkyellow]");
+                info.inc = tail;
+                var ETLinter2 = cvar(VARinter, info);
+                //We find ETLinter2 is the same as ETL, i.e. true optimised CVAR using inferred VAR at 0.05
+                //is the same as CVAR calculated using 0.05 with the interpolated VAR from the actual 
+                //time variables above and below 0.05.
+                ColourConsole.WriteEmbeddedColourLine($"[green]CVAR({VARinter,16:E8})[/green] [darkyellow]gives ETL {ETLinter2,16:E8}[/darkyellow] ([red]{ETL - ETLinter2:e16}[/red])");
+
+                //Now try LP
+                var m = tlen;
+                var n = tlen + 1;
+                double[] x = new double[n];
+                double[] LL = new double[n + m];
+                double[] L = new double[n + m];
+                double[] U = new double[n + m];
+                double[] A = new double[n * m];
+                double[] c = new double[n];
+                BlasLike.dsetvec(tlen, 1.0 / (tail * tlen), c);
+                BlasLike.dsetvec(1, 1.0, c, tlen);
+                BlasLike.dsetvec(tlen, 0, L);
+                BlasLike.dsetvec(tlen, smax, U);
+                BlasLike.dsetvec(1, smin, L, tlen);
+                BlasLike.dsetvec(1, smax, U, tlen);
+                BlasLike.dsetvec(m, smax, U, n);
+                for (var i = 0; i < m; ++i)
+                {
+                    L[n + i] = Math.Max(s[i], 0);
+                }
+                for (var i = 0; i < tlen; ++i)
+                {
+                    BlasLike.dset(1, 1, A, m, i + m * i);
+                    BlasLike.dset(1, 1, A, m, i + m * tlen);
+                }
+                opt.n = n;
+                opt.m = m;
+                opt.L = L;
+                opt.U = U;
+                opt.A = A;
+                opt.c = c;
+                opt.names = new string[n];
+                for (var i = 0; i < tlen; ++i)
+                {
+                    opt.names[i] = "time" + (i + 1);
+                }
+                opt.names[tlen] = "VAR";
+                BlasLike.dsetvec(n, 1.0 / n, x);
+                double back = -12;
+                bool useIP = true;
+                if (!useIP) back = opt.ActiveOpt(1, x, LL);
+                else back = opt.InteriorOpt(1e-9, x, LL);
+                var ccc = new double[m];
+                Factorise.dmxmulv(m, n, A, x, ccc);
+                var cvarLP = x[tlen] + BlasLike.dsumvec(m, x) / (tail * tlen);
+                var cvarLPVAR = cvar(x[tlen], info);
+                ColourConsole.WriteEmbeddedColourLine($"[green]LP objective[/green]\t\t\t\t\t[darkyellow]{BlasLike.ddotvec(n, c, x),16:E8}[/darkyellow]");
+                ColourConsole.WriteEmbeddedColourLine($"[green]LP gives VAR={x[tlen],16:E8}[/green] and [darkyellow]CVAR =\t{cvarLP,16:E8}[/darkyellow]");
+                ColourConsole.WriteEmbeddedColourLine($"[green]CVAR({x[tlen],16:E8})[/green] =\t\t\t[darkyellow]{cvarLP,16:E8}[/darkyellow]");
+                ColourConsole.WriteInfo("Optimise to get best portfolio weights");
+                opt.n = nstocks + tlen + 1;
+                opt.m = tlen + 1;
+                opt.A = new double[opt.n * opt.m];
+                opt.L = new double[opt.n + opt.m];
+                opt.U = new double[opt.n + opt.m];
+                opt.c = new double[opt.n];
+                opt.ntrue = nstocks;
+                opt.mtrue = 1;
+                BlasLike.dsetvec(tlen, 1.0 / Portfolio.Portfolio.check_digit(info.inc * tlen), opt.c, nstocks);
+                BlasLike.dsetvec(1, 1.0, opt.c, nstocks + tlen);
+                BlasLike.dsetvec(nstocks, 0, opt.L);
+                BlasLike.dsetvec(nstocks, 1, opt.U);
+                BlasLike.dsetvec(tlen, 0, opt.L, nstocks);
+                BlasLike.dsetvec(tlen, smax, opt.U, nstocks);
+                BlasLike.dsetvec(1, smin, opt.L, nstocks + tlen);
+                BlasLike.dsetvec(1, smax, opt.U, nstocks + tlen);
+                BlasLike.dsetvec(1, 1, opt.L, opt.n);
+                BlasLike.dsetvec(1, 1, opt.U, opt.n);
+                BlasLike.dsetvec(tlen, 0, opt.L, opt.n + 1);
+                BlasLike.dsetvec(tlen, smax, opt.U, opt.n + 1);
+
+                BlasLike.dset(nstocks, 1, opt.A, opt.m);
+                for (var i = 0; i < tlen; ++i)
+                {//These constraints ensure that the optimisation variables are constrained so that (LOSS above VAR)+VAR-portfolio LOSS>=0
+                    BlasLike.dsccopy(nstocks, -1, DATA, tlen, opt.A, opt.m, i, i + 1);
+                    BlasLike.dset(1, 1, opt.A, opt.m, 1 + i + opt.m * (i + nstocks));
+                    BlasLike.dset(1, 1, opt.A, opt.m, 1 + i + opt.m * (tlen + nstocks));
+                }
+                x = new double[opt.n];
+                LL = new double[opt.n + opt.m];
+                opt.names = (string[])names.Clone();
+                Array.Resize(ref opt.names, opt.n);
+                for (var i = 0; i < tlen; ++i)
+                {
+                    opt.names[i + nstocks] = "time" + (i + 1);
+                }
+                opt.names[opt.n - 1] = "VAR";
+
+                if (!useIP) back = opt.ActiveOpt(1, x, LL);
+                else back = opt.InteriorOpt(1e-9, x, LL);
+                var VARopt = x[x.Length - 1];
+                var CVARopt = BlasLike.ddotvec(opt.n, x, opt.c);
+                var xopt = (double[])x.Clone();
+                Array.Resize(ref xopt, nstocks);
+
+                Factorise.dmxmulv(tlen, nstocks, DATA, xopt, s);
+
+                info.inc = tail;
+                var ETLcheck = cvar(VARopt, info);
+                ETL = cvar1d(ref VAR, info);
+                ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Using optimised portfolio weights[/darkyellow]\n[cyan]VAR\t{VARopt,16:E8} [/cyan] [yellow]Check using cavr1d {VAR,16:E8}[/yellow]\n[cyan]CVAR\t{CVARopt,16:E8} [/cyan] [yellow]Check using cvar1d {ETL,16:E8}[/yellow] [green]Check using cvar({VARopt,16:E8}) {ETLcheck,16:E8}[/green]");
+                n=nstocks;
+                m=1;
+                L=new double[n+m];
+                U=new double[n+m];
+                A=new double[n*m];
+                var alpha=new double[n];
+                var initial=new double[n];
+                BlasLike.dsetvec(n,1.0/n,initial);
+                var delta=0.5;
+                opt.Q=null;
+                BlasLike.dsetvec(n,0,L);
+                BlasLike.dsetvec(n,1,U);
+                L[n]=U[n]=1;
+                BlasLike.dsetvec(n,1,A);
+             //   L[0]=U[0]=x[0];
+             //   L[2]=U[2]=x[2];
+                var tarR=new double[tlen];
+                BlasLike.dsetvec(tlen,0.005,tarR);
+                tarR=null;
+                back=opt.BasicOptimisation(n,m,-1,A,L,U,0.5,0.5,delta,-1,-1,-1,-1,alpha,initial,null,null,names,useIP,0,null,null,null,0,null,tlen,1.0,DATA,tail,tarR);
+                for(var i=0;i<n;i++){
+                    ColourConsole.WriteEmbeddedColourLine($"[green]{names[i],16}[/green]\t[cyan]{opt.wback[i],16:E8}[/cyan]\t[darkcyan]{x[i],16:E8}[/darkcyan]");
+                }
+                ColourConsole.WriteEmbeddedColourLine($"[green]back[/green] = [cyan]{back}[/cyan]");
+                x=(double[])opt.wback.Clone();
+                L[0]=U[0]=x[0];
+                L[2]=U[2]=x[2];
+                back=opt.BasicOptimisation(n,m,-1,A,L,U,0.5,0.5,delta,-1,-1,-1,-1,alpha,initial,null,null,names,useIP,0,null,null,null,0,null,tlen,1.0,DATA,tail,tarR);
+                for(var i=0;i<n;i++){
+                    ColourConsole.WriteEmbeddedColourLine($"[green]{names[i],16}[/green]\t[cyan]{opt.wback[i],16:E8}[/cyan]\t[darkcyan]{x[i],16:E8}[/darkcyan]");
+                }
+                ColourConsole.WriteEmbeddedColourLine($"[green]back[/green] = [cyan]{back}[/cyan]");
+        return;
+            }
+
+            {
                 Console.WriteLine("GAIN/LOSS");
                 Portfolio.Portfolio opt = new Portfolio.Portfolio("");
                 double[] DATA;
@@ -1185,18 +1436,19 @@ namespace UseBlas
                 opt.GainLossSetUp(n, tlen, DATA, names, R, lambda, useIP);
             }
             {
-                var filename = "costlogC";
+                var filename = "costlog";
                 Console.WriteLine("BUY/SELL and LONG/SHORT");
                 double[] SV = null, FC = null, FL = null, L = null, U = null, alpha = null, initial = null, A = null;
                 double[] buy = null, sell = null, bench = null, Q = null, A_abs = null, Abs_U = null, Abs_L = null;
-                double gamma, delta, kappa, value, valuel, rmin, rmax;
-                int n, nfac, m, nabs, mabs;
+                double gamma, delta, kappa, value, valuel, rmin, rmax, min_holding, min_trade, minRisk;
+                double[] minhold = new double[0], mintrade = new double[0], min_lot = null, size_lot = null;
+                int n, nfac, m, nabs, mabs, round, basket, tradenum;
                 int[] I_A = null;
                 string[] names;
                 using (var buysell = new InputSomeData())
                 {
-                    buysell.doubleFields = "Q SV FC FL L U alpha initial A buy sell gamma delta kappa bench value valuel rmin rmax Abs_U Abs_L A_abs";
-                    buysell.intFields = "n nfac m nabs mabs I_A";
+                    buysell.doubleFields = "Q SV FC FL L U alpha initial A buy sell gamma delta kappa bench value valuel rmin rmax Abs_U Abs_L A_abs min_holding min_trade min_lot size_lot minRisk";
+                    buysell.intFields = "n nfac m nabs mabs I_A round basket tradenum";
                     buysell.stringFields = "names";
                     try
                     {
@@ -1226,6 +1478,7 @@ namespace UseBlas
                     delta = buysell.mapDouble["delta"][0];
                     kappa = buysell.mapDouble["kappa"][0];
                     gamma = buysell.mapDouble["gamma"][0];
+                    minRisk = buysell.mapDouble["minRisk"][0];
                     value = buysell.mapDouble["value"][0];
                     valuel = buysell.mapDouble["valuel"][0];
                     rmin = buysell.mapDouble["rmin"][0];
@@ -1234,10 +1487,17 @@ namespace UseBlas
                     names = buysell.mapString["names"];
                     nabs = buysell.mapInt["nabs"][0];
                     mabs = buysell.mapInt["mabs"][0];
+                    round = buysell.mapInt["round"][0];
+                    basket = buysell.mapInt["basket"][0];
+                    tradenum = buysell.mapInt["tradenum"][0];
                     A_abs = buysell.mapDouble["A_abs"];
                     Abs_U = buysell.mapDouble["Abs_U"];
                     Abs_L = buysell.mapDouble["Abs_L"];
                     I_A = buysell.mapInt["I_A"];
+                    min_holding = buysell.mapDouble["min_holding"][0];
+                    min_trade = buysell.mapDouble["min_trade"][0];
+                    min_lot = buysell.mapDouble["min_lot"];
+                    size_lot = buysell.mapDouble["size_lot"];
                 }
                 /*   L[0] = -0.017583279913421082;
                       U[0] = -0.017583279913421082;
@@ -1246,10 +1506,51 @@ namespace UseBlas
                       L[n - 20] = 0;//-1e-3;
                       U[n - 20] = 0;//1e-3;*/
                 bool useIp = true;
-                var basket = 396;
-                var trades = 10;//390;//200;
+                double[] minlot = null;
+                double[] sizelot = null;
+                var roundw = new double[n];
+                var shake = new int[n];
+                for (var i = 0; i < n; ++i) shake[i] = -1;
+                if (round == 1)
+                {
+                    if (min_lot != null && min_lot.Length == 1)
+                    {
+                        minlot = new double[n];
+                        BlasLike.dsetvec(n, min_lot[0], minlot);
+                    }
+                    else if (min_lot != null && min_lot.Length == n)
+                        minlot = min_lot;
+                    if (size_lot != null && size_lot.Length == 1)
+                    {
+                        sizelot = new double[n];
+                        BlasLike.dsetvec(n, size_lot[0], sizelot);
+                    }
+                    else if (size_lot != null && size_lot.Length == n)
+                        sizelot = size_lot;
+                }
+                if (min_holding >= 0)
+                {
+                    minhold = new double[n];
+                    BlasLike.dsetvec(n, min_holding, minhold);
+                }
+                else minhold = null;
+                if (min_trade >= 0)
+                {
+                    mintrade = new double[n];
+                    BlasLike.dsetvec(n, min_trade, mintrade);
+                }
+                else mintrade = null;
+                var trades = tradenum;
                 useIp = false;
-                Portfolio.Portfolio.INFO sendInput = new Portfolio.Portfolio.INFO();
+                Portfolio.Portfolio.OptParamRound Op = new Portfolio.Portfolio.OptParamRound();
+                Portfolio.Portfolio.INFO sendInput = new Portfolio.Portfolio.INFO(); Op.basket = basket;
+                Op.trades = trades;
+                Op.lower = L;
+                Op.m = m;
+                Op.n = n;
+                Op.upper = U;
+                Op.minholdlot = null;
+                Op.mintradelot = null;
                 sendInput.n = n;
                 sendInput.m = m;
                 sendInput.nfac = nfac;
@@ -1281,18 +1582,56 @@ namespace UseBlas
                     opt.FC = FC;
                     opt.nfac = nfac;
                     opt.bench = bench;
-                    var targetRisk = 0.02;
+                    var targetRisk = minRisk;
                     sendInput.target = targetRisk;
-                    opt.DropRisk(basket, trades, targetRisk, sendInput);
+                    opt.gamma = opt.kappa = 5e-2;
+                    opt.CalcRisk(opt.gamma, sendInput);
+                    opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
+                    //  opt.DropRisk(basket, trades, targetRisk, sendInput);
+                    sendInput.useIP = false;
+                    if (round == 1)
+                    {
+                        opt.Rounding(basket, trades, initial, minlot, sizelot, roundw, null, null, sendInput);
+                        opt.roundcheck(n, roundw, initial, minlot, sizelot, shake);
+                    }
+                    else
+                    {
+                        Op.x = opt.wback; Op.MoreInfo = sendInput;
+                        opt.Thresh(Op, mintrade == null ? null : initial, mintrade == null ? minhold : mintrade, roundw, mintrade == null ? null : minhold);
+                        opt.thresh_check(n, roundw, mintrade == null ? null : initial, L, U, mintrade == null ? minhold : mintrade, mintrade == null ? null : minhold, BlasLike.lm_eps8, shake);
+                    }
+                    foreach (var i in shake)
+                    {
+                        if (i != -1) ColourConsole.WriteEmbeddedColourLine($"[green]{names[i]}[/green][red] was not rounded properly! {roundw[i],26:e16}[/red]");
+                    }
                 }
                 else
                 {
                     Portfolio.Portfolio opt = new Portfolio.Portfolio("");
                     opt.Q = Q;
                     opt.bench = bench;
-                    var targetRisk = 0.1;
+                    var targetRisk = minRisk;
                     sendInput.target = targetRisk;
-                    opt.DropRisk(basket, trades, targetRisk, sendInput);
+                    opt.gamma = opt.kappa = 0.5;
+                    opt.CalcRisk(opt.gamma, sendInput);
+                    opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
+                    // opt.DropRisk(basket, trades, targetRisk, sendInput);
+                    sendInput.useIP = false;
+                    if (round == 1)
+                    {
+                        opt.Rounding(basket, trades, initial, minlot, sizelot, roundw, null, null, sendInput);
+                        opt.roundcheck(n, roundw, initial, minlot, sizelot, shake);
+                    }
+                    else
+                    {
+                        Op.x = opt.wback; Op.MoreInfo = sendInput;
+                        opt.Thresh(Op, mintrade == null ? null : initial, mintrade == null ? minhold : mintrade, roundw, mintrade == null ? null : minhold);
+                        opt.thresh_check(n, roundw, mintrade == null ? null : initial, L, U, mintrade == null ? minhold : mintrade, mintrade == null ? null : minhold, BlasLike.lm_eps8, shake);
+                    }
+                    foreach (var i in shake)
+                    {
+                        if (i != -1) ColourConsole.WriteEmbeddedColourLine($"[green]{names[i]}[/green][red] was not rounded properly! {roundw[i],26:e16}[/red]");
+                    }
                 }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);

@@ -46,6 +46,15 @@ namespace Ordering
             a = b;
             b = k2;
         }
+        ///<summary>Find an integer array of indecies order, that orders x. If sign is 1, then x[order[0]] is the largest x,
+        ///if sign is -1 x[order[0]] is the smallest x</summary>
+        ///<param name="n">Dimension of x</param>
+        ///<param name="x">Find order of x</param>
+        ///<param name="order">Output array of indecies that order x</param>
+        ///<param name="dropbad">If not null, specifies indecies which must not be ordered</param>
+        ///<param name="init">Find order for x[i] - init</param>
+        ///<param name="sign">if sign is 1 max x is x[order[0]], if sign is -1 min x is x[order[0]]</param>
+        ///<param name="xstart">starting index for x</param>
         public static void getorder(int n, double[] x, int[] order = null, byte[] dropbad = null, double init = 0, short sign = 1, int xstart = 0)
         {
             var cmp = new compare();
@@ -62,6 +71,12 @@ namespace Ordering
                 Array.Sort(xxx, order, cmp);
             }
         }
+        ///<summary>Find an integer array of indecies order, that orders abs(x).</summary>
+        ///<param name="n">Dimension of x</param>
+        ///<param name="x">Find order of x</param>
+        ///<param name="order">Output array of indecies that order x</param>
+        ///<param name="dropbad">If not null, specifies indecies which must not be ordered</param>
+        ///<param name="xstart">starting index for x</param>
         public static void getorderabs(int n, double[] x, int[] order = null, byte[] dropbad = null, int xstart = 0)
         {
             var cmp = new compareAbs();

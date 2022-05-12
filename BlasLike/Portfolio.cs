@@ -9,6 +9,2292 @@ namespace Portfolio
 {
     public class Portfolio
     {
+        int BACK;
+        public void set_repeat<T>(int n, T p, T[] a)
+        {
+            //while(n--){*a++ = p;}
+            for (var i = 0; i < n; ++i)
+            {
+                a[i] = p;
+            }
+        }
+        public class KeepBest
+        {
+            public int back;
+            public int nround;
+            public int n;
+            public int stage;
+            public int stuck;
+            public double[] w;
+            public double[] oldw;
+            public double[] first;
+            public double utility;
+            public bool print;
+            public KeepBest(int n, int back = -1, int nround = 0, double util = 0, int stage = 0)
+            {
+                if (util == 0) util = BlasLike.lm_max;
+                this.back = back;
+                this.nround = nround;
+                this.utility = util;
+                this.n = n;
+                this.stage = stage;
+                w = new double[n];
+                oldw = new double[n];
+                first = new double[n];
+                stuck = 0;
+                print = true;
+            }
+            public void Setw(double[] w, int back, int nround, double utility, int stage)
+            {
+                BlasLike.dcopyvec(n, w, this.w);
+                this.back = back;
+                this.utility = utility;
+                this.nround = nround;
+                this.stage = stage;
+            }
+            public void Message()
+            {
+                if (print)
+                {
+                    ColourConsole.WriteEmbeddedColourLine($"[red]code {back},[/red] [green]utility {utility},[/green] [cyan]number rounded {nround}[/cyan]");
+                }
+            }
+        }
+
+        public class roundstep
+        {
+            public double util;
+            public double[] L;
+            public double[] U;
+            public double[] kL;
+            public double[] kU;
+            public double[] w;
+            public OptParamRound info;
+            public roundstep next;
+            public roundstep prev;
+            public int nround;
+            public int back;
+            public int[] bound_order;
+            public int[] can_repeat;
+            public int count;
+            public bool success;
+        }
+        public double RoundInnerUtil(object info)
+        {
+            OptParamRound OP = (OptParamRound)info;
+            INFO sendInput = (INFO)OP.MoreInfo;
+            var w = new double[sendInput.n];
+            var gradient = new double[sendInput.n];
+            BlasLike.dcopyvec(sendInput.n, wback, w);
+            int baskethere = -1, tradeshere = -1;
+            return PortfolioUtility(sendInput.n, gamma, kappa, sendInput.buy, sendInput.sell, sendInput.alpha, w, gradient, ref baskethere, ref tradeshere, false);
+        }
+        public int RoundInnerOpt(object info)
+        {
+            OptParamRound OP = (OptParamRound)info;
+            INFO vars = (INFO)OP.MoreInfo;
+            double[] minholdlot = OP.minholdlot;
+            double[] mintradelot = OP.mintradelot;
+            OP.minholdlot = null;
+            OP.mintradelot = null;
+            if (minholdlot != null && mintradelot != null)
+            {
+                double[] w = new double[n];
+                Thresh(OP, vars.initial, mintradelot, w, minholdlot); vars.back = (OP.back == 2 ? 6 : OP.back);
+                BlasLike.dcopyvec(vars.n, w, wback);
+            }
+            else if (minholdlot != null)
+            {
+                double[] w = new double[n];
+                Thresh(OP, null, minholdlot, w, null); vars.back = (OP.back == 2 ? 6 : OP.back);
+                BlasLike.dcopyvec(vars.n, w, wback);
+            }
+            else if (mintradelot != null)
+            {
+                double[] w = new double[n];
+                Thresh(OP, vars.initial, mintradelot, w, null); vars.back = (OP.back == 2 ? 6 : OP.back);
+                BlasLike.dcopyvec(vars.n, w, wback);
+            }
+            else
+            {
+                for (var i = 0; i < vars.n; ++i)
+                {
+                    if (OP.lower[i] > OP.upper[i])
+                    {
+                        var start = vars.initial;
+                        var init = start != null ? start[i] : 0;
+                        ColourConsole.WriteEmbeddedColourLine($"BAD bounds for {i} ([red]{OP.lower[i]} {OP.upper[i]}[/red])  initial is: [magenta]{start[i]}[/magenta]");
+                    }
+                }
+                OP.back = BACK = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, OP.lower, OP.upper, gamma, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
+                              alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR);
+            }
+            OP.minholdlot = minholdlot;
+            OP.mintradelot = mintradelot;
+            if (BACK == 0)
+            {
+                int i;
+                for (i = 0; i < vars.n; ++i)
+                {
+                    if (Math.Abs(wback[i] - OP.lower[i]) < 1e-7)
+                        wback[i] = OP.lower[i];
+                    else if (Math.Abs(wback[i] - OP.upper[i]) < 1e-7)
+                        wback[i] = OP.upper[i];
+                }
+            }
+            Debug.Assert(OP.x == wback);
+            return BACK;
+        }
+        public delegate double UFUNC(int n, double gamma, double kappa, double[] buy, double[] sell, double[] alpha, double[] w, double[] gradient, ref int basket, ref int trades, bool print = true, double thresh = 1E-14);
+        public delegate void GFUNC(int n, double[] w, double[] g);
+        public delegate int FUNCGEN(object i);
+        public delegate double UTILGEN(object i);
+        public delegate int OFUNC(int n, int m, int nfac, double[] A, double[] L, double[] U, double gamma, double kappa, double delta, double value, double valuel, double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell, string[] names, bool useIP = true, int nabs = 0, double[] A_abs = null, double[] L_abs = null, double[] U_abs = null, int mabs = 0, int[] I_a = null);
+        public class OptParamRound
+        {
+            public int n;
+            public int m;
+            public double[] x;
+            public double[] grad;
+            public UTILGEN UtilityFunc;
+            public FUNCGEN OptFunc;//This must set back member
+            public GFUNC GradFunc;
+            public object MoreInfo;
+            public double[] lower;
+            public double[] upper;
+            public double[] c;
+            public int back;
+            public int mabs;
+            public int lp;
+            public int basket;
+            public int trades;
+            public int longbasket;
+            public int shortbasket;
+            public int tradebuy;
+            public int tradesell;
+            public double[] initial;
+            public double equalbounds;
+            public double dropfac;
+            public double[] minholdlot;
+            public double[] mintradelot;
+            public object TimeOptData;
+            public string dump;
+        }
+        double unround = 1e60;
+        double round_eps = BlasLike.lm_eps8;
+        ///<summary>Return the position of w in the roundlot ladder. If this is a whole number, then w is on a rung</summary>
+        ///<param name="w">weight</param>
+        ///<param name="initial">initial weight</param>
+        ///<param name="minl">minimum lot</param>
+        ///<param name="sizl">subsequent lot</param>
+        public double digitisei(double w, double initial, double minl, double sizl)
+        {
+            double ww = w - initial;
+            double wa = Math.Abs(ww);
+            double digit = 0, one = 1.0;
+            if (wa < BlasLike.lm_eps) { digit = 0; }
+            else if (wa < minl) { digit = 0/*wa/minl*/; }
+            else if (sizl < BlasLike.lm_eps) { digit = unround; }
+            else if (wa >= minl) { digit = one + (wa - minl) / sizl; }
+            if (ww < 0) { digit = -digit; }
+            if (Math.Abs(digit) != unround)
+            {
+                digit = check_digit(digit);
+            }
+            return digit;
+        }
+        ///<summary>Return a whole number if digit is whole number plus/minus something very small</summary>
+        public static double check_digit(double digit)
+        {
+            if (Math.Abs(digit) < BlasLike.lm_eps) return 0.0;
+            double delta = Math.Abs(Math.Abs(digit - (long)(digit)) - 1);
+            if (delta <= (BlasLike.lm_rooteps))
+            {
+                long ndelta = (long)(delta / BlasLike.lm_eps);
+                if (digit > 0)
+                {
+                    digit += ndelta * BlasLike.lm_eps;
+                }
+                else if (digit < 0)
+                {
+                    digit -= ndelta * BlasLike.lm_eps;
+                }
+            }
+            return digit;
+        }
+        public double digit2w(double w, double initial, double d, double minl, double sizl, double minlb = 0.0)
+        {
+            if (Math.Abs(d) != unround) d = check_digit(d);
+            //Find nearest integer to d[i] (from digitise) and work out corresponding weight
+            double roundw = w, p5 = 0.5;
+            long p = 0, lone = 1;
+            if (Math.Abs(d) == unround) { p = 1000000000; }
+            else if (Math.Abs(d) <= BlasLike.lm_eps8) { p = 0; }
+            /*	else if(d>0)p=(long)floor(d+p5);
+                else if(d<0)p=(long)floor(d-p5);*/
+            else p = (long)Math.Floor(Math.Abs(d) + p5);//This is the right way
+
+            if (d < 0) p = -p;
+            if (Math.Abs(d) == unround) { roundw = w - initial; }
+            else if (Math.Abs(p) <= lone)
+            {
+                if (minlb == 0)
+                    roundw = minl * p;
+                else if (roundw >= 0)
+                    roundw = minl * p;
+                else if (roundw <= 0)
+                    roundw = minlb * p;
+            }
+            else if (d > 0 && minl == sizl) { roundw = sizl * p; }
+            else if (d < 0 && minl == sizl) { roundw = sizl * p; }
+            else if (d > 0) { roundw = sizl * (p - lone) + minl; }
+            else if (d < 0) { roundw = sizl * (p + lone) - minl; }
+            roundw += initial;
+
+            return roundw;
+        }
+
+        double round_weight(double x, double initial, double minl, double sizel)
+        {
+            return digit2w(x, initial, digitisei(x, initial, minl, sizel), minl, sizel);
+        }
+        public int round_check(int n, double[] w, double[] initial, double[] L, double[] U, double[] minlot, double[] sizelot, double eps = 0.0)
+        {
+            if (eps == 0.0) eps = BlasLike.lm_rooteps;
+            int i, bad;
+            bool badi;
+            double init;
+            long kk;
+            for (i = 0, bad = 0; i < n; ++i)
+            {
+                init = initial != null ? initial[i] : 0;
+                badi = false;
+                if (Math.Abs(Math.Abs(w[i]) - Math.Abs(round_weight(w[i], init, minlot[i], sizelot != null ? sizelot[i] : 0))) > eps)
+                {
+                    if (Math.Abs(Math.Abs(w[i] - init) - minlot[i]) > eps)
+                    {
+                        if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
+                        {
+                            kk = (long)((Math.Abs(w[i] - init) - minlot[i]) / sizelot[i]);
+                            if (Math.Abs(kk * sizelot[i] + minlot[i] - Math.Abs(w[i] - init)) > eps)
+                            {
+                                badi = true; ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red] {L[i]} (w-init) {w[i] - init} {kk} {U[i]}");
+                            }
+                        }
+                        else if (Math.Abs(w[i] - init) - Math.Abs(minlot[i]) < -eps && Math.Abs(w[i] - init) > eps)
+                        { badi = true; ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red] {L[i]} (w-init) {w[i] - init} base {U[i]}"); }
+                    }
+                }
+                if (L[i] == U[i]) continue;
+                if (w[i] < L[i] - BlasLike.lm_eps8 || w[i] > U[i] + BlasLike.lm_eps8)
+                {
+                    badi = true; ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red] {L[i]} (w) {w[i]} {U[i]}");
+                }
+                if (badi) bad++;
+            }
+            return n - bad;
+        }///<summary>Check how well x is rounded</summary>
+         ///<param name="n">Number of assets</param>
+         ///<param name="x">Rounded weights</param>
+         ///<param name="initial">Initial weights</param>
+         ///<param name="minlot">Bottom "ladder rung"</param>
+         ///<param name="sizelot">Other "ladder rungs"</param>
+         ///<param name="shake">Output shake[i] = -1 if asset i is rounded, otherwise i"</param>
+        public int roundcheck(int n, double[] x, double[] initial, double[] minlot, double[] sizelot, int[] shake)
+        {
+            var nround = 0;
+            for (var i = 0; i < n; ++i)
+            {
+                var init = initial != null ? initial[i] : 0;
+                var dd = 0L;
+                double nwL, nwU;
+                if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
+                {
+                    dd = (long)digitisei(x[i], init, minlot[i], sizelot[i]);
+                    if (x[i] > init)
+                    {
+                        nwL = digit2w(x[i], init, dd, minlot[i], sizelot[i]);
+                        nwU = digit2w(x[i], init, dd + 1, minlot[i], sizelot[i]);
+                    }
+                    else if (x[i] < init)
+                    {
+                        nwL = digit2w(x[i], init, dd - 1, minlot[i], sizelot[i]);
+                        nwU = digit2w(x[i], init, dd, minlot[i], sizelot[i]);
+                    }
+                    else
+                    {
+                        nwL = nwU = digit2w(x[i], init, 0, minlot[i], sizelot[i]);
+                    }
+                    if (Math.Abs(x[i] - nwL) < round_eps || Math.Abs(x[i] - nwU) < round_eps || Math.Abs(x[i] - init) < BlasLike.lm_eps)
+                    {
+                        shake[i] = -1;
+                        nround++;
+                    }
+                    else shake[i] = i;
+                }
+                else if (minlot != null && minlot[i] > BlasLike.lm_eps)
+                {
+                    if (Math.Abs(x[i] - init) >= minlot[i] || Math.Abs(x[i] - init) < BlasLike.lm_eps)
+                    {
+                        shake[i] = -1;
+                        nround++;
+                    }
+                    else shake[i] = i;
+                }
+                else
+                {
+                    shake[i] = -1;
+                    nround++;
+                }
+            }
+            return nround;
+        }
+        public void treenext(roundstep rstep, double[] initial, double[] minlot,
+                                double[] sizelot, bool passedfromthresh = false, double[] thresh = null)
+        {
+            OptParamRound info = rstep.info;
+            int maxstage = 20;
+            int n = info.n;
+            int m = info.m;
+            int firstlim = (n < 100) ? n : n, roundy = n;
+            int stuck;
+            double[] bound_error = new double[n];
+
+            if (rstep.prev != null)
+            {
+                BlasLike.dcopyvec(m + n, rstep.L, info.lower);
+                BlasLike.dcopyvec(m + n, rstep.U, info.upper);
+                //	info.OptSetup(basket,trades);
+                info.OptFunc(info);
+                //	rstep.util=info.utility_base(n,x,c,H);
+                rstep.util = info.UtilityFunc(info);
+                if (info.back == 10) info.back = 6;
+                rstep.back = info.back;
+                if (info.x != wback) BlasLike.dcopyvec(n, wback, info.x);
+                BlasLike.dcopyvec(n, info.x, rstep.w);
+                BlasLike.dcopyvec(m + n, rstep.kL, info.lower);
+                BlasLike.dcopyvec(m + n, rstep.kU, info.upper);
+            }
+
+
+            rstep.nround = 0;
+            bool fixup = false;
+            int i, j, i6 = 0;
+            double init = 0, nwL = 0, nwU = 0;
+            long dd;
+            roundstep next = rstep.next = new roundstep(), roundstuck;
+            if (next == null) return;
+            next.can_repeat = rstep.can_repeat;
+            next.success = rstep.success;
+
+            next.kL = rstep.kL;
+            next.kU = rstep.kU;
+            next.L = new double[n + m];
+            next.U = new double[n + m];
+            next.w = new double[n];
+            next.bound_order = new int[n];
+            if (!(next.L != null && next.U != null && next.w != null && next.bound_order != null)) return;
+            next.prev = rstep;
+            next.info = info;
+            next.next = null;
+            next.nround = 0;
+            next.util = BlasLike.lm_max;
+            next.count = next.prev.count + 1;
+            next.back = info.back;
+            if (rstep.prev != null && rstep.prev.nround == n && rstep.back < 2)
+            {
+                rstep.back = 6; fixup = true;
+            }
+            else
+                fixup = false;
+
+            while (rstep.back == 6 && i6 < n)
+            {
+                for (j = i6; j < n; ++j)
+                {
+                    dd = 0;
+                    if (rstep.prev != null && rstep.prev.nround == n)
+                        i = rstep.prev.bound_order[j];
+                    else
+                        i = rstep.bound_order[j];
+                    init = initial != null ? initial[i] : 0;
+                    if (rstep.L[i] == rstep.kL[i] && rstep.U[i] == rstep.kU[i]) { i6++; continue; }
+                    else
+                    {
+                        if (rstep.prev != null && rstep.prev.L[i] == rstep.kL[i] && rstep.prev.U[i] == rstep.kU[i])
+                        {
+                            if (rstep.U[i] == rstep.kU[i])
+                            {
+                                if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
+                                {
+                                    dd = (long)digitisei(rstep.prev.w[i], init, minlot[i], sizelot[i]);
+                                    if (rstep.prev.w[i] > init)
+                                    {
+                                        nwL = digit2w(rstep.prev.w[i], init, dd, minlot[i], sizelot[i]);
+                                        nwU = digit2w(rstep.prev.w[i], init, dd + 1, minlot[i], sizelot[i]);
+                                    }
+                                    else if (rstep.prev.w[i] < init)
+                                    {
+                                        nwL = digit2w(rstep.prev.w[i], init, dd - 1, minlot[i], sizelot[i]);
+                                        nwU = digit2w(rstep.prev.w[i], init, dd, minlot[i], sizelot[i]);
+                                    }
+                                    else
+                                    {
+                                        nwL = nwU = digit2w(rstep.prev.w[i], init, 0, minlot[i], sizelot[i]);
+                                    }
+                                }
+                                else if (rstep.prev.w[i] >= init)
+                                {
+                                    nwL = init;
+                                    nwU = minlot[i] + init;
+                                }
+                                else if (rstep.prev.w[i] < init)
+                                {
+                                    nwU = init;
+                                    nwL = -minlot[i] + init;
+                                }
+                                rstep.U[i] = Math.Max(rstep.kL[i], Math.Min(nwL, rstep.kU[i]));
+                                rstep.L[i] = rstep.kL[i];
+                            }
+                            else if (rstep.L[i] == rstep.kL[i])
+                            {
+                                if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
+                                {
+                                    dd = (long)digitisei(rstep.prev.w[i], init, minlot[i], sizelot[i]);
+                                    if (rstep.prev.w[i] > init)
+                                    {
+                                        nwL = digit2w(rstep.prev.w[i], init, dd, minlot[i], sizelot[i]);
+                                        nwU = digit2w(rstep.prev.w[i], init, dd + 1, minlot[i], sizelot[i]);
+                                    }
+                                    else if (rstep.prev.w[i] < init)
+                                    {
+                                        nwL = digit2w(rstep.prev.w[i], init, dd - 1, minlot[i], sizelot[i]);
+                                        nwU = digit2w(rstep.prev.w[i], init, dd, minlot[i], sizelot[i]);
+                                    }
+                                    else
+                                    {
+                                        nwL = nwU = digit2w(rstep.prev.w[i], init, 0, minlot[i], sizelot[i]);
+                                    }
+                                }
+                                else if (rstep.prev.w[i] >= init)
+                                {
+                                    nwL = init;
+                                    nwU = minlot[i] + init;
+                                }
+                                else if (rstep.prev.w[i] < init)
+                                {
+                                    nwU = init;
+                                    nwL = -minlot[i] + init;
+                                }
+                                if (Math.Abs((nwU - (rstep.prev.w[i])) - (rstep.prev.w[i] - nwL)) < BlasLike.lm_rooteps)
+                                {
+                                    if (rstep.L[i] == rstep.kL[i])
+                                    {
+                                        rstep.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.L[i]));
+                                        rstep.U[i] = rstep.kU[i];
+                                    }
+                                    else if (rstep.U[i] == rstep.kU[i])
+                                    {
+                                        rstep.U[i] = Math.Max(rstep.kL[i], Math.Min(nwL, rstep.U[i]));
+                                        rstep.L[i] = rstep.kL[i];
+                                    }
+                                }
+                                else
+                                {
+                                    rstep.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.kL[i]));
+                                    rstep.U[i] = rstep.kU[i];
+                                }
+                            }
+                        }
+                        else
+                        {
+                            double wuse = fixup ? rstep.w[i] : rstep.prev.w[i];
+                            if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
+                            {
+                                dd = (long)digitisei(wuse, init, minlot[i], sizelot[i]);
+                                if (wuse > init)
+                                {
+                                    nwL = Math.Max((digit2w(wuse, init, dd - 1, minlot[i], sizelot[i])), rstep.kL[i]);
+                                    nwU = Math.Min((digit2w(wuse, init, dd + 1, minlot[i], sizelot[i])), rstep.kU[i]);
+                                }
+                                else if (wuse > init)
+                                {
+                                    nwL = Math.Max((digit2w(wuse, init, dd - 1, minlot[i], sizelot[i])), rstep.kL[i]);
+                                    nwU = Math.Min((digit2w(wuse, init, dd + 1, minlot[i], sizelot[i])), rstep.kU[i]);
+                                }
+                                else
+                                {
+                                    nwL = nwU = Math.Max((digit2w(wuse, init, 0, minlot[i], sizelot[i])), rstep.kL[i]);
+                                }
+                            }
+                            else if (wuse >= init)
+                            {
+                                nwL = init;
+                                nwU = minlot[i] + init;
+                            }
+                            else if (wuse < init)
+                            {
+                                nwU = init;
+                                nwL = -minlot[i] + init;
+                            }
+                            if (wuse > rstep.U[i])
+                            {
+                                rstep.U[i] = rstep.kU[i];
+                                rstep.L[i] = Math.Max(nwU, rstep.kL[i]);
+                            }
+                            else if (wuse < rstep.L[i])
+                            {
+                                rstep.L[i] = rstep.kL[i];
+                                rstep.U[i] = Math.Max(rstep.kL[i], Math.Min(nwL, rstep.kU[i]));
+                            }
+                            else if (rstep.prev != null && rstep.prev.nround == n)
+                            {
+                                if (rstep.L[i] == rstep.kL[i])
+                                {
+                                    rstep.U[i] = rstep.kU[i];
+                                    rstep.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.kL[i]));
+                                }
+                                else if (rstep.U[i] == rstep.kU[i])
+                                {
+                                    rstep.L[i] = rstep.kL[i];
+                                    rstep.U[i] = Math.Max(rstep.kL[i], Math.Min(nwL, rstep.kU[i]));
+                                }
+                                else if (wuse == rstep.L[i])
+                                {
+                                    rstep.L[i] = rstep.kL[i];
+                                    rstep.U[i] = Math.Max(rstep.kL[i], Math.Min(nwL, rstep.kU[i]));
+                                }
+                                else if (wuse == rstep.U[i])
+                                {
+                                    rstep.U[i] = rstep.kU[i];
+                                    rstep.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.kL[i]));
+                                }
+                            }
+                        }
+                        i6 = j + 1; break;
+                    }
+                }
+                BlasLike.dcopyvec(m + n, rstep.L, info.lower);
+                BlasLike.dcopyvec(m + n, rstep.U, info.upper);
+                //		info.OptSetup(basket,trades);
+                info.OptFunc(info);
+                //		rstep.util=info.utility_base(n,x,c,H);
+                rstep.util = info.UtilityFunc(info);
+                rstep.back = info.back;
+                if (rstep.back == 6)
+                {
+                    j = i6 - 1;
+                    i = rstep.bound_order[j];
+                    if (rstep.U[i] == rstep.kU[i])//&&rstep.prev.bound_order[j]!=rstep.bound_order[j])
+                    {
+                        rstep.U[i] = rstep.L[i];
+                        rstep.L[i] = rstep.kL[i];
+                    }
+                    else if (rstep.L[i] == rstep.kL[i])//&&rstep.prev.bound_order[j]!=rstep.bound_order[j])
+                    {
+                        rstep.L[i] = rstep.U[i];
+                        rstep.U[i] = rstep.kU[i];
+                    }
+                    BlasLike.dcopyvec(n, rstep.w, info.x);
+                }
+                BlasLike.dcopyvec(n, info.x, rstep.w);
+                BlasLike.dcopyvec(m + n, rstep.kL, info.lower);
+                BlasLike.dcopyvec(m + n, rstep.kU, info.upper);
+            }
+            BlasLike.dcopyvec(m + n, rstep.L, next.L);
+            BlasLike.dcopyvec(m + n, rstep.U, next.U);
+            double switch1 = 1;
+            for (i = 0; i < n; ++i)
+            {
+                init = initial != null ? initial[i] : 0; dd = 0;
+                if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
+                {
+                    dd = (long)digitisei(info.x[i], init, minlot[i], sizelot[i]);
+                    if (info.x[i] > init)
+                    {
+                        nwL = digit2w(info.x[i], init, dd, minlot[i], sizelot[i]);
+                        nwU = digit2w(info.x[i], init, dd + 1, minlot[i], sizelot[i]);
+                    }
+                    else if (info.x[i] < init)
+                    {
+                        nwL = digit2w(info.x[i], init, dd - 1, minlot[i], sizelot[i]);
+                        nwU = digit2w(info.x[i], init, dd, minlot[i], sizelot[i]);
+                    }
+                    else
+                    {
+                        nwL = nwU = digit2w(info.x[i], init, 0, minlot[i], sizelot[i]);
+                    }
+                    if (Math.Abs(info.x[i] - nwL) < round_eps || Math.Abs(info.x[i] - nwU) < round_eps || Math.Abs(info.x[i] - init) < BlasLike.lm_eps)
+                    {
+                        bound_error[i] = i;
+                        rstep.nround++;
+                        continue;
+                    }
+                    if (((nwU - (info.x[i])) / (info.x[i] - nwL)) < switch1)
+                    {
+                        if (nwU >= rstep.L[i] && nwU <= rstep.kU[i])
+                            bound_error[i] = n + nwU - (info.x[i]);
+                        else
+                            bound_error[i] = n + info.x[i] - nwL;
+                    }
+                    else
+                    {
+                        if (nwL <= rstep.U[i])
+                            bound_error[i] = n + info.x[i] - nwL;
+                        else
+                            bound_error[i] = n + nwU - (info.x[i]);
+                    }
+                }
+                else
+                {
+                    if ((thresh != null && Math.Abs(info.x[i]) >= thresh[i]) || Math.Abs(info.x[i]) < BlasLike.lm_eps)
+                    {
+                        if (Math.Abs(info.x[i] - init) >= minlot[i] || Math.Abs(info.x[i] - init) < BlasLike.lm_eps)
+                        {
+                            bound_error[i] = i;
+                            rstep.nround++;
+                            continue;
+                        }
+                        else
+                            bound_error[i] = n + Math.Abs(info.x[i] - init);
+                    }
+                    else
+                    {
+                        if (rstep.kL[i] == rstep.kU[i]) { rstep.nround++; bound_error[i] = i; }
+                        else bound_error[i] = n + Math.Max(Math.Abs(info.x[i]), (Math.Abs(info.x[i] - init)));
+                    }
+                }
+            }
+            ColourConsole.WriteEmbeddedColourLine($"[green]first nround=[/green][cyan]{rstep.nround}[/cyan]");
+            /*if(!sizelot)rstep.nround=thresh_check(n,info.x,initial,rstep.kL,rstep.kU,minlot,0,round_eps);
+            else*/
+            rstep.nround = round_check(n, info.x, initial, rstep.kL, rstep.kU, minlot, sizelot, round_eps);
+            ColourConsole.WriteEmbeddedColourLine($"[green]then  nround=[/green][cyan]{rstep.nround}[/cyan]");
+            Ordering.Order.getorder(n, bound_error, next.bound_order, null);//printorder(n,neinfo.xt.bound_order);
+                                                                            //	for(j=rstep.nround;j<min(n/4+rstep.nround,n);++j)
+            roundy = Math.Max(((int)(rstep.nround * .5 + n * .5)), (rstep.nround + 1));
+            //	stuck=(rstep.prev&&(rstep.prev.nround==rstep.nround))?true:false;
+            stuck = 0; roundstuck = rstep;
+            var bestround = 0;
+            roundstep test = rstep, best = null;
+            while ((test = test.prev) != null)
+            {
+                if (bestround < test.nround)
+                {
+                    bestround = test.nround;
+                    best = test;
+                }
+            }
+            if (best != null && best.nround == rstep.nround)
+            {
+                stuck++;
+                roundstuck = best;
+            }
+            for (j = 0; j < Math.Min(Math.Max(1, roundy), n); ++j)
+            {
+                //		i=next.bound_order[n-j-1];
+                i = next.bound_order[j]; dd = 0;
+                var testw = info.x[i];
+                if (testw < rstep.kL[i])
+                    testw = rstep.kL[i];
+                else if (testw > rstep.kU[i])
+                    testw = rstep.kU[i];
+                init = initial != null ? initial[i] : 0;
+                if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
+                {
+                    dd = (long)digitisei(testw, init, minlot[i], sizelot[i]);
+                    if (testw > init)
+                    {
+                        if (!(j % 2 != 0 && next.count % 2 != 0))
+                        {
+                            nwL = digit2w(testw, init, dd - 1, minlot[i], sizelot[i]);
+                            nwU = digit2w(testw, init, dd + (long)stuck, minlot[i], sizelot[i]);
+                            if (nwL < rstep.kL[i])
+                            {
+                                nwL = digit2w(testw, init, dd, minlot[i], sizelot[i]);
+                                nwU = digit2w(testw, init, dd + 1 + (long)stuck, minlot[i], sizelot[i]);
+                            }
+                        }
+                        else
+                        {
+                            nwL = digit2w(testw, init, dd, minlot[i], sizelot[i]);
+                            nwU = digit2w(testw, init, dd + 1 + (long)stuck, minlot[i], sizelot[i]);
+                        }
+                    }
+                    else if (testw < init)
+                    {
+                        if (!(j % 2 != 0 && next.count % 2 != 0))
+                        {
+                            nwL = digit2w(testw, init, dd - (long)stuck, minlot[i], sizelot[i]);
+                            nwU = digit2w(testw, init, dd + 1, minlot[i], sizelot[i]);
+                            if (nwU > rstep.kU[i])
+                            {
+                                nwL = digit2w(testw, init, dd - 1 - (long)stuck, minlot[i], sizelot[i]);
+                                nwU = digit2w(testw, init, dd, minlot[i], sizelot[i]);
+                            }
+                        }
+                        else
+                        {
+                            nwL = digit2w(testw, init, dd - 1 - (long)stuck, minlot[i], sizelot[i]);
+                            nwU = digit2w(testw, init, dd, minlot[i], sizelot[i]);
+                        }
+                    }
+                    else
+                    {
+                        nwL = digit2w(testw, init, -(long)stuck, minlot[i], sizelot[i]);
+                        nwU = digit2w(testw, init, 0, minlot[i], sizelot[i]);
+                    }
+                    //  ColourConsole.WriteEmbeddedColourLine($"[cyan]closeness {names[i]}[/cyan] [green]{testw-nwL}[/green] [darkgreen]{testw-nwU}[/darkgreen] [yellow]{testw}[/yellow]");
+                    if (Math.Abs(info.x[i] - nwL) < round_eps || Math.Abs(info.x[i] - nwU) < round_eps || Math.Abs(testw - init) < BlasLike.lm_eps)
+                    {
+                        continue;
+                        //				break;
+                    }
+                    if (Math.Abs((nwU - (testw)) - (testw - nwL)) < BlasLike.lm_rooteps)
+                    {
+                        if (false && !(j % 2 != 0 && next.count % 2 != 0))
+                        {
+                            next.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.L[i]));
+                        }
+                        /*    else if (false)
+                            {
+                                next.U[i] = Math.Max(rstep.kL[i], Math.Min(nwL, rstep.U[i]));
+                            }*/
+                    }
+                    else if (((nwU - (testw)) / (testw - nwL)) < switch1)
+                    {
+                        if (nwU >= rstep.L[i] && nwU != rstep.kU[i])
+                            next.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.L[i]));
+                        else
+                        {
+                            next.U[i] = Math.Max(rstep.kL[i], Math.Max(nwU, rstep.U[i]));
+                            next.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.kL[i]));
+                        }
+                    }
+                    else
+                    {
+                        if (nwL <= rstep.U[i] && nwL != rstep.kL[i])
+                            next.U[i] = Math.Max(rstep.kL[i], Math.Min(nwL, rstep.U[i]));
+                        else
+                        {
+                            next.L[i] = Math.Min(rstep.kU[i], Math.Min(nwL, rstep.L[i]));
+                            next.U[i] = Math.Max(rstep.kL[i], Math.Min(nwL, rstep.kU[i]));
+                        }
+                    }
+                    if (next.U[i] < next.L[i])
+                    {
+                        next.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.kL[i]));
+                        next.U[i] = rstep.kU[i];
+                    }
+                }
+                else
+                {
+                    i = next.bound_order[j];
+                    if ((thresh != null && Math.Abs(testw) >= thresh[i]) || Math.Abs(testw) < BlasLike.lm_eps)
+                    {
+                        if (!(rstep.nround == n && Math.Abs(Math.Abs(testw - init) - minlot[i]) < BlasLike.lm_eps8) && ((Math.Abs(testw - init) >= Math.Abs(minlot[i]) || Math.Abs(testw - init) < BlasLike.lm_eps)))
+                        {
+                            continue;
+                        }
+                        if (Math.Abs(minlot[i]) - Math.Abs(testw - init) < Math.Abs(testw - init) * switch1)
+                        {
+                            if (testw - init > 0)
+                            {
+                                next.L[i] = Math.Max(Math.Min(rstep.kU[i], minlot[i] + init), rstep.kL[i]);
+                                next.L[i] = Math.Min(next.U[i], next.L[i]);
+                            }
+                            else
+                            {
+                                next.U[i] = Math.Min(Math.Max(rstep.kL[i], -minlot[i] + init), rstep.kU[i]);
+                                next.U[i] = Math.Max(next.U[i], next.L[i]);
+                            }
+                        }
+                        else
+                        {
+                            next.U[i] = Math.Min(Math.Max(rstep.kL[i], init), rstep.kU[i]);
+                            next.L[i] = Math.Max(Math.Min(rstep.kU[i], init), rstep.kL[i]);
+                        }
+                        if (rstep.nround == n && Math.Abs(Math.Abs(testw - init) - minlot[i]) < BlasLike.lm_eps8 && rstep.can_repeat[i] != 0)
+                        {
+                            if (rstep.can_repeat[i] == 3)
+                            {
+                                rstep.can_repeat[i]--;
+                                if (rstep.kL[i] < init + BlasLike.lm_eps8 && testw > init)
+                                {
+                                    next.L[i] = init + minlot[i];//rstep.kL[i] next time
+                                    next.U[i] = Math.Min(init + minlot[i], rstep.kU[i]);
+                                }
+                                else if (rstep.kU[i] > init - BlasLike.lm_eps8 && testw < init)
+                                {
+                                    next.U[i] = init - minlot[i];//rstep.kU[i] next time
+                                    next.L[i] = Math.Max(rstep.kL[i], init - minlot[i]);
+                                }
+                            }
+                            else if (rstep.can_repeat[i] == 2)
+                            {
+                                rstep.can_repeat[i]--;
+                                if (rstep.kL[i] < init + BlasLike.lm_eps8 && testw > init)
+                                {
+                                    next.L[i] = init + minlot[i];//rstep.kL[i] next time
+                                    next.U[i] = rstep.kU[i];
+                                }
+                                else if (rstep.kU[i] > init - BlasLike.lm_eps8 && testw < init)
+                                {
+                                    next.U[i] = init - minlot[i];//rstep.kU[i] next time
+                                    next.L[i] = rstep.kL[i];
+                                }
+                            }
+                            else if (rstep.can_repeat[i] == 1)
+                            {
+                                rstep.can_repeat[i]--;
+                                next.L[i] = rstep.kL[i];
+                                next.U[i] = rstep.kU[i];
+                            }
+                        }
+                    }
+                    else if (Math.Abs(minlot[i]) - Math.Abs(testw - init) < Math.Abs(testw - init) * switch1)
+                    {
+                        if (Math.Abs(minlot[i]) - Math.Abs(testw - init) < Math.Abs(testw - init) * switch1 && (thresh != null && Math.Abs(thresh[i]) - Math.Abs(testw) < Math.Abs(testw) * switch1))
+                        {
+                            if (testw - init > 0)
+                                next.L[i] = Math.Max(Math.Min(rstep.kU[i], Math.Max(thresh != null ? thresh[i] : 0, minlot[i] + init)), rstep.kL[i]);
+                            else
+                                next.U[i] = Math.Min(Math.Max(rstep.kL[i], Math.Min(thresh != null ? -thresh[i] : 0, -minlot[i] + init)), rstep.kU[i]);
+                        }
+                        else
+                        {
+                            if (testw - init > 0)
+                                next.L[i] = Math.Max(Math.Min(rstep.kU[i], Math.Max(thresh != null ? thresh[i] : 0, init)), rstep.kL[i]);
+                            else
+                                next.U[i] = Math.Min(Math.Max(rstep.kL[i], Math.Min(thresh != null ? -thresh[i] : 0, init)), rstep.kU[i]);
+                        }
+                    }
+                    else
+                    {
+                        if (info.x[i] - init > 0)
+                            next.L[i] = Math.Max(Math.Min(rstep.kU[i], 0), rstep.kL[i]);
+                        else
+                            next.U[i] = Math.Min(Math.Max(rstep.kL[i], 0), rstep.kU[i]);
+                    }
+                }
+            }
+            if (bestround >= n - 2 && next.count > maxstage && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
+            if (rstep.nround == n && next.count == 2 && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
+            if (!next.success && rstep.nround == n && rstep.back <= 1)
+                next.success = true;
+            if (next.success && passedfromthresh && next.count > maxstage) { rstep.util = info.UtilityFunc(info); return; }
+            if ((rstep.nround < n && next.count < (firstlim * 2) && !next.success) || (next.count < firstlim/*&&info.TimeOptData==0*/))
+            {
+                ColourConsole.WriteEmbeddedColourLine($"[yellow]stage {next.count}[/yellow][green] {rstep.nround} rounded[/green]");
+                treenext(next, initial, minlot, sizelot, passedfromthresh, thresh);
+            }
+        }
+        public bool treestart(OptParamRound info, bool passedfromthresh, double[] initial, double[] minlot,
+                        double[] sizelot, double[] roundw, double[] thresh = null)
+        {
+            int i;
+            int n = info.n;
+            int m = info.m;
+            roundstep next = new roundstep();
+            roundstep start, prev;
+            next.can_repeat = new int[n];
+            set_repeat(n, 3, next.can_repeat);
+
+            next.success = false;
+            next.count = 1;
+            next.kL = new double[n + m];
+            next.kU = new double[n + m];
+            BlasLike.dcopyvec(n + m, info.lower, next.kL);
+            BlasLike.dcopyvec(n + m, info.upper, next.kU);
+            next.L = new double[n + m];
+            next.U = new double[n + m];
+            next.w = new double[n];
+            next.bound_order = new int[n]; for (i = 0; i < n; ++i) next.bound_order[i] = i;
+            next.prev = null;
+            next.info = info;
+            next.back = info.back;
+            BlasLike.dcopyvec(n, info.x, next.w);
+            BlasLike.dcopyvec(m + n, next.kL, next.L);
+            BlasLike.dcopyvec(m + n, next.kU, next.U);
+            treenext(next, initial, minlot, sizelot, passedfromthresh, thresh);//すぎの木
+            start = next;
+            prev = null;
+            var bestround = 0;
+            while (next != null)
+            {
+                bestround = Math.Max(bestround, next.nround);
+                prev = next;
+                next = next.next;
+            }
+            double ulow = BlasLike.lm_max;
+            bool back = false;
+            int nround = 0;
+            if (prev.prev != null && prev.prev.back < 2)
+            {
+                BlasLike.dcopyvec(n, prev.prev.w, roundw);
+                ColourConsole.WriteEmbeddedColourLine($"[green]{prev.prev.nround} Rounded at level[/green]\t[yellow]{prev.prev.count}[/yellow]");
+            }
+            if (prev.nround == bestround && prev.back < 2)
+            {
+                BlasLike.dcopyvec(n, prev.w, roundw);
+                ulow = prev.util;
+                info.back = prev.back;
+                back = true;
+            }
+            while (prev != null)
+            {
+                if (prev.nround > nround)
+                {
+                    BlasLike.dcopyvec(n, prev.w, roundw); nround = prev.nround;
+                }
+                if (prev.nround == bestround && ulow > prev.util && prev.back < 2)
+                {
+                    BlasLike.dcopyvec(n, prev.w, roundw);
+                    ulow = prev.util;
+                    info.back = prev.back;
+                    back = true;
+                }
+                prev = prev.prev;
+            }
+            ColourConsole.WriteEmbeddedColourLine($"[green]{nround}[/green]\t[yellow]stocks were rounded properly[/yellow]");
+            return back;
+        }
+        public int thresh_check(int n, double[] w, double[] initial, double[] L, double[] U, double[] min_trade, double[] min_hold = null, double eps = 0, int[] shake = null)
+        {
+            if (eps == 0) eps = BlasLike.lm_rooteps;
+            int i, bad;
+            bool badi;
+            double init;
+            for (i = 0, bad = 0; i < n; ++i)
+            {
+                init = initial != null ? initial[i] : 0;
+                badi = false;
+                if (Math.Abs(Math.Abs(w[i]) - Math.Abs(round_weight(w[i], init, min_trade[i], 0))) > eps && Math.Abs(Math.Abs(w[i] - init) - min_trade[i]) > eps)
+                {
+                    badi = true; if (shake != null) shake[i] = i;
+                }
+                if (min_hold != null && Math.Abs(Math.Abs(w[i]) - Math.Abs(round_weight(w[i], 0, min_hold[i], 0))) > eps && Math.Abs(Math.Abs(w[i]) - min_hold[i]) > eps)
+                {
+                    badi = true; if (shake != null) shake[i] = i;
+                }
+                if (w[i] < L[i] - BlasLike.lm_eps8 || w[i] > U[i] + BlasLike.lm_eps8)
+                {
+                    badi = true; if (shake != null) shake[i] = i;
+                }
+                if (badi) bad++;
+            }
+            return n - bad;
+        }
+
+        public int threshopt(object info, KeepBest KB, double[] L,
+                                double[] U, double[] Lfirst, double[] Ufirst, double[] initial,
+                                double[] minlot, int stage, double[] naive, double[] minlot1 = null,
+                                int rounded = 0, double oldutil = 0, bool nopt = false)
+        {
+            double rounderror = BlasLike.lm_eps8;
+            OptParamRound OP = (OptParamRound)info;
+            int n = OP.n;
+            int m = OP.m;
+            double[] lower = OP.lower;
+            double[] upper = OP.upper;
+            double[] updowntest = new double[0];
+            int[] updownorder = new int[0];
+            byte[] updownbad = new byte[0];
+            double score_test = BlasLike.lm_eps;
+            //	if(stage>5)score_test*=1.0/stage;
+            if (OP.back > 1) return OP.back;
+            bool firsttime = (L == lower);
+            double utility;
+            int nround = 0;
+            double[] Lnext = new double[0];
+            double[] Unext = new double[0];
+
+            if (firsttime)
+            {
+                Array.Resize(ref Lnext, n + m);
+                Array.Resize(ref Unext, n + m);
+                L = Lnext;
+                U = Unext;
+                BlasLike.dcopyvec(n + m, lower, L);
+                BlasLike.dcopyvec(n + m, upper, U);
+                utility = OP.UtilityFunc(info);
+            }
+            else
+            {
+                BlasLike.dcopyvec(n + m, L, lower);
+                BlasLike.dcopyvec(n + m, U, upper);
+                if (!nopt) { OP.OptFunc(info); }
+                else { ColourConsole.WriteInfo($"Did not need to optimise here"); }
+                utility = OP.UtilityFunc(info);
+            }
+
+            /*
+                {
+                    FILE*INTERDATA=fopen((char*)"interdata",(char*)"a");
+                    if(INTERDATA)
+                    {
+                        fprintf(INTERDATA,(char*)"++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++%d",OP.back);
+                        for(int i=0;i<n;++i)
+                        {
+                            fprintf(INTERDATA,(char*)"%3d %30.16e %30.16e %30.16e",i+1,lower[i],x[i],upper[i]);
+                        }
+                        fclose(INTERDATA);
+                    }
+                }
+            */
+            int kbranch = -11111, kk;
+            double dd = -1, init, nw;//sizl,minl1,minl3,minl4;
+            double breakpoint = 1;
+            double breduce = .8;
+            int doit = 0, maxset = 20;
+            bool doreorder = false;
+
+            bool ok = false;
+            if (OP.back <= 1)
+            {
+                nround = 0;
+                ok = true;
+                BlasLike.dcopyvec(n, OP.x, KB.oldw);
+                //		std::valarray<double>score(n);
+                //		score=lm_max;
+                //		for(kk=0;kk<n;++kk)
+                //		{
+                //			init=initial?initial[kk]:0;
+                //			score[kk]=Math.Abs(Math.Abs(x[kk]-init)-minlot[kk])/minlot[kk];
+                //		}
+                for (kk = 0; kk < n; ++kk)
+                {
+                    var i = kk;
+                    kbranch = kk; dd = -1;
+                    if (Math.Abs(OP.x[kbranch]) < BlasLike.lm_eps) OP.x[kbranch] = 0;
+                    init = initial != null ? initial[kbranch] : 0;
+                    /*			if(score[kbranch]<score_test&&(Math.Abs(x[kbranch]-init)<minlot[kbranch]))
+                                {
+                    //					printf((char*)"Discarding %-.8e %-.8e score %-.8e this time",x[kbranch]-init,minlot[kbranch],score[kbranch]);
+                                    if(score[kbranch]<1e-15)nround++;
+                                    continue;
+                                }*/
+                    if (Math.Abs(OP.x[kbranch] - init) <= minlot[kbranch] + rounderror && (minlot1 != null && Math.Abs(OP.x[kbranch]) <= minlot1[kbranch] + rounderror))
+                    {
+                        /*				dd=digitisei(OP.x[kbranch],init,minlot[kbranch],0,0);
+                                        nw=naive[kbranch]=digit2w(OP.x[kbranch],init,dd,minlot[kbranch],0,0);
+                                        if(Math.Abs(nw)<minlot1[kbranch])
+                                        {*/
+                        if (OP.x[kbranch] > 0) { nw = naive[kbranch] = Math.Max((digit2w(OP.x[kbranch], init, OP.x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(OP.x[kbranch], 0, 1, minlot1[kbranch], 0, 0))); }
+                        else if (OP.x[kbranch] < 0) { nw = naive[kbranch] = Math.Min((digit2w(OP.x[kbranch], init, OP.x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(OP.x[kbranch], 0, -1, minlot1[kbranch], 0, 0))); }
+                        else { nw = naive[kbranch] = Math.Min((digit2w(OP.x[kbranch], init, OP.x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(OP.x[kbranch], 0, 0, minlot1[kbranch], 0, 0))); }
+                        //				}
+                        if (nw < Lfirst[kbranch] - BlasLike.lm_eps)
+                        {
+                            naive[kbranch] = digit2w(OP.x[kbranch], init, 1, minlot[kbranch], 0, 0);
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])");
+                        }
+                        else if (nw > Ufirst[kbranch] + BlasLike.lm_eps)
+                        {
+                            naive[kbranch] = digit2w(OP.x[kbranch], init, -1, minlot[kbranch], 0, 0);
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])");
+                        }
+                    }
+                    else if (Math.Abs(OP.x[kbranch] - init) <= minlot[kbranch] + rounderror)
+                    {
+                        dd = digitisei(OP.x[kbranch], init, minlot[kbranch], 0);
+                        nw = naive[kbranch] = digit2w(OP.x[kbranch], init, dd, minlot[kbranch], 0, 0);
+                        if (minlot1 != null && Math.Abs(nw) < minlot1[kbranch])
+                        {
+                            if (OP.x[kbranch] > 0) { nw = naive[kbranch] = Math.Max((digit2w(OP.x[kbranch], init, OP.x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(OP.x[kbranch], 0, 1, minlot1[kbranch], 0, 0))); }
+                            else if (OP.x[kbranch] < 0) { nw = naive[kbranch] = Math.Min((digit2w(OP.x[kbranch], init, OP.x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(OP.x[kbranch], 0, -1, minlot1[kbranch], 0, 0))); }
+                            else { nw = naive[kbranch] = Math.Min((digit2w(OP.x[kbranch], init, OP.x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(OP.x[kbranch], 0, 0, minlot1[kbranch], 0, 0))); }
+                        }
+                        if (nw < Lfirst[kbranch] - BlasLike.lm_eps)
+                        {
+                            naive[kbranch] = digit2w(OP.x[kbranch], init, dd + 1, minlot[kbranch], 0, 0);
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])");
+                        }
+                        else if (nw > Ufirst[kbranch] + BlasLike.lm_eps)
+                        {
+                            naive[kbranch] = digit2w(OP.x[kbranch], init, dd - 1, minlot[kbranch], 0, 0);
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])");
+                        }
+                    }
+                    else if (minlot1 != null && Math.Abs(OP.x[kbranch]) <= minlot1[kbranch] + rounderror)
+                    {
+                        dd = digitisei(OP.x[kbranch], 0, minlot1[kbranch], 0);
+                        nw = naive[kbranch] = digit2w(OP.x[kbranch], 0, dd, minlot1[kbranch], 0, 0);
+                        if (Math.Abs(nw - init) < minlot[kbranch])
+                        {
+                            if (OP.x[kbranch] > 0) { nw = naive[kbranch] = Math.Max((digit2w(OP.x[kbranch], init, OP.x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(OP.x[kbranch], 0, 1, minlot1[kbranch], 0, 0))); }
+                            else if (OP.x[kbranch] < 0) { nw = naive[kbranch] = Math.Min((digit2w(OP.x[kbranch], init, OP.x[kbranch] - init > 0 ? 1 : -1, minlot[kbranch], 0, 0)), (digit2w(OP.x[kbranch], 0, -1, minlot1[kbranch], 0, 0))); }
+                            else { nw = naive[kbranch] = Math.Min((digit2w(OP.x[kbranch], init, 0, minlot[kbranch], 0, 0)), (digit2w(OP.x[kbranch], 0, OP.x[kbranch] - init > 0 ? 1 : -1, minlot1[kbranch], 0, 0))); }
+                        }
+                        if (nw < Lfirst[kbranch] - BlasLike.lm_eps)
+                        {
+                            naive[kbranch] = digit2w(OP.x[kbranch], 0, dd + 1, minlot1[kbranch], 0, 0);
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] increased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [magenta]{naive[kbranch] - nw}[/magenta])");
+                        }
+                        else if (nw > Ufirst[kbranch] + BlasLike.lm_eps)
+                        {
+                            naive[kbranch] = digit2w(OP.x[kbranch], 0, dd - 1, minlot1[kbranch], 0, 0);
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Naive weight for[/green][red] {kbranch}[/red] decreased from [cyan]{nw}[/cyan] to [green]{naive[kbranch]}[/green] (change [red]{naive[kbranch] - nw}[/red])");
+                        }
+                    }
+                    else
+                    {
+                        nw = naive[kbranch] = OP.x[kbranch];
+                    }
+
+
+                    if (OP.x[kbranch] < (naive[kbranch] - rounderror))
+                    {
+                        ok = false;
+                        if (naive[kbranch] != Lfirst[kbranch])
+                        {
+                            L[kbranch] = naive[kbranch];
+                            //					U[kbranch]=Ufirst[kbranch];
+                        }
+                        else
+                            U[kbranch] = Math.Min(Ufirst[kbranch], naive[kbranch]);
+                        if (Math.Abs(minlot[kbranch]) > Math.Abs(init))
+                        {
+                            if (init > 0)
+                            {
+                                L[kbranch] = Math.Min(Ufirst[kbranch], Math.Max(Lfirst[kbranch], naive[kbranch]));
+                            }
+                            else
+                            {
+                                U[kbranch] = Math.Max(Lfirst[kbranch], Math.Min(Ufirst[kbranch], naive[kbranch]));
+                            }
+                        }
+                    }
+                    else if (OP.x[kbranch] > (naive[kbranch] + rounderror))
+                    {
+                        ok = false;
+                        if (naive[kbranch] != Ufirst[kbranch])
+                        {
+                            U[kbranch] = naive[kbranch];
+                            //					L[kbranch]=Lfirst[kbranch];
+                        }
+                        else
+                            L[kbranch] = Math.Max(Lfirst[kbranch], naive[kbranch]);
+                        if (Math.Abs(minlot[kbranch]) > Math.Abs(init))
+                        {
+                            if (init > 0)
+                            {
+                                L[kbranch] = Math.Min(Ufirst[kbranch], Math.Max(Lfirst[kbranch], naive[kbranch]));
+                            }
+                            else
+                            {
+                                U[kbranch] = Math.Max(Lfirst[kbranch], Math.Min(Ufirst[kbranch], naive[kbranch]));
+                            }
+                        }
+                    }
+                    else nround++;
+
+                    if (Math.Abs(Math.Abs(dd - (long)(dd)) - 1) < BlasLike.lm_rooteps)
+                    {
+                        ColourConsole.WriteEmbeddedColourLine($"minlot---- kbranch {kbranch} [green]{dd} {(long)dd}[/green]\tLUxn [cyan]{L[kbranch]}[/cyan] [yellow]{OP.x[kbranch]} {naive[kbranch]}[/yellow] [cyan]{U[kbranch]}[/cyan]");
+                    }
+
+                    if (L[kbranch] > U[kbranch])
+                    {
+                        if (L[kbranch] <= Ufirst[kbranch]) U[kbranch] = Ufirst[kbranch];
+                        else if (U[kbranch] >= Lfirst[kbranch]) L[kbranch] = Lfirst[kbranch];
+                        else
+                        {
+                            U[kbranch] = Ufirst[kbranch];
+                            L[kbranch] = Lfirst[kbranch];
+                        }
+                    }
+                }
+                ColourConsole.WriteEmbeddedColourLine($"[green]{nround}[/green] rounded at stage [green]{stage} (out of {n})[/green] utility [magenta]{utility}[/magenta] change [magenta]{utility - oldutil}[/magenta]");
+                nround = thresh_check(n, OP.x, initial, Lfirst, Ufirst, minlot, minlot1, rounderror);
+                ColourConsole.WriteEmbeddedColourLine($"[green]{nround}[/green] rounded at stage [green]{stage} (out of {n})[/green] utility [magenta]{utility}[/magenta] change [magenta]{utility - oldutil}[/magenta]");
+                if (firsttime) BlasLike.dcopyvec(n, OP.x, KB.first);
+
+                if (nround == KB.nround && Math.Abs(utility - KB.utility) <= BlasLike.lm_eps)
+                    KB.stuck++;
+                if (KB.nround < nround)
+                {
+                    KB.Setw(OP.x, OP.back, nround, utility, stage);
+                    KB.Message(); KB.stuck = 0;
+                }
+                else if (KB.nround == nround && utility < KB.utility)
+                {
+                    KB.Setw(OP.x, OP.back, nround, utility, stage);
+                    KB.Message(); KB.stuck = 0;
+                }
+
+                if (nround == rounded && Math.Abs(utility - oldutil) <= BlasLike.lm_eps)
+                    ok = true;
+                //		if(KB.stuck>0)ok=1;
+                //printf((char*)"stuck %d line %d nround %d %d",KB.stuck,__LINE__,KB.nround,nround);
+                if (!ok && stage < KB.stage + 5)
+                    threshopt(info, KB, L, U, Lfirst, Ufirst, initial, minlot,
+                    stage + 1, naive, minlot1, nround, utility, false);
+                else if (ok && stage < KB.stage + 5 && nround < n)
+                {
+                    ColourConsole.WriteEmbeddedColourLine($"End of branch; [green]stage {stage}[/green]");
+                    bool doopt = false;
+                    Array.Resize(ref updowntest, n);
+                    Array.Resize(ref updownorder, n);
+                    Array.Resize(ref updownbad, n);
+
+                    for (var i = 0; i < n; ++i) updownbad[i] = (byte)0;
+                    double[] keephere = new double[n];
+                    BlasLike.dcopyvec(n, OP.x, keephere);
+                    doreorder = false;
+                    doit = 0;
+                    double LL = BlasLike.lm_max, UU = BlasLike.lm_max;
+                    while (doit < (int)n)
+                    {
+                        BlasLike.dcopyvec(n, keephere, OP.x);
+                        if (doit != 0)
+                        {
+                            for (kbranch = 0; kbranch < n; ++kbranch)
+                            {
+                                init = initial != null ? initial[kbranch] : 0;
+                                if (Math.Abs(OP.x[kbranch] - init) <= minlot[kbranch] + rounderror && (minlot1 != null && Math.Abs(OP.x[kbranch]) <= minlot1[kbranch] + rounderror))
+                                {
+                                    updowntest[kbranch] = 10 + (Math.Abs(OP.x[kbranch] - init) / minlot[kbranch]) + (Math.Abs(OP.x[kbranch]) / minlot1[kbranch]);
+                                    doreorder = true;
+                                }
+                                else if (Math.Abs(OP.x[kbranch] - init) <= minlot[kbranch] + rounderror)
+                                {
+                                    updowntest[kbranch] = 10 + Math.Abs(OP.x[kbranch] - init) / minlot[kbranch];
+                                    doreorder = true;
+                                }
+                                else if (minlot1 != null && Math.Abs(OP.x[kbranch]) <= minlot1[kbranch] + rounderror)
+                                {
+                                    updowntest[kbranch] = 10 + Math.Abs(OP.x[kbranch]) / minlot1[kbranch];
+                                    doreorder = true;
+                                }
+                                else
+                                    updowntest[kbranch] = Math.Abs(OP.x[kbranch]) + Math.Abs(OP.x[kbranch] - init);
+                            }
+                        }
+                        if (doreorder) Ordering.Order.getorder(n, updowntest, updownorder, updownbad, 0);
+                        for (kk = doit; kk < n; ++kk)
+                        {
+                            kbranch = doreorder ? updownorder[kk] : kk;
+                            init = initial != null ? initial[kbranch] : 0;
+                            LL = Lfirst[kbranch];
+                            UU = Ufirst[kbranch];
+                            if (Math.Abs(OP.x[kbranch] - init) <= minlot[kbranch] + rounderror && (minlot1 != null && Math.Abs(OP.x[kbranch]) <= minlot1[kbranch] + rounderror))
+                            {
+                                if (Math.Abs(OP.x[kbranch] - init) < Math.Abs(OP.x[kbranch]))
+                                {
+                                    if (OP.x[kbranch] > 0)
+                                    {
+                                        /*								naive[kbranch]=Math.Max((digit2w(x[kbranch],0,digitisei(x[kbranch],0,minlot1[kbranch],0,0),minlot1[kbranch],0,0)),(digit2w(x[kbranch],init,digitisei(x[kbranch],init,minlot[kbranch],0,0),minlot[kbranch],0,0)));
+                                                                        L[kbranch]=Math.Max(Math.Min(Ufirst[kbranch],naive[kbranch]),Lfirst[kbranch]);
+                                                                        U[kbranch]=Ufirst[kbranch];*/
+                                        naive[kbranch] = digit2w(OP.x[kbranch], 0, 0, minlot1[kbranch], 0, 0);
+                                        L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], naive[kbranch]), Lfirst[kbranch]);
+                                        U[kbranch] = Ufirst[kbranch];
+                                        doopt = true; doit = kk; break;
+                                    }
+                                    else if (OP.x[kbranch] < 0)
+                                    {
+                                        /*								naive[kbranch]=Math.Min((digit2w(x[kbranch],0,digitisei(x[kbranch],0,minlot1[kbranch],0,0),minlot1[kbranch],0,0)),(digit2w(x[kbranch],init,digitisei(x[kbranch],init,minlot[kbranch],0,0),minlot[kbranch],0,0)));
+                                                                        L[kbranch]=Lfirst[kbranch];
+                                                                        U[kbranch]=Math.Min(Math.Max(Lfirst[kbranch],naive[kbranch]),Ufirst[kbranch]);*/
+                                        naive[kbranch] = digit2w(OP.x[kbranch], 0, 0, minlot1[kbranch], 0, 0);
+                                        L[kbranch] = Lfirst[kbranch];
+                                        U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], naive[kbranch]), Ufirst[kbranch]);
+                                        doopt = true; doit = kk; break;
+                                    }
+                                }
+                                else
+                                {
+                                    if (OP.x[kbranch] > init)
+                                    {
+                                        naive[kbranch] = digit2w(OP.x[kbranch], init, 0, minlot[kbranch], 0, 0);
+                                        L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], naive[kbranch]), Lfirst[kbranch]);
+                                        U[kbranch] = Ufirst[kbranch];
+                                    }
+                                    else if (OP.x[kbranch] < init)
+                                    {
+                                        naive[kbranch] = digit2w(OP.x[kbranch], init, 0, minlot[kbranch], 0, 0);
+                                        L[kbranch] = Lfirst[kbranch];
+                                        U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], naive[kbranch]), Ufirst[kbranch]);
+                                    }
+
+                                    doopt = true; doit = kk; break;
+                                }
+                            }
+                            else if (Math.Abs(OP.x[kbranch] - init) <= minlot[kbranch] + rounderror)
+                            {
+                                dd = digitisei(OP.x[kbranch], init, minlot[kbranch], 0);
+                                if (OP.x[kbranch] > init)
+                                {
+                                    naive[kbranch] = digit2w(OP.x[kbranch], init, dd + 1, minlot[kbranch], 0, 0);
+                                    L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], naive[kbranch]), Lfirst[kbranch]);
+                                    U[kbranch] = Ufirst[kbranch];
+                                }
+                                else if (OP.x[kbranch] < init)
+                                {
+                                    naive[kbranch] = digit2w(OP.x[kbranch], init, dd - 1, minlot[kbranch], 0, 0);
+                                    L[kbranch] = Lfirst[kbranch];
+                                    U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], naive[kbranch]), Ufirst[kbranch]);
+                                }
+
+                                doopt = true; doit = kk; break;
+                            }
+                            else if (minlot1 != null && Math.Abs(OP.x[kbranch]) <= minlot1[kbranch] + rounderror)
+                            {
+                                dd = digitisei(OP.x[kbranch], 0, minlot1[kbranch], 0);
+                                if (OP.x[kbranch] > 0)
+                                {
+                                    naive[kbranch] = digit2w(OP.x[kbranch], 0, dd + 1, minlot1[kbranch], 0, 0);
+                                    L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], naive[kbranch]), Lfirst[kbranch]);
+                                    U[kbranch] = Ufirst[kbranch];
+                                }
+                                else if (OP.x[kbranch] < 0)
+                                {
+                                    naive[kbranch] = digit2w(OP.x[kbranch], 0, dd - 1, minlot1[kbranch], 0, 0);
+                                    L[kbranch] = Lfirst[kbranch];
+                                    U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], naive[kbranch]), Ufirst[kbranch]);
+                                }
+
+                                doopt = true; doit = kk; break;
+                            }
+                            else
+                                naive[kbranch] = OP.x[kbranch];
+                        }
+                        if (doopt)
+                        {
+                            BlasLike.dcopyvec(n + m, L, lower);
+                            BlasLike.dcopyvec(n + m, U, upper);
+                            OP.OptFunc(info);
+                            if (OP.back < 1)
+                            {
+                                ColourConsole.WriteInfo($"================================= BREAK AWAY +++++++++++++++++++++++++++++++++++++");
+                                break;
+                            }
+                            else
+                            {
+                                L[kbranch] = LL;
+                                U[kbranch] = UU;
+                                doit++;
+                            }
+                        }
+                    }
+                    if (doopt)
+                        threshopt(info, KB, L, U, Lfirst, Ufirst, initial, minlot, stage + 1,
+                        naive, minlot1, nround, utility, OP.back < 1);
+                    else
+                    {
+                        ColourConsole.WriteEmbeddedColourLine($"[green]No re-opt stage {stage}[/green]");
+                    }
+                }
+            }
+
+            if (OP.back > 1)
+            {
+                int more = 1, breakno = 0, breakmax = 10;
+                bool bad = true;
+                while (bad && (more > 0 || breakno < breakmax))
+                {
+                    if (more == 1) ColourConsole.WriteEmbeddedColourLine($"Stage [red]{stage}[/red] New start after infeasibility with [cyan]{more}[/cyan] step");
+                    else ColourConsole.WriteEmbeddedColourLine($"Stage [red]{stage}[/red] New start after infeasibility with [cyan]{more}[/cyan] steps");
+                    bad = false;
+                    for (kbranch = 0; kbranch < n; ++kbranch)
+                    {
+                        if (OP.x[kbranch] > U[kbranch])
+                        {
+                            ColourConsole.WriteEmbeddedColourLine($"bounds on {kbranch} {OP.x[kbranch]} ([red]{L[kbranch]},{U[kbranch]}[/red])");
+                        }
+                        else if (OP.x[kbranch] < L[kbranch] || OP.x[kbranch] > U[kbranch])
+                        {
+                            ColourConsole.WriteEmbeddedColourLine($"bounds on {kbranch} {OP.x[kbranch]} ([red]{L[kbranch]},{U[kbranch]}[/red])");
+                        }
+                        if (L[kbranch] == U[kbranch])
+                        {
+                            L[kbranch] = Lfirst[kbranch];
+                            U[kbranch] = Ufirst[kbranch];
+                        }
+                    }
+
+
+                    Array.Resize(ref updowntest, n);
+                    Array.Resize(ref updownorder, n);
+                    Array.Resize(ref updownbad, n);
+
+                    for (var i = 0; i < n; ++i) updownbad[i] = (byte)0;
+                    doreorder = false;
+                    doit = 0;
+                    for (kbranch = 0; kbranch < n; ++kbranch)
+                    {
+                        init = initial != null ? initial[kbranch] : 0;
+                        if (Math.Abs(KB.oldw[kbranch] - init) <= minlot[kbranch] + rounderror && (minlot1 != null && Math.Abs(KB.oldw[kbranch]) <= minlot1[kbranch] + rounderror))
+                        {
+                            updowntest[kbranch] = 10 + (Math.Abs(KB.oldw[kbranch] - init) / minlot[kbranch]) + (Math.Abs(KB.oldw[kbranch]) / minlot1[kbranch]);
+                            doreorder = false;
+                        }
+                        else if (Math.Abs(KB.oldw[kbranch] - init) <= minlot[kbranch] + rounderror)
+                        {
+                            updowntest[kbranch] = 10 + Math.Abs(KB.oldw[kbranch] - init) / minlot[kbranch];
+                            doreorder = true;
+                        }
+                        else if (minlot1 != null && Math.Abs(KB.oldw[kbranch]) <= minlot1[kbranch] + rounderror)
+                        {
+                            updowntest[kbranch] = 10 + Math.Abs(KB.oldw[kbranch]) / minlot1[kbranch];
+                            doreorder = true;
+                        }
+                        else
+                            updowntest[kbranch] = Math.Abs(KB.oldw[kbranch]) + Math.Abs(KB.oldw[kbranch] - init);
+                    }
+
+                    if (doreorder)
+                    {
+                        Ordering.Order.getorder(n, updowntest, updownorder, updownbad, 0); breakno++;
+                    }
+                    else
+                        breakno = breakmax;
+                    for (kk = 0; kk < n; ++kk)
+                    {
+                        kbranch = doreorder ? updownorder[kk] : kk;
+                        init = initial != null ? initial[kbranch] : 0;
+                        if (Math.Abs(KB.oldw[kbranch] - init) <= minlot[kbranch] + rounderror && (minlot1 != null && Math.Abs(KB.oldw[kbranch]) <= minlot1[kbranch] + rounderror))
+                        {
+                            if (init > minlot1[kbranch])
+                            {
+                                if (KB.oldw[kbranch] > 0) { naive[kbranch] = Math.Max((digit2w(KB.oldw[kbranch], init, 0, minlot[kbranch], 0, 0)), (digit2w(KB.oldw[kbranch], 0, 0, minlot1[kbranch], 0, 0))); }
+                                else { naive[kbranch] = Math.Min((digit2w(KB.oldw[kbranch], init, 0, minlot[kbranch], 0, 0)), (digit2w(KB.oldw[kbranch], 0, 0, minlot1[kbranch], 0, 0))); }
+                                if (Ufirst[kbranch] <= minlot[kbranch])
+                                {
+                                    L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], init), Lfirst[kbranch]);
+                                    U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], init), Ufirst[kbranch]);
+                                }
+                                else if (Lfirst[kbranch] >= minlot[kbranch])
+                                {
+                                    L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], init), Lfirst[kbranch]);
+                                    U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], init), Ufirst[kbranch]);
+                                }
+                                else if (Math.Abs(KB.oldw[kbranch] - init) <= minlot[kbranch] * breakpoint)
+                                {
+                                    L[kbranch] = Math.Max(naive[kbranch], Lfirst[kbranch]);
+                                    U[kbranch] = Math.Min(naive[kbranch], Ufirst[kbranch]); doit++;
+                                }
+                                else if (doit > maxset)
+                                {
+                                    //	AddLog((char*)"Enough resets %d",doit);
+                                    continue;
+                                }
+                                else if (KB.oldw[kbranch] - init > minlot[kbranch] * breakpoint)
+                                {
+                                    L[kbranch] = Math.Max(naive[kbranch], Lfirst[kbranch]);
+                                    U[kbranch] = Ufirst[kbranch]; doit++;
+                                }
+                                else if (KB.oldw[kbranch] - init < -minlot[kbranch] * breakpoint)
+                                {
+                                    L[kbranch] = Lfirst[kbranch]; doit++;
+                                    U[kbranch] = Math.Min(naive[kbranch], Ufirst[kbranch]);
+                                }
+                                if (L[kbranch] > U[kbranch])
+                                {
+                                    bad = true; break;
+                                }
+                            }
+                            else
+                            {
+                                dd = digitisei(KB.oldw[kbranch], 0, minlot1[kbranch], 0);
+                                naive[kbranch] = digit2w(KB.oldw[kbranch], 0, dd, minlot1[kbranch], 0, 0);
+                                if (Ufirst[kbranch] <= minlot1[kbranch])
+                                {
+                                    L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], 0), Lfirst[kbranch]);
+                                    U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], 0), Ufirst[kbranch]);
+                                }
+                                else if (Lfirst[kbranch] >= minlot1[kbranch])
+                                {
+                                    L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], 0), Lfirst[kbranch]);
+                                    U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], 0), Ufirst[kbranch]);
+                                }
+                                else if (Math.Abs(KB.oldw[kbranch]) <= minlot1[kbranch] * breakpoint)
+                                {
+                                    L[kbranch] = Math.Max(naive[kbranch], Lfirst[kbranch]);
+                                    U[kbranch] = Math.Min(naive[kbranch], Ufirst[kbranch]); doit++;
+                                }
+                                else if (doit > maxset)
+                                {
+                                    //	AddLog((char*)"Enough resets %d",doit);
+                                    continue;
+                                }
+                                else if (KB.oldw[kbranch] > minlot1[kbranch] * breakpoint)
+                                {
+                                    L[kbranch] = Math.Max(naive[kbranch], Lfirst[kbranch]);
+                                    U[kbranch] = Ufirst[kbranch]; doit++;
+                                }
+                                else if (KB.oldw[kbranch] < -minlot1[kbranch] * breakpoint)
+                                {
+                                    L[kbranch] = Lfirst[kbranch]; doit++;
+                                    U[kbranch] = Math.Min(naive[kbranch], Ufirst[kbranch]);
+                                }
+                                if (L[kbranch] > U[kbranch])
+                                {
+                                    bad = true; break;
+                                }
+                            }
+
+                        }
+                        else if (minlot1 != null && Math.Abs(KB.oldw[kbranch]) <= minlot1[kbranch] + rounderror)
+                        {
+                            dd = digitisei(KB.oldw[kbranch], 0, minlot1[kbranch], 0);
+                            if (dd == 0 && Math.Abs(KB.oldw[kbranch]) > minlot1[kbranch] * breakpoint)
+                            {
+                                if (KB.oldw[kbranch] > init) dd++;
+                                if (KB.oldw[kbranch] < init) dd--;
+                            }
+                            naive[kbranch] = digit2w(KB.oldw[kbranch], 0, dd, minlot1[kbranch], 0, 0);
+                            if (Ufirst[kbranch] <= minlot1[kbranch])
+                            {
+                                L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], 0), Lfirst[kbranch]);
+                                U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], 0), Ufirst[kbranch]);
+                            }
+                            else if (Lfirst[kbranch] >= minlot1[kbranch])
+                            {
+                                L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], 0), Lfirst[kbranch]);
+                                U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], 0), Ufirst[kbranch]);
+                            }
+                            else if (Math.Abs(KB.oldw[kbranch]) <= minlot1[kbranch] * breakpoint)
+                            {
+                                if (Lfirst[kbranch] >= 0)
+                                {
+                                    L[kbranch] = Math.Max(naive[kbranch], Lfirst[kbranch]);
+                                    U[kbranch] = Math.Max(Lfirst[kbranch], Math.Min(naive[kbranch], Ufirst[kbranch])); doit++;
+                                }
+                                else
+                                {
+                                    L[kbranch] = Math.Min(Ufirst[kbranch], Math.Max(naive[kbranch], Lfirst[kbranch]));
+                                    U[kbranch] = Math.Min(naive[kbranch], Ufirst[kbranch]); doit++;
+                                }
+                            }
+                            else if (doit > maxset)
+                            {
+                                //	AddLog((char*)"Enough resets %d",doit);
+                                continue;
+                            }
+                            else if (KB.oldw[kbranch] > minlot1[kbranch] * breakpoint)
+                            {
+                                L[kbranch] = Math.Max(naive[kbranch], Lfirst[kbranch]);
+                                U[kbranch] = Ufirst[kbranch]; doit++;
+                            }
+                            else if (KB.oldw[kbranch] < -minlot1[kbranch] * breakpoint)
+                            {
+                                L[kbranch] = Lfirst[kbranch]; doit++;
+                                U[kbranch] = Math.Min(naive[kbranch], Ufirst[kbranch]);
+                            }
+                            if (L[kbranch] > U[kbranch])
+                            {
+                                bad = true; break;
+                            }
+                        }
+                        else if (Math.Abs(KB.oldw[kbranch] - init) <= minlot[kbranch] + rounderror)
+                        {
+                            dd = digitisei(KB.oldw[kbranch], init, minlot[kbranch], 0);
+                            if (dd == 0 && Math.Abs(KB.oldw[kbranch] - init) > minlot[kbranch] * breakpoint)
+                            {
+                                if (KB.oldw[kbranch] > init) dd++;
+                                if (KB.oldw[kbranch] < init) dd--;
+                            }
+                            naive[kbranch] = digit2w(KB.oldw[kbranch], init, dd, minlot[kbranch], 0, 0);
+                            if (Ufirst[kbranch] <= minlot[kbranch])
+                            {
+                                L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], init), Lfirst[kbranch]);
+                                U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], init), Ufirst[kbranch]);
+                            }
+                            else if (Lfirst[kbranch] >= minlot[kbranch])
+                            {
+                                L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], init), Lfirst[kbranch]);
+                                U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], init), Ufirst[kbranch]);
+                            }
+                            else if (Math.Abs(KB.oldw[kbranch] - init) <= minlot[kbranch] * breakpoint)
+                            {
+                                if (Lfirst[kbranch] >= 0)
+                                {
+                                    L[kbranch] = Math.Max(naive[kbranch], Lfirst[kbranch]);
+                                    U[kbranch] = Math.Max(Lfirst[kbranch], Math.Min(naive[kbranch], Ufirst[kbranch])); doit++;
+                                }
+                                else
+                                {
+                                    L[kbranch] = Math.Min(Ufirst[kbranch], Math.Max(naive[kbranch], Lfirst[kbranch]));
+                                    U[kbranch] = Math.Min(naive[kbranch], Ufirst[kbranch]); doit++;
+                                }
+                            }
+                            /*					else if(doit>maxset)
+                                                {
+                                                //	AddLog((char*)"Enough resets %d",doit);
+                                                    continue;
+                                                }*/
+                            else if (KB.oldw[kbranch] - init > minlot[kbranch] * breakpoint)
+                            {
+                                L[kbranch] = Math.Max(naive[kbranch], Lfirst[kbranch]);
+                                U[kbranch] = Ufirst[kbranch]; doit++;
+                            }
+                            else if (KB.oldw[kbranch] - init < -minlot[kbranch] * breakpoint)
+                            {
+                                L[kbranch] = Lfirst[kbranch]; doit++;
+                                U[kbranch] = Math.Min(naive[kbranch], Ufirst[kbranch]);
+                            }
+                            if (L[kbranch] > U[kbranch])
+                            {
+                                bad = true; break;
+                            }
+                        }
+                        else
+                            naive[kbranch] = KB.oldw[kbranch];
+                    }
+                    more--;
+                    if (bad) break;
+                    BlasLike.dcopyvec(n + m, L, lower);
+                    BlasLike.dcopyvec(n + m, U, upper);
+                    OP.OptFunc(info);
+                    if (OP.back > 1)
+                    {
+                        bad = true;
+                        if (doreorder)
+                        {
+                            breakpoint *= breduce;
+                            ColourConsole.WriteEmbeddedColourLine($"\t\t*** [cyan]{breakno}[/cyan] Breakpoint now [magenta]{breakpoint}[/magenta] ***");
+                            if (breakno < breakmax) more++;
+                        }
+                        //printf((char*)"breakpoint %f line %d",breakpoint,__LINE__);
+                    }
+                }
+                if (OP.back <= 1)
+                {
+                    ColourConsole.WriteEmbeddedColourLine($"Successful new start found for stage {stage}");
+                    OP.back = threshopt(info, KB, L, U, Lfirst, Ufirst, initial, minlot, stage,
+                        naive, minlot1, nround, utility, true);
+                }
+                else { ColourConsole.WriteError($"Could not find new start"); OP.back = 25; }
+            }
+            return OP.back;
+        }
+
+        public void Thresh(object info, double[] initial, double[] minlot,
+                                double[] roundw, double[] minlot1)
+        {
+            double rounderror = BlasLike.lm_eps8;
+            OptParamRound OP = (OptParamRound)info;
+            OP.OptFunc = RoundInnerOpt;
+            OP.UtilityFunc = RoundInnerUtil;
+            int i;
+            OP.initial = initial;
+            var ffi = 0;
+            for (i = 0; i < OP.n; ++i)
+            {
+                if (OP.lower[i] == OP.upper[i])
+                {
+                    minlot[i] = 0;
+                    if (minlot1 != null) minlot1[i] = 0;
+                    ffi++;
+                }
+            }
+            if (ffi > 0) ColourConsole.WriteEmbeddedColourLine($"[cyan]Changed lot for[/cyan] [red]{ffi}[/red][cyan] lots due to fixed bounds[/cyan]");
+            for (i = 0; i < OP.n; ++i)
+            {
+                if (OP.lower[i] == OP.upper[i]) continue;
+                var init = initial != null ? initial[i] : 0.0;
+                if (OP.lower[i] > init)
+                {
+                    if (OP.lower[i] < minlot[i] + init)
+                    {
+                        ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {OP.lower[i]}[/green][red] to {minlot[i] + init}[/red]");
+                        OP.lower[i] = minlot[i] + init;
+                    }
+                }
+                else if (OP.upper[i] < init)
+                {
+                    if (OP.upper[i] > -minlot[i] + init)
+                    {
+                        ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {OP.upper[i]}[/green][red] to {-minlot[i] + init}[/red]");
+                        OP.upper[i] = -minlot[i] + init;
+                    }
+                }
+                /*  else if (OP.lower[i] == init)//Probably does nothing
+                  {
+                      var dd = (long)digitisei(OP.lower[i], init, minlot[i], 0);
+                      var newL = digit2w(OP.lower[i], init, dd, minlot[i], 0);
+                      ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {OP.lower[i]}[/green][red] to {newL}[/red]");
+                      OP.lower[i] = newL;
+                  }
+                  else if (OP.upper[i] == init)//Probably does nothing
+                  {
+                      var dd = (long)digitisei(OP.upper[i], init, minlot[i], 0);
+                      var newU = digit2w(OP.upper[i], init, dd, minlot[i], 0);
+                      ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {OP.upper[i]}[/green][red] to {newU}[/red]");
+                      OP.upper[i] = newU;
+                  }*/
+            }
+            int n = OP.n;
+            int m = OP.m;
+            double[] lower = OP.lower;
+            double[] upper = OP.upper;
+            double[] Lkeep = new double[n + m], Ukeep = new double[n + m], naive = new double[n];
+            double[] LL = new double[0];
+            double[] UU = new double[0];
+            KeepBest KB = new KeepBest(n);
+
+            BlasLike.dcopyvec(n, OP.x, KB.w);
+            BlasLike.dcopyvec(n + m, lower, Lkeep);
+            BlasLike.dcopyvec(n + m, upper, Ukeep);
+            bool changed = false;
+            int nround;
+            int back = 0;
+            bool bad = false;
+            for (i = 0; i < n; ++i)
+            {
+                double init = initial != null ? initial[i] : 0, newb;
+                if (upper[i] + BlasLike.lm_eps8 < minlot[i] + init)
+                {
+                    if (init < upper[i])
+                    {
+                        newb = Math.Min(upper[i], (Math.Max(init, lower[i])));
+                        if (upper[i] != newb)
+                        {
+                            changed = true;
+                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                            upper[i] = newb;
+                        }
+                    }
+                    else if (init > upper[i])
+                    {
+                        newb = Math.Min(upper[i], (Math.Max(init - minlot[i], lower[i])));
+                        if (upper[i] != newb)
+                        {
+                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                            changed = true; upper[i] = newb;
+                        }
+                    }
+                }
+                if (lower[i] - BlasLike.lm_eps8 > init - minlot[i])
+                {
+                    if (init > lower[i])
+                    {
+                        newb = Math.Max(lower[i], (Math.Min(init, upper[i])));
+                        if (lower[i] != newb)
+                        {
+                            changed = true;
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                            lower[i] = newb;
+                        }
+                    }
+                    else if (init < lower[i])
+                    {
+                        newb = Math.Max(lower[i], (Math.Min(init + minlot[i], upper[i])));
+                        if (lower[i] != newb)
+                        {
+                            changed = true;
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                            lower[i] = newb;
+                        }
+                    }
+                }
+                if (lower[i] > upper[i]) bad = true;
+            }
+            if (minlot1 != null)
+            {
+                for (i = 0; i < n; ++i)
+                {
+                    double init = initial != null ? initial[i] : 0, newb;
+                    if (upper[i] + BlasLike.lm_eps8 < minlot1[i])
+                    {
+                        if (0 < upper[i])
+                        {
+                            newb = Math.Min(upper[i], (Math.Max(0, lower[i])));
+                            if (upper[i] != newb)
+                            {
+                                changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                                upper[i] = newb;
+                            }
+                        }
+                        else if (0 > upper[i])
+                        {
+                            newb = Math.Min(upper[i], (Math.Max(-minlot1[i], lower[i])));
+                            if (upper[i] != newb)
+                            {
+                                changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                                upper[i] = newb;
+                                if (upper[i] - init < -minlot[i])
+                                {
+                                    upper[i] = Math.Min(upper[i], (Math.Max(-minlot[i] + init, lower[i])));
+                                    ColourConsole.WriteEmbeddedColourLine($"[red]Decrease {names[i]} further to [/red][magenta]{upper[i]}[/magenta]");
+                                }
+                            }
+                        }
+                    }
+                    if (lower[i] - BlasLike.lm_eps8 > -minlot1[i])
+                    {
+                        if (0 > lower[i])
+                        {
+                            newb = Math.Max(lower[i], (Math.Min(0, upper[i])));
+                            if (lower[i] != newb)
+                            {
+                                changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                                lower[i] = newb;
+                            }
+                        }
+                        else if (0 < lower[i])
+                        {
+                            newb = Math.Max(lower[i], (Math.Min(minlot1[i], upper[i])));
+                            if (lower[i] != newb)
+                            {
+                                changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                                lower[i] = newb;
+                                if (lower[i] - init < minlot[i])
+                                {
+                                    lower[i] = Math.Max(lower[i], (Math.Min(minlot[i] + init, upper[i])));
+                                    ColourConsole.WriteEmbeddedColourLine($"[green]Increase {names[i]} further to [/green][darkgreen]{lower[i]}[/darkgreen]");
+                                }
+                            }
+                        }
+                    }
+                    if (init != 0 && (init - minlot[i]) < -minlot1[i] && lower[i] - BlasLike.lm_eps8 > Math.Min((init - minlot[i]), -minlot1[i]))
+                    {
+                        if (minlot1[i] > init)
+                        {
+                            newb = Math.Max(lower[i], Math.Max(init + minlot[i], minlot1[i]));
+                            if (lower[i] != newb)
+                            {
+                                changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                                lower[i] = newb;
+                            }
+                        }
+                        else
+                        {
+                            newb = Math.Max(lower[i], init);
+                            if (lower[i] != newb)
+                            {
+                                changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                                lower[i] = newb;
+                            }
+                        }
+                    }
+                    if (init != 0 && (init - minlot[i]) < -minlot1[i] && upper[i] + BlasLike.lm_eps8 < Math.Max(init + minlot[i], minlot1[i]))
+                    {
+                        if (-minlot1[i] < init)
+                        {
+                            newb = Math.Min(upper[i], Math.Min((init - minlot[i]), -minlot1[i]));
+                            if (upper[i] != newb)
+                            {
+                                changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                                upper[i] = newb;
+                            }
+                        }
+                        else
+                        {
+                            newb = Math.Min(upper[i], init);
+                            if (upper[i] != newb)
+                            {
+                                changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                                upper[i] = newb;
+                            }
+                        }
+                    }
+                    if (lower[i] > upper[i]) bad = true;
+                }
+            }
+            if (changed)
+            {
+                ColourConsole.WriteInfo($"Changed bounds due to high threshold and reoptimise");
+                Array.Resize(ref LL, n + m);
+                Array.Resize(ref UU, n + m);
+                BlasLike.dcopyvec(n + m, Lkeep, LL);
+                BlasLike.dcopyvec(n + m, Ukeep, UU);
+                BlasLike.dcopyvec(n + m, lower, Lkeep);
+                BlasLike.dcopyvec(n + m, upper, Ukeep);
+            }
+            if (!bad)
+            {
+                OP.OptFunc(info);
+                back = OP.back;
+                if (back < 2)
+                {
+                    if (wback != OP.x)
+                        BlasLike.dcopyvec(n, wback, OP.x);
+                    if (minlot1 == null)
+                    {
+                        if (treestart(OP, true, initial, minlot, null, KB.w)) { OP.back = 0; }
+                        BlasLike.dcopyvec(n, KB.w, roundw);
+                    }
+                    else
+                    {
+                        threshopt(OP, KB, lower, upper, Lkeep, Ukeep, initial, minlot, 0, naive, minlot1);
+                        BlasLike.dcopyvec(n, KB.w, roundw);
+                        BlasLike.dcopyvec(n, KB.w, OP.x);//To get U1 correct!
+                                                         //				if(treestart(OP,true,initial,minlot,0,KB.w,minlot1)){OP.back=0;}
+                                                         //				dcopyvec(n,KB.w,roundw);
+                    }
+                    nround = thresh_check(n, roundw, initial, Lkeep, Ukeep, minlot, minlot1, rounderror);
+                    if (nround != n) OP.back = 2;//Infeasible
+                }
+                double U1 = OP.UtilityFunc(info);
+                ColourConsole.WriteEmbeddedColourLine($"Start from optimum back={OP.back} U={U1}");
+                if (initial != null)
+                {
+                    if (changed)
+                    {
+                        BlasLike.dcopyvec(n + m, LL, lower);
+                        BlasLike.dcopyvec(n + m, UU, upper);
+                    }
+                    else
+                    {
+                        BlasLike.dcopyvec(n + m, Lkeep, lower);
+                        BlasLike.dcopyvec(n + m, Ukeep, upper);
+                    }
+                    for (i = 0; i < n; ++i)
+                    {
+                        if (lower[i] == upper[i]) continue;
+                        if ((initial[i] <= upper[i]) && (initial[i] >= lower[i]))
+                        {
+                            lower[i] = Math.Max((initial[i] - 1e-8), lower[i]);
+                            upper[i] = Math.Min((initial[i] + 1e-8), upper[i]);
+                        }
+                        else
+                        {
+                            bad = true;
+                        }
+                        if (lower[i] > upper[i])
+                            bad = true;
+                    }
+                    if (!bad) OP.OptFunc(info);
+                    BlasLike.dcopyvec(n + m, Lkeep, lower);
+                    BlasLike.dcopyvec(n + m, Ukeep, upper);
+                    //			OP.AddLog((char*)"back %d bad %d",OP.back,bad);
+                    if (!bad && OP.back < 2)
+                    {
+                        //			OP.AddLog((char*)"back %d bad %d",OP.back,bad);
+                        BlasLike.dcopyvec(n, initial, OP.x);
+                        if (minlot != null)
+                        {
+                            if (treestart(OP, true, initial, minlot, null, KB.w)) { OP.back = 0; }
+                        }
+                        else
+                        {
+                            threshopt(info, KB, lower, upper, Lkeep, Ukeep, initial, minlot, 0, naive, minlot1);
+                            //					if(treestart(OP,true,initial,minlot,0,KB.w,minlot1)){OP.back=0;}
+                        }
+                        nround = thresh_check(n, KB.w, initial, Lkeep, Ukeep, minlot, minlot1, rounderror);
+                        if (nround != n) OP.back = 2;//Infeasible
+                        BlasLike.dcopyvec(n, KB.w, OP.x);//To get U2 correct!
+                        double U2 = OP.UtilityFunc(info);
+                        ColourConsole.WriteEmbeddedColourLine($"Start from initial back={OP.back} U={U2}");
+                        if (U2 > U1 || OP.back > 1)
+                        {
+                            BlasLike.dcopyvec(n, roundw, OP.x);
+                            BlasLike.dcopyvec(n, roundw, KB.w);
+                            OP.back = 0;
+                        }
+                        else
+                        {
+                            back = OP.back;
+                        }
+                    }
+                    else
+                    {
+                        OP.back = back;
+                        BlasLike.dcopyvec(n, roundw, OP.x);
+                        BlasLike.dcopyvec(n, roundw, KB.w);
+                        bad = false;
+                    }
+                }
+            }
+            if (changed)//We musn't lose the original bounds
+            {
+                BlasLike.dcopyvec(n + m, LL, lower);
+                BlasLike.dcopyvec(n + m, UU, upper);
+            }
+            else
+            {
+                BlasLike.dcopyvec(n + m, Lkeep, lower);
+                BlasLike.dcopyvec(n + m, Ukeep, upper);
+            }
+            if (bad)
+            {
+                OP.back = 2; return;
+            }
+            if (KB.back != -1) KB.Message();
+            BlasLike.dcopyvec(n, KB.w, roundw);
+            if (OP.back == 25) OP.back = 0;
+            if (OP.back < 2)
+            {
+                double compromise = BlasLike.lm_rooteps; bad = false;
+                for (i = 0; i < n; ++i)
+                {
+                    double init = initial != null ? initial[i] : 0;
+                    if (Math.Abs(Math.Abs(roundw[i]) - Math.Abs(round_weight(roundw[i], init, minlot[i], 0))) > compromise && Math.Abs(Math.Abs(roundw[i] - init) - minlot[i]) > compromise)
+                    {
+                        ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for trade [green]{names[i]}[/green]; threshold is [cyan]{roundw[i] - init}[/cyan]"); bad = true;
+                    }
+                    if (minlot1 != null && Math.Abs(Math.Abs(roundw[i]) - Math.Abs(round_weight(roundw[i], 0, minlot1[i], 0))) > compromise && Math.Abs(Math.Abs(roundw[i]) - minlot1[i]) > compromise)
+                    {
+                        ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for stock [green]{names[i]}[/green]; threshold is [cyan]{roundw[i]}[/cyan]");
+                        bad = true;
+                    }
+                }
+                nround = thresh_check(n, roundw, initial, lower, upper, minlot, minlot1, rounderror);
+                ColourConsole.WriteEmbeddedColourLine($"[blue]first  check {nround}[/blue]");
+                nround = thresh_check(n, roundw, initial, lower, upper, minlot, minlot1, compromise);
+                ColourConsole.WriteEmbeddedColourLine($"[cyan]second  check {nround}[/cyan]");
+            }
+            if (bad) OP.back = 2;
+        }
+
+
+
+        public void Rounding(int basket, int trades, double[] initial, double[] minlot,
+                                double[] sizelot, double[] roundw, double[] minholdlot, double[] mintradelot, object info)
+        {
+            OptParamRound Op = new OptParamRound();
+            Op.MoreInfo = info;
+            Op.basket = basket;
+            Op.trades = trades;
+            Op.lower = (double[])((INFO)info).L.Clone();
+            Op.m = ((INFO)info).m;
+            Op.n = ((INFO)info).n;
+            Op.OptFunc = RoundInnerOpt;
+            Op.upper = (double[])((INFO)info).U.Clone();
+            Op.UtilityFunc = RoundInnerUtil;
+            Op.x = wback;// (double[])wback.Clone();
+            Op.minholdlot = minholdlot;
+            Op.mintradelot = mintradelot;
+            Op.initial = initial;
+            var ffi = 0;
+            for (var i = 0; i < Op.n; ++i)
+            {
+                if (Op.lower[i] == Op.upper[i])
+                {
+                    minlot[i] = 0;
+                    sizelot[i] = 0;
+                    ffi++;
+                }
+            }
+            if (ffi > 0) ColourConsole.WriteEmbeddedColourLine($"[cyan]Changed lot for[/cyan] [red]{ffi}[/red][cyan] lots due to fixed bounds[/cyan]");
+            bool bad = false, changed = false;
+            var lower = Op.lower;
+            var upper = Op.upper;
+            var Lkeep = (double[])lower.Clone();
+            var Ukeep = (double[])upper.Clone();
+            var minlot1 = minholdlot;
+            for (var i = 0; i < Op.n; ++i)
+            {
+                if (Op.lower[i] == Op.upper[i]) continue;
+                double init = initial != null ? initial[i] : 0, newb;
+                if (upper[i] + BlasLike.lm_eps8 < minlot[i] + init)
+                {
+                    if (init < upper[i])
+                    {
+                        newb = Math.Min(upper[i], (Math.Max(init, lower[i])));
+                        if (upper[i] != newb)
+                        {
+                            changed = true;
+                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                            upper[i] = newb;
+                        }
+                    }
+                    else if (init > upper[i])
+                    {
+                        newb = Math.Min(upper[i], (Math.Max(init - minlot[i], lower[i])));
+                        if (upper[i] != newb)
+                        {
+                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                            changed = true; upper[i] = newb;
+                        }
+                    }
+                }
+                if (lower[i] - BlasLike.lm_eps8 > init - minlot[i])
+                {
+                    if (init > lower[i])
+                    {
+                        newb = Math.Max(lower[i], (Math.Min(init, upper[i])));
+                        if (lower[i] != newb)
+                        {
+                            changed = true;
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                            lower[i] = newb;
+                        }
+                    }
+                    else if (init < lower[i])
+                    {
+                        newb = Math.Max(lower[i], (Math.Min(init + minlot[i], upper[i])));
+                        if (lower[i] != newb)
+                        {
+                            changed = true;
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                            lower[i] = newb;
+                        }
+                    }
+                }
+                if (lower[i] > upper[i]) bad = true;
+            }
+            if (minlot1 != null)
+            {
+                for (var i = 0; i < Op.n; ++i)
+                {
+                    if (Op.lower[i] == Op.upper[i]) continue;
+                    double init = initial != null ? initial[i] : 0, newb;
+                    if (upper[i] + BlasLike.lm_eps8 < minlot1[i])
+                    {
+                        if (0 < upper[i])
+                        {
+                            newb = Math.Min(upper[i], (Math.Max(0, lower[i])));
+                            if (upper[i] != newb)
+                            {
+                                changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                                upper[i] = newb;
+                            }
+                        }
+                        else if (0 > upper[i])
+                        {
+                            newb = Math.Min(upper[i], (Math.Max(-minlot1[i], lower[i])));
+                            if (upper[i] != newb)
+                            {
+                                changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                                upper[i] = newb;
+                                if (upper[i] - init < -minlot[i])
+                                {
+                                    upper[i] = Math.Min(upper[i], (Math.Max(-minlot[i] + init, lower[i])));
+                                    ColourConsole.WriteEmbeddedColourLine($"[red]Decrease {names[i]} further to [/red][magenta]{upper[i]}[/magenta]");
+                                }
+                            }
+                        }
+                    }
+                    if (lower[i] - BlasLike.lm_eps8 > -minlot1[i])
+                    {
+                        if (0 > lower[i])
+                        {
+                            newb = Math.Max(lower[i], (Math.Min(0, upper[i])));
+                            if (lower[i] != newb)
+                            {
+                                changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                                lower[i] = newb;
+                            }
+                        }
+                        else if (0 < lower[i])
+                        {
+                            newb = Math.Max(lower[i], (Math.Min(minlot1[i], upper[i])));
+                            if (lower[i] != newb)
+                            {
+                                changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                                lower[i] = newb;
+                                if (lower[i] - init < minlot[i])
+                                {
+                                    lower[i] = Math.Max(lower[i], (Math.Min(minlot[i] + init, upper[i])));
+                                    ColourConsole.WriteEmbeddedColourLine($"[green]Increase {names[i]} further to [/green][darkgreen]{lower[i]}[/darkgreen]");
+                                }
+                            }
+                        }
+                    }
+                    if (init != 0 && (init - minlot[i]) < -minlot1[i] && lower[i] - BlasLike.lm_eps8 > Math.Min((init - minlot[i]), -minlot1[i]))
+                    {
+                        if (minlot1[i] > init)
+                        {
+                            newb = Math.Max(lower[i], Math.Max(init + minlot[i], minlot1[i]));
+                            if (lower[i] != newb)
+                            {
+                                changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                                lower[i] = newb;
+                            }
+                        }
+                        else
+                        {
+                            newb = Math.Max(lower[i], init);
+                            if (lower[i] != newb)
+                            {
+                                changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                                lower[i] = newb;
+                            }
+                        }
+                    }
+                    if (init != 0 && (init - minlot[i]) < -minlot1[i] && upper[i] + BlasLike.lm_eps8 < Math.Max(init + minlot[i], minlot1[i]))
+                    {
+                        if (-minlot1[i] < init)
+                        {
+                            newb = Math.Min(upper[i], Math.Min((init - minlot[i]), -minlot1[i]));
+                            if (upper[i] != newb)
+                            {
+                                changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                                upper[i] = newb;
+                            }
+                        }
+                        else
+                        {
+                            newb = Math.Min(upper[i], init);
+                            if (upper[i] != newb)
+                            {
+                                changed = true;
+                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                                upper[i] = newb;
+                            }
+                        }
+                    }
+                    if (lower[i] > upper[i]) bad = true;
+                }
+            }
+
+            for (var i = 0; i < Op.n; ++i)
+            {
+                if (Op.lower[i] == Op.upper[i]) continue;
+                var init = initial != null ? initial[i] : 0.0;
+                if (Op.lower[i] > init)
+                {
+                    var dd = (long)digitisei(Op.lower[i], init, minlot[i], sizelot[i]);
+                    var newL = digit2w(Op.lower[i], init, dd + 1, minlot[i], sizelot[i]);
+                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {Op.lower[i]}[/green][red] to {newL}[/red]");
+                    Op.lower[i] = newL; changed = true;
+                }
+                else if (Op.upper[i] < init)
+                {
+                    var dd = (long)digitisei(Op.upper[i], init, minlot[i], sizelot[i]);
+                    var newU = digit2w(Op.upper[i], init, dd - 1, minlot[i], sizelot[i]);
+                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {Op.upper[i]}[/green][red] to {newU}[/red]");
+                    Op.upper[i] = newU; changed = true;
+                }
+                /*               else if (Op.lower[i] == init)//Probably does nothing
+                               {
+                                   var dd = (long)digitisei(Op.lower[i], init, minlot[i], sizelot[i]);
+                                   var newL = digit2w(Op.lower[i], init, dd, minlot[i], sizelot[i]);
+                                   ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {Op.lower[i]}[/green][red] to {newL}[/red]");
+                                   Op.lower[i] = newL;changed=true;
+                               }
+                               else if (Op.upper[i] == init)//Probably does nothing
+                               {
+                                   var dd = (long)digitisei(Op.upper[i], init, minlot[i], sizelot[i]);
+                                   var newU = digit2w(Op.upper[i], init, dd, minlot[i], sizelot[i]);
+                                   ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {Op.upper[i]}[/green][red] to {newU}[/red]");
+                                   Op.upper[i] = newU;changed=true;
+                               }*/
+                if (lower[i] > upper[i])
+                    bad = true;
+            }
+            if (changed)
+            {
+                ColourConsole.WriteInfo($"Changed bounds due to high threshold and reoptimise");
+            }
+            if (!bad) if (treestart(Op, false, initial, minlot, sizelot, roundw)) { BACK = 0; ((INFO)info).back = BACK; }
+                else ColourConsole.WriteError("Bound problem after reset");
+            if (changed)
+            {
+                BlasLike.dcopyvec(lower.Length, Lkeep, lower);
+                BlasLike.dcopyvec(upper.Length, Ukeep, upper);
+            }
+        }
+
         public class INFO
         {
             public int n; public int m; public int nfac; public double[] A; public double[] L; public double[] U; public
@@ -20,6 +2306,11 @@ namespace Portfolio
             public double[] bench;
             public double target;
             public int back = -1;
+            public int tlen = 0;
+            public double DATAlambda = 1;
+            public double[] DATA = null;
+            public double tail = 0.05;
+            public double[] targetR = null;
         }
         ///<summary> A function that returns risk - target risk. Use with Solve1D to do risk constraint</summary>
         ///<param name="gam">guess for gamma (for return risk utility) or (gamma and kappa for cost risk utility)</param>
@@ -28,10 +2319,10 @@ namespace Portfolio
         {
             INFO vars = (INFO)info;
             vars.back = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, vars.L, vars.U, gam, gam, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
-                     alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a);
+                     alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR);
             double[] www = (double[])wback.Clone();
             if (vars.bench != null) BlasLike.dsubvec(vars.n, www, vars.bench, www);
-            var fix =nfixed;
+            var fix = nfixed;
             nfixed = 0;
             var backr = Math.Sqrt(Variance(www)) - vars.target;
             nfixed = fix;
@@ -60,14 +2351,14 @@ namespace Portfolio
                 else ColourConsole.WriteError("INFEASIBLE");
                 sendInput.useIP = false;
                 back = BasicOptimisation(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
-                 alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a);
+                 alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR);
                 var w = new double[sendInput.n];
                 var gradient = new double[sendInput.n];
                 BlasLike.dcopyvec(sendInput.n, wback, w);
                 var utility = PortfolioUtility(sendInput.n, gamma, kappa, sendInput.buy, sendInput.sell, sendInput.alpha, w, gradient, ref baskethere, ref tradeshere);
                 ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
                 if (back != 6) back = Dropper(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
-                     alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, basket, baskethere, trades, tradeshere);
+                     alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, basket, baskethere, trades, tradeshere);
                 if (back == 6) ColourConsole.WriteError("INFEASIBLE");
                 BlasLike.dcopyvec(sendInput.n, wback, w);
                 if (back != 6)
@@ -89,7 +2380,7 @@ namespace Portfolio
                         kappa = gamma = newgamma;
                         sendInput.useIP = true;
                         BasicOptimisation(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
-                         alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a);
+                         alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR);
                         w = new double[sendInput.n];
                         gradient = new double[sendInput.n];
                         BlasLike.dcopyvec(sendInput.n, wback, w);
@@ -180,7 +2471,7 @@ namespace Portfolio
         double gamma, double kappa, double delta, double value, double valuel,
         double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell,
         string[] names, bool useIp = true, int nabs = 0, double[] A_abs = null, double[] Abs_L = null, double[] Abs_U = null,
-        int mabs = 0, int[] I_A = null, int basket = -1, int baskethere = -1, int trades = -1, int tradeshere = -1)
+        int mabs = 0, int[] I_A = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, int basket = -1, int baskethere = -1, int trades = -1, int tradeshere = -1)
         {
             if (basket < 0) { basket = n; baskethere = n; }
             if (trades < 0) { trades = n; tradeshere = n; }
@@ -224,7 +2515,7 @@ namespace Portfolio
                     }
                 }
                 var back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                    alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A);
+                    alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda, DATA, tail, targetR);
                 if (back != 6)
                 {
                     BlasLike.dcopyvec(n, wback, w);
@@ -632,8 +2923,8 @@ namespace Portfolio
                 BlasLike.dsetvec(WW.Length, 1.0 / n, WW);
                 for (var i = 0; i < n; ++i)
                 {
-                    WW[i + n] = initial[i] == 0 ? 0 : Math.Max(0, (initial[i] - 1.0 / n));
-                    if (bothsellbuy) WW[i + 2 * n] = initial[i] == 0 ? 0 : Math.Max(0, -(initial[i] - 1.0 / n));
+                    WW[i + n] = Math.Abs(initial[i]) < BlasLike.lm_eps ? 0 : Math.Max(0, (initial[i] - 1.0 / n));
+                    if (bothsellbuy) WW[i + 2 * n] = Math.Abs(initial[i]) < BlasLike.lm_eps ? 0 : Math.Max(0, -(initial[i] - 1.0 / n));
                 }
                 this.initial = initial;
                 this.w = WW;
@@ -646,8 +2937,8 @@ namespace Portfolio
                 BlasLike.dsetvec(WW.Length, 1.0 / n, WW);
                 for (var i = 0; i < n; ++i)
                 {
-                    WW[i + n] = initial[i] == 0 ? 0 : Math.Max(0, (initial[i] - 1.0 / n));
-                    if (bothsellbuy) WW[i + 2 * n] = initial[i] == 0 ? 0 : Math.Max(0, -(initial[i] - 1.0 / n));
+                    WW[i + n] = Math.Abs(initial[i]) < BlasLike.lm_eps ? 0 : Math.Max(0, (initial[i] - 1.0 / n));
+                    if (bothsellbuy) WW[i + 2 * n] = Math.Abs(initial[i]) < BlasLike.lm_eps ? 0 : Math.Max(0, -(initial[i] - 1.0 / n));
                 }
                 this.w = WW;
                 WriteInputs("./optinput2");
@@ -733,11 +3024,15 @@ namespace Portfolio
         ///<param name="U_abs">array of upper bounds for absolute constraints (nabs+mabs)</param>
         ///<param name="mabs">number of absolute constraints in I_a</param>
         ///<param name="I_a">integer array, if I_a[i] = k, the i'th constraint has data from the k'th constraint in A</param>
+        ///<param name="tlen">For ETL or GAIN/LOSS, number time periods</param>
+        ///<param name="DATA">For GAIN/LOSS array length n*tlen of returns' data (-returns's data for ETL)</param>
+        ///<param name="tail">In ETL, 100*tail% defines upper tail</param>
+        ///<param name="targetR">For GAIN/LOSS, array of tlen target returns (usually all the the same)</param>
         public int BasicOptimisation(int n, int m, int nfac, double[] A, double[] L, double[] U,
         double gamma, double kappa, double delta, double value, double valuel,
         double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell,
         string[] names, bool useIP = true, int nabs = 0, double[] A_abs = null, double[] L_abs = null, double[] U_abs = null,
-        int mabs = 0, int[] I_a = null)
+        int mabs = 0, int[] I_a = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null)
         {
             int back;
             nfixed = 0;
@@ -780,6 +3075,7 @@ namespace Portfolio
                 Order.Reorder(n, mainorder, U);
                 Order.Reorder(n, mainorder, alpha);
                 Order.Reorder(n, mainorder, initial);
+                if (DATA != null) Order.Reorder_gen(n, mainorder, DATA, tlen, 1, true);
                 if (bench != null) Order.Reorder(n, mainorder, bench);
                 if (buy != null) Order.Reorder(n, mainorder, buy);
                 if (sell != null) Order.Reorder(n, mainorder, sell);
@@ -831,7 +3127,7 @@ namespace Portfolio
                 if (useLS && 0 > L[i] && 0 < U[i])
                 {
                     longshortI++;
-                    if (buysellI > 0 && initial[i] == 0) longshortbuysell++;
+                    if (buysellI > 0 && Math.Abs(initial[i]) < BlasLike.lm_eps) longshortbuysell++;
                 }
             }
             var longshortbuysellIndex = new int[longshortbuysell];
@@ -851,7 +3147,7 @@ namespace Portfolio
                 if (buysellvars && (initial[i] > L[i] && initial[i] < U[i])) buysellIndex[buysellI++] = i;
                 if (useLS && 0 > L[i] && 0 < U[i])
                 {
-                    if (buysellI > 0 && initial[i] == 0) longshortbuysellIndex[longshortbuysell++] = i;
+                    if (buysellI > 0 && Math.Abs(initial[i]) < BlasLike.lm_eps) longshortbuysellIndex[longshortbuysell++] = i;
                     else longshortIndex[longshortI++] = i;
                 }
             }
@@ -860,6 +3156,17 @@ namespace Portfolio
             for (var i = 0; i < longshortbuysell; ++i) longshortbuysellIndex_inverse[longshortbuysellIndex[i]] = i;
             var N = n + buysellI + longshortI;
             var M = m + buysellI + longshortI + (delta < 2.0 ? 1 : 0);
+            double DATAmax = 0.0, DATAmin = 0.0;
+            if (tlen > 0)
+            {
+                BlasLike.dxminmax(tlen * n, DATA, 1, ref DATAmax, ref DATAmin);
+                DATAmax *= (double)n;
+                if (targetR == null)                //ETL
+                    N += tlen + 1;
+                else                                //GAIN/LOSS
+                    N += tlen;
+                M += tlen;
+            }
             if (value > 0) M++;
             if (rmax > 0 && rmin == rmax) M++;
             else if (rmax > 0) M++;
@@ -878,6 +3185,14 @@ namespace Portfolio
             BlasLike.dsetvec(buysellI, useIP ? BlasLike.lm_max : 1, UU, n);
             BlasLike.dsetvec(longshortI, 0, LL, n + buysellI);
             BlasLike.dsetvec(longshortI, useIP ? BlasLike.lm_max : 1, UU, n + buysellI);
+
+            BlasLike.dsetvec(tlen, 0, LL, n + buysellI + longshortI);
+            BlasLike.dsetvec(tlen, useIP ? BlasLike.lm_max : DATAmax, UU, n + buysellI + longshortI);
+            if (targetR == null)
+            {
+                BlasLike.dsetvec(1, 0, LL, n + buysellI + longshortI + tlen);
+                BlasLike.dsetvec(1, useIP ? BlasLike.lm_max : DATAmax, UU, n + buysellI + longshortI + tlen);
+            }
             //Constraints
             BlasLike.dcopyvec(m, L, LL, n, N);
             BlasLike.dcopyvec(m, U, UU, n, N);
@@ -930,6 +3245,16 @@ namespace Portfolio
             {
                 BlasLike.dsetvec(buysellI, 0, CC, n);
             }
+            if (tlen > 0)
+            {
+                if (targetR == null)
+                {
+                    BlasLike.dsetvec(tlen, DATAlambda / check_digit(tail * tlen), CC, n + buysellI + longshortI);
+                    BlasLike.dsetvec(1, DATAlambda, CC, n + buysellI + longshortI + tlen);
+                }
+                else
+                    BlasLike.dsetvec(tlen, DATAlambda, CC, n + buysellI + longshortI);
+            }
             var cnum = m + buysellI + longshortI;
             var cnumTurn = -1;
             var forcedTurn = 0.0;
@@ -968,8 +3293,8 @@ namespace Portfolio
                         BlasLike.dset(1, 1.0, AA, M, cnum + M * i);//sum w =sum buy+ initial + initial-sell
                 }
                 BlasLike.dset(buysellI, 2.0, AA, M, cnum + M * n);//2sum sell
-                LL[N + cnum] = BlasLike.dsumvec(n, initial) + 2 * forcedI;
-                UU[N + cnum] = 2.0 * (delta - fixedTurn) + BlasLike.dsumvec(n, initial) + 2 * forcedI;
+                LL[N + cnum] = BlasLike.dsumvec(n, initial) + 2.0 * (forcedI-fixedTurn);
+                UU[N + cnum] = 2.0 * (delta +forcedI- fixedTurn) + BlasLike.dsumvec(n, initial);
                 cnum++;
             }
             var extraLong = 0.0;
@@ -1168,6 +3493,27 @@ namespace Portfolio
                     cnum++;
                 }
             }
+            if (tlen > 0)
+            {//Constraints for ETL or GAIN/LOSS
+                if (targetR == null) BlasLike.dsetvec(tlen, 0, LL, N + M - tlen);
+                else BlasLike.dcopyvec(tlen, targetR, LL, 0, N + M - tlen);
+                BlasLike.dsetvec(tlen, useIP ? BlasLike.lm_max : DATAmax, UU, N + M - tlen);
+
+                for (var i = 0; i < tlen; ++i)
+                {//GAIN/LOSS   r[t] + max((Target - r[t]),0) >= Target
+                 //ETL          -r[t] + max((r[t] - VAR),0) >= 0
+                    if (targetR == null) BlasLike.dsccopy(n, -1, DATA, tlen, AA, M, i, i + M - tlen);//ETL has minus
+                    else BlasLike.dcopy(n, DATA, tlen, AA, M, i, i + M - tlen);//GAIN/LOSS has plus
+                    BlasLike.dset(1, 1, AA, M, M - tlen + i + M * (i + n));
+                    if (targetR == null) BlasLike.dset(1, 1, AA, M, M - tlen + i + M * (tlen + n));//Get VAR for ETL
+                    if (nfixed > 0)
+                    {
+                        var fixedReturn = BlasLike.ddot(nfixed, DATA, tlen, fixedW, 1, i + tlen * n, n);
+                        if (targetR != null) fixedReturn = -fixedReturn;
+                        LL[N + M - tlen + i] += fixedReturn;
+                    }
+                }
+            }
             this.names = names;
             this.L = LL;
             this.U = UU;
@@ -1195,7 +3541,7 @@ namespace Portfolio
                 for (var i = 0; i < buysellI; ++i)
                 {
                     var ind = buysellIndex[i];
-                    WW[i + n] = initial[ind] == 0 ? 0 : Math.Max(0, (initial[ind] - WW[ind]));
+                    WW[i + n] = Math.Abs(initial[ind]) < BlasLike.lm_eps ? 0 : Math.Max(0, (initial[ind] - WW[ind]));
                 }
                 for (var i = 0; i < longshortI; ++i)
                 {
@@ -1208,7 +3554,7 @@ namespace Portfolio
                 Console.WriteLine($"back = {back}");
             }
             ColourConsole.WriteLine("_______________________________________________________________________________________________________________________", ConsoleColor.Green);
-            ColourConsole.WriteEmbeddedColourLine($"[yellow]{"Asset",12}[/yellow]\t[cyan]{"WEIGHT-INITIAL or WEIGHT",25}[/cyan]\t[red]{"SELL or SHORT",12}[/red]\t[darkcyan]{"BUY or LONG",12}[/darkcyan]\t[green]{"INITIAL or 0",12}[/green]\t\t[darkmagenta]{"LIMIT",12}[/darkmagenta]");
+            if (buysellI > 0 || longshortI > 0) ColourConsole.WriteEmbeddedColourLine($"[yellow]{"Asset",12}[/yellow]\t[cyan]{"WEIGHT-INITIAL or WEIGHT",25}[/cyan]\t[red]{"SELL or SHORT",12}[/red]\t[darkcyan]{"BUY or LONG",12}[/darkcyan]\t[green]{"INITIAL or 0",12}[/green]\t\t[darkmagenta]{"LIMIT",12}[/darkmagenta]");
             for (var i = 0; i < n; ++i)
             {
                 if (buysellvars && buysellIndex_inverse[i] != -1)
@@ -1232,6 +3578,15 @@ namespace Portfolio
                     }
                 }
             }
+            if (tlen > 0)
+            {
+                ColourConsole.WriteEmbeddedColourLine($"[yellow]{"Asset",12}[/yellow]\t[cyan]{"Time Variable W",25}[/cyan]\t[darkcyan]{"Constrained Value",12}[/darkcyan]\t\t[darkmagenta]{"UPPER LIMIT test",12}[/darkmagenta]");
+                for (var i = 0; i < tlen; ++i)
+                {
+                    var c1 = BlasLike.ddot(N, AA, M, WW, 1, M - tlen + i);
+                    ColourConsole.WriteEmbeddedColourLine($"[yellow]{"TIME " + (i + 1),12}[/yellow]\t[cyan]{(WW[i + n + buysellI + longshortI]),25:F8}[/cyan]\t[darkcyan]{(c1),12:F8}[/darkcyan]\t\t[darkmagenta]{(!useIP ? (UU[N + M - tlen + i] - c1) : 10),12:f2}[/darkmagenta]");
+                }
+            }
             ColourConsole.WriteLine("_______________________________________________________________________________________________________________________", ConsoleColor.Green);
             if (cnumTurn != -1) ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Test Turnover constraint:[/darkyellow]\t[red]{LL[N + cnumTurn],20:f16}[/red]\t[cyan]{BlasLike.ddot(N, AA, M, WW, 1, cnumTurn),20:f16}[/cyan]\t[green]{UU[N + cnumTurn],20:f16}[/green]");
             if (cnumVal != -1) ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Test Long Value constraint:[/darkyellow]\t[red]{LL[N + cnumVal],20:f16}[/red]\t[cyan]{BlasLike.ddot(N, AA, M, WW, 1, cnumVal),20:f16}[/cyan]\t[green]{UU[N + cnumVal],20:f16}[/green]");
@@ -1244,14 +3599,18 @@ namespace Portfolio
             var shortsideS = -extraShort;
             for (var i = 0; i < n; ++i)
             {
+                if (Math.Abs(WW[i] - L[i]) < BlasLike.lm_eps)
+                    WW[i] = L[i];
+                else if (Math.Abs(WW[i] - U[i]) < BlasLike.lm_eps)
+                    WW[i] = U[i];
                 var cc = 0;
-                if (longshortIndex_inverse[i] == -1 && UU[i] < 0)
+                if ((longshortIndex_inverse[i] == -1 || longshortbuysellIndex_inverse[i] == -1) && UU[i] <= 0)
                     shortsideS -= WW[i];
                 if ((cc = longshortbuysellIndex_inverse[i]) != -1)
                     shortsideS += WW[buysellIndex_inverse[i] + n];
             }
             if (longshortI > 0) shortsideS += BlasLike.dsumvec(longshortI, WW, n + buysellI);
-            wback = new double[n + nfixed];
+            if (wback == null) wback = new double[n + nfixed];
             BlasLike.dcopyvec(n, WW, wback);
             var alphaFixed = 0.0;
             if (nfixed > 0)
@@ -1275,6 +3634,7 @@ namespace Portfolio
                 Order.Reorder(n, mainorderInverse, U);
                 Order.Reorder(n, mainorderInverse, alpha);
                 Order.Reorder(n, mainorderInverse, initial);
+                if (DATA != null) Order.Reorder_gen(n, mainorderInverse, DATA, tlen, 1, true);
                 if (bench != null) Order.Reorder(n, mainorderInverse, bench);
                 if (buy != null) Order.Reorder(n, mainorderInverse, buy);
                 if (sell != null) Order.Reorder(n, mainorderInverse, sell);
@@ -1389,15 +3749,16 @@ namespace Portfolio
                 ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio constraint {(i + 1),3}:[/magenta]\t[cyan]{ccval,20:f16}[/cyan]\t([red]{L[i + n],20:f16},{U[i + n],20:f16}[/red])");
             }
             //            ActiveSet.Optimise.printV("optimal weights", WW, n);
-            if (buysellI > 0 || longshortI > 0)
+            if (tlen==0&&(buysellI > 0 || longshortI > 0))
             {
-                if (Math.Abs(shortside + shortsideS) > BlasLike.lm_eps * 10)
+                if (Math.Abs(shortside + shortsideS) > BlasLike.lm_rooteps * 2)
                     back = 6;
                 if (Math.Abs(utility - utilityA) > BlasLike.lm_rooteps)
                     back = 6;
                 if (kappa > 1e-14 && Math.Abs(cost - costA - costFixed) > BlasLike.lm_eps * 10)
                     back = 6;
             }
+            BACK = back;
             return back;
         }
         public void GainLossSetUp(int n, int tlen, double[] DATA, string[] names, double R, double lambda, bool useIP = true)
@@ -1606,7 +3967,7 @@ namespace Portfolio
         public virtual int makeQ()
         {
             var nn = ntrue * (ntrue + 1) / 2;
-            if (Q.Length == nn)
+            if (Q != null && Q.Length == nn)
                 return 0;
             else
                 return -10;
