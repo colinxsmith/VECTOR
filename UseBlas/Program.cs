@@ -1400,7 +1400,7 @@ namespace UseBlas
                 var tarR = new double[tlen];
                 BlasLike.dsetvec(tlen, 0.005, tarR);
                 double VARtest, ETLtest;
-                //tarR=null;
+                tarR=null;
                 back = opt.BasicOptimisation(n, m, -1, A, L, U, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR);
                 for (var i = 0; i < n; i++)
                 {

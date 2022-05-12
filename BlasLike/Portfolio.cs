@@ -3595,12 +3595,12 @@ namespace Portfolio
             }
             if (tlen > 0)
             {
-                ColourConsole.WriteEmbeddedColourLine($"[yellow]{"Asset",12}[/yellow]\t[cyan]{"Time Variable W",25}[/cyan]\t[darkcyan]{"Constrained Value",12}[/darkcyan]\t\t[green]{"LOWER",12}[/green]\t\t[darkmagenta]{"UPPER LIMIT test",12}[/darkmagenta]");
+                ColourConsole.WriteEmbeddedColourLine($"[yellow]{"Asset",12}[/yellow]\t[cyan]{"Time Variable W",25}[/cyan]\t[darkcyan]{"Constrained Value",20}[/darkcyan]\t[green]{"LOWER",20}[/green]\t[magenta]{"Constraint - Lower",20}[/magenta]");
                 double c1;
                 for (var i = 0; i < tlen; ++i)
                 {
                     c1 = BlasLike.ddot(N, AA, M, WW, 1, M - tlen + i);
-                    ColourConsole.WriteEmbeddedColourLine($"[yellow]{"TIME " + (i + 1),12}[/yellow]\t[cyan]{(WW[i + n + buysellI + longshortI]),25:F8}[/cyan]\t[darkcyan]{(c1),12:F8}[/darkcyan]\t\t[green]{LL[N + M - tlen + i],12:f8}[/green]\t\t[darkmagenta]{(!useIP ? (UU[N + M - tlen + i] - c1) : 10),12:f2}[/darkmagenta]");
+                    ColourConsole.WriteEmbeddedColourLine($"[yellow]{"TIME " + (i + 1),12}[/yellow]\t[cyan]{(WW[i + n + buysellI + longshortI]),25:F8}[/cyan]\t[darkcyan]{(c1),20:F8}[/darkcyan]\t[green]{LL[N + M - tlen + i],20:f8}[/green]\t[magenta]{(c1-LL[N + M - tlen + i]),20:f8}[/magenta]");
                 }
                 if (targetR == null) ColourConsole.WriteEmbeddedColourLine($"[yellow]{"VAR",12}[/yellow]\t[cyan]{(WW[tlen + n + buysellI + longshortI]),25:F8}[/cyan]");
             }
