@@ -219,6 +219,21 @@ namespace Portfolio
                 {
                     digit -= ndelta * BlasLike.lm_eps;
                 }
+                return digit;
+            }
+            delta = Math.Abs(Math.Abs(digit - (long)(digit)));
+            if (delta <= (BlasLike.lm_rooteps))
+            {
+                long ndelta = (long)(delta / BlasLike.lm_eps);
+                if (digit > 0)
+                {
+                    digit -= ndelta * BlasLike.lm_eps;
+                }
+                else if (digit < 0)
+                {
+                    digit += ndelta * BlasLike.lm_eps;
+                }
+                return digit;
             }
             return digit;
         }
@@ -3293,8 +3308,8 @@ namespace Portfolio
                         BlasLike.dset(1, 1.0, AA, M, cnum + M * i);//sum w =sum buy+ initial + initial-sell
                 }
                 BlasLike.dset(buysellI, 2.0, AA, M, cnum + M * n);//2sum sell
-                LL[N + cnum] = BlasLike.dsumvec(n, initial) + 2.0 * (forcedI-fixedTurn);
-                UU[N + cnum] = 2.0 * (delta +forcedI- fixedTurn) + BlasLike.dsumvec(n, initial);
+                LL[N + cnum] = BlasLike.dsumvec(n, initial) + 2.0 * (forcedI - fixedTurn);
+                UU[N + cnum] = 2.0 * (delta + forcedI - fixedTurn) + BlasLike.dsumvec(n, initial);
                 cnum++;
             }
             var extraLong = 0.0;
@@ -3504,7 +3519,7 @@ namespace Portfolio
                  //ETL          -r[t] + max((r[t] - VAR),0) >= 0
                     if (targetR == null) BlasLike.dsccopy(n, -1, DATA, tlen, AA, M, i, i + M - tlen);//ETL has minus
                     else BlasLike.dcopy(n, DATA, tlen, AA, M, i, i + M - tlen);//GAIN/LOSS has plus
-                    BlasLike.dset(1, 1, AA, M, M - tlen + i + M * (i + n));
+                    BlasLike.dset(1, 1, AA, M, M - tlen + i + M * (i + n));//THe positive variables
                     if (targetR == null) BlasLike.dset(1, 1, AA, M, M - tlen + i + M * (tlen + n));//Get VAR for ETL
                     if (nfixed > 0)
                     {
@@ -3580,14 +3595,14 @@ namespace Portfolio
             }
             if (tlen > 0)
             {
-                ColourConsole.WriteEmbeddedColourLine($"[yellow]{"Asset",12}[/yellow]\t[cyan]{"Time Variable W",25}[/cyan]\t[darkcyan]{"Constrained Value",12}[/darkcyan]\t\t[darkmagenta]{"UPPER LIMIT test",12}[/darkmagenta]");
+                ColourConsole.WriteEmbeddedColourLine($"[yellow]{"Asset",12}[/yellow]\t[cyan]{"Time Variable W",25}[/cyan]\t[darkcyan]{"Constrained Value",12}[/darkcyan]\t\t[green]{"LOWER",12}[/green]\t\t[darkmagenta]{"UPPER LIMIT test",12}[/darkmagenta]");
                 double c1;
                 for (var i = 0; i < tlen; ++i)
                 {
                     c1 = BlasLike.ddot(N, AA, M, WW, 1, M - tlen + i);
-                    ColourConsole.WriteEmbeddedColourLine($"[yellow]{"TIME " + (i + 1),12}[/yellow]\t[cyan]{(WW[i + n + buysellI + longshortI]),25:F8}[/cyan]\t[darkcyan]{(c1),12:F8}[/darkcyan]\t\t[darkmagenta]{(!useIP ? (UU[N + M - tlen + i] - c1) : 10),12:f2}[/darkmagenta]");
+                    ColourConsole.WriteEmbeddedColourLine($"[yellow]{"TIME " + (i + 1),12}[/yellow]\t[cyan]{(WW[i + n + buysellI + longshortI]),25:F8}[/cyan]\t[darkcyan]{(c1),12:F8}[/darkcyan]\t\t[green]{LL[N + M - tlen + i],12:f8}[/green]\t\t[darkmagenta]{(!useIP ? (UU[N + M - tlen + i] - c1) : 10),12:f2}[/darkmagenta]");
                 }
-                if(targetR==null)ColourConsole.WriteEmbeddedColourLine($"[yellow]{"VAR",12}[/yellow]\t[cyan]{(WW[tlen + n + buysellI + longshortI]),25:F8}[/cyan]");
+                if (targetR == null) ColourConsole.WriteEmbeddedColourLine($"[yellow]{"VAR",12}[/yellow]\t[cyan]{(WW[tlen + n + buysellI + longshortI]),25:F8}[/cyan]");
             }
             ColourConsole.WriteLine("_______________________________________________________________________________________________________________________", ConsoleColor.Green);
             if (cnumTurn != -1) ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Test Turnover constraint:[/darkyellow]\t[red]{LL[N + cnumTurn],20:f16}[/red]\t[cyan]{BlasLike.ddot(N, AA, M, WW, 1, cnumTurn),20:f16}[/cyan]\t[green]{UU[N + cnumTurn],20:f16}[/green]");
@@ -3751,13 +3766,13 @@ namespace Portfolio
                 ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio constraint {(i + 1),3}:[/magenta]\t[cyan]{ccval,20:f16}[/cyan]\t([red]{L[i + n],20:f16},{U[i + n],20:f16}[/red])");
             }
             //            ActiveSet.Optimise.printV("optimal weights", WW, n);
-                if(longshortI>0&& (Math.Abs(shortside + shortsideS) > BlasLike.lm_rooteps * 2))
-                    back = 6;
-                if (buysellI>0&&(Math.Abs(turnover*0.5 - turn2) > BlasLike.lm_rooteps))
-                    back = 6;
-                if (buysellI>0&&kappa > 1e-14 && (Math.Abs(cost - costA - costFixed) > BlasLike.lm_eps * 10))
-                    back = 6;
-                        BACK = back;
+            if (longshortI > 0 && (Math.Abs(shortside + shortsideS) > BlasLike.lm_rooteps * 2))
+                back = 6;
+            if (buysellI > 0 && (Math.Abs(turnover * 0.5 - turn2) > BlasLike.lm_rooteps))
+                back = 6;
+            if (buysellI > 0 && kappa > 1e-14 && (Math.Abs(cost - costA - costFixed) > BlasLike.lm_eps * 10))
+                back = 6;
+            BACK = back;
             return back;
         }
         public void GainLossSetUp(int n, int tlen, double[] DATA, string[] names, double R, double lambda, bool useIP = true)

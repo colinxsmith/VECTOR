@@ -778,5 +778,13 @@ namespace BlasLikeTest
             test = BlasLike.ddotvec(n, Qw, Qw);
             Assert.IsTrue(Math.Abs(test) < BlasLike.lm_eps2, $"test={test}");
         }
+        [TestMethod]
+        public void Test_digit()
+        {
+            var d1 = 2.0 + 1e-13;
+            Assert.IsTrue(Portfolio.Portfolio.check_digit(d1) == 2.0, $"{Portfolio.Portfolio.check_digit(d1)}");
+            d1 = 2.0 - 1e-13;
+            Assert.IsTrue(Portfolio.Portfolio.check_digit(d1) == 2.0, $"{Portfolio.Portfolio.check_digit(d1)}");
+        }
     }
 }
