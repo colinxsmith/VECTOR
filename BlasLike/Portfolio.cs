@@ -3084,9 +3084,9 @@ namespace Portfolio
             if(delta>=0){
                 BACK=back=BasicOptimisation(n,m,nfac,A,L,U,gamma,kappa,-1,value,valuel,rmin,rmax,alpha,initial,buy,sell,names,useIP,nabs,A_abs,L_abs,U_abs,mabs,I_a,tlen,DATAlambda,DATA,tail,targetR);
                 if(back>2)return back;
-            /*    double turn= this.turnover(n,wback,initial);
+               double turn= this.turnover(n,wback,initial);
                 if(turn<=delta)return back;
-                w=(double[])wback.Clone();
+           /*     w=(double[])wback.Clone();
                 var fac1=delta/turn;
                 for(var i=0;i<n;++i){
                     if(wback[i]>initial[i])w[i]=(wback[i]-initial[i])*fac1+initial[i];
