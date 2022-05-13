@@ -3011,6 +3011,37 @@ namespace Portfolio
             }
             //            ActiveSet.Optimise.printV("optimal weights", WW, n);
         }
+                ///<summary>Portfolio loss wrt a target 
+                ///LOSS = sum(max(0,target-s))
+                ///</summary>
+                ///<param name="s">Array of returns</param>
+                ///<param name="target">Array of target returns</param>
+                public double LOSS(double[] s, double[] target)
+                {
+                    double back = 0;
+                    for (var i = 0; i < s.Length; ++i)
+                    {
+                        back += Math.Max(0.0, target[i] - s[i]);
+                    }
+                    return back;
+                }
+                ///<summary>Portfolio turnover 
+                ///turnover = 0.5*sum(abs(0,w-initial))
+                ///</summary>
+                ///<param name="n">Number of weights</param>
+                ///<param name="w">Array of weights</param>
+                ///<param name="initial">Array of starting weights</param>
+                ///<param name="wstart">first index of w</param>
+                ///<param name="istart">first index of initial</param>
+                public double turnover(int n,double[] w, double[] initial,int wstart=0,int istart=0)
+                {
+                    double back = 0;
+                    for (var i = 0; i < n; ++i)
+                    {
+                        back += Math.Abs(w[i-wstart] - initial[i-istart]);
+                    }
+                    return back*0.5;
+                }
         ///<summary>Portfolio Optimisation with BUY/SELL utility and LONG/SHORT constraints
         ///If a variable's upper and lower bounds are equal, this variable is re-ordered out of the optimisaion
         ///</summary>
@@ -3050,6 +3081,19 @@ namespace Portfolio
         int mabs = 0, int[] I_a = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null)
         {
             int back;
+            if(delta>=0){
+                BACK=back=BasicOptimisation(n,m,nfac,A,L,U,gamma,kappa,-1,value,valuel,rmin,rmax,alpha,initial,buy,sell,names,useIP,nabs,A_abs,L_abs,U_abs,mabs,I_a,tlen,DATAlambda,DATA,tail,targetR);
+                if(back>2)return back;
+            /*    double turn= this.turnover(n,wback,initial);
+                if(turn<=delta)return back;
+                w=(double[])wback.Clone();
+                var fac1=delta/turn;
+                for(var i=0;i<n;++i){
+                    if(wback[i]>initial[i])w[i]=(wback[i]-initial[i])*fac1+initial[i];
+                    else w[i]=-(wback[i]-initial[i])*fac1+initial[i];
+                }
+                var ch=this.turnover(n,w,initial);*/
+            }
             nfixed = 0;
             ntrue = n;
             mtrue = m;
@@ -3090,6 +3134,7 @@ namespace Portfolio
                 Order.Reorder(n, mainorder, U);
                 Order.Reorder(n, mainorder, alpha);
                 Order.Reorder(n, mainorder, initial);
+                Order.Reorder(n, mainorder, w);
                 if (DATA != null) Order.Reorder_gen(n, mainorder, DATA, tlen, 1, true);
                 if (bench != null) Order.Reorder(n, mainorder, bench);
                 if (buy != null) Order.Reorder(n, mainorder, buy);
@@ -3548,10 +3593,12 @@ namespace Portfolio
                 var LAMBDAS = new double[N + M];
                 for (var i = 0; i < n; ++i)
                 {
+                    if(delta<2)WW[i]=this.w[i];
+                    else{
                     if (UU[i] > 0)
                         WW[i] = UU[i] / n;
                     else
-                        WW[i] = 0.5 * (UU[i] + LL[i]) / n;
+                        WW[i] = 0.5 * (UU[i] + LL[i]) / n;}
                 }
                 for (var i = 0; i < buysellI; ++i)
                 {
@@ -3568,6 +3615,11 @@ namespace Portfolio
                 back = ActiveOpt(0, WW, LAMBDAS);
                 Console.WriteLine($"back = {back}");
             }
+                if(back==6){
+                for(var i=0;i<M;++i){
+                    var ci=BlasLike.ddot(N,AA,M,WW,1,i);
+                   if(ci+BlasLike.lm_eps<LL[i+N]||ci-BlasLike.lm_eps>UU[i+N]) ColourConsole.WriteEmbeddedColourLine($"[cyan]Constraint {i+1}[/cyan] [red]{LL[N+i]}[/red] [yellow]{ci}[/yellow] [green]{UU[N+i]}[/green] {cnumTurn+1}");
+                }}
             ColourConsole.WriteLine("_______________________________________________________________________________________________________________________", ConsoleColor.Green);
             if (buysellI > 0 || longshortI > 0) ColourConsole.WriteEmbeddedColourLine($"[yellow]{"Asset",12}[/yellow]\t[cyan]{"WEIGHT-INITIAL or WEIGHT",25}[/cyan]\t[red]{"SELL or SHORT",12}[/red]\t[darkcyan]{"BUY or LONG",12}[/darkcyan]\t[green]{"INITIAL or 0",12}[/green]\t\t[darkmagenta]{"LIMIT",12}[/darkmagenta]");
             for (var i = 0; i < n; ++i)
@@ -3651,6 +3703,7 @@ namespace Portfolio
                 Order.Reorder(n, mainorderInverse, U);
                 Order.Reorder(n, mainorderInverse, alpha);
                 Order.Reorder(n, mainorderInverse, initial);
+                Order.Reorder(n, mainorderInverse, w);
                 if (DATA != null) Order.Reorder_gen(n, mainorderInverse, DATA, tlen, 1, true);
                 if (bench != null) Order.Reorder(n, mainorderInverse, bench);
                 if (buy != null) Order.Reorder(n, mainorderInverse, buy);
@@ -4036,12 +4089,12 @@ namespace Portfolio
                 {
                     if (L[i] < 0 && U[i] > 0)
                     {
-                        if (w[i] >= 0) L[i] = 0;
+                        if (w[i] > 0) L[i] = 0;
                         else if (w[i] < 0) U[i] = 0;
                     }
                     if (L[i] < initial[i] && U[i] > initial[i])
                     {
-                        if (w[i] >= initial[i]) L[i] = initial[i];
+                        if (w[i] > initial[i]) L[i] = initial[i];
                         else if (w[i] < initial[i]) U[i] = initial[i];
                     }
                 }

@@ -1236,16 +1236,6 @@ namespace UseBlas
                     var back = X + r / Portfolio.Portfolio.check_digit(info.inc * tlen);
                     return back;
                 }
-                ///<summary>Portfolio loss wrt a target </summary>
-                double LOSS(double[] s, double[] target)
-                {
-                    double back = 0;
-                    for (var i = 0; i < s.Length; ++i)
-                    {
-                        back += Math.Max(0.0, target[i] - s[i]);
-                    }
-                    return back;
-                }
                 double cvar1d(ref double var1, object kk)
                 {
                     ETLpass info = (ETLpass)kk;
@@ -1388,7 +1378,7 @@ namespace UseBlas
                 var alpha = new double[n];
                 var initial = new double[n];
                 BlasLike.dsetvec(n, 1.0 / n, initial);
-                var delta = 0.5;
+                var delta = 0.1;
                 opt.Q = null;
                 BlasLike.dsetvec(n, 0, L);
                 BlasLike.dsetvec(n, 1, U);
@@ -1400,7 +1390,8 @@ namespace UseBlas
                 var tarR = new double[tlen];
                 BlasLike.dsetvec(tlen, 0.005, tarR);
                 double VARtest, ETLtest;
-                tarR=null;
+                //tarR=null;
+                ColourConsole.WriteLine($"SET TURNOVER {delta}",ConsoleColor.DarkYellow);
                 back = opt.BasicOptimisation(n, m, -1, A, L, U, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR);
                 for (var i = 0; i < n; i++)
                 {
@@ -1416,7 +1407,7 @@ namespace UseBlas
                 else
                 {
                     Factorise.dmxmulv(tlen, nstocks, DATA, opt.wback, info.returns);
-                    var loss = LOSS(info.returns, tarR);
+                    var loss =opt. LOSS(info.returns, tarR);
                     ColourConsole.WriteEmbeddedColourLine($"[green]Inferred[/green] [cyan]LOSS={loss};[/cyan]");
                 }
                 if (true/*back == 6*/)
@@ -1441,7 +1432,7 @@ namespace UseBlas
                     else
                     {
                         Factorise.dmxmulv(tlen, nstocks, DATA, opt.wback, info.returns);
-                        var loss = LOSS(info.returns, tarR);
+                        var loss =opt.LOSS(info.returns, tarR);
                         ColourConsole.WriteEmbeddedColourLine($"[green]Inferred[/green] [cyan]LOSS={loss};[/cyan]");
                     }
                 }
@@ -1464,7 +1455,7 @@ namespace UseBlas
                 else
                 {
                     Factorise.dmxmulv(tlen, nstocks, DATA, opt.wback, info.returns);
-                    var loss = LOSS(info.returns, tarR);
+                    var loss =opt.LOSS(info.returns, tarR);
                     ColourConsole.WriteEmbeddedColourLine($"[green]Inferred[/green] [cyan]LOSS={loss};[/cyan]");
                 }
                 if (true/*back == 6*/)
@@ -1488,7 +1479,7 @@ namespace UseBlas
                     else
                     {
                         Factorise.dmxmulv(tlen, nstocks, DATA, opt.wback, info.returns);
-                        var loss = LOSS(info.returns, tarR);
+                        var loss =opt.LOSS(info.returns, tarR);
                         ColourConsole.WriteEmbeddedColourLine($"[green]Inferred[/green] [cyan]LOSS={loss};[/cyan]");
                     }
                 }
