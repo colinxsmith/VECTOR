@@ -3109,6 +3109,7 @@ namespace Portfolio
                 mainorder[i] = i;
             }
             var boundLU = new double[m];
+            var fixedGLETL=new double[tlen];
             if (nfixed > 0)
             {
                 int i = 0, I = n - 1, ifixed = 0;
@@ -3160,7 +3161,10 @@ namespace Portfolio
                 }
                 BlasLike.dzerovec(n - nfixed, fixedW);
                 BlasLike.dcopyvec(nfixed, L, fixedW, n - nfixed, n - nfixed);
-                Order.bound_reorganise(1, n, n - nfixed, m, L);
+                for(i=0;i<tlen;++i){
+                        if (targetR == null)  fixedGLETL[i] = -BlasLike.ddot(nfixed, DATA, tlen, fixedW, 1, i + tlen * (n-nfixed), n-nfixed);
+                        else fixedGLETL[i] = BlasLike.ddot(nfixed, DATA, tlen, fixedW, 1, i + tlen * (n-nfixed), n-nfixed);
+                }Order.bound_reorganise(1, n, n - nfixed, m, L);
                 if (debugLevel == 2) ActiveSet.Optimise.printV("L end", L, -1, n - nfixed);
                 Order.bound_reorganise(1, n, n - nfixed, m, U);
                 if (debugLevel == 2) ActiveSet.Optimise.printV("U end", U, -1, n - nfixed);
@@ -3569,9 +3573,7 @@ namespace Portfolio
                     if (targetR == null) BlasLike.dset(1, 1, AA, M, M - tlen + i + M * (tlen + n));//Get VAR for ETL
                     if (nfixed > 0)
                     {
-                        var fixedReturn = BlasLike.ddot(nfixed, DATA, tlen, fixedW, 1, i + tlen * n, n);
-                        if (targetR != null) fixedReturn = -fixedReturn;
-                        LL[N + M - tlen + i] += fixedReturn;
+                        LL[N + M - tlen + i] -= fixedGLETL[i];
                     }
                 }
             }
@@ -3709,7 +3711,6 @@ namespace Portfolio
                 Order.Reorder(n, mainorderInverse, U);
                 Order.Reorder(n, mainorderInverse, alpha);
                 Order.Reorder(n, mainorderInverse, initial);
-                Order.Reorder(n, mainorderInverse, w);
                 if (DATA != null) Order.Reorder_gen(n, mainorderInverse, DATA, tlen, 1, true);
                 if (bench != null) Order.Reorder(n, mainorderInverse, bench);
                 if (buy != null) Order.Reorder(n, mainorderInverse, buy);
