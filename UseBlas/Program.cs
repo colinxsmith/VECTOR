@@ -1378,7 +1378,7 @@ namespace UseBlas
                 var alpha = new double[n];
                 var initial = new double[n];
                 BlasLike.dsetvec(n, 1.0 / n, initial);
-                var delta = 0.45;
+                var delta = 0.35;
                 opt.Q = null;
                 BlasLike.dsetvec(n, 0, L);
                 BlasLike.dsetvec(n, 1, U);
