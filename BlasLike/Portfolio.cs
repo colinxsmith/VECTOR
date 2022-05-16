@@ -3081,19 +3081,13 @@ namespace Portfolio
         int mabs = 0, int[] I_a = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null)
         {
             int back;
-            if (delta >= 0)
+            if (false &&delta >= 0)
             {
                 BACK = back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, -1, value, valuel, rmin, rmax, alpha, initial, buy, sell, names, useIP, nabs, A_abs, L_abs, U_abs, mabs, I_a, tlen, DATAlambda, DATA, tail, targetR);
                 if (back > 2) return back;
                 double turn = this.turnover(n, wback, initial);
                 if (turn <= delta) return back;
-                /*     w=(double[])wback.Clone();
-                     var fac1=delta/turn;
-                     for(var i=0;i<n;++i){
-                         if(wback[i]>initial[i])w[i]=(wback[i]-initial[i])*fac1+initial[i];
-                         else w[i]=-(wback[i]-initial[i])*fac1+initial[i];
-                     }
-                     var ch=this.turnover(n,w,initial);*/
+                     w=(double[])wback.Clone();
             }
             nfixed = 0;
             ntrue = n;
@@ -3136,7 +3130,7 @@ namespace Portfolio
                 Order.Reorder(n, mainorder, U);
                 Order.Reorder(n, mainorder, alpha);
                 Order.Reorder(n, mainorder, initial);
-                Order.Reorder(n, mainorder, w);
+                if(w!=null&&w.Length>=n)Order.Reorder(n, mainorder, w);
                 if (DATA != null) Order.Reorder_gen(n, mainorder, DATA, tlen, 1, true);
                 if (bench != null) Order.Reorder(n, mainorder, bench);
                 if (buy != null) Order.Reorder(n, mainorder, buy);
@@ -3322,7 +3316,6 @@ namespace Portfolio
             }
             var cnum = m + buysellI + longshortI;
             var cnumTurn = -1;
-            var forcedTurn = 0.0;
             var forcedI = 0.0;
             var fixedTurn = 0.0;
             for (var i = 0; i < nfixed; ++i)
@@ -3336,7 +3329,6 @@ namespace Portfolio
                     if (initial[i] >= U[i])
                     {
                         forcedI += -initial[i];
-                        forcedTurn += (U[i] - initial[i]) * 0.5;
                     }
                 }
             }
@@ -3596,8 +3588,8 @@ namespace Portfolio
                 var LAMBDAS = new double[N + M];
                 for (var i = 0; i < n; ++i)
                 {
-                    if (delta < 2) WW[i] = this.w[i];
-                    else
+                //    if (delta < 2) WW[i] = this.w[i];
+                //    else
                     {
                         if (UU[i] > 0)
                             WW[i] = UU[i] / n;
@@ -3672,7 +3664,9 @@ namespace Portfolio
             if (cnumRmin != -1) ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Test Rmin constraint:[/darkyellow]\t\t[red]{LL[N + cnumRmin],20:f16}[/red]\t[cyan]{BlasLike.ddot(N, AA, M, WW, 1, cnumRmin),20:f16}[/cyan]\t[green]{UU[N + cnumRmin],20:f16}[/green]");
             if (cnumRmax != -1) ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Test Rmax constraint:[/darkyellow]\t\t[red]{LL[N + cnumRmax],20:f16}[/red]\t[cyan]{BlasLike.ddot(N, AA, M, WW, 1, cnumRmax),20:f16}[/cyan]\t[green]{UU[N + cnumRmax],20:f16}[/green]");
             var turn2 = fixedTurn;
-            if (buysellI > 0) turn2 += (-forcedTurn + BlasLike.dsumvec(buysellI, WW, n) + (BlasLike.dsumvec(n, WW) - BlasLike.dsumvec(n, initial)) * 0.5);
+            for (var i = 0; i < n; ++i)
+            {if(buysellIndex_inverse[i]==-1)turn2+=Math.Abs(WW[i] - initial[i])*0.5;}
+            if (buysellI > 0) turn2 += (BlasLike.dsumvec(buysellI, WW, n) + BlasLike.dsumvec(n, WW) - BlasLike.dsumvec(n, initial)) * 0.5;
             var shortsideS = -extraShort;
             for (var i = 0; i < n; ++i)
             {
@@ -3832,7 +3826,7 @@ namespace Portfolio
                 back = 6;
             if (buysellI > 0 && kappa > 1e-14 && (Math.Abs(cost - costA - costFixed) > BlasLike.lm_eps * 10))
                 back = 6;
-            BACK = back;
+                BACK = back;
             return back;
         }
         public void GainLossSetUp(int n, int tlen, double[] DATA, string[] names, double R, double lambda, bool useIP = true)
