@@ -3249,7 +3249,7 @@ namespace Portfolio
 
             BlasLike.dsetvec(tlen, 0, LL, n + buysellI + longshortI);
             BlasLike.dsetvec(tlen, useIP ? BlasLike.lm_max : DATAmax, UU, n + buysellI + longshortI);
-            if (targetR == null)
+            if (targetR == null&&tlen>0)
             {
                 BlasLike.dsetvec(1, 0, LL, n + buysellI + longshortI + tlen);
                 BlasLike.dsetvec(1, useIP ? BlasLike.lm_max : DATAmax, UU, n + buysellI + longshortI + tlen);
@@ -3331,6 +3331,10 @@ namespace Portfolio
                     if (initial[i] >= U[i])
                     {
                         forcedI += -initial[i];
+                    }
+                    else if (initial[i] <= L[i])
+                    {
+                        forcedI += initial[i];
                     }
                 }
             }
@@ -3824,7 +3828,7 @@ namespace Portfolio
             //            ActiveSet.Optimise.printV("optimal weights", WW, n);
             if (longshortI > 0 && (Math.Abs(shortside + shortsideS) > BlasLike.lm_rooteps * 2))
                 back = 6;
-            if (buysellI > 0 && (Math.Abs(turnover * 0.5 - turn2) > BlasLike.lm_rooteps))
+            if ((buysellI > 0&&longshortI==0 )&& (Math.Abs(turnover * 0.5 - turn2) > BlasLike.lm_rooteps))
                 back = 6;
             if (buysellI > 0 && kappa > 1e-14 && (Math.Abs(cost - costA - costFixed) > BlasLike.lm_eps * 10))
                 back = 6;
@@ -4092,12 +4096,12 @@ namespace Portfolio
                 {
                     if (L[i] < 0 && U[i] > 0)
                     {
-                        if (w[i] > 0) L[i] = 0;
+                        if (w[i] >= 0) L[i] = 0;
                         else if (w[i] < 0) U[i] = 0;
                     }
                     if (L[i] < initial[i] && U[i] > initial[i])
                     {
-                        if (w[i] > initial[i]) L[i] = initial[i];
+                        if (w[i] >= initial[i]) L[i] = initial[i];
                         else if (w[i] < initial[i]) U[i] = initial[i];
                     }
                 }
