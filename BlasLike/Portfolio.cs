@@ -3081,13 +3081,13 @@ namespace Portfolio
         int mabs = 0, int[] I_a = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null)
         {
             int back;
-            if (false &&delta >= 0)
+            if (delta >= 0)
             {
                 BACK = back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, -1, value, valuel, rmin, rmax, alpha, initial, buy, sell, names, useIP, nabs, A_abs, L_abs, U_abs, mabs, I_a, tlen, DATAlambda, DATA, tail, targetR);
                 if (back > 2) return back;
                 double turn = this.turnover(n, wback, initial);
                 if (turn <= delta) return back;
-                     w=(double[])wback.Clone();
+                w = (double[])wback.Clone();
             }
             nfixed = 0;
             ntrue = n;
@@ -3103,7 +3103,7 @@ namespace Portfolio
                 mainorder[i] = i;
             }
             var boundLU = new double[m];
-            var fixedGLETL=new double[tlen];
+            var fixedGLETL = new double[tlen];
             if (nfixed > 0)
             {
                 int i = 0, I = n - 1, ifixed = 0;
@@ -3130,7 +3130,7 @@ namespace Portfolio
                 Order.Reorder(n, mainorder, U);
                 Order.Reorder(n, mainorder, alpha);
                 Order.Reorder(n, mainorder, initial);
-                if(w!=null&&w.Length>=n)Order.Reorder(n, mainorder, w);
+                if (w != null && w.Length >= n) Order.Reorder(n, mainorder, w);
                 if (DATA != null) Order.Reorder_gen(n, mainorder, DATA, tlen, 1, true);
                 if (bench != null) Order.Reorder(n, mainorder, bench);
                 if (buy != null) Order.Reorder(n, mainorder, buy);
@@ -3155,10 +3155,12 @@ namespace Portfolio
                 }
                 BlasLike.dzerovec(n - nfixed, fixedW);
                 BlasLike.dcopyvec(nfixed, L, fixedW, n - nfixed, n - nfixed);
-                for(i=0;i<tlen;++i){
-                        if (targetR == null)  fixedGLETL[i] = -BlasLike.ddot(nfixed, DATA, tlen, fixedW, 1, i + tlen * (n-nfixed), n-nfixed);
-                        else fixedGLETL[i] = BlasLike.ddot(nfixed, DATA, tlen, fixedW, 1, i + tlen * (n-nfixed), n-nfixed);
-                }Order.bound_reorganise(1, n, n - nfixed, m, L);
+                for (i = 0; i < tlen; ++i)
+                {
+                    if (targetR == null) fixedGLETL[i] = -BlasLike.ddot(nfixed, DATA, tlen, fixedW, 1, i + tlen * (n - nfixed), n - nfixed);
+                    else fixedGLETL[i] = BlasLike.ddot(nfixed, DATA, tlen, fixedW, 1, i + tlen * (n - nfixed), n - nfixed);
+                }
+                Order.bound_reorganise(1, n, n - nfixed, m, L);
                 if (debugLevel == 2) ActiveSet.Optimise.printV("L end", L, -1, n - nfixed);
                 Order.bound_reorganise(1, n, n - nfixed, m, U);
                 if (debugLevel == 2) ActiveSet.Optimise.printV("U end", U, -1, n - nfixed);
@@ -3588,8 +3590,8 @@ namespace Portfolio
                 var LAMBDAS = new double[N + M];
                 for (var i = 0; i < n; ++i)
                 {
-                //    if (delta < 2) WW[i] = this.w[i];
-                //    else
+                    //    if (delta < 2) WW[i] = this.w[i];
+                    //    else
                     {
                         if (UU[i] > 0)
                             WW[i] = UU[i] / n;
@@ -3665,7 +3667,7 @@ namespace Portfolio
             if (cnumRmax != -1) ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Test Rmax constraint:[/darkyellow]\t\t[red]{LL[N + cnumRmax],20:f16}[/red]\t[cyan]{BlasLike.ddot(N, AA, M, WW, 1, cnumRmax),20:f16}[/cyan]\t[green]{UU[N + cnumRmax],20:f16}[/green]");
             var turn2 = fixedTurn;
             for (var i = 0; i < n; ++i)
-            {if(buysellIndex_inverse[i]==-1)turn2+=Math.Abs(WW[i] - initial[i])*0.5;}
+            { if (buysellIndex_inverse[i] == -1) turn2 += Math.Abs(WW[i] - initial[i]) * 0.5; }
             if (buysellI > 0) turn2 += (BlasLike.dsumvec(buysellI, WW, n) + BlasLike.dsumvec(n, WW) - BlasLike.dsumvec(n, initial)) * 0.5;
             var shortsideS = -extraShort;
             for (var i = 0; i < n; ++i)
@@ -3826,7 +3828,7 @@ namespace Portfolio
                 back = 6;
             if (buysellI > 0 && kappa > 1e-14 && (Math.Abs(cost - costA - costFixed) > BlasLike.lm_eps * 10))
                 back = 6;
-                BACK = back;
+            BACK = back;
             return back;
         }
         public void GainLossSetUp(int n, int tlen, double[] DATA, string[] names, double R, double lambda, bool useIP = true)

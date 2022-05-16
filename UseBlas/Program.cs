@@ -1484,7 +1484,7 @@ namespace UseBlas
                     }
                 }
                 ColourConsole.WriteEmbeddedColourLine($"[green]back[/green] = [cyan]{back}[/cyan]");
-                return;
+                //       return;
             }
 
             {
