@@ -3081,7 +3081,7 @@ namespace Portfolio
         int mabs = 0, int[] I_a = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null)
         {
             int back;
-            if (delta >= 0)
+            if (buy == null && sell == null && delta >= 0)
             {
                 BACK = back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, -1, value, valuel, rmin, rmax, alpha, initial, buy, sell, names, useIP, nabs, A_abs, L_abs, U_abs, mabs, I_a, tlen, DATAlambda, DATA, tail, targetR);
                 if (back > 2) return back;
@@ -3249,7 +3249,7 @@ namespace Portfolio
 
             BlasLike.dsetvec(tlen, 0, LL, n + buysellI + longshortI);
             BlasLike.dsetvec(tlen, useIP ? BlasLike.lm_max : DATAmax, UU, n + buysellI + longshortI);
-            if (targetR == null&&tlen>0)
+            if (targetR == null && tlen > 0)
             {
                 BlasLike.dsetvec(1, 0, LL, n + buysellI + longshortI + tlen);
                 BlasLike.dsetvec(1, useIP ? BlasLike.lm_max : DATAmax, UU, n + buysellI + longshortI + tlen);
@@ -3318,28 +3318,19 @@ namespace Portfolio
             }
             var cnum = m + buysellI + longshortI;
             var cnumTurn = -1;
-            var forcedI = 0.0;
             var fixedTurn = 0.0;
+            var fixedCost = 0.0;
             for (var i = 0; i < nfixed; ++i)
             {
-                fixedTurn += Math.Abs(U[nfixed - i - 1 + n + m] - initial[i + n]) / 2.0;
-            }
-            for (var i = 0; i < n; ++i)
-            {
-                if (buysellIndex_inverse[i] == -1)
+                fixedTurn += Math.Abs(U[nfixed - i - 1 + n + m] - initial[i + n]) * 0.5;
+                if (buy != null & sell != null)
                 {
-                    if (initial[i] >= U[i])
-                    {
-                        forcedI += -initial[i];
-                    }
-                    else if (initial[i] <= L[i])
-                    {
-                        forcedI += initial[i];
-                    }
+                    fixedCost += Math.Max(0.0, U[nfixed - i - 1 + n + m] - initial[i + n]) * buy[i + n] - Math.Min(0.0, U[nfixed - i - 1 + n + m] - initial[i + n]) * sell[i + n];
                 }
             }
             if (delta < 2.0)
             {
+                var forcedI = 0.0;
                 cnumTurn = cnum;
                 for (var i = 0; i < n; ++i)
                 {
@@ -3349,14 +3340,15 @@ namespace Portfolio
                             BlasLike.dset(1, 1.0, AA, M, cnum + M * i);
                         else if (initial[i] >= U[i])
                         {
+                            forcedI -= initial[i];
                             BlasLike.dset(1, -1.0, AA, M, cnum + M * i);
                         }
                     }
                     else
-                        BlasLike.dset(1, 1.0, AA, M, cnum + M * i);//sum w =sum buy+ initial + initial-sell
+                        BlasLike.dset(1, 1.0, AA, M, cnum + M * i);//w = (w-initial) + initial OR initial - (initial-w)
                 }
                 BlasLike.dset(buysellI, 2.0, AA, M, cnum + M * n);//2sum sell
-                LL[N + cnum] = BlasLike.dsumvec(n, initial) + 2.0 * (forcedI - fixedTurn);
+                LL[N + cnum] = 2.0 * (forcedI - fixedTurn) + BlasLike.dsumvec(n, initial);
                 UU[N + cnum] = 2.0 * (delta + forcedI - fixedTurn) + BlasLike.dsumvec(n, initial);
                 cnum++;
             }
@@ -3670,9 +3662,31 @@ namespace Portfolio
             if (cnumRmin != -1) ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Test Rmin constraint:[/darkyellow]\t\t[red]{LL[N + cnumRmin],20:f16}[/red]\t[cyan]{BlasLike.ddot(N, AA, M, WW, 1, cnumRmin),20:f16}[/cyan]\t[green]{UU[N + cnumRmin],20:f16}[/green]");
             if (cnumRmax != -1) ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Test Rmax constraint:[/darkyellow]\t\t[red]{LL[N + cnumRmax],20:f16}[/red]\t[cyan]{BlasLike.ddot(N, AA, M, WW, 1, cnumRmax),20:f16}[/cyan]\t[green]{UU[N + cnumRmax],20:f16}[/green]");
             var turn2 = fixedTurn;
+            var cost2 = fixedCost;
             for (var i = 0; i < n; ++i)
-            { if (buysellIndex_inverse[i] == -1) turn2 += Math.Abs(WW[i] - initial[i]) * 0.5; }
-            if (buysellI > 0) turn2 += (BlasLike.dsumvec(buysellI, WW, n) + BlasLike.dsumvec(n, WW) - BlasLike.dsumvec(n, initial)) * 0.5;
+            {
+                if (buysellIndex_inverse[i] == -1)
+                {
+                    turn2 += Math.Abs(WW[i] - initial[i]) * 0.5;
+                    if (buy != null && sell != null)
+                    {
+                        cost2 += Math.Max(WW[i] - initial[i], 0.0) * buy[i] - Math.Min(WW[i] - initial[i], 0.0) * sell[i];
+                    }
+                }
+            }
+            //            if (buysellI > 0) 
+            //turn2 += (BlasLike.dsumvec(buysellI, WW, n) + BlasLike.dsumvec(n, WW) - BlasLike.dsumvec(n, initial)) * 0.5;
+            if (buysellI > 0)
+            {
+                for (var i = 0; i < buysellI; ++i)
+                {
+                    var k = buysellIndex[i];
+                    turn2 += (WW[n + i] + WW[k] - initial[k]);
+                    if (buy != null && sell != null) cost2 += WW[n + i] * (buy[k] + sell[k]) + (WW[k] - initial[k]) * buy[k];
+                }
+                turn2 -= fixedTurn;
+                cost2 -= fixedCost;
+            }
             var shortsideS = -extraShort;
             for (var i = 0; i < n; ++i)
             {
@@ -3815,11 +3829,11 @@ namespace Portfolio
                     }
                 }
             }
-            var utility = -eret * gamma / (1 - gamma) + kappa / (1 - kappa) * (cost + initbase) + 0.5 * variance + benchmarkExtra + alphaFixed * gamma / (1 - gamma) - costFixed * kappa / (1 - kappa) - fixedVariance;
+            var utility = -eret * gamma / (1 - gamma) + kappa / (1 - kappa) * (cost + initbase) + 0.5 * variance + benchmarkExtra + alphaFixed * gamma / (1 - gamma) - fixedCost * kappa / (1 - kappa) - fixedVariance;
             var utilityA = -BlasLike.ddotvec(n - nfixed, fixedSecondOrder, WW) + BlasLike.ddotvec(N, CC, WW) + 0.5 * variance + benchmarkExtra - fixedVariance;
             ColourConsole.WriteEmbeddedColourLine($"Utility:\t\t\t[green]{utility,20:f16}:[/green]\t[cyan] {utilityA,20:f16}[/cyan]");
             ColourConsole.WriteEmbeddedColourLine($"Turnover:\t\t\t[green]{turnover * 0.5,20:f16}:[/green]\t[cyan]{turn2,20:f16}[/cyan]");
-            ColourConsole.WriteEmbeddedColourLine($"Cost:\t\t\t\t[green]{cost,20:f16}:[/green]\t[cyan]{costA + costFixed,20:f16}[/cyan]");
+            ColourConsole.WriteEmbeddedColourLine($"Cost:\t\t\t\t[green]{cost,20:f16}:[/green]\t[cyan]{cost2,20:f16}[/cyan]");
             for (var i = 0; i < m; ++i)
             {
                 var ccval = BlasLike.ddot(n, A, m, wback, 1, i);
@@ -3828,9 +3842,9 @@ namespace Portfolio
             //            ActiveSet.Optimise.printV("optimal weights", WW, n);
             if (longshortI > 0 && (Math.Abs(shortside + shortsideS) > BlasLike.lm_rooteps * 2))
                 back = 6;
-            if ((buysellI > 0&&longshortI==0 )&& (Math.Abs(turnover * 0.5 - turn2) > BlasLike.lm_rooteps))
+            if ((buysellI > 0 && longshortI == 0) && (Math.Abs(turnover * 0.5 - turn2) > BlasLike.lm_rooteps))
                 back = 6;
-            if (buysellI > 0 && kappa > 1e-14 && (Math.Abs(cost - costA - costFixed) > BlasLike.lm_eps * 10))
+            if (buysellI > 0 && kappa > 1e-14 && (Math.Abs(cost - cost2) > BlasLike.lm_eps * 10))
                 back = 6;
             BACK = back;
             return back;
