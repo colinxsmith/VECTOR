@@ -3684,8 +3684,6 @@ namespace Portfolio
                     turn2 += WW[n + i] + (WW[k] - initial[k]) * 0.5;
                     if (buy != null && sell != null) cost2 += WW[n + i] * (buy[k] + sell[k]) + (WW[k] - initial[k]) * buy[k];
                 }
-                //           turn2 -= fixedTurn;
-                //           cost2 -= fixedCost;
             }
             var shortsideS = -extraShort;
             for (var i = 0; i < n; ++i)
@@ -3781,7 +3779,9 @@ namespace Portfolio
                         initbase += buy[i] * initial[i];
                     }
                 }
-            var eretA = alphaFixed * gamma / (1 - gamma) + BlasLike.ddotvec(n - nfixed, fixedSecondOrder, WW) - BlasLike.ddotvec(n - nfixed, CC, WW) + kappa / (1 - kappa) * costbase;
+            var eretA = alphaFixed * gamma / (1 - gamma)
+            + BlasLike.ddotvec(n - nfixed, fixedSecondOrder, WW)
+            - BlasLike.ddotvec(n - nfixed, CC, WW) + kappa / (1 - kappa) * costbase;
             if (gamma != 0) eretA /= gamma / (1 - gamma);
             var costA = 0.0;
             for (var i = 0; useCosts && i < buysellI; ++i)
@@ -3842,9 +3842,9 @@ namespace Portfolio
             //            ActiveSet.Optimise.printV("optimal weights", WW, n);
             if (longshortI > 0 && (Math.Abs(shortside + shortsideS) > BlasLike.lm_rooteps * 2))
                 back = 6;
-            if ((buysellI > 0 && longshortI == 0) && (Math.Abs(turnover * 0.5 - turn2) > BlasLike.lm_rooteps))
+            if ((buysellI > 0 /*&& longshortI == 0*/) && (Math.Abs(turnover * 0.5 - turn2) > BlasLike.lm_rooteps))
                 back = 6;
-            if (buysellI > 0 && kappa > 1e-14 && (Math.Abs(cost - cost2) > BlasLike.lm_eps * 10))
+            if ((buysellI > 0 /*&& kappa > 1e-14*/) && (Math.Abs(cost - cost2) > BlasLike.lm_eps * 10))
                 back = 6;
             BACK = back;
             return back;

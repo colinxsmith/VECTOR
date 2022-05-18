@@ -1378,7 +1378,7 @@ namespace UseBlas
                 var alpha = new double[n];
                 var initial = new double[n];
                 BlasLike.dsetvec(n, 1.0 / n, initial);
-                var delta = 0.35;
+                var delta = 0.4;
                 opt.Q = null;
                 BlasLike.dsetvec(n, 0, L);
                 BlasLike.dsetvec(n, 1, U);
@@ -1390,7 +1390,7 @@ namespace UseBlas
                 var tarR = new double[tlen];
                 BlasLike.dsetvec(tlen, 0.005, tarR);
                 double VARtest, ETLtest;
-                // tarR = null;
+                tarR = null;
                 ColourConsole.WriteLine($"SET TURNOVER {delta}", ConsoleColor.DarkYellow);
                 back = opt.BasicOptimisation(n, m, -1, A, L, U, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR);
                 for (var i = 0; i < n; i++)
@@ -1410,7 +1410,7 @@ namespace UseBlas
                     var loss = opt.LOSS(info.returns, tarR);
                     ColourConsole.WriteEmbeddedColourLine($"[green]Inferred[/green] [cyan]LOSS={loss};[/cyan]");
                 }
-                if (true/*back == 6*/)
+                if (back == 6)
                 {
                     ColourConsole.WriteError("NEED TO REPEAT");
                     var Lhere = (double[])L.Clone();
@@ -1458,7 +1458,7 @@ namespace UseBlas
                     var loss = opt.LOSS(info.returns, tarR);
                     ColourConsole.WriteEmbeddedColourLine($"[green]Inferred[/green] [cyan]LOSS={loss};[/cyan]");
                 }
-                if (true/*back == 6*/)
+                if (back == 6)
                 {
                     ColourConsole.WriteError("NEED TO REPEAT");
                     var Lhere = (double[])L.Clone();
@@ -1484,7 +1484,7 @@ namespace UseBlas
                     }
                 }
                 ColourConsole.WriteEmbeddedColourLine($"[green]back[/green] = [cyan]{back}[/cyan]");
-                //      return;
+                //          return;
             }
 
             {
