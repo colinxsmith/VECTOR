@@ -3609,7 +3609,6 @@ namespace Portfolio
                 WriteInputs("./optinput2");
                 back = ActiveOpt(0, WW, LAMBDAS);
                 Console.WriteLine($"back = {back}");
-            }
             if (back == 6)
             {
                 for (var i = 0; i < M; ++i)
@@ -3617,7 +3616,7 @@ namespace Portfolio
                     var ci = BlasLike.ddot(N, AA, M, WW, 1, i);
                     if (ci + BlasLike.lm_eps < LL[i + N] || ci - BlasLike.lm_eps > UU[i + N]) ColourConsole.WriteEmbeddedColourLine($"[cyan]Constraint {i + 1}[/cyan] [red]{LL[N + i]}[/red] [yellow]{ci}[/yellow] [green]{UU[N + i]}[/green] {cnumTurn + 1}");
                 }
-            }
+            }} 
             ColourConsole.WriteLine("_______________________________________________________________________________________________________________________", ConsoleColor.Green);
             if (buysellI > 0 || longshortI > 0) ColourConsole.WriteEmbeddedColourLine($"[yellow]{"Asset",12}[/yellow]\t[cyan]{"WEIGHT-INITIAL or WEIGHT",25}[/cyan]\t[red]{"SELL or SHORT",12}[/red]\t[darkcyan]{"BUY or LONG",12}[/darkcyan]\t[green]{"INITIAL or 0",12}[/green]\t\t[darkmagenta]{"LIMIT",12}[/darkmagenta]");
             for (var i = 0; i < n; ++i)
