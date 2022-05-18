@@ -3328,9 +3328,9 @@ namespace Portfolio
                     fixedCost += Math.Max(0.0, U[nfixed - i - 1 + n + m] - initial[i + n]) * buy[i + n] - Math.Min(0.0, U[nfixed - i - 1 + n + m] - initial[i + n]) * sell[i + n];
                 }
             }
+            var forcedI = 0.0;
             if (delta < 2.0)
             {
-                var forcedI = 0.0;
                 cnumTurn = cnum;
                 for (var i = 0; i < n; ++i)
                 {
@@ -3340,7 +3340,7 @@ namespace Portfolio
                             BlasLike.dset(1, 1.0, AA, M, cnum + M * i);
                         else if (initial[i] >= U[i])
                         {
-                            forcedI -= initial[i];
+                            forcedI += initial[i];
                             BlasLike.dset(1, -1.0, AA, M, cnum + M * i);
                         }
                     }
@@ -3348,8 +3348,8 @@ namespace Portfolio
                         BlasLike.dset(1, 1.0, AA, M, cnum + M * i);//w = (w-initial) + initial OR initial - (initial-w)
                 }
                 BlasLike.dset(buysellI, 2.0, AA, M, cnum + M * n);//2sum sell
-                LL[N + cnum] = 2.0 * (forcedI - fixedTurn) + BlasLike.dsumvec(n, initial);
-                UU[N + cnum] = 2.0 * (delta + forcedI - fixedTurn) + BlasLike.dsumvec(n, initial);
+                LL[N + cnum] = 2.0 * (-fixedTurn) + BlasLike.dsumvec(n, initial) - forcedI * 2;
+                UU[N + cnum] = 2.0 * (delta - fixedTurn) + BlasLike.dsumvec(n, initial) - forcedI * 2;
                 cnum++;
             }
             var extraLong = 0.0;
@@ -3681,11 +3681,11 @@ namespace Portfolio
                 for (var i = 0; i < buysellI; ++i)
                 {
                     var k = buysellIndex[i];
-                    turn2 += (WW[n + i] + WW[k] - initial[k]);
+                    turn2 += WW[n + i] + (WW[k] - initial[k]) * 0.5;
                     if (buy != null && sell != null) cost2 += WW[n + i] * (buy[k] + sell[k]) + (WW[k] - initial[k]) * buy[k];
                 }
-                turn2 -= fixedTurn;
-                cost2 -= fixedCost;
+                //           turn2 -= fixedTurn;
+                //           cost2 -= fixedCost;
             }
             var shortsideS = -extraShort;
             for (var i = 0; i < n; ++i)
