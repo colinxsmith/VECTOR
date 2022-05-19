@@ -3631,8 +3631,8 @@ return  back;
                  //ETL          -r[t] + max((r[t] - VAR),0) >= 0
                     if (targetR == null) BlasLike.dsccopy(n, -1, DATA, tlen, AA, M, i, i +  m+buysellI+longshortI);//ETL has minus
                     else BlasLike.dcopy(n, DATA, tlen, AA, M, i, i +  m+buysellI+longshortI);//GAIN/LOSS has plus
-                    BlasLike.dset(1, 1, AA, M,  m+buysellI+longshortI + i + M * (i + n));//THe positive variables
-                    if (targetR == null) BlasLike.dset(1, 1, AA, M,  m+buysellI+longshortI + i + M * (tlen + n));//Get VAR for ETL
+                    BlasLike.dset(1, 1, AA, M,  m+buysellI+longshortI + i + M * (i + n+buysellI+longshortI));//THe positive variables
+                    if (targetR == null) BlasLike.dset(1, 1, AA, M,  m+buysellI+longshortI + i + M * (tlen + n+buysellI+longshortI));//Get VAR for ETL
                     if (nfixed > 0)
                     {
                         LL[N + m+buysellI+longshortI + i] -= fixedGLETL[i];
