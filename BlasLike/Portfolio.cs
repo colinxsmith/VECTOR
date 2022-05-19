@@ -3736,7 +3736,7 @@ cnum++;
                 double c1;
                 for (var i = 0; i < tlen; ++i)
                 {
-                    c1 = BlasLike.ddot(N, AA, M, WW, 1, M - tlen + i);
+                    c1 = BlasLike.ddot(N, AA, M, WW, 1, m+buysellI+longshortI+ i);
                     ColourConsole.WriteEmbeddedColourLine($"[yellow]{"TIME " + (i + 1),12}[/yellow]\t[cyan]{(WW[i + n + buysellI + longshortI]),25:F8}[/cyan]\t[darkcyan]{(c1),20:F8}[/darkcyan]\t[green]{LL[N + M - tlen + i],20:f8}[/green]\t[magenta]{(c1 - LL[N + M - tlen + i]),20:f8}[/magenta]");
                 }
                 if (targetR == null) ColourConsole.WriteEmbeddedColourLine($"[yellow]{"VAR",12}[/yellow]\t[cyan]{(WW[tlen + n + buysellI + longshortI]),25:F8}[/cyan]");
