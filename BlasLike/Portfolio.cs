@@ -3383,7 +3383,7 @@ return  back;
                 else
                     BlasLike.dsetvec(tlen, DATAlambda, CC, n + buysellI + longshortI);
             }
-            var cnum = m + buysellI + longshortI;
+            var cnum = m + buysellI + longshortI+tlen;
             var cnumTurn = -1;
             var fixedTurn = 0.0;
             var fixedCost = 0.0;
@@ -3619,32 +3619,34 @@ return  back;
                     cnum++;
                 }
             }
-            var cnumETL=0;
+            var cnumETL=-1;
             if (tlen > 0)
             {//Constraints for ETL or GAIN/LOSS
-                if (targetR == null) BlasLike.dsetvec(tlen, 0, LL, N + M - tlen);
-                else BlasLike.dcopyvec(tlen, targetR, LL, 0, N + M - tlen);
-                BlasLike.dsetvec(tlen, useIP ? BlasLike.lm_max : DATAmax, UU, N + M - tlen);
+                if (targetR == null) BlasLike.dsetvec(tlen, 0, LL, N + m+buysellI+longshortI);
+                else BlasLike.dcopyvec(tlen, targetR, LL, 0, N + m+buysellI+longshortI);
+                BlasLike.dsetvec(tlen, useIP ? BlasLike.lm_max : DATAmax, UU, N +  m+buysellI+longshortI);
 
                 for (var i = 0; i < tlen; ++i)
                 {//GAIN/LOSS   r[t] + max((Target - r[t]),0) >= Target
                  //ETL          -r[t] + max((r[t] - VAR),0) >= 0
-                    if (targetR == null) BlasLike.dsccopy(n, -1, DATA, tlen, AA, M, i, i + M - tlen);//ETL has minus
-                    else BlasLike.dcopy(n, DATA, tlen, AA, M, i, i + M - tlen);//GAIN/LOSS has plus
-                    BlasLike.dset(1, 1, AA, M, M - tlen + i + M * (i + n));//THe positive variables
-                    if (targetR == null) BlasLike.dset(1, 1, AA, M, M - tlen + i + M * (tlen + n));//Get VAR for ETL
+                    if (targetR == null) BlasLike.dsccopy(n, -1, DATA, tlen, AA, M, i, i +  m+buysellI+longshortI);//ETL has minus
+                    else BlasLike.dcopy(n, DATA, tlen, AA, M, i, i +  m+buysellI+longshortI);//GAIN/LOSS has plus
+                    BlasLike.dset(1, 1, AA, M,  m+buysellI+longshortI + i + M * (i + n));//THe positive variables
+                    if (targetR == null) BlasLike.dset(1, 1, AA, M,  m+buysellI+longshortI + i + M * (tlen + n));//Get VAR for ETL
                     if (nfixed > 0)
                     {
-                        LL[N + M - tlen + i] -= fixedGLETL[i];
+                        LL[N + m+buysellI+longshortI + i] -= fixedGLETL[i];
                     }
                 }
             if(ETLorLOSSconstraint){
 cnumETL=cnum;
-LL[N+cnum]=ETLorLOSSmin;
+LL[N+ cnum]=ETLorLOSSmin;
 UU[N+cnum]=ETLorLOSSmax;
 BlasLike.dset(n,0,AA,M,cnum);
-for(var i=n;i<N;++i)
-BlasLike.dset(1,1,AA, M,  cnum + i * M);
+int i;
+for(i=n+buysellI+longshortI;i<n+buysellI+longshortI+tlen;++i)
+BlasLike.dset(1,1.0/check_digit(tail * tlen),AA, M,  cnum + i * M);
+BlasLike.dset(1,1.0,AA, M,  cnum + i * M);
 cnum++;
             }
             }
@@ -3689,6 +3691,10 @@ cnum++;
                 this.w = WW;
                 WriteInputs("./optinput2");
                 back = ActiveOpt(0, WW, LAMBDAS);
+                if(ETLorLOSSconstraint){
+                    var setETL=BlasLike.ddot(N,AA,M,WW,1,cnumETL);
+                    ColourConsole.WriteEmbeddedColourLine($"For ETL [red]min {LL[N+cnumETL]}[/red] [yellow]value {setETL}[/yellow] [cyan]max {UU[N+cnumETL]}[/cyan]");
+                }
                 Console.WriteLine($"back = {back}");
                 if (back == 6)
                 {

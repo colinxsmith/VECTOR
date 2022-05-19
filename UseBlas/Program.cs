@@ -1487,20 +1487,22 @@ namespace UseBlas
                 var ones=new double[tlen];
                 BlasLike.dsetvec(tlen,1.0/tlen,ones);
                 Factorise.dmxmulv( nstocks,tlen, DATA, ones, alpha,0,0,0,true);
-                back=opt.BasicOptimisation(n, m, -1, A, L, U, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR);
+              
+                delta=0.45;
+                  back=opt.BasicOptimisation(n, m, -1, A, L, U, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR);
                 if(true){
                     ColourConsole.WriteError("NEED TO REPEAT");
                     var Lhere = (double[])L.Clone();
                     var Uhere = (double[])U.Clone();
-                    opt.BoundsSetToSign(n, Lhere, Uhere, initial, opt.wback);
+                  //  opt.BoundsSetToSign(n, Lhere, Uhere, initial, opt.wback);
                     back = opt.BasicOptimisation(n, m, -1, A, Lhere, Uhere, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR);
                
                 var VARnow=1e-8;
                 var ETLnow=Portfolio.Portfolio.ETL(nstocks,opt.wback,DATA,tail,ref VARnow);
-                var ETLmax=ETLnow*0.5;
-                var ETLmin=ETLnow*0.1;
+                var ETLmax=ETLnow*.999;
+                var ETLmin=0.0;
                 ColourConsole.WriteEmbeddedColourLine($"[green]ETLmin {ETLmin,12:e16}[/green]  [yellow]ETLmax {ETLmax,12:e16}[/yellow]");
-                    back = opt.BasicOptimisation(n, m, -1, A, Lhere, Uhere, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR,true,ETLmin,ETLmax);
+                    back = opt.BasicOptimisation(n, m, -1, A, Lhere, Uhere, 0.5, 0.5,delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR,true,ETLmin,ETLmax);
                     ColourConsole.WriteInfo($"back is {back}");
                 ETLnow=Portfolio.Portfolio.ETL(nstocks,opt.wback,DATA,tail,ref VARnow);
                         }return;
