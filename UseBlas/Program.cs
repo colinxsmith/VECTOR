@@ -8,12 +8,6 @@ using Microsoft.Win32;
 
 namespace UseBlas
 {
-    class ETLpass
-    {
-        public double[] returns;
-        public int T;
-        public double inc;
-    }
     class Program
     {
         static unsafe void Main(string[] args)
@@ -1191,7 +1185,7 @@ namespace UseBlas
                 BlasLike.dsetvec(nstocks, 1.0 / nstocks, testw);
                 var s = new double[tlen];
                 double tail = 0.05;//confidence is (1-tail) I think, so 95% confident here
-                ETLpass info = new ETLpass();
+               Portfolio.Portfolio. ETLpass info = new Portfolio.Portfolio. ETLpass();
                 info.inc = tail;
                 info.T = tlen;
                 info.returns = s;
@@ -1225,9 +1219,14 @@ namespace UseBlas
                 var ETLinterord = (cvarord2 - cvarord1) * (tail * tlen - (double)(int)(tail * tlen)) + cvarord1;
 
                 ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Traditional Method[/darkyellow]\n[green]Interpolated VAR {VARinterord,16:E8}[/green] [darkyellow]Interpolated ETL {ETLinterord,16:E8}[/darkyellow]");
+                //Try doing it in Portfolio class
+                var VARp=0.0;
+                var ETLp=Portfolio.Portfolio.ETL(s,tail,ref VARp);
+                ETLp=Portfolio.Portfolio.ETL(nstocks,testw,DATA,tail,ref VARp);
+                
                 double cvar(double X, object kk)
                 {
-                    ETLpass info = (ETLpass)kk;
+                    Portfolio.Portfolio.ETLpass info = (Portfolio.Portfolio.ETLpass)kk;
                     double r = 0;
                     for (var i = 0; i < info.T; ++i)
                     {
@@ -1238,7 +1237,7 @@ namespace UseBlas
                 }
                 double cvar1d(ref double var1, object kk)
                 {
-                    ETLpass info = (ETLpass)kk;
+                    Portfolio.Portfolio.ETLpass info = (Portfolio.Portfolio.ETLpass)kk;
                     var tailkeep = tail;
                     var1 = ActiveSet.Optimise.PathMin(cvar, smin, smax, BlasLike.lm_eps8, 0, kk);
                     var back = cvar(var1, kk);
@@ -1484,7 +1483,7 @@ namespace UseBlas
                     }
                 }
                 ColourConsole.WriteEmbeddedColourLine($"[green]back[/green] = [cyan]{back}[/cyan]");
-                //          return;
+                //    return;
             }
 
             {
@@ -1668,8 +1667,8 @@ namespace UseBlas
                     sendInput.target = targetRisk;
                     opt.gamma = opt.kappa = 5e-2;
                     opt.CalcRisk(opt.gamma, sendInput);
+         //             opt.DropRisk(basket, trades, targetRisk, sendInput);
                     opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
-                    //  opt.DropRisk(basket, trades, targetRisk, sendInput);
                     sendInput.useIP = false;
                     if (round == 1)
                     {
