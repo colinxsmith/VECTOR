@@ -18,31 +18,33 @@ namespace Portfolio
                 a[i] = p;
             }
         }
-    public class ETLpass
-    {
-        public double[] returns;
-        public int T;
-        public double inc;
-                public double cvar(double X,object kk)
-                {ETLpass here=(ETLpass)kk;
-                    double r = 0;
-                    for (var i = 0; i < T; ++i)
-                    {
-                        r += Math.Max(0, here.returns[i] - X);
-                    }
-                    var back = X + r / check_digit(here.inc * here.T);
-                    return back;
+        public class ETLpass
+        {
+            public double[] returns;
+            public int T;
+            public double inc;
+            public double cvar(double X, object kk)
+            {
+                ETLpass here = (ETLpass)kk;
+                double r = 0;
+                for (var i = 0; i < T; ++i)
+                {
+                    r += Math.Max(0, here.returns[i] - X);
                 }
-                public double cvar1d(ref double var1)
-                {double smin=0,smax=BlasLike.lm_max;
-                BlasLike.dxminmax(T,returns,1,ref smax,ref smin);
-                smin=-smax;
-                    var1 = ActiveSet.Optimise.PathMin(cvar, smin, smax, BlasLike.lm_eps8, 0, this);
-                    var back = cvar(var1,this);
-                    ColourConsole.WriteEmbeddedColourLine($"[yellow]Value at Risk {var1,16:E8}[/yellow], [green]Expected Tail Loss {back,16:E8}[/green] [magenta]at tail {inc}[/magenta]");
-                    return back;
-                }
-    }
+                var back = X + r / check_digit(here.inc * here.T);
+                return back;
+            }
+            public double cvar1d(ref double var1)
+            {
+                double smin = 0, smax = BlasLike.lm_max;
+                BlasLike.dxminmax(T, returns, 1, ref smax, ref smin);
+                smin = -smax;
+                var1 = ActiveSet.Optimise.PathMin(cvar, smin, smax, BlasLike.lm_eps8, 0, this);
+                var back = cvar(var1, this);
+                ColourConsole.WriteEmbeddedColourLine($"[yellow]Value at Risk {var1,16:E8}[/yellow], [green]Expected Tail Loss {back,16:E8}[/green] [magenta]at tail {inc}[/magenta]");
+                return back;
+            }
+        }
         public class KeepBest
         {
             public int back;
@@ -226,17 +228,22 @@ namespace Portfolio
                 digit = check_digit(digit);
             }
             return digit;
-        }///<summary>Round to pow significant digits</summary>
-        ///<param name="www"> double number to be rounded </param>
-        public static double rounder(double www,double pow=3){
-                var cc=0;
-                if(www<10){
-                while(www<Math.Pow(10.0,pow-1)){www*=10;cc++;}
-                return check_digit(Math.Floor(www)/Math.Pow(10.0,(double)cc));
-        }else{
-                while(www>=Math.Pow(10.0,pow)){www/=10;cc++;}
-                return check_digit(Math.Floor(www)*Math.Pow(10.0,(double)cc));
-                }
+        }///<summary>Round to fig significant digits</summary>
+         ///<param name="www"> double number to be rounded </param>
+         ///<param name="fig"> number of significant figures </param>
+        public static double rounder(double www, double fig = 3)
+        {
+            var cc = 0;
+            if (www < 10)
+            {
+                while (www < Math.Pow(10.0, fig - 1)) { www *= 10; cc++; }
+                return check_digit(Math.Floor(www) / Math.Pow(10.0, (double)cc));
+            }
+            else
+            {
+                while (www >= Math.Pow(10.0, fig)) { www /= 10; cc++; }
+                return check_digit(Math.Floor(www) * Math.Pow(10.0, (double)cc));
+            }
         }
         ///<summary>Return a whole number if digit is whole number plus/minus something very small</summary>
         public static double check_digit(double digit)
@@ -972,7 +979,7 @@ namespace Portfolio
             var bestround = 0;
             while (next != null)
             {
-               if(next.back<2) bestround = Math.Max(bestround, next.nround);
+                if (next.back < 2) bestround = Math.Max(bestround, next.nround);
                 prev = next;
                 next = next.next;
             }
@@ -2361,9 +2368,9 @@ namespace Portfolio
             public double[] DATA = null;
             public double tail = 0.05;
             public double[] targetR = null;
-            public bool ETLorLOSSconstraint=false;
-            public double ETLorLOSSmax=0;
-            public double ETLorLOSSmin=0;
+            public bool ETLorLOSSconstraint = false;
+            public double ETLorLOSSmax = 0;
+            public double ETLorLOSSmin = 0;
         }
         ///<summary> A function that returns risk - target risk. Use with Solve1D to do risk constraint</summary>
         ///<param name="gam">guess for gamma (for return risk utility) or (gamma and kappa for cost risk utility)</param>
@@ -2372,7 +2379,7 @@ namespace Portfolio
         {
             INFO vars = (INFO)info;
             vars.back = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, vars.L, vars.U, gam, gam, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
-                     alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR,vars.ETLorLOSSconstraint,vars.ETLorLOSSmin,vars.ETLorLOSSmax);
+                     alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR, vars.ETLorLOSSconstraint, vars.ETLorLOSSmin, vars.ETLorLOSSmax);
             double[] www = (double[])wback.Clone();
             if (vars.bench != null) BlasLike.dsubvec(vars.n, www, vars.bench, www);
             var fix = nfixed;
@@ -2404,14 +2411,14 @@ namespace Portfolio
                 else ColourConsole.WriteError("INFEASIBLE");
                 sendInput.useIP = false;
                 back = BasicOptimisation(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
-                 alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR,sendInput.ETLorLOSSconstraint,sendInput.ETLorLOSSmin,sendInput.ETLorLOSSmax);
+                 alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax);
                 var w = new double[sendInput.n];
                 var gradient = new double[sendInput.n];
                 BlasLike.dcopyvec(sendInput.n, wback, w);
                 var utility = PortfolioUtility(sendInput.n, gamma, kappa, sendInput.buy, sendInput.sell, sendInput.alpha, w, gradient, ref baskethere, ref tradeshere);
                 ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
                 if (back != 6) back = Dropper(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
-                     alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR,sendInput.ETLorLOSSconstraint,sendInput.ETLorLOSSmin,sendInput.ETLorLOSSmax, basket, baskethere, trades, tradeshere);
+                     alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax, basket, baskethere, trades, tradeshere);
                 if (back == 6) ColourConsole.WriteError("INFEASIBLE");
                 BlasLike.dcopyvec(sendInput.n, wback, w);
                 if (back != 6)
@@ -2433,7 +2440,7 @@ namespace Portfolio
                         kappa = gamma = newgamma;
                         sendInput.useIP = true;
                         BasicOptimisation(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
-                         alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR,sendInput.ETLorLOSSconstraint,sendInput.ETLorLOSSmin,sendInput.ETLorLOSSmax);
+                         alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax);
                         w = new double[sendInput.n];
                         gradient = new double[sendInput.n];
                         BlasLike.dcopyvec(sendInput.n, wback, w);
@@ -2524,7 +2531,7 @@ namespace Portfolio
         double gamma, double kappa, double delta, double value, double valuel,
         double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell,
         string[] names, bool useIp = true, int nabs = 0, double[] A_abs = null, double[] Abs_L = null, double[] Abs_U = null,
-        int mabs = 0, int[] I_A = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null,bool ETLorLOSSconstraint=false,double ETLorLOSSmin=0,double ETLorLOSSmax=0, int basket = -1, int baskethere = -1, int trades = -1, int tradeshere = -1)
+        int mabs = 0, int[] I_A = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0, double ETLorLOSSmax = 0, int basket = -1, int baskethere = -1, int trades = -1, int tradeshere = -1)
         {
             if (basket < 0) { basket = n; baskethere = n; }
             if (trades < 0) { trades = n; tradeshere = n; }
@@ -2568,7 +2575,7 @@ namespace Portfolio
                     }
                 }
                 var back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                    alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda, DATA, tail, targetR,ETLorLOSSconstraint,ETLorLOSSmin,ETLorLOSSmax);
+                    alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax);
                 if (back != 6)
                 {
                     BlasLike.dcopyvec(n, wback, w);
@@ -2617,7 +2624,7 @@ namespace Portfolio
                         }
                     }
                     back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                       alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A,tlen,  DATAlambda,DATA,tail,targetR, ETLorLOSSconstraint,ETLorLOSSmin,ETLorLOSSmax);
+                       alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax);
                     while (back == 6)
                     {
                         fast = false;
@@ -2647,7 +2654,7 @@ namespace Portfolio
                             }
                         }
                         back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                           alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A,tlen,  DATAlambda,DATA,tail,targetR, ETLorLOSSconstraint,ETLorLOSSmin,ETLorLOSSmax);
+                           alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax);
                         if (back != 6)
                         {
                             BlasLike.dcopyvec(n, wback, w);
@@ -3058,13 +3065,14 @@ namespace Portfolio
         ///<param name="tail">proportion of upper losses in tail</param>
         ///<param name="VAR">The Value at risk calculated here</param>
 
-        public static double ETL(double[]s,double tail,ref double VAR){
-ETLpass passer=new ETLpass();
-passer.returns=s;
-passer.T=s.Length;
-passer.inc=tail;
-var back = passer.cvar1d(ref VAR);
-return  back;
+        public static double ETL(double[] s, double tail, ref double VAR)
+        {
+            ETLpass passer = new ETLpass();
+            passer.returns = s;
+            passer.T = s.Length;
+            passer.inc = tail;
+            var back = passer.cvar1d(ref VAR);
+            return back;
         }
         ///<summary>Return Portfolio Expected Tail Loss given portfolio weights
         ///and historic losses given as -returns
@@ -3077,12 +3085,12 @@ return  back;
         ///</param>
         ///<param name="tail">proportion of upper losses in tail</param>
         ///<param name="VAR">The Value at risk calculated here</param>
-        public static double ETL(int n,double[]w,double[]DATA,double tail,ref double VAR)
+        public static double ETL(int n, double[] w, double[] DATA, double tail, ref double VAR)
         {
-            int tlen=DATA.Length/n;
-            var s=new double[tlen];
-                Factorise.dmxmulv(tlen, n, DATA, w, s);
-                return ETL(s,tail,ref VAR);
+            int tlen = DATA.Length / n;
+            var s = new double[tlen];
+            Factorise.dmxmulv(tlen, n, DATA, w, s);
+            return ETL(s, tail, ref VAR);
         }
         ///<summary>Portfolio loss wrt a target 
         ///LOSS = sum(max(0,target-s))
@@ -3106,12 +3114,12 @@ return  back;
         ///<param name="w">Array of asset weights</param>
         ///<param name="DATA">Array of historic returns data</param>
         ///<param name="target">Array of target returns</param>
-        public static double LOSS(int n,double[]w,double[]DATA, double[] target)
+        public static double LOSS(int n, double[] w, double[] DATA, double[] target)
         {
-            int tlen=DATA.Length/n;
-            var s=new double[tlen];
-                Factorise.dmxmulv(tlen, n, DATA, w, s);
-            return LOSS(s,target);
+            int tlen = DATA.Length / n;
+            var s = new double[tlen];
+            Factorise.dmxmulv(tlen, n, DATA, w, s);
+            return LOSS(s, target);
         }
         ///<summary>Portfolio turnover 
         ///turnover = 0.5*sum(abs(0,w-initial))
@@ -3169,12 +3177,12 @@ return  back;
         double gamma, double kappa, double delta, double value, double valuel,
         double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell,
         string[] names, bool useIP = true, int nabs = 0, double[] A_abs = null, double[] L_abs = null, double[] U_abs = null,
-        int mabs = 0, int[] I_a = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null,bool ETLorLOSSconstraint=false,double ETLorLOSSmin=0,double ETLorLOSSmax=0)
+        int mabs = 0, int[] I_a = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0, double ETLorLOSSmax = 0)
         {
             int back;
             if (buy == null && sell == null && delta >= 0)
             {
-                BACK = back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, -1, value, valuel, rmin, rmax, alpha, initial, buy, sell, names, useIP, nabs, A_abs, L_abs, U_abs, mabs, I_a, tlen, DATAlambda, DATA, tail, targetR,ETLorLOSSconstraint,ETLorLOSSmin,ETLorLOSSmax);
+                BACK = back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, -1, value, valuel, rmin, rmax, alpha, initial, buy, sell, names, useIP, nabs, A_abs, L_abs, U_abs, mabs, I_a, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax);
                 if (back > 2) return back;
                 double turn = this.turnover(n, wback, initial);
                 if (turn <= delta) return back;
@@ -3308,8 +3316,8 @@ return  back;
             for (var i = 0; i < longshortbuysell; ++i) longshortbuysellIndex_inverse[longshortbuysellIndex[i]] = i;
             var N = n + buysellI + longshortI;
             var M = m + buysellI + longshortI;
-            if(delta<2.0)M++;
-            if(ETLorLOSSconstraint&&tlen>0)M++;
+            if (delta < 2.0) M++;
+            if (ETLorLOSSconstraint && tlen > 0) M++;
             double DATAmax = 0.0, DATAmin = 0.0;
             if (tlen > 0)
             {
@@ -3409,7 +3417,7 @@ return  back;
                 else
                     BlasLike.dsetvec(tlen, DATAlambda, CC, n + buysellI + longshortI);
             }
-            var cnum = m + buysellI + longshortI+tlen;
+            var cnum = m + buysellI + longshortI + tlen;
             var cnumTurn = -1;
             var fixedTurn = 0.0;
             var fixedCost = 0.0;
@@ -3645,43 +3653,48 @@ return  back;
                     cnum++;
                 }
             }
-            var cnumETL=-1;
+            var cnumETL = -1;
             if (tlen > 0)
             {//Constraints for ETL or GAIN/LOSS
-                if (targetR == null) BlasLike.dsetvec(tlen, 0, LL, N + m+buysellI+longshortI);
-                else BlasLike.dcopyvec(tlen, targetR, LL, 0, N + m+buysellI+longshortI);
-                BlasLike.dsetvec(tlen, useIP ? BlasLike.lm_max : DATAmax, UU, N +  m+buysellI+longshortI);
+                if (targetR == null) BlasLike.dsetvec(tlen, 0, LL, N + m + buysellI + longshortI);
+                else BlasLike.dcopyvec(tlen, targetR, LL, 0, N + m + buysellI + longshortI);
+                BlasLike.dsetvec(tlen, useIP ? BlasLike.lm_max : DATAmax, UU, N + m + buysellI + longshortI);
 
                 for (var i = 0; i < tlen; ++i)
                 {//GAIN/LOSS   r[t] + max((Target - r[t]),0) >= Target
                  //ETL          -r[t] + max((r[t] - VAR),0) >= 0
-                    if (targetR == null) BlasLike.dsccopy(n, -1, DATA, tlen, AA, M, i, i +  m+buysellI+longshortI);//ETL has minus
-                    else BlasLike.dcopy(n, DATA, tlen, AA, M, i, i +  m+buysellI+longshortI);//GAIN/LOSS has plus
-                    BlasLike.dset(1, 1, AA, M,  m+buysellI+longshortI + i + M * (i + n+buysellI+longshortI));//THe positive variables
-                    if (targetR == null) BlasLike.dset(1, 1, AA, M,  m+buysellI+longshortI + i + M * (tlen + n+buysellI+longshortI));//Get VAR for ETL
+                    if (targetR == null) BlasLike.dsccopy(n, -1, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//ETL has minus
+                    else BlasLike.dcopy(n, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//GAIN/LOSS has plus
+                    BlasLike.dset(1, 1, AA, M, m + buysellI + longshortI + i + M * (i + n + buysellI + longshortI));//THe positive variables
+                    if (targetR == null) BlasLike.dset(1, 1, AA, M, m + buysellI + longshortI + i + M * (tlen + n + buysellI + longshortI));//Get VAR for ETL
                     if (nfixed > 0)
                     {
-                        LL[N + m+buysellI+longshortI + i] -= fixedGLETL[i];
+                        LL[N + m + buysellI + longshortI + i] -= fixedGLETL[i];
                     }
                 }
-            if(ETLorLOSSconstraint){
-cnumETL=cnum;
-if(targetR==null){
-LL[N+ cnum]=ETLorLOSSmin;
-UU[N+cnum]=ETLorLOSSmax;
-BlasLike.dset(n,0,AA,M,cnum);
-int i;
-for(i=n+buysellI+longshortI;i<n+buysellI+longshortI+tlen;++i)
-BlasLike.dset(1,1.0/check_digit(tail * tlen),AA, M,  cnum + i * M);
-BlasLike.dset(1,1.0,AA, M,  cnum + i * M);
-}else{
-LL[N+ cnum]=ETLorLOSSmin;
-UU[N+cnum]=ETLorLOSSmax;
-BlasLike.dset(n,0,AA,M,cnum);
-for(var i=n+buysellI+longshortI;i<n+buysellI+longshortI+tlen;++i)
-BlasLike.dset(1,1.0,AA, M,  cnum + i * M);
-}cnum++;
-            }
+                if (ETLorLOSSconstraint)
+                {
+                    cnumETL = cnum;
+                    if (targetR == null)
+                    {
+                        LL[N + cnum] = ETLorLOSSmin;
+                        UU[N + cnum] = ETLorLOSSmax;
+                        BlasLike.dset(n, 0, AA, M, cnum);
+                        int i;
+                        for (i = n + buysellI + longshortI; i < n + buysellI + longshortI + tlen; ++i)
+                            BlasLike.dset(1, 1.0 / check_digit(tail * tlen), AA, M, cnum + i * M);
+                        BlasLike.dset(1, 1.0, AA, M, cnum + i * M);
+                    }
+                    else
+                    {
+                        LL[N + cnum] = ETLorLOSSmin;
+                        UU[N + cnum] = ETLorLOSSmax;
+                        BlasLike.dset(n, 0, AA, M, cnum);
+                        for (var i = n + buysellI + longshortI; i < n + buysellI + longshortI + tlen; ++i)
+                            BlasLike.dset(1, 1.0, AA, M, cnum + i * M);
+                    }
+                    cnum++;
+                }
             }
             this.names = names;
             this.L = LL;
@@ -3724,10 +3737,11 @@ BlasLike.dset(1,1.0,AA, M,  cnum + i * M);
                 this.w = WW;
                 WriteInputs("./optinput2");
                 back = ActiveOpt(0, WW, LAMBDAS);
-                if(ETLorLOSSconstraint){
-                    var setETLorLOSS=BlasLike.ddot(N,AA,M,WW,1,cnumETL);
-                    if(targetR==null)ColourConsole.WriteEmbeddedColourLine($"[magenta]For ETL[/magenta] ([green]strength {LAMBDAS[N+cnumETL]}[/green]) [red]min {LL[N+cnumETL]}[/red] [yellow]value {setETLorLOSS}[/yellow] [cyan]max {UU[N+cnumETL]}[/cyan]");
-                    else ColourConsole.WriteEmbeddedColourLine($"[magenta]For LOSS[/magenta] ([green]strength {LAMBDAS[N+cnumETL]}[/green]) [red]min {LL[N+cnumETL]}[/red] [yellow]value {setETLorLOSS}[/yellow] [cyan]max {UU[N+cnumETL]}[/cyan]");
+                if (ETLorLOSSconstraint)
+                {
+                    var setETLorLOSS = BlasLike.ddot(N, AA, M, WW, 1, cnumETL);
+                    if (targetR == null) ColourConsole.WriteEmbeddedColourLine($"[magenta]For ETL[/magenta] ([green]strength {LAMBDAS[N + cnumETL]}[/green]) [red]min {LL[N + cnumETL]}[/red] [yellow]value {setETLorLOSS}[/yellow] [cyan]max {UU[N + cnumETL]}[/cyan]");
+                    else ColourConsole.WriteEmbeddedColourLine($"[magenta]For LOSS[/magenta] ([green]strength {LAMBDAS[N + cnumETL]}[/green]) [red]min {LL[N + cnumETL]}[/red] [yellow]value {setETLorLOSS}[/yellow] [cyan]max {UU[N + cnumETL]}[/cyan]");
                 }
                 Console.WriteLine($"back = {back}");
                 if (back == 6)
@@ -3770,8 +3784,8 @@ BlasLike.dset(1,1.0,AA, M,  cnum + i * M);
                 double c1;
                 for (var i = 0; i < tlen; ++i)
                 {
-                    c1 = BlasLike.ddot(N, AA, M, WW, 1, m+buysellI+longshortI+ i);
-                    ColourConsole.WriteEmbeddedColourLine($"[yellow]{"TIME " + (i + 1),12}[/yellow]\t[cyan]{(WW[i + n + buysellI + longshortI]),25:F8}[/cyan]\t[darkcyan]{(c1),20:F8}[/darkcyan]\t[green]{LL[N + m+buysellI+longshortI + i],20:f8}[/green]\t[magenta]{(c1 - LL[N + m+buysellI+longshortI + i]),20:f8}[/magenta]");
+                    c1 = BlasLike.ddot(N, AA, M, WW, 1, m + buysellI + longshortI + i);
+                    ColourConsole.WriteEmbeddedColourLine($"[yellow]{"TIME " + (i + 1),12}[/yellow]\t[cyan]{(WW[i + n + buysellI + longshortI]),25:F8}[/cyan]\t[darkcyan]{(c1),20:F8}[/darkcyan]\t[green]{LL[N + m + buysellI + longshortI + i],20:f8}[/green]\t[magenta]{(c1 - LL[N + m + buysellI + longshortI + i]),20:f8}[/magenta]");
                 }
                 if (targetR == null) ColourConsole.WriteEmbeddedColourLine($"[yellow]{"VAR",12}[/yellow]\t[cyan]{(WW[tlen + n + buysellI + longshortI]),25:F8}[/cyan]");
             }
@@ -3955,22 +3969,26 @@ BlasLike.dset(1,1.0,AA, M,  cnum + i * M);
             ColourConsole.WriteEmbeddedColourLine($"Utility:\t\t\t[green]{utility,20:f16}:[/green]\t[cyan] {utilityA,20:f16}[/cyan]");
             ColourConsole.WriteEmbeddedColourLine($"Turnover:\t\t\t[green]{turnover * 0.5,20:f16}:[/green]\t[cyan]{turn2,20:f16}[/cyan]");
             ColourConsole.WriteEmbeddedColourLine($"Cost:\t\t\t\t[green]{cost,20:f16}:[/green]\t[cyan]{cost2,20:f16}[/cyan]");
-            if(tlen>0&&DATAlambda!=0.0){
-                if(targetR==null){
-                var ETL2=BlasLike.ddotvec(tlen+1,WW,CC,n-nfixed+buysellI+longshortI,n-nfixed+buysellI+longshortI)/DATAlambda;
-                var VAR1=0e0;
-                var ETL1=ETL(n,wback,DATA,tail,ref VAR1);
-                if(Math.Abs(ETL1-ETL2)>BlasLike.lm_rooteps)
-                back=6;
-            ColourConsole.WriteEmbeddedColourLine($"ETL:\t\t\t\t[green]{ETL1,20:f16}:[/green]\t[cyan]{ETL2,20:f16}[/cyan]");
+            if (tlen > 0 && DATAlambda != 0.0)
+            {
+                if (targetR == null)
+                {
+                    var ETL2 = BlasLike.ddotvec(tlen + 1, WW, CC, n - nfixed + buysellI + longshortI, n - nfixed + buysellI + longshortI) / DATAlambda;
+                    var VAR1 = 0e0;
+                    var ETL1 = ETL(n, wback, DATA, tail, ref VAR1);
+                    if (Math.Abs(ETL1 - ETL2) > BlasLike.lm_rooteps)
+                        back = 6;
+                    ColourConsole.WriteEmbeddedColourLine($"ETL:\t\t\t\t[green]{ETL1,20:f16}:[/green]\t[cyan]{ETL2,20:f16}[/cyan]");
                 }
-                else{
-                var LOSS2=BlasLike.ddotvec(tlen,WW,CC,n-nfixed+buysellI+longshortI,n-nfixed+buysellI+longshortI)/DATAlambda;
-                                var LOSS1=LOSS(n,wback,DATA,targetR);
-                if(Math.Abs(LOSS1-LOSS2)>BlasLike.lm_rooteps)
-                back=6;
-            ColourConsole.WriteEmbeddedColourLine($"LOSS:\t\t\t\t[green]{LOSS2,20:f16}:[/green]\t[cyan]{LOSS2,20:f16}[/cyan]");
-                }}
+                else
+                {
+                    var LOSS2 = BlasLike.ddotvec(tlen, WW, CC, n - nfixed + buysellI + longshortI, n - nfixed + buysellI + longshortI) / DATAlambda;
+                    var LOSS1 = LOSS(n, wback, DATA, targetR);
+                    if (Math.Abs(LOSS1 - LOSS2) > BlasLike.lm_rooteps)
+                        back = 6;
+                    ColourConsole.WriteEmbeddedColourLine($"LOSS:\t\t\t\t[green]{LOSS2,20:f16}:[/green]\t[cyan]{LOSS2,20:f16}[/cyan]");
+                }
+            }
             for (var i = 0; i < m; ++i)
             {
                 var ccval = BlasLike.ddot(n, A, m, wback, 1, i);

@@ -1185,7 +1185,7 @@ namespace UseBlas
                 BlasLike.dsetvec(nstocks, 1.0 / nstocks, testw);
                 var s = new double[tlen];
                 double tail = 0.05;//confidence is (1-tail) I think, so 95% confident here
-               Portfolio.Portfolio. ETLpass info = new Portfolio.Portfolio. ETLpass();
+                Portfolio.Portfolio.ETLpass info = new Portfolio.Portfolio.ETLpass();
                 info.inc = tail;
                 info.T = tlen;
                 info.returns = s;
@@ -1220,10 +1220,10 @@ namespace UseBlas
 
                 ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Traditional Method[/darkyellow]\n[green]Interpolated VAR {VARinterord,16:E8}[/green] [darkyellow]Interpolated ETL {ETLinterord,16:E8}[/darkyellow]");
                 //Try doing it in Portfolio class
-                var VARp=0.0;
-                var ETLp=Portfolio.Portfolio.ETL(s,tail,ref VARp);
-                ETLp=Portfolio.Portfolio.ETL(nstocks,testw,DATA,tail,ref VARp);
-                
+                var VARp = 0.0;
+                var ETLp = Portfolio.Portfolio.ETL(s, tail, ref VARp);
+                ETLp = Portfolio.Portfolio.ETL(nstocks, testw, DATA, tail, ref VARp);
+
                 double cvar(double X, object kk)
                 {
                     Portfolio.Portfolio.ETLpass info = (Portfolio.Portfolio.ETLpass)kk;
@@ -1409,7 +1409,7 @@ namespace UseBlas
                     var loss = Portfolio.Portfolio.LOSS(info.returns, tarR);
                     ColourConsole.WriteEmbeddedColourLine($"[green]Inferred[/green] [cyan]LOSS={loss};[/cyan]");
                 }
-              //  if (back == 6)
+                //  if (back == 6)
                 {
                     ColourConsole.WriteError("NEED TO REPEAT");
                     var Lhere = (double[])L.Clone();
@@ -1457,7 +1457,7 @@ namespace UseBlas
                     var loss = Portfolio.Portfolio.LOSS(info.returns, tarR);
                     ColourConsole.WriteEmbeddedColourLine($"[green]Inferred[/green] [cyan]LOSS={loss};[/cyan]");
                 }
-               // if (back == 6)
+                // if (back == 6)
                 {
                     ColourConsole.WriteError("NEED TO REPEAT");
                     var Lhere = (double[])L.Clone();
@@ -1484,42 +1484,46 @@ namespace UseBlas
                 }
                 ColourConsole.WriteEmbeddedColourLine($"[green]back[/green] = [cyan]{back}[/cyan]");
                 //Add returns to utility and try ETL or LOSS constraint
-                var ones=new double[tlen];
-                BlasLike.dsetvec(tlen,1.0/tlen,ones);
-                Factorise.dmxmulv( nstocks,tlen, DATA, ones, alpha,0,0,0,true);
-              
-                delta=0.45;
-                dlambda=1e-5;
-                  back=opt.BasicOptimisation(n, m, -1, A, L, U, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR);
-                if(true){
+                var ones = new double[tlen];
+                BlasLike.dsetvec(tlen, 1.0 / tlen, ones);
+                Factorise.dmxmulv(nstocks, tlen, DATA, ones, alpha, 0, 0, 0, true);
+
+                delta = 0.45;
+                dlambda = 1e-5;
+                back = opt.BasicOptimisation(n, m, -1, A, L, U, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR);
+                if (true)
+                {
                     ColourConsole.WriteError("NEED TO REPEAT");
                     var Lhere = (double[])L.Clone();
                     var Uhere = (double[])U.Clone();
-              //      opt.BoundsSetToSign(n, Lhere, Uhere, initial, opt.wback);
+                    //      opt.BoundsSetToSign(n, Lhere, Uhere, initial, opt.wback);
                     back = opt.BasicOptimisation(n, m, -1, A, Lhere, Uhere, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR);
-               if(tarR==null){
-                var VARnow=1e-8;
-                var ETLnow=Portfolio.Portfolio.ETL(nstocks,opt.wback,DATA,tail,ref VARnow);
-                var ETLmax=ETLnow*.9;
-                ETLmax=Portfolio.Portfolio.rounder(ETLmax,4);
-                var ETLmin=0.0;
-                ColourConsole.WriteEmbeddedColourLine($"[green]ETLmin {ETLmin,12:e16}[/green]  [yellow]ETLmax {ETLmax,12:e16}[/yellow]");
-                    back = opt.BasicOptimisation(n, m, -1, A, Lhere, Uhere, 0.5, 0.5,delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR,true,ETLmin,ETLmax);
-                    ColourConsole.WriteInfo($"back is {back}");
-                ETLnow=Portfolio.Portfolio.ETL(nstocks,opt.wback,DATA,tail,ref VARnow);
-                 ColourConsole.WriteEmbeddedColourLine($"[green]ETL is  {ETLnow,12:e16}[/green] ([cyan]{ETLmin,12:e16},{ETLmax,12:e16}[/cyan])");
-            }
-               else{
-                var Lossnow=Portfolio.Portfolio.LOSS(n,opt.wback,DATA,tarR);
-                var Lossmax=Lossnow*0.95;
-                Lossmax=Portfolio.Portfolio.rounder(Lossmax,4);
-                var Lossmin=0.0;
-                ColourConsole.WriteEmbeddedColourLine($"[green]Lossmin {Lossmin,12:e16}[/green]  [yellow]Lossmax {Lossmax,12:e16}[/yellow]");
-                    back = opt.BasicOptimisation(n, m, -1, A, Lhere, Uhere, 0.5, 0.5,delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR,true,Lossmin,Lossmax);
-                    ColourConsole.WriteInfo($"back is {back}");
-                 Lossnow=Portfolio.Portfolio.LOSS(n,opt.wback,DATA,tarR);
-                 ColourConsole.WriteEmbeddedColourLine($"[green]LOSS is  {Lossnow,12:e16}[/green] ([cyan]{Lossmin,12:e16},{Lossmax,12:e16}[/cyan])");
-            }}//return;
+                    if (tarR == null)
+                    {
+                        var VARnow = 1e-8;
+                        var ETLnow = Portfolio.Portfolio.ETL(nstocks, opt.wback, DATA, tail, ref VARnow);
+                        var ETLmax = ETLnow * .9;
+                        ETLmax = Portfolio.Portfolio.rounder(ETLmax, 4);
+                        var ETLmin = 0.0;
+                        ColourConsole.WriteEmbeddedColourLine($"[green]ETLmin {ETLmin,12:e16}[/green]  [yellow]ETLmax {ETLmax,12:e16}[/yellow]");
+                        back = opt.BasicOptimisation(n, m, -1, A, Lhere, Uhere, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR, true, ETLmin, ETLmax);
+                        ColourConsole.WriteInfo($"back is {back}");
+                        ETLnow = Portfolio.Portfolio.ETL(nstocks, opt.wback, DATA, tail, ref VARnow);
+                        ColourConsole.WriteEmbeddedColourLine($"[green]ETL is  {ETLnow,12:e16}[/green] ([cyan]{ETLmin,12:e16},{ETLmax,12:e16}[/cyan])");
+                    }
+                    else
+                    {
+                        var Lossnow = Portfolio.Portfolio.LOSS(n, opt.wback, DATA, tarR);
+                        var Lossmax = Lossnow * 0.95;
+                        Lossmax = Portfolio.Portfolio.rounder(Lossmax, 4);
+                        var Lossmin = 0.0;
+                        ColourConsole.WriteEmbeddedColourLine($"[green]Lossmin {Lossmin,12:e16}[/green]  [yellow]Lossmax {Lossmax,12:e16}[/yellow]");
+                        back = opt.BasicOptimisation(n, m, -1, A, Lhere, Uhere, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR, true, Lossmin, Lossmax);
+                        ColourConsole.WriteInfo($"back is {back}");
+                        Lossnow = Portfolio.Portfolio.LOSS(n, opt.wback, DATA, tarR);
+                        ColourConsole.WriteEmbeddedColourLine($"[green]LOSS is  {Lossnow,12:e16}[/green] ([cyan]{Lossmin,12:e16},{Lossmax,12:e16}[/cyan])");
+                    }
+                }//return;
             }
 
             {
@@ -1703,7 +1707,7 @@ namespace UseBlas
                     sendInput.target = targetRisk;
                     opt.gamma = opt.kappa = 5e-2;
                     opt.CalcRisk(opt.gamma, sendInput);
-         //             opt.DropRisk(basket, trades, targetRisk, sendInput);
+                    //             opt.DropRisk(basket, trades, targetRisk, sendInput);
                     opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
                     sendInput.useIP = false;
                     if (round == 1)
