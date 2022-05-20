@@ -202,7 +202,6 @@ namespace Portfolio
             public double dropfac;
             public double[] minholdlot;
             public double[] mintradelot;
-            public object TimeOptData;
             public string dump;
         }
         double unround = 1e60;
@@ -227,6 +226,17 @@ namespace Portfolio
                 digit = check_digit(digit);
             }
             return digit;
+        }///<summary>Round to pow significant digits</summary>
+        ///<param name="www"> double number to be rounded </param>
+        public static double rounder(double www,double pow=3){
+                var cc=0;
+                if(www<10){
+                while(www<Math.Pow(10.0,pow-1)){www*=10;cc++;}
+                return check_digit(Math.Floor(www)/Math.Pow(10.0,(double)cc));
+        }else{
+                while(www>=Math.Pow(10.0,pow)){www/=10;cc++;}
+                return check_digit(Math.Floor(www)*Math.Pow(10.0,(double)cc));
+                }
         }
         ///<summary>Return a whole number if digit is whole number plus/minus something very small</summary>
         public static double check_digit(double digit)
@@ -448,12 +458,12 @@ namespace Portfolio
             else
                 fixup = false;
 
-            while (rstep.back == 6 && i6 < n)
+            while (rstep.back == 6 && i6 < 10)
             {
                 for (j = i6; j < n; ++j)
                 {
                     dd = 0;
-                    if (rstep.prev != null && rstep.prev.nround == n)
+                    if (rstep.prev != null && rstep.prev.nround >= n)
                         i = rstep.prev.bound_order[j];
                     else
                         i = rstep.bound_order[j];
@@ -918,7 +928,7 @@ namespace Portfolio
                     }
                 }
             }
-            if (bestround >= n - 2 && next.count > maxstage && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
+            if (bestround >= n - 2 && next.count > maxstage /*&& rstep.back <= 1*/) { rstep.util = info.UtilityFunc(info); return; }
             if (rstep.nround == n && next.count == 2 && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
             if (!next.success && rstep.nround == n && rstep.back <= 1)
                 next.success = true;
@@ -962,7 +972,7 @@ namespace Portfolio
             var bestround = 0;
             while (next != null)
             {
-                bestround = Math.Max(bestround, next.nround);
+               if(next.back<2) bestround = Math.Max(bestround, next.nround);
                 prev = next;
                 next = next.next;
             }
@@ -983,7 +993,7 @@ namespace Portfolio
             }
             while (prev != null)
             {
-                if (prev.nround > nround)
+                if (prev.nround > nround && prev.back < 2)
                 {
                     BlasLike.dcopyvec(n, prev.w, roundw); nround = prev.nround;
                 }
@@ -3058,6 +3068,7 @@ return  back;
         }
         ///<summary>Return Portfolio Expected Tail Loss given portfolio weights
         ///and historic losses given as -returns
+        ///Asset returns data for i'th period and j'th asset is given in -DATA[i+j*tlen]
         ///</summary>
         ///<param name="n">Number of assets in portfolio</param>
         ///<param name="w">n portfolio weights</param>
@@ -3078,7 +3089,7 @@ return  back;
         ///</summary>
         ///<param name="s">Array of returns</param>
         ///<param name="target">Array of target returns</param>
-        public double LOSS(double[] s, double[] target)
+        public static double LOSS(double[] s, double[] target)
         {
             double back = 0;
             for (var i = 0; i < s.Length; ++i)
@@ -3086,6 +3097,21 @@ return  back;
                 back += Math.Max(0.0, target[i] - s[i]);
             }
             return back;
+        }
+        ///<summary>Portfolio loss wrt target returns for each period
+        ///Asset returns data for i'th period and j'th asset is given in DATA[i+j*tlen]
+        ///LOSS = sum(max(0,target-s)) where s=DATA.w
+        ///</summary>
+        ///<param name="n">Number of assets in portfolio</param>
+        ///<param name="w">Array of asset weights</param>
+        ///<param name="DATA">Array of historic returns data</param>
+        ///<param name="target">Array of target returns</param>
+        public static double LOSS(int n,double[]w,double[]DATA, double[] target)
+        {
+            int tlen=DATA.Length/n;
+            var s=new double[tlen];
+                Factorise.dmxmulv(tlen, n, DATA, w, s);
+            return LOSS(s,target);
         }
         ///<summary>Portfolio turnover 
         ///turnover = 0.5*sum(abs(0,w-initial))
@@ -3640,6 +3666,7 @@ return  back;
                 }
             if(ETLorLOSSconstraint){
 cnumETL=cnum;
+if(targetR==null){
 LL[N+ cnum]=ETLorLOSSmin;
 UU[N+cnum]=ETLorLOSSmax;
 BlasLike.dset(n,0,AA,M,cnum);
@@ -3647,7 +3674,13 @@ int i;
 for(i=n+buysellI+longshortI;i<n+buysellI+longshortI+tlen;++i)
 BlasLike.dset(1,1.0/check_digit(tail * tlen),AA, M,  cnum + i * M);
 BlasLike.dset(1,1.0,AA, M,  cnum + i * M);
-cnum++;
+}else{
+LL[N+ cnum]=ETLorLOSSmin;
+UU[N+cnum]=ETLorLOSSmax;
+BlasLike.dset(n,0,AA,M,cnum);
+for(var i=n+buysellI+longshortI;i<n+buysellI+longshortI+tlen;++i)
+BlasLike.dset(1,1.0,AA, M,  cnum + i * M);
+}cnum++;
             }
             }
             this.names = names;
@@ -3692,8 +3725,9 @@ cnum++;
                 WriteInputs("./optinput2");
                 back = ActiveOpt(0, WW, LAMBDAS);
                 if(ETLorLOSSconstraint){
-                    var setETL=BlasLike.ddot(N,AA,M,WW,1,cnumETL);
-                    ColourConsole.WriteEmbeddedColourLine($"For ETL [red]min {LL[N+cnumETL]}[/red] [yellow]value {setETL}[/yellow] [cyan]max {UU[N+cnumETL]}[/cyan]");
+                    var setETLorLOSS=BlasLike.ddot(N,AA,M,WW,1,cnumETL);
+                    if(targetR==null)ColourConsole.WriteEmbeddedColourLine($"[magenta]For ETL[/magenta] ([green]strength {LAMBDAS[N+cnumETL]}[/green]) [red]min {LL[N+cnumETL]}[/red] [yellow]value {setETLorLOSS}[/yellow] [cyan]max {UU[N+cnumETL]}[/cyan]");
+                    else ColourConsole.WriteEmbeddedColourLine($"[magenta]For LOSS[/magenta] ([green]strength {LAMBDAS[N+cnumETL]}[/green]) [red]min {LL[N+cnumETL]}[/red] [yellow]value {setETLorLOSS}[/yellow] [cyan]max {UU[N+cnumETL]}[/cyan]");
                 }
                 Console.WriteLine($"back = {back}");
                 if (back == 6)
@@ -3737,7 +3771,7 @@ cnum++;
                 for (var i = 0; i < tlen; ++i)
                 {
                     c1 = BlasLike.ddot(N, AA, M, WW, 1, m+buysellI+longshortI+ i);
-                    ColourConsole.WriteEmbeddedColourLine($"[yellow]{"TIME " + (i + 1),12}[/yellow]\t[cyan]{(WW[i + n + buysellI + longshortI]),25:F8}[/cyan]\t[darkcyan]{(c1),20:F8}[/darkcyan]\t[green]{LL[N + M - tlen + i],20:f8}[/green]\t[magenta]{(c1 - LL[N + M - tlen + i]),20:f8}[/magenta]");
+                    ColourConsole.WriteEmbeddedColourLine($"[yellow]{"TIME " + (i + 1),12}[/yellow]\t[cyan]{(WW[i + n + buysellI + longshortI]),25:F8}[/cyan]\t[darkcyan]{(c1),20:F8}[/darkcyan]\t[green]{LL[N + m+buysellI+longshortI + i],20:f8}[/green]\t[magenta]{(c1 - LL[N + m+buysellI+longshortI + i]),20:f8}[/magenta]");
                 }
                 if (targetR == null) ColourConsole.WriteEmbeddedColourLine($"[yellow]{"VAR",12}[/yellow]\t[cyan]{(WW[tlen + n + buysellI + longshortI]),25:F8}[/cyan]");
             }
@@ -3921,6 +3955,22 @@ cnum++;
             ColourConsole.WriteEmbeddedColourLine($"Utility:\t\t\t[green]{utility,20:f16}:[/green]\t[cyan] {utilityA,20:f16}[/cyan]");
             ColourConsole.WriteEmbeddedColourLine($"Turnover:\t\t\t[green]{turnover * 0.5,20:f16}:[/green]\t[cyan]{turn2,20:f16}[/cyan]");
             ColourConsole.WriteEmbeddedColourLine($"Cost:\t\t\t\t[green]{cost,20:f16}:[/green]\t[cyan]{cost2,20:f16}[/cyan]");
+            if(tlen>0&&DATAlambda!=0.0){
+                if(targetR==null){
+                var ETL2=BlasLike.ddotvec(tlen+1,WW,CC,n-nfixed+buysellI+longshortI,n-nfixed+buysellI+longshortI)/DATAlambda;
+                var VAR1=0e0;
+                var ETL1=ETL(n,wback,DATA,tail,ref VAR1);
+                if(Math.Abs(ETL1-ETL2)>BlasLike.lm_rooteps)
+                back=6;
+            ColourConsole.WriteEmbeddedColourLine($"ETL:\t\t\t\t[green]{ETL1,20:f16}:[/green]\t[cyan]{ETL2,20:f16}[/cyan]");
+                }
+                else{
+                var LOSS2=BlasLike.ddotvec(tlen,WW,CC,n-nfixed+buysellI+longshortI,n-nfixed+buysellI+longshortI)/DATAlambda;
+                                var LOSS1=LOSS(n,wback,DATA,targetR);
+                if(Math.Abs(LOSS1-LOSS2)>BlasLike.lm_rooteps)
+                back=6;
+            ColourConsole.WriteEmbeddedColourLine($"LOSS:\t\t\t\t[green]{LOSS2,20:f16}:[/green]\t[cyan]{LOSS2,20:f16}[/cyan]");
+                }}
             for (var i = 0; i < m; ++i)
             {
                 var ccval = BlasLike.ddot(n, A, m, wback, 1, i);
