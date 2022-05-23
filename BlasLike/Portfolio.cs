@@ -23,14 +23,26 @@ namespace Portfolio
             public double[] returns;
             public int T;
             public double inc;
+            public bool[] breakdownIndex=null;
+            public int VARindex=-1;
             public double cvar(double X, object kk)
             {
                 ETLpass here = (ETLpass)kk;
                 double r = 0;
+                if(here.breakdownIndex==null){
                 for (var i = 0; i < T; ++i)
                 {
                     r += Math.Max(0, here.returns[i] - X);
-                }
+                }}else {
+                for (var i = 0; i < T; ++i)
+                {
+                    r += Math.Max(0, here.returns[i] - X);
+                    if(Math.Abs(here.returns[i]-X)<BlasLike.lm_eps)
+                    here.VARindex=i;
+                    if(here.returns[i]>=X){
+                        here.breakdownIndex[i]=true;
+                    }else here.breakdownIndex[i]=false;
+                }}
                 var back = X + r / check_digit(here.inc * here.T);
                 return back;
             }
@@ -3065,13 +3077,15 @@ namespace Portfolio
         ///<param name="tail">proportion of upper losses in tail</param>
         ///<param name="VAR">The Value at risk calculated here</param>
 
-        public static double ETL(double[] s, double tail, ref double VAR)
+        public static double ETL(double[] s, double tail, ref double VAR,ref int VARindex,bool[]breakdownindex=null)
         {
             ETLpass passer = new ETLpass();
             passer.returns = s;
             passer.T = s.Length;
             passer.inc = tail;
+            passer.breakdownIndex=breakdownindex;
             var back = passer.cvar1d(ref VAR);
+            VARindex=passer.VARindex;
             return back;
         }
         ///<summary>Return Portfolio Expected Tail Loss given portfolio weights
@@ -3085,25 +3099,32 @@ namespace Portfolio
         ///</param>
         ///<param name="tail">proportion of upper losses in tail</param>
         ///<param name="VAR">The Value at risk calculated here</param>
-        public static double ETL(int n, double[] w, double[] DATA, double tail, ref double VAR)
+        public static double ETL(int n, double[] w, double[] DATA, double tail, ref double VAR,ref int VARindex,bool[]breakdownindex=null)
         {
             int tlen = DATA.Length / n;
             var s = new double[tlen];
             Factorise.dmxmulv(tlen, n, DATA, w, s);
-            return ETL(s, tail, ref VAR);
+            return ETL(s, tail, ref VAR,ref VARindex,breakdownindex);
         }
         ///<summary>Portfolio loss wrt a target 
         ///LOSS = sum(max(0,target-s))
         ///</summary>
         ///<param name="s">Array of returns</param>
         ///<param name="target">Array of target returns</param>
-        public static double LOSS(double[] s, double[] target)
+        public static double LOSS(double[] s, double[] target,bool[] breakdownIndex=null)
         {
             double back = 0;
+            if(breakdownIndex==null){
             for (var i = 0; i < s.Length; ++i)
             {
                 back += Math.Max(0.0, target[i] - s[i]);
-            }
+            }}else{
+            for (var i = 0; i < s.Length; ++i)
+            {
+                back += Math.Max(0.0, target[i] - s[i]);
+                if(target[i]>s[i])breakdownIndex[i]=true;
+                else breakdownIndex[i]=false;
+            }}
             return back;
         }
         ///<summary>Portfolio loss wrt target returns for each period
@@ -3114,12 +3135,12 @@ namespace Portfolio
         ///<param name="w">Array of asset weights</param>
         ///<param name="DATA">Array of historic returns data</param>
         ///<param name="target">Array of target returns</param>
-        public static double LOSS(int n, double[] w, double[] DATA, double[] target)
+        public static double LOSS(int n, double[] w, double[] DATA, double[] target,bool [] breakdownindex=null)
         {
             int tlen = DATA.Length / n;
             var s = new double[tlen];
             Factorise.dmxmulv(tlen, n, DATA, w, s);
-            return LOSS(s, target);
+            return LOSS(s, target,breakdownindex);
         }
         ///<summary>Portfolio turnover 
         ///turnover = 0.5*sum(abs(0,w-initial))
@@ -3975,7 +3996,8 @@ namespace Portfolio
                 {
                     var ETL2 = BlasLike.ddotvec(tlen + 1, WW, CC, n - nfixed + buysellI + longshortI, n - nfixed + buysellI + longshortI) / DATAlambda;
                     var VAR1 = 0e0;
-                    var ETL1 = ETL(n, wback, DATA, tail, ref VAR1);
+                    int VARindex=-2;
+                    var ETL1 = ETL(n, wback, DATA, tail, ref VAR1,ref VARindex);
                     if (Math.Abs(ETL1 - ETL2) > BlasLike.lm_rooteps)
                         back = 6;
                     ColourConsole.WriteEmbeddedColourLine($"ETL:\t\t\t\t[green]{ETL1,20:f16}:[/green]\t[cyan]{ETL2,20:f16}[/cyan]");
