@@ -1221,9 +1221,11 @@ namespace UseBlas
                 ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Traditional Method[/darkyellow]\n[green]Interpolated VAR {VARinterord,16:E8}[/green] [darkyellow]Interpolated ETL {ETLinterord,16:E8}[/darkyellow]");
                 //Try doing it in Portfolio class
                 var VARp = 0.0;
-                int VARindexp=-2;
-                var ETLp = Portfolio.Portfolio.ETL(s, tail, ref VARp,ref VARindexp);
-                ETLp = Portfolio.Portfolio.ETL(nstocks, testw, DATA, tail, ref VARp,ref VARindexp);
+                int VARindexp = -2;
+                var ETLp = Portfolio.Portfolio.ETL(s, tail, ref VARp, ref VARindexp);
+                var break1 = (double[])new double[nstocks];
+                ETLp = Portfolio.Portfolio.ETL(nstocks, testw, DATA, tail, ref VARp, ref VARindexp, break1);
+                var ETLb = BlasLike.ddotvec(nstocks, testw, break1);
 
                 double cvar(double X, object kk)
                 {
@@ -1390,7 +1392,7 @@ namespace UseBlas
                 var tarR = new double[tlen];
                 BlasLike.dsetvec(tlen, 0.005, tarR);
                 double VARtest, ETLtest;
-               tarR = null;
+                tarR = null;
                 ColourConsole.WriteLine($"SET TURNOVER {delta}", ConsoleColor.DarkYellow);
                 back = opt.BasicOptimisation(n, m, -1, A, L, U, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR);
                 for (var i = 0; i < n; i++)
@@ -1502,18 +1504,18 @@ namespace UseBlas
                     if (tarR == null)
                     {
                         var VARnow = 1e-8;
-                        int varIndexnow=-2;
-                        var ETLnow = Portfolio.Portfolio.ETL(nstocks, opt.wback, DATA, tail, ref VARnow,ref varIndexnow);
+                        int varIndexnow = -2;
+                        var ETLnow = Portfolio.Portfolio.ETL(nstocks, opt.wback, DATA, tail, ref VARnow, ref varIndexnow);
                         var ETLmax = ETLnow * .9;
                         ETLmax = Portfolio.Portfolio.rounder(ETLmax, 4);
                         var ETLmin = 0.0;
                         ColourConsole.WriteEmbeddedColourLine($"[green]ETLmin {ETLmin,12:e16}[/green]  [yellow]ETLmax {ETLmax,12:e16}[/yellow]");
                         back = opt.BasicOptimisation(n, m, -1, A, Lhere, Uhere, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR, true, ETLmin, ETLmax);
                         ColourConsole.WriteInfo($"back is {back}");
-var ETLbreakdown=(double[])new double[nstocks];
-                        ETLnow = Portfolio.Portfolio.ETL(nstocks, opt.wback, DATA, tail, ref VARnow,ref varIndexnow,ETLbreakdown);
+                        var ETLbreakdown = (double[])new double[nstocks];
+                        ETLnow = Portfolio.Portfolio.ETL(nstocks, opt.wback, DATA, tail, ref VARnow, ref varIndexnow, ETLbreakdown);
 
-var ETLcheckb=BlasLike.ddotvec(nstocks,opt.wback,ETLbreakdown);
+                        var ETLcheckb = BlasLike.ddotvec(nstocks, opt.wback, ETLbreakdown);
                         ColourConsole.WriteEmbeddedColourLine($"[green]ETL is  {ETLnow,12:e16}[/green] ([cyan]{ETLmin,12:e16},{ETLmax,12:e16}[/cyan])");
                     }
                     else
@@ -1525,12 +1527,13 @@ var ETLcheckb=BlasLike.ddotvec(nstocks,opt.wback,ETLbreakdown);
                         ColourConsole.WriteEmbeddedColourLine($"[green]Lossmin {Lossmin,12:e16}[/green]  [yellow]Lossmax {Lossmax,12:e16}[/yellow]");
                         back = opt.BasicOptimisation(n, m, -1, A, Lhere, Uhere, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR, true, Lossmin, Lossmax);
                         ColourConsole.WriteInfo($"back is {back}");
-                        var LOSSbreakdown=(double[])new double[n];
-                        Lossnow = Portfolio.Portfolio.LOSS(n, opt.wback, DATA, tarR,LOSSbreakdown);
-var LOSScheck=BlasLike.ddotvec(n,opt.wback,LOSSbreakdown);
+                        var LOSSbreakdown = (double[])new double[n];
+                        Lossnow = Portfolio.Portfolio.LOSS(n, opt.wback, DATA, tarR, LOSSbreakdown);
+                        var LOSScheck = BlasLike.ddotvec(n, opt.wback, LOSSbreakdown);
                         ColourConsole.WriteEmbeddedColourLine($"[green]LOSS is  {Lossnow,12:e16}[/green] ([cyan]{Lossmin,12:e16},{Lossmax,12:e16}[/cyan])");
                     }
-                }//return;
+                }
+                //return;
             }
 
             {
