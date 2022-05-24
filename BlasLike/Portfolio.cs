@@ -4394,7 +4394,7 @@ namespace Portfolio
             if (beta != null)
             {
                 hessmull(w.Length, Q, bench, beta);
-                var benchvar = BlasLike.ddotvec(w.Length, beta, beta);
+                var benchvar = BlasLike.ddotvec(w.Length, beta, bench);
                 BlasLike.dscalvec(w.Length, 1.0 / benchvar, beta);
                 var portbeta = BlasLike.ddotvec(w.Length, w, beta);
                 BlasLike.daxpyvec(w.Length, -portbeta, bench, w);//Residual weights

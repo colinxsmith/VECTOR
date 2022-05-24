@@ -802,16 +802,38 @@ namespace BlasLikeTest
             var opt = new Portfolio.Portfolio("");
             opt.n = 5;
             opt.ntrue = opt.n;
-            double[] Q = { 1.0, 2.0, 0.2, 3.0, 0.2, 0.3, 4.0, 0.2, 0.3, 0.4, 5.0, 0.2, 0.3, 0.4, 0.5 };
+            double[] Q = { 1,
+                            1e-2,2,
+                            1e-2,1e-2,3,
+                            1e-2,1e-2,1e-2,4,
+                            1e-2,1e-2,1e-2,1e-2,5 };
             double[] w = { 1.0, 2.0, 3.0, 4.0, 5.0 };
+            double[] bench = { 1.0, 1.0, 1.0, 1.0, 1.0 };
             opt.Q = Q;
-            BlasLike.dscalvec(opt.n, 1.0 / 15.0, w);
+            BlasLike.dscalvec(opt.n, 1.0 / 15.0, w);//make portfolio and benchmark weights sum to 1
+            BlasLike.dscalvec(opt.n, 1.0 / opt.n, bench);
             var breakdown = (double[])w.Clone();
             opt.hessmull(w.Length, opt.Q, w, breakdown);
-            var risk = Math.Sqrt(BlasLike.ddotvec(w.Length, w, breakdown));
-            opt.RiskBreakdown(w, null, breakdown);
-            var risktest = BlasLike.ddotvec(w.Length, w, breakdown);
-            Assert.IsTrue(Math.Abs(risk - risktest)<BlasLike.lm_eps8);
+            var risk = Math.Sqrt(BlasLike.ddotvec(w.Length, w, breakdown));//portfolio risk
+            opt.RiskBreakdown(w, null, breakdown);//breakdown is MCTR
+            var risktest = BlasLike.ddotvec(w.Length, w, breakdown);//check we get risk
+            Assert.IsTrue(Math.Abs(risk - risktest) < BlasLike.lm_eps8,$"{risk - risktest}");
+
+            var breakdownr = (double[])w.Clone();
+            var beta = (double[])w.Clone();
+            opt.hessmull(opt.n, opt.Q, bench, beta);
+            var benchvar = BlasLike.ddotvec(opt.n, bench, beta);//benchmark variance
+            var benchrisk = Math.Sqrt(benchvar);//benchmark risk
+
+            BlasLike.dscalvec(opt.n, 1.0 / benchvar, beta);//asset beta
+            var portbeta = BlasLike.ddotvec(opt.n, w, beta);//portfolio beta
+
+            opt.RiskBreakdown(w, bench, breakdownr, beta);
+            BlasLike.daxpyvec(w.Length, -portbeta, bench, w);//residual weights
+            var resrisktest = BlasLike.ddotvec(w.Length, w, breakdownr);
+            BlasLike.daxpyvec(w.Length, portbeta, bench, w);//restore weights
+            // total risk squared = residual risk squared +systematic risk squared (i.e. beta*benchrisk squared)
+            Assert.IsTrue(Math.Abs(risk * risk - portbeta * portbeta * benchrisk * benchrisk - resrisktest * resrisktest) < BlasLike.lm_eps8,$"{risk * risk - portbeta * portbeta * benchrisk * benchrisk - resrisktest * resrisktest}");
         }
     }
 }
