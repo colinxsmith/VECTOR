@@ -3099,12 +3099,27 @@ namespace Portfolio
         ///</param>
         ///<param name="tail">proportion of upper losses in tail</param>
         ///<param name="VAR">The Value at risk calculated here</param>
-        public static double ETL(int n, double[] w, double[] DATA, double tail, ref double VAR,ref int VARindex,bool[]breakdownindex=null)
+        ///<param name="VARindex">The time interval that defines VAR</param>
+        ///<param name="breakdown">Returns a double array such that ETL=w.breakdown</param>
+        public static double ETL(int n, double[] w, double[] DATA, double tail, ref double VAR,ref int VARindex,double[]breakdown=null)
         {
             int tlen = DATA.Length / n;
             var s = new double[tlen];
             Factorise.dmxmulv(tlen, n, DATA, w, s);
-            return ETL(s, tail, ref VAR,ref VARindex,breakdownindex);
+            if(breakdown==null)return ETL(s, tail, ref VAR,ref VARindex,null);
+            else{
+                var breakd=(bool[])new bool[tlen];
+                var back=ETL(s, tail, ref VAR,ref VARindex,breakd);
+var vcount=0;
+for(var i=0;i<tlen;++i){
+if(breakd[i]){vcount++;
+    BlasLike.daxpy(n,1,DATA,tlen,breakdown,1,i);
+    BlasLike.daxpy(n,-1,DATA,tlen,breakdown,1,VARindex);
+}
+}
+BlasLike.dscalvec(n,1.0/check_digit(tail*tlen),breakdown);
+    BlasLike.daxpy(n,1,DATA,tlen,breakdown,1,VARindex);
+    return back;}
         }
         ///<summary>Portfolio loss wrt a target 
         ///LOSS = sum(max(0,target-s))
@@ -3135,13 +3150,25 @@ namespace Portfolio
         ///<param name="w">Array of asset weights</param>
         ///<param name="DATA">Array of historic returns data</param>
         ///<param name="target">Array of target returns</param>
-        public static double LOSS(int n, double[] w, double[] DATA, double[] target,bool [] breakdownindex=null)
+        ///<param name="breakdown">Returns a double array such that LOSS=w.breakdown</param>
+        public static double LOSS(int n, double[] w, double[] DATA, double[] target,double [] breakdown=null)
         {
             int tlen = DATA.Length / n;
             var s = new double[tlen];
             Factorise.dmxmulv(tlen, n, DATA, w, s);
-            return LOSS(s, target,breakdownindex);
-        }
+            if(breakdown==null)
+            return LOSS(s, target,null);
+            else{
+            var breakdownindex=(bool[])new bool[tlen];
+            var back=LOSS(s,target,breakdownindex);
+for(var i=0;i<tlen;++i){
+if(breakdownindex[i]){
+     for(var j=0;j<n;++j){
+         breakdown[j]+=target[i] - DATA[i+j*tlen];
+     }
+}
+            }return back;
+        }}
         ///<summary>Portfolio turnover 
         ///turnover = 0.5*sum(abs(0,w-initial))
         ///</summary>
