@@ -19,17 +19,24 @@ namespace Portfolio
             }
         }
         public class ETLpass
-        {
+        {///<summary>Loss series whose ETL and VAR we wish to find, this is -returns. double array with length T</summary>
             public double[] returns;
+            ///<summary>Number of time periods</summary>
             public int T;
+            ///<summary>Proportion of history which defines the tail with losses above VAR</summary>
             public double inc;
+            ///<summary>Entry for index i is true if period i is in the tail</summary>
             public bool[] breakdownIndex = null;
+            ///<summary>Index i such that returns[i] is closest to the VAR of the losses</summary>
             public int VARindex = -1;
-            public double cvar(double X, object kk)
+            ///<summary>The minimum for this function with respect to X is the CVAR for the given return
+            ///series. All data is passed through the object kk which is cast to an ETLpass class.
+            ///This is intended for use with ActiveSet.Optimise.PathMin.</summary>
+            ///<param name="X">The value of X which minimises this function is the VAR</param>
+            ///<param name="kk">Data for the calulation is cast from kk to an ETLpass class</param>
+            double cvar(double X, object kk)
             {
-                double small = 1;
-                double diff;
-                ETLpass here = (ETLpass)kk;
+                ETLpass here = this;
                 double r = 0;
                 if (here.breakdownIndex == null)
                 {
@@ -40,6 +47,13 @@ namespace Portfolio
                 }
                 else
                 {
+                    /* Here we want to find the index for the VAR variable. It may not be unique. The VAR 
+                    variable may not even coincide with an entry in here.returns[]. So to find the closest
+                    here.returns[here.VARindex] to X we let the loop find a value for small. It is probably
+                    OK to use lm_eps for small, but I think this will work best.
+                    */
+                    double small = 1;
+                    double diff;
                     for (var i = 0; i < T; ++i)
                     {
                         r += Math.Max(0, here.returns[i] - X);
@@ -48,16 +62,14 @@ namespace Portfolio
                             small = Math.Min(small, diff);
                             here.VARindex = i;
                         }
-                        if (here.returns[i] >= X)
-                        {
-                            here.breakdownIndex[i] = true;
-                        }
+                        if (here.returns[i] >= X) here.breakdownIndex[i] = true;
                         else here.breakdownIndex[i] = false;
                     }
                 }
                 var back = X + r / check_digit(here.inc * here.T);
                 return back;
-            }
+            }///<summary>Find VAR given by var1 and return CVAR</summary>
+             ///<param name="var1">var1 will be the VAR for returns<param>
             public double cvar1d(ref double var1)
             {
                 double smin = 0, smax = BlasLike.lm_max;
@@ -4351,6 +4363,55 @@ namespace Portfolio
                         else if (w[i] < initial[i]) U[i] = initial[i];
                     }
                 }
+            }
+        }///<Summary>Calculate marginal contributions to risk
+         ///If benchmark weights are null breakdown will contain MCTR (marginal contributions to total risk).
+         ///If benchmark weights are given breakdown will contain MCAR (marginal contributions to active risk).
+         ///If benchmark weights are given and beta is not null breakdown will contain MCRR (marginal contributions to residual risk).
+         ///Note sum(MCTR.w)=Total risk
+         ///and sum(MCAR.(w-bench))=Active risk
+         ///and sum(MCAR.(w-beta*bench))=Residual risk
+         ///</Summary>
+         ///<param name="w">Array of portfolio weights</param>
+         ///<param name="bench">Array of benchmark weights</param>
+         ///<param name="breakdown">Array of MCAR or MCTR or MCRR</param>
+         ///<param name="beta">Array of asset betas is calculated if beta is not null</param>
+
+        public void RiskBreakdown(double[] w, double[] bench = null,
+        double[] breakdown = null, double[] beta = null)
+        {
+            if (breakdown == null) { ColourConsole.WriteError("Risk breakdown array must not be null"); return; }
+            var Qx = breakdown;
+            if (bench != null)
+            {
+                Debug.Assert(w.Length == bench.Length);
+                if (beta != null)
+                {
+                    Debug.Assert(w.Length == beta.Length);
+                }
+                else BlasLike.dsubvec(w.Length, w, bench, w);//Active weights now
+            }
+            if (beta != null)
+            {
+                hessmull(w.Length, Q, bench, beta);
+                var benchvar = BlasLike.ddotvec(w.Length, beta, beta);
+                BlasLike.dscalvec(w.Length, 1.0 / benchvar, beta);
+                var portbeta = BlasLike.ddotvec(w.Length, w, beta);
+                BlasLike.daxpyvec(w.Length, -portbeta, bench, w);//Residual weights
+                hessmull(w.Length, Q, w, Qx);
+                var resRisk = Math.Sqrt(BlasLike.ddotvec(w.Length, w, Qx));
+                BlasLike.dscalvec(w.Length, 1.0 / resRisk, Qx);//MCRR
+                var resRisktest = BlasLike.ddotvec(w.Length, w, Qx);
+                BlasLike.daxpyvec(w.Length, portbeta, bench, w);
+            }
+            else
+            {
+                hessmull(w.Length, Q, w, Qx);
+                var Variance = BlasLike.ddotvec(w.Length, w, Qx);//Total Variance or Active variance
+                var risk = Math.Sqrt(Variance);
+                BlasLike.dscalvec(w.Length, 1.0 / risk, Qx);
+                var risktest = BlasLike.ddotvec(w.Length, w, Qx);
+                if (bench != null) BlasLike.daddvec(w.Length, w, bench, w);
             }
         }
         public double Variance(double[] w)

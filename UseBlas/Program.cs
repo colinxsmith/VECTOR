@@ -1717,6 +1717,9 @@ namespace UseBlas
                     sendInput.target = targetRisk;
                     opt.gamma = opt.kappa = 5e-2;
                     opt.CalcRisk(opt.gamma, sendInput);
+                    var breakdown = (double[])opt.wback.Clone();
+                    var beta = (double[])null;//opt.wback.Clone();
+                    opt.RiskBreakdown(opt.wback, opt.bench, breakdown, beta);
                     //             opt.DropRisk(basket, trades, targetRisk, sendInput);
                     opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
                     sendInput.useIP = false;
