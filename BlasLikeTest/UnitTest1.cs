@@ -785,14 +785,33 @@ namespace BlasLikeTest
             Assert.IsTrue(Portfolio.Portfolio.check_digit(d1) == 2.0, $"{Portfolio.Portfolio.check_digit(d1)}");
             d1 = 2.0 - 1e-13;
             Assert.IsTrue(Portfolio.Portfolio.check_digit(d1) == 2.0, $"{Portfolio.Portfolio.check_digit(d1)}");
-        }[TestMethod]
-        public void Test_sigfig(){
-            var d1=23123.45567;
-            Assert.IsTrue(Portfolio.Portfolio.rounder(d1,4)==23120,$"{Portfolio.Portfolio.rounder(d1)}");
-                    d1=0.001234567;
-            Assert.IsTrue(Portfolio.Portfolio.rounder(d1,2)==0.0012,$"{Portfolio.Portfolio.rounder(d1)}");
-                    d1=1.283456789;
-            Assert.IsTrue(Portfolio.Portfolio.rounder(d1)==1.28,$"{Portfolio.Portfolio.rounder(d1)}");
+        }
+        [TestMethod]
+        public void Test_sigfig()
+        {
+            var d1 = 23123.45567;
+            Assert.IsTrue(Portfolio.Portfolio.rounder(d1, 4) == 23120, $"{Portfolio.Portfolio.rounder(d1)}");
+            d1 = 0.001234567;
+            Assert.IsTrue(Portfolio.Portfolio.rounder(d1, 2) == 0.0012, $"{Portfolio.Portfolio.rounder(d1)}");
+            d1 = 1.283456789;
+            Assert.IsTrue(Portfolio.Portfolio.rounder(d1) == 1.28, $"{Portfolio.Portfolio.rounder(d1)}");
+        }
+        [TestMethod]
+        public void Test_MCTR()
+        {
+            var opt = new Portfolio.Portfolio("");
+            opt.n = 5;
+            opt.ntrue = opt.n;
+            double[] Q = { 1.0, 2.0, 0.2, 3.0, 0.2, 0.3, 4.0, 0.2, 0.3, 0.4, 5.0, 0.2, 0.3, 0.4, 0.5 };
+            double[] w = { 1.0, 2.0, 3.0, 4.0, 5.0 };
+            opt.Q = Q;
+            BlasLike.dscalvec(opt.n, 1.0 / 15.0, w);
+            var breakdown = (double[])w.Clone();
+            opt.hessmull(w.Length, opt.Q, w, breakdown);
+            var risk = Math.Sqrt(BlasLike.ddotvec(w.Length, w, breakdown));
+            opt.RiskBreakdown(w, null, breakdown);
+            var risktest = BlasLike.ddotvec(w.Length, w, breakdown);
+            Assert.IsTrue(Math.Abs(risk - risktest)<BlasLike.lm_eps8);
         }
     }
 }
