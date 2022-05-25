@@ -790,9 +790,9 @@ namespace BlasLikeTest
         public void Test_sigfig()
         {
             var d1 = 23123.45567;
-            Assert.IsTrue(Portfolio.Portfolio.rounder(d1, 4) == 23120, $"{Portfolio.Portfolio.rounder(d1)}");
+            Assert.IsTrue(Portfolio.Portfolio.rounder(d1, 4) == 23120, $"{Portfolio.Portfolio.rounder(d1, 4)}");
             d1 = 0.001234567;
-            Assert.IsTrue(Portfolio.Portfolio.rounder(d1, 2) == 0.0012, $"{Portfolio.Portfolio.rounder(d1)}");
+            Assert.IsTrue(Portfolio.Portfolio.rounder(d1, 2) == 0.0012, $"{Portfolio.Portfolio.rounder(d1, 2)}");
             d1 = 1.283456789;
             Assert.IsTrue(Portfolio.Portfolio.rounder(d1) == 1.28, $"{Portfolio.Portfolio.rounder(d1)}");
         }
@@ -817,7 +817,7 @@ namespace BlasLikeTest
             var risk = Math.Sqrt(BlasLike.ddotvec(w.Length, w, breakdown));//portfolio risk
             opt.RiskBreakdown(w, null, breakdown);//breakdown is MCTR
             var risktest = BlasLike.ddotvec(w.Length, w, breakdown);//check we get risk
-            Assert.IsTrue(Math.Abs(risk - risktest) < BlasLike.lm_eps8,$"{risk - risktest}");
+            Assert.IsTrue(Math.Abs(risk - risktest) < BlasLike.lm_eps8, $"{risk - risktest}");
 
             var breakdownr = (double[])w.Clone();
             var beta = (double[])w.Clone();
@@ -833,7 +833,36 @@ namespace BlasLikeTest
             var resrisktest = BlasLike.ddotvec(w.Length, w, breakdownr);
             BlasLike.daxpyvec(w.Length, portbeta, bench, w);//restore weights
             // total risk squared = residual risk squared +systematic risk squared (i.e. beta*benchrisk squared)
-            Assert.IsTrue(Math.Abs(risk * risk - portbeta * portbeta * benchrisk * benchrisk - resrisktest * resrisktest) < BlasLike.lm_eps8,$"{risk * risk - portbeta * portbeta * benchrisk * benchrisk - resrisktest * resrisktest}");
+            Assert.IsTrue(Math.Abs(risk * risk - portbeta * portbeta * benchrisk * benchrisk - resrisktest * resrisktest) < BlasLike.lm_eps8, $"{risk * risk - portbeta * portbeta * benchrisk * benchrisk - resrisktest * resrisktest}");
+        }
+        [TestMethod]
+        public void Test_LOSS()
+        {
+            double[] s = { 1, 2, 5, 4, 3, 7, 6, 5, 8, 9, -1, 7, -3, 8, 9, 6 };
+            double[] target = new double[s.Length];
+            bool[] breakIndex = new bool[s.Length];
+            BlasLike.dsetvec(s.Length, 4.3, target);
+            var loss = Portfolio.Portfolio.LOSS(s, target, breakIndex);
+            var numberOfLosses = 0;
+            foreach (var k in breakIndex) if (k) numberOfLosses++;
+            Assert.IsTrue(numberOfLosses == 6, $"number of losses {numberOfLosses}");
+            Assert.IsTrue(loss == 19.8, $"Loss is {loss}");
+        }
+        [TestMethod]
+        public void Test_ETL()
+        {
+            double[] s = { 1, 2, 15, 4, 3, 7, 16, 5, 18, 9, -1, 7, -3,
+             8, 9, 6, 5, 3, 8, 9, 1, 4, 8, 9, 4, 0, 12 };
+            double tail = 0.05;
+            bool[] breakIndex = new bool[s.Length];
+            var VAR = 0.0;
+            var VARindex = -1;
+            var etl = Portfolio.Portfolio.ETL(s, tail, ref VAR, ref VARindex, breakIndex);
+            var numberInTail = 0;
+            foreach (var k in breakIndex) if (k) numberInTail++;
+            Assert.IsTrue(Math.Abs(etl - 17.481481481481506) < BlasLike.lm_eps, $"{etl - 17.481481481481506}");
+            Assert.IsTrue(Math.Abs(VAR - 16.000000000000092) < BlasLike.lm_eps, $"{VAR - 16.000000000000092}");
+            Assert.IsTrue(VARindex == 6, $"{VARindex}");
         }
     }
 }

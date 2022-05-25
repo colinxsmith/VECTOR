@@ -4313,7 +4313,7 @@ namespace Portfolio
             BlasLike.dzerovec(nn, hx);
         }
         public virtual void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
-        {
+        {Debug.Assert(ntrue!=0);
             if (Q != null)
             {
                 Factorise.CovMul(ntrue, Q, x, hx, 0, 0, 0, 'U', nfixed);
@@ -4322,7 +4322,7 @@ namespace Portfolio
             else BlasLike.dzerovec(nn, hx);
         }
         public virtual void hessmull(int nn, double[] QQ, double[] x, double[] hx)
-        {
+        {Debug.Assert(ntrue!=0);
             if (Q != null)
             {
                 Factorise.CovMul(ntrue, Q, x, hx, 0, 0, 0, 'U', nfixed);
@@ -4768,7 +4768,7 @@ namespace Portfolio
                 }
         }
         public override void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
-        {
+        {Debug.Assert(ntrue!=0);
             if (Q != null)
             {
                 if (nfixed > 0)
@@ -4782,7 +4782,7 @@ namespace Portfolio
             else BlasLike.dzerovec(nn, hx);
         }
         public override void hessmull(int nn, double[] QQ, double[] x, double[] hx)
-        {
+        {Debug.Assert(ntrue!=0);
             if (Q != null)
             {
                 if (nfixed > 0)
