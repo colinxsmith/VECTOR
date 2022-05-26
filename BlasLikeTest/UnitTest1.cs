@@ -863,6 +863,7 @@ namespace BlasLikeTest
             Assert.IsTrue(Math.Abs(etl - 17.481481481481506) < BlasLike.lm_eps, $"{etl - 17.481481481481506}");
             Assert.IsTrue(Math.Abs(VAR - 16.000000000000092) < BlasLike.lm_eps, $"{VAR - 16.000000000000092}");
             Assert.IsTrue(VARindex == 6, $"{VARindex}");
+            Assert.IsTrue(numberInTail == 1, $"{numberInTail}");
         }
     }
 }
