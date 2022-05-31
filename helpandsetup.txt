@@ -1,0 +1,15 @@
+Creating the original setup
+
+dotnet new sln
+dotnet new classlib -o BlasLike
+dotnet sln add BlasLike/BlasLike.csproj
+
+dotnet new console -o UseBlas
+dotnet sln add UseBlas/UseBlas.csproj
+dotnet add UseBlas/UseBlas.csproj reference BlasLike/BlasLike.csproj
+
+dotnet new mstest -o BlasLikeTest
+dotnet sln add BlasLikeTest/BlasLikeTest.csproj
+dotnet add BlasLikeTest/BlasLikeTest.csproj reference BlasLike/BlasLike.csproj
+
+Now we want to add a web server
