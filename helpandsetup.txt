@@ -13,3 +13,13 @@ dotnet sln add BlasLikeTest/BlasLikeTest.csproj
 dotnet add BlasLikeTest/BlasLikeTest.csproj reference BlasLike/BlasLike.csproj
 
 Now we want to add a web server
+
+dotnet new webapi -o BitaServer
+cd BitaServer
+dotnet add package Microsoft.EntityFrameworkCore.InMemory
+cd ..
+
+Need to add to solution
+
+dotnet sln add BitaServer/BitaServer.csproj
+dotnet add BitaServer/BitaServer.csproj reference BlasLike/BlasLike.csproj
