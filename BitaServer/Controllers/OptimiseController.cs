@@ -28,11 +28,26 @@ public class OptimiseController : ControllerBase
     [HttpGet("test")]
     public IEnumerable<Optimise> Get()
     {
-        double testdigit = 12.9999999999;
+        double testdigit = 123.9999999999;
         var back = (Optimise[])new Optimise[1];
         back[0] = new Optimise();
         back[0].digit = testdigit;
         back[0].tdigit = Portfolio.Portfolio.check_digit(testdigit);
+        var op=back[0];
+        ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green] [yellow]{op.n}[/yellow]");
+        return back;
+    }
+    [HttpGet("test/n")]
+    public IEnumerable<Optimise> Getn()
+    {
+        double testdigit = 11.000000000001;
+        var back = (Optimise[])new Optimise[1];
+        back[0] = new Optimise();
+        back[0].n = 500;
+        back[0].digit = testdigit;
+        back[0].tdigit = Portfolio.Portfolio.check_digit(testdigit);
+        var op = back[0];
+        ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green] [yellow]{op.n}[/yellow]");
         return back;
     }
 }
