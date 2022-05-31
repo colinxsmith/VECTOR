@@ -13,23 +13,26 @@ public class OptimiseController : ControllerBase
     {
         _logger = logger;
     }
-    [HttpPost]
+    [HttpPost("test")]
     public IEnumerable<Optimise> Post(Optimise op)
     {
-        var dd = Portfolio.Portfolio.check_digit(op.digit);
-        op.tdigit = dd;
-        var back = Enumerable.Range(0, 1).Select(aa => op).ToArray();
+        if (op.digit != null)
+        {
+            op.tdigit = op.digit != null ? Portfolio.Portfolio.check_digit((double)op.digit) : null;
+        }
+        ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green] [yellow]{op.n}[/yellow]");
+        var back = (Optimise[])new Optimise[1];
+        back[0] = op;
         return back;
     }
-    [HttpGet(Name = "GetOptimise")]
+    [HttpGet("test")]
     public IEnumerable<Optimise> Get()
     {
-        double testdigit = 2.9999999999;
-        var back = Enumerable.Range(0, 1).Select(aa => new Optimise
-        {
-            digit = testdigit,
-            tdigit = Portfolio.Portfolio.check_digit(testdigit)
-        }).ToArray();
+        double testdigit = 12.9999999999;
+        var back = (Optimise[])new Optimise[1];
+        back[0] = new Optimise();
+        back[0].digit = testdigit;
+        back[0].tdigit = Portfolio.Portfolio.check_digit(testdigit);
         return back;
     }
 }

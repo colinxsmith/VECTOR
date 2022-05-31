@@ -27,12 +27,20 @@ dotnet add BitaServer/BitaServer.csproj reference BlasLike/BlasLike.csproj
 To test the server use:
 (dotnet tool install -g Microsoft.dotnet-httprepl
 to install httprepl)
-httprepl https://localhost:7020/optimise
-post -h Content-Type=application/json -c "{"digit":2.00000001}"
-should get back
+httprepl https://localhost:7020/optimise/test
+post -h Content-Type=application/json -c "{"digit":22222.00000001}"
+should get back something like:
+
+HTTP/1.1 200 OK
+Content-Type: application/json; charset=utf-8
+Date: Tue, 31 May 2022 15:01:10 GMT
+Server: Kestrel
+Transfer-Encoding: chunked
+
 [
   {
-    "digit": 2.00000001,
-    "tdigit": 2
+    "digit": 22222.00000001,
+    "tdigit": 22222,
+    "n": null
   }
 ]
