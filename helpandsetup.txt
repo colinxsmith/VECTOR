@@ -23,3 +23,16 @@ Need to add to solution
 
 dotnet sln add BitaServer/BitaServer.csproj
 dotnet add BitaServer/BitaServer.csproj reference BlasLike/BlasLike.csproj
+
+To test the server use:
+(dotnet tool install -g Microsoft.dotnet-httprepl
+to install httprepl)
+httprepl https://localhost:7020/optimise
+post -h Content-Type=application/json -c "{"digit":2.00000001}"
+should get back
+[
+  {
+    "digit": 2.00000001,
+    "tdigit": 2
+  }
+]
