@@ -44,3 +44,6 @@ Transfer-Encoding: chunked
     "n": null
   }
 ]
+
+or with curl
+curl -X POST -H "Content-type: application/json" -d '{"digit":22222.00000001}' https://localhost:7020/optimise/test
