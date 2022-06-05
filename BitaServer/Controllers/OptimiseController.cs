@@ -14,28 +14,24 @@ public class OptimiseController : ControllerBase
         _logger = logger;
     }
     [HttpPost("test")]
-    public IEnumerable<Optimise> Post(Optimise op)
+    public ActionResult<IEnumerable<Optimise>> Post(Optimise op)
     {
         if (op.digit != null)
         {
             op.tdigit = op.digit != null ? Portfolio.Portfolio.check_digit((double)op.digit) : null;
         }
         ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green] [yellow]{op.n}[/yellow]");
-        var back = (Optimise[])new Optimise[1];
-        back[0] = op;
-        return back;
+        return new[] { op };
     }
     [HttpGet("test")]
-    public IEnumerable<Optimise> Get()
+    public ActionResult<IEnumerable<Optimise>> Get()
     {
         double testdigit = 123.9999999999;
-        var back = (Optimise[])new Optimise[1];
-        back[0] = new Optimise();
-        back[0].digit = testdigit;
-        back[0].tdigit = Portfolio.Portfolio.check_digit(testdigit);
-        var op=back[0];
+        var op = new Optimise();
+        op.digit = testdigit;
+        op.tdigit = Portfolio.Portfolio.check_digit(testdigit);
         ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green] [yellow]{op.n}[/yellow]");
-        return back;
+        return new[] { op };
     }
     [HttpGet("test/n")]
     public IEnumerable<Optimise> Getn()
