@@ -1,5 +1,6 @@
 using System;
 using Blas;
+using System.Diagnostics;
 namespace Solver
 {
     public static class Factorise
@@ -1371,6 +1372,13 @@ void ddmxmulv(int n, double* d, int incd, double* x, int incx)
                         BlasLike.daxpy(n - i, Q[Qstart + n + i * nfac + k], Q, nfac, C, 1, Qstart + n + k + i * nfac, Cstart + ij);
                     }
                 }
+        }
+        public static double covariance(int t, double[] s1, double[] s2,int s1start=0,int s2start=0)
+        {
+            var m1 = BlasLike.dsumvec(t, s1,s1start) / t;
+            var m2 = BlasLike.dsumvec(t, s2,s2start) / t;
+            var cv = BlasLike.ddotvec(t, s1, s2,s1start,s2start);
+            return (cv - m1 * m2 * t) / (t - 1);
         }
     }
 }

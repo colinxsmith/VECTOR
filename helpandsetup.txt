@@ -45,5 +45,7 @@ Transfer-Encoding: chunked
   }
 ]
 
-or with curl
+or with curl on linux
 curl -X POST -H "Content-type: application/json" -d '{"digit":22222.00000001}' https://localhost:7020/optimise/test
+or on windows
+curl -X POST -H "Content-type: application/json" -d "{\"digit\":22222.00000001}" https://localhost:7020/optimise/test

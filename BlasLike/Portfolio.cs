@@ -3886,7 +3886,7 @@ namespace Portfolio
             if (cnumRmax != -1) ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Test Rmax constraint:[/darkyellow]\t\t[red]{LL[N + cnumRmax],20:f16}[/red]\t[cyan]{BlasLike.ddot(N, AA, M, WW, 1, cnumRmax),20:f16}[/cyan]\t[green]{UU[N + cnumRmax],20:f16}[/green]");
             var turn2 = fixedTurn;
             var cost2 = fixedCost;
-            for (var i = 0; i < n; ++i)
+            for (var i = 0; initial!=null&&i < n; ++i)
             {
                 if (buysellIndex_inverse[i] == -1)
                 {
@@ -4039,7 +4039,7 @@ namespace Portfolio
             var turnover = 0.0;
             var cost = 0.0;
             var costFixed = 0.0;
-            for (var i = 0; i < n; ++i)
+            for (var i = 0;initial!=null&& i < n; ++i)
             {
                 turnover += Math.Abs(wback[i] - initial[i]);
                 if ((buy != null) && (sell != null))
