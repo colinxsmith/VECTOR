@@ -9,6 +9,7 @@ import * as d3 from 'd3';
 export class OptimiseComponent {
   width = 500;
   height = 400;
+  format=d3.format('0.6f')
   opt: Array<Optimise> = [];
   constructor(private http: HttpClient, @Inject('BASE_URL') private baseUrl: string, private element: ElementRef) {
     http.get<Optimise[]>(baseUrl + 'optimise/ETL').subscribe(result => {

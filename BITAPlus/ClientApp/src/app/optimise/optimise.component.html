@@ -1,11 +1,13 @@
-<h1 style="text-align: center;" id="tableLabel">ETL Optimisation</h1>
+<h1 style="text-align: center;" id="tableLabel">
+    ETL Optimisation</h1>
 <div class="maindiv" *ngIf="opt&&opt[0]"></div>
 <button (mouseover)="over($event,true)" (mouseleave)="over($event)" (click)="sendStep()">Send New Optimisation Parameters</button>
 <table style="width:100%">
     <tr>
         <td>tail: {{opt[0].tail}}</td>
-        <td>ETL: {{opt[0].etl}}</td>
-        <td>VAR: {{opt[0].var}}</td>
+        <td>ETL: {{format(opt[0].etl)}}</td>
+        <td>VAR: {{format(opt[0].var)}}</td>
+        <td>VAR index: {{opt[0].vaRindex}}</td>
         <td>gamma: {{opt[0].gamma}}<br>Set: <input class="step g" style="width:5em" [min]="0" [max]="1" [value]="opt[0].gamma"></td>
         <td>ETLmax: {{opt[0].etLmax}}<br>Set: <input class="step E" style="width:5em" [min]="0" [max]="1" [value]="opt[0].etLmax"></td>
     </tr>
