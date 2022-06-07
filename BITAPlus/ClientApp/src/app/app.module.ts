@@ -7,8 +7,6 @@ import { RouterModule } from '@angular/router';
 import { AppComponent } from './app.component';
 import { NavMenuComponent } from './nav-menu/nav-menu.component';
 import { HomeComponent } from './home/home.component';
-import { CounterComponent } from './counter/counter.component';
-import { FetchDataComponent } from './fetch-data/fetch-data.component';
 import { OptimiseComponent } from './optimise/optimise.component';
 import { BarplotComponent } from './barplot/barplot.component';
 
@@ -17,8 +15,6 @@ import { BarplotComponent } from './barplot/barplot.component';
     AppComponent,
     NavMenuComponent,
     HomeComponent,
-    CounterComponent,
-    FetchDataComponent,
     OptimiseComponent,
     BarplotComponent
   ],
@@ -28,8 +24,6 @@ import { BarplotComponent } from './barplot/barplot.component';
     FormsModule,
     RouterModule.forRoot([
       { path: '', component: HomeComponent, pathMatch: 'full' },
-      { path: 'counter', component: CounterComponent },
-      { path: 'fetch-data', component: FetchDataComponent },
       { path: 'optimise', component: OptimiseComponent },
     ])
   ],
