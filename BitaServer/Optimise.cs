@@ -20,9 +20,11 @@ public class Optimise
     public double? ETLmax { get; set; }
     public string[]? names { get; set; }
     public double[]? initial { get; set; }
+    public double[]? Q { get; set; }
     public double[]? w { get; set; }
     public double? ETL { get; set; }
     public double? VAR { get; set; }
     public int? VARindex { get; set; }
     public double[]? breakdown { get; set; }
+    public int? back{set;get;}
 }

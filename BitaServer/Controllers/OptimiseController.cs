@@ -64,22 +64,24 @@ public class OptimiseController : ControllerBase
     {
         if (!op.gamma.HasValue) op.gamma = 0.5;
         if (!op.kappa.HasValue) op.kappa = op.gamma;
-        var opt = new Portfolio.Portfolio("");
-        var ones = new double[op.tlen.GetValueOrDefault()];
-        var alpha = new double[op.n.GetValueOrDefault()];
-        var Q = new double[op.n.GetValueOrDefault() * (op.n.GetHashCode() + 1) / 2];
-        var ij = 0;
+        double[] Q;
+        if(op.Q==null){Q = new double[op.n.GetValueOrDefault() * (op.n.GetHashCode() + 1) / 2];op.Q=Q;
+                var ij = 0;
         for (var i = 0; i < op.n.GetValueOrDefault(); ++i)
         {
             for (var j = 0; j <= i; ++j)
             {
                 Q[ij++] = Solver.Factorise.covariance(op.tlen.GetValueOrDefault(), op.DATA, op.DATA, i * op.tlen.GetValueOrDefault(), j * op.tlen.GetValueOrDefault());
             }
-        }
+        }}
+        else Q=op.Q;
+        var opt = new Portfolio.Portfolio("");
+        var ones = new double[op.tlen.GetValueOrDefault()];
+        var alpha = new double[op.n.GetValueOrDefault()];
         opt.Q = Q;
         BlasLike.dsetvec(op.tlen.GetValueOrDefault(), 1.0 / op.tlen.GetValueOrDefault(), ones);
         Factorise.dmxmulv(op.n.GetValueOrDefault(), op.tlen.GetValueOrDefault(), op.DATA, ones, alpha, 0, 0, 0, true);
-        opt.BasicOptimisation(op.n.GetValueOrDefault(), op.m.GetValueOrDefault(), -1,
+        op.back = opt.BasicOptimisation(op.n.GetValueOrDefault(), op.m.GetValueOrDefault(), -1,
            op.A, op.L, op.U, op.gamma.GetValueOrDefault(), op.kappa.GetValueOrDefault(), -1, -1, -1, -1, -1, alpha, op.initial, null, null,
            op.names, false, 0, null, null, null, 0, null, op.tlen.GetValueOrDefault(),
             op.Gstrength.GetValueOrDefault(), op.DATA, op.tail.GetValueOrDefault(),
