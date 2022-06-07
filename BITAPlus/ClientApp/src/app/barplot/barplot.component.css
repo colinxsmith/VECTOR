@@ -1,0 +1,72 @@
+circle {
+    fill: green;
+}
+
+input.newdat {
+    width: 5em;
+}
+
+rect.plus {
+    fill: url(#grad2);
+}
+
+rect.minus {
+    fill: url(#grad1);
+}
+
+line {
+    stroke: black;
+}
+
+text.lab {
+    font-size: 10px;
+    text-anchor: end;
+}
+
+h1 {
+    font-size: 20px;
+}
+
+text.editbox {
+    text-anchor: middle;
+    font-size: 10px;
+}
+
+rect.editbox {
+    fill: grey;
+    opacity: 0.2;
+}
+
+div.mainTip {
+    background: black;
+    color: white;
+    position: absolute;
+    text-align: center;
+    font-size: 150%;
+    padding: 1px 5px 2px 5px;
+    border: 8px;
+    border-radius: 4px;
+    bottom: inherit;
+    box-shadow: 1px 1px 3px #222222;
+    font-weight: bold;
+    font-family: Open Sans, sans-serif;
+    pointer-events: none;
+    overflow: none;
+    z-index: 3;
+    opacity: 0;
+    margin-left: -2px;
+    border-width: 2px;
+    border-style: solid;
+    border-color: orchid rgb(119, 247, 119) rgb(96, 96, 230) rgb(201, 81, 81);
+}
+
+div.mainTip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -10px;
+    border-width: 10px;
+    border-style: groove;
+    border-color: #555 transparent transparent transparent;
+}

@@ -1,0 +1,44 @@
+<div class="mainTip"></div>
+<h1 style="text-align: center;">{{title}}</h1>
+<div style="display:inline-flex">
+    <svg [attr.height]="height" [attr.width]="width">
+      <defs>
+          <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:rgb(255,255,0);stop-opacity:1" />
+            <stop offset="100%" style="stop-color:rgb(255,0,0);stop-opacity:1" />
+          </linearGradient>
+          <linearGradient id="grad2" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:rgb(0,255,225);stop-opacity:1" />
+            <stop offset="100%" style="stop-color:rgb(0,255,0);stop-opacity:1" />
+          </linearGradient>
+      </defs>
+      <line [attr.x1]="0" [attr.x2]="width" [attr.y1]="scaleY(0)" [attr.y2]="scaleY(0)"></line>
+      <line [attr.y1]="0" [attr.y2]="height" [attr.x1]="scaleX(0)" [attr.x2]="scaleX(0)"></line>
+      <g [attr.transform]="translatehack(scaleX(0),0)" *ngFor="let y of scaleY.domain()">
+          <text class="lab" x="-0.5em" [attr.y]="scaleY(y)">{{formatL(y)}}</text>
+      </g>
+      <g *ngFor="let x of DATA;let i=index;">
+          <rect  [attr.class]="x>=0?'ongraph plus':'ongraph minus'" (mouseleave)="info($event, i, x)"
+              (click)="getnewChange(i)"
+              (mouseenter)="info($event, i, x, true)" [attr.width]="scaleX(1)-scaleX(0)"
+              [attr.height]="abshack(scaleY(x)-scaleY(0))" [attr.x]="scaleX(i)" [attr.y]="scaleY(x>=0?x:0)">
+          </rect>
+          <rect  [style.fill-opacity]="0"  (mouseleave)="info($event, i, x)"
+              (click)="getnewChange(i)"
+              (mouseenter)="info($event, i, x, true)" [attr.width]="scaleX(1)-scaleX(0)"
+              [attr.height]="10+abshack(scaleY(x)-scaleY(0))" [attr.x]="scaleX(i)" [attr.y]="-5+scaleY(x>=0?x:0)">
+          </rect>
+      </g>
+      <g *ngIf="editvalues">
+      <g *ngFor="let x of dataToChange;let i=index;">
+          <g   [attr.transform]="translatehack(scaleX(i+0.5),scaleY(x)+7)">
+              <text y="0.5em" class="editbox">{{x}}</text>
+              <rect (click)="getnewChange(i)" class="editbox" y="-0.4em" x="-0.5em" height="1em" width="1em"></rect>
+          </g>
+       </g>
+       </g>
+  </svg>
+</div>
+<div *ngIf="editvalues">
+    <input class="newdat">
+</div>

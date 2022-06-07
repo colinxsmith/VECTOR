@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlasLikeTest", "BlasLikeTes
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitaServer", "BitaServer\BitaServer.csproj", "{6FAC66F9-D755-451F-A55C-BF07FE7A6D6D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BITAPlus", "BITAPlus\BITAPlus.csproj", "{1F4495C8-6922-46E6-B3C0-337767ECE3D6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -72,5 +74,17 @@ Global
 		{6FAC66F9-D755-451F-A55C-BF07FE7A6D6D}.Release|x64.Build.0 = Release|Any CPU
 		{6FAC66F9-D755-451F-A55C-BF07FE7A6D6D}.Release|x86.ActiveCfg = Release|Any CPU
 		{6FAC66F9-D755-451F-A55C-BF07FE7A6D6D}.Release|x86.Build.0 = Release|Any CPU
+		{1F4495C8-6922-46E6-B3C0-337767ECE3D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F4495C8-6922-46E6-B3C0-337767ECE3D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F4495C8-6922-46E6-B3C0-337767ECE3D6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1F4495C8-6922-46E6-B3C0-337767ECE3D6}.Debug|x64.Build.0 = Debug|Any CPU
+		{1F4495C8-6922-46E6-B3C0-337767ECE3D6}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1F4495C8-6922-46E6-B3C0-337767ECE3D6}.Debug|x86.Build.0 = Debug|Any CPU
+		{1F4495C8-6922-46E6-B3C0-337767ECE3D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F4495C8-6922-46E6-B3C0-337767ECE3D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F4495C8-6922-46E6-B3C0-337767ECE3D6}.Release|x64.ActiveCfg = Release|Any CPU
+		{1F4495C8-6922-46E6-B3C0-337767ECE3D6}.Release|x64.Build.0 = Release|Any CPU
+		{1F4495C8-6922-46E6-B3C0-337767ECE3D6}.Release|x86.ActiveCfg = Release|Any CPU
+		{1F4495C8-6922-46E6-B3C0-337767ECE3D6}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
