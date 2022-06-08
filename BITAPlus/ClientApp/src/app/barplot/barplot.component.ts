@@ -1,19 +1,7 @@
 import { Component, Input, ElementRef, OnChanges, OnInit, Output, EventEmitter } from '@angular/core';
 import * as d3 from 'd3';
-const mymin =  (a: Array<number>)=> {
-  let back = 9999999999999;
-  a.forEach(x => {
-    back = Math.min(x, back);
-  });
-  return back;
-}
-const mymax =  (a: Array<number>)=> {
-  let back = -9999999999999;
-  a.forEach(x => {
-    back = Math.max(x, back);
-  });
-  return back;
-}
+export const convHackForMinMax=(a:number|undefined)=>a!=undefined?a:0;
+
 @Component({
   selector: 'app-barplot',
   templateUrl: './barplot.component.html',
@@ -82,13 +70,14 @@ export class BarplotComponent implements OnChanges, OnInit {
     this.editdata = this.dataToChange;
     this.update();
   }
+
   update() {
     this.scaleX
       .domain([0, this.dataToChange.length])
       .range([this.width * this.rimX, this.width * (1 - 0.5 * this.rimX)]);
     const useforscale = this.editvalues ? this.dataToChange : this.DATA;
     this.scaleY
-      .domain([Math.min(mymin(useforscale), 0), mymax(useforscale)])
+      .domain([Math.min(convHackForMinMax(d3.min(useforscale)), 0), convHackForMinMax(d3.max(useforscale))])
       .range([this.height * (1 - this.rimY), this.height * this.rimY]);
     d3.select(this.element.nativeElement).selectAll('rect.ongraph').data(this.DATA)
       .transition()
