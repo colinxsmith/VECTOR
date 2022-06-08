@@ -27,4 +27,9 @@ public class Optimise
     public int? VARindex { get; set; }
     public double[]? breakdown { get; set; }
     public int? back{set;get;}
+    public string? message{set;get;}
+    public double?risk{set;get;}
+    public double?expreturn{set;get;}
+    public double[]?alpha{set;get;}
+    public double[]?mctr{set;get;}
 }

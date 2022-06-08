@@ -73,5 +73,10 @@ interface Optimise {
   var: number,
   vaRindex: number,
   breakdown: Array<number>,
-  back: number
+  back: number,
+  message:string,
+  mctr:Array<number>,
+  risk:number,
+  alpha:Array<number>,
+  expreturn:number
 }

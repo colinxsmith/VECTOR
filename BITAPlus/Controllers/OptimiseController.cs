@@ -26,13 +26,18 @@ public class OptimiseController : ControllerBase
         ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green] [yellow]{op.n}[/yellow]");
         return new[] { op };
     }
+    [HttpGet()]
+    public IEnumerable<Optimise> Blank()
+    {
+        return new[]{new Optimise()};
+    }
     [HttpGet("ETL")]
     public Optimise[] GetETL()
     {
         var op = new Optimise();
         using (var CVarData = new InputSomeData())
         {
-            CVarData.doubleFields = "DATA";//The DATA is LOSS i.e. - returns
+            CVarData.doubleFields = "DATA L U A";//The DATA is LOSS i.e. - returns
             CVarData.intFields = "n tlen";
             CVarData.stringFields = "names";
             try
@@ -43,20 +48,19 @@ public class OptimiseController : ControllerBase
             {
                 CVarData.Read("../GLdist");
             }
+            op.L = CVarData.mapDouble["L"];
+            op.U = CVarData.mapDouble["U"];
+            op.A = CVarData.mapDouble["A"];
             op.DATA = CVarData.mapDouble["DATA"];
             op.names = CVarData.mapString["names"];
             op.n = CVarData.mapInt["n"][0];
             op.tlen = CVarData.mapInt["tlen"][0];
         }
+        BlasLike.dnegvec(op.DATA.Length,op.DATA);
         op.m = 1;
-        op.L = new double[op.n.Value + op.m.Value];
-        op.U = new double[op.n.Value + op.m.Value];
-        op.A = new double[op.n.Value * op.m.Value];
-        BlasLike.dsetvec(op.n.Value, 1, op.U);
-        BlasLike.dsetvec(op.n.Value, 1, op.A);
-        op.L[op.n.Value] = op.U[op.n.Value] = 1.0;
         op.ETLopt = false;
         op.Gstrength = 1;
+        op.tail=0.05;
         return new[] { op };
     }
     [HttpPost("ETL")]
@@ -77,23 +81,28 @@ public class OptimiseController : ControllerBase
         else Q=op.Q;
         var opt = new Portfolio.Portfolio("");
         var ones = new double[op.tlen.GetValueOrDefault()];
-        var alpha = new double[op.n.GetValueOrDefault()];
+        op.alpha = new double[op.n.GetValueOrDefault()];
         opt.Q = Q;
         BlasLike.dsetvec(op.tlen.GetValueOrDefault(), 1.0 / op.tlen.GetValueOrDefault(), ones);
-        Factorise.dmxmulv(op.n.GetValueOrDefault(), op.tlen.GetValueOrDefault(), op.DATA, ones, alpha, 0, 0, 0, true);
+        Factorise.dmxmulv(op.n.GetValueOrDefault(), op.tlen.GetValueOrDefault(), op.DATA, ones, op.alpha, 0, 0, 0, true);
         op.back = opt.BasicOptimisation(op.n.GetValueOrDefault(), op.m.GetValueOrDefault(), -1,
-           op.A, op.L, op.U, op.gamma.GetValueOrDefault(), op.kappa.GetValueOrDefault(), -1, -1, -1, -1, -1, alpha, op.initial, null, null,
+           op.A, op.L, op.U, op.gamma.GetValueOrDefault(), op.kappa.GetValueOrDefault(), -1, -1, -1, -1, -1, op.alpha, op.initial, null, null,
            op.names, false, 0, null, null, null, 0, null, op.tlen.GetValueOrDefault(),
             op.Gstrength.GetValueOrDefault(), op.DATA, op.tail.GetValueOrDefault(),
             null, op.ETLopt.GetValueOrDefault(), op.ETLmin.GetValueOrDefault(),
             op.ETLmax.GetValueOrDefault());
         op.w = opt.wback;
+        op.message=Portfolio.Portfolio.OptMessages(Math.Abs(op.back.GetValueOrDefault()));
         op.breakdown = new double[op.n.GetValueOrDefault()];
         double VAR = 0;
         int ind = -1;
         op.ETL = Portfolio.Portfolio.ETL(op.n.GetValueOrDefault(), op.w, op.DATA, op.tail.GetValueOrDefault(), ref VAR, ref ind, op.breakdown);
         op.VAR = VAR;
         op.VARindex = ind;
+        op.mctr=new double[op.n.GetValueOrDefault()];
+        opt.RiskBreakdown(op.w,null,op.mctr);
+        op.risk=BlasLike.ddotvec(op.n.GetValueOrDefault(),op.w,op.mctr);
+        op.expreturn=BlasLike.ddotvec(op.n.GetValueOrDefault(),op.w,op.alpha);
         return new[] { op };
     }
     [HttpGet("test")]

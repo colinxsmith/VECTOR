@@ -3209,6 +3209,21 @@ namespace Portfolio
                 return back;
             }
         }
+        public static string OptMessages(int i)
+        {ColourConsole.WriteInfo($"messages {i}");
+            switch (i)
+            {
+                case 0:
+                    return "Optimimal Solution";
+                case 1:
+                    return "Not all conditions for a minimum have been met, but the method could not make the utility smaller";
+                case 6:
+                    return "Infeasible problem, impossible to satisfy all constraints";
+                default:
+                    return $"Optimisation failed {i}";
+            }
+        }
+
         ///<summary>Portfolio turnover 
         ///turnover = 0.5*sum(abs(0,w-initial))
         ///</summary>
@@ -3886,7 +3901,7 @@ namespace Portfolio
             if (cnumRmax != -1) ColourConsole.WriteEmbeddedColourLine($"[darkyellow]Test Rmax constraint:[/darkyellow]\t\t[red]{LL[N + cnumRmax],20:f16}[/red]\t[cyan]{BlasLike.ddot(N, AA, M, WW, 1, cnumRmax),20:f16}[/cyan]\t[green]{UU[N + cnumRmax],20:f16}[/green]");
             var turn2 = fixedTurn;
             var cost2 = fixedCost;
-            for (var i = 0; initial!=null&&i < n; ++i)
+            for (var i = 0; initial != null && i < n; ++i)
             {
                 if (buysellIndex_inverse[i] == -1)
                 {
@@ -4039,7 +4054,7 @@ namespace Portfolio
             var turnover = 0.0;
             var cost = 0.0;
             var costFixed = 0.0;
-            for (var i = 0;initial!=null&& i < n; ++i)
+            for (var i = 0; initial != null && i < n; ++i)
             {
                 turnover += Math.Abs(wback[i] - initial[i]);
                 if ((buy != null) && (sell != null))
@@ -4066,7 +4081,7 @@ namespace Portfolio
                     int VARindex = -2;
                     var ETL1 = ETL(n, wback, DATA, tail, ref VAR1, ref VARindex);
                     if (Math.Abs(ETL1 - ETL2) > BlasLike.lm_rooteps)
-                        back = 6;
+                        back = -back;
                     ColourConsole.WriteEmbeddedColourLine($"ETL:\t\t\t\t[green]{ETL1,20:f16}:[/green]\t[cyan]{ETL2,20:f16}[/cyan]");
                 }
                 else
@@ -4074,7 +4089,7 @@ namespace Portfolio
                     var LOSS2 = BlasLike.ddotvec(tlen, WW, CC, n - nfixed + buysellI + longshortI, n - nfixed + buysellI + longshortI) / DATAlambda;
                     var LOSS1 = LOSS(n, wback, DATA, targetR);
                     if (Math.Abs(LOSS1 - LOSS2) > BlasLike.lm_rooteps)
-                        back = 6;
+                        back = -back;
                     ColourConsole.WriteEmbeddedColourLine($"LOSS:\t\t\t\t[green]{LOSS2,20:f16}:[/green]\t[cyan]{LOSS2,20:f16}[/cyan]");
                 }
             }
@@ -4313,7 +4328,8 @@ namespace Portfolio
             BlasLike.dzerovec(nn, hx);
         }
         public virtual void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
-        {Debug.Assert(ntrue!=0);
+        {
+            Debug.Assert(ntrue != 0);
             if (Q != null)
             {
                 Factorise.CovMul(ntrue, Q, x, hx, 0, 0, 0, 'U', nfixed);
@@ -4322,7 +4338,8 @@ namespace Portfolio
             else BlasLike.dzerovec(nn, hx);
         }
         public virtual void hessmull(int nn, double[] QQ, double[] x, double[] hx)
-        {Debug.Assert(ntrue!=0);
+        {
+            Debug.Assert(ntrue != 0);
             if (Q != null)
             {
                 Factorise.CovMul(ntrue, Q, x, hx, 0, 0, 0, 'U', nfixed);
@@ -4768,7 +4785,8 @@ namespace Portfolio
                 }
         }
         public override void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
-        {Debug.Assert(ntrue!=0);
+        {
+            Debug.Assert(ntrue != 0);
             if (Q != null)
             {
                 if (nfixed > 0)
@@ -4782,7 +4800,8 @@ namespace Portfolio
             else BlasLike.dzerovec(nn, hx);
         }
         public override void hessmull(int nn, double[] QQ, double[] x, double[] hx)
-        {Debug.Assert(ntrue!=0);
+        {
+            Debug.Assert(ntrue != 0);
             if (Q != null)
             {
                 if (nfixed > 0)
