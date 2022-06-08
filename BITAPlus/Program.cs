@@ -5,12 +5,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
- app.UseCors(x => x
+ /*app.UseCors(x => x
             .AllowAnyOrigin()
             .AllowAnyMethod()
             .AllowAnyHeader()
             .SetIsOriginAllowed(d=>true)
-            );
+            );*/
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
