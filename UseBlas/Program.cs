@@ -1724,15 +1724,12 @@ namespace UseBlas
                     opt.CalcRisk(opt.gamma, sendInput);
                     var breakdown = (double[])opt.wback.Clone();
                     var beta = (double[])null;//opt.wback.Clone();
-                    var nfixed=opt.nfixed;
-                    opt.nfixed=0;
                     opt.RiskBreakdown(opt.wback, opt.bench, breakdown, beta);
                     //             opt.DropRisk(basket, trades, targetRisk, sendInput);
                     var FX=new double[nfac];
                     var Fbreak=new double[nfac];
                     var Sbreak=new double[opt.wback.Length];
                     opt.FactorRiskAttribution(opt.wback,opt.bench,FX,Fbreak,Sbreak);
-                    opt.nfixed=nfixed;
                     opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
                     sendInput.useIP = false;
                     if (round == 1)

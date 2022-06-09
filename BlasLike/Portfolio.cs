@@ -4110,6 +4110,7 @@ namespace Portfolio
             if ((buysellI > 0 /*&& kappa > 1e-14*/) && (Math.Abs(cost - cost2) > BlasLike.lm_eps * 10))
                 back = 6;
             BACK = back;
+            nfixed=0;
             return back;
         }
         public void GainLossSetUp(int n, int tlen, double[] DATA, string[] names, double R, double lambda, bool useIP = true)
