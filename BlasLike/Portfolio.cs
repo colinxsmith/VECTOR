@@ -3210,7 +3210,8 @@ namespace Portfolio
             }
         }
         public static string OptMessages(int i)
-        {ColourConsole.WriteInfo($"messages {i}");
+        {
+            ColourConsole.WriteInfo($"messages {i}");
             switch (i)
             {
                 case 0:
@@ -3219,6 +3220,8 @@ namespace Portfolio
                     return "Not all conditions for a minimum have been met, but the method could not make the utility smaller";
                 case 6:
                     return "Infeasible problem, impossible to satisfy all constraints";
+                case 10:
+                    return "At least one upper bound was less than a lower bound";
                 default:
                     return $"Optimisation failed {i}";
             }
@@ -4072,6 +4075,7 @@ namespace Portfolio
             ColourConsole.WriteEmbeddedColourLine($"Utility:\t\t\t[green]{utility,20:f16}:[/green]\t[cyan] {utilityA,20:f16}[/cyan]");
             ColourConsole.WriteEmbeddedColourLine($"Turnover:\t\t\t[green]{turnover * 0.5,20:f16}:[/green]\t[cyan]{turn2,20:f16}[/cyan]");
             ColourConsole.WriteEmbeddedColourLine($"Cost:\t\t\t\t[green]{cost,20:f16}:[/green]\t[cyan]{cost2,20:f16}[/cyan]");
+            CVARGLprob = false;
             if (tlen > 0 && DATAlambda != 0.0)
             {
                 if (targetR == null)
@@ -4081,7 +4085,7 @@ namespace Portfolio
                     int VARindex = -2;
                     var ETL1 = ETL(n, wback, DATA, tail, ref VAR1, ref VARindex);
                     if (Math.Abs(ETL1 - ETL2) > BlasLike.lm_rooteps)
-                        back = -back;
+                        CVARGLprob = true;
                     ColourConsole.WriteEmbeddedColourLine($"ETL:\t\t\t\t[green]{ETL1,20:f16}:[/green]\t[cyan]{ETL2,20:f16}[/cyan]");
                 }
                 else
@@ -4089,7 +4093,7 @@ namespace Portfolio
                     var LOSS2 = BlasLike.ddotvec(tlen, WW, CC, n - nfixed + buysellI + longshortI, n - nfixed + buysellI + longshortI) / DATAlambda;
                     var LOSS1 = LOSS(n, wback, DATA, targetR);
                     if (Math.Abs(LOSS1 - LOSS2) > BlasLike.lm_rooteps)
-                        back = -back;
+                        CVARGLprob = true;
                     ColourConsole.WriteEmbeddedColourLine($"LOSS:\t\t\t\t[green]{LOSS2,20:f16}:[/green]\t[cyan]{LOSS2,20:f16}[/cyan]");
                 }
             }
@@ -4301,6 +4305,7 @@ namespace Portfolio
         public double delta;
         public double[] w = null;
         public double[] wback = null;
+        public bool CVARGLprob = false;
         public double[] initial = null;
         public double[] bench = null;
         public double[] L = null;
@@ -4823,6 +4828,26 @@ namespace Portfolio
             var nn = (nfac + 1) * ntrue;
             Q = new double[nn];
             return Factorise.FMP(ntrue, nfac, FC, SV, FL, Q);
+        }
+        public void FactorRiskAttribution(double[] w, double[] bench = null, double[] FX = null, double[] FactorRiskBreakdown = null, double[] SpecificBreakdown = null)
+        {
+            var n = w.Length;
+            Debug.Assert(FX.Length == nfac);
+            Debug.Assert(FactorRiskBreakdown.Length == nfac);
+            Debug.Assert(SpecificBreakdown.Length == n);
+            var FXi = FactorRiskBreakdown;
+            if (bench != null) BlasLike.dsubvec(n, w, bench, w);
+            Factorise.dmxmulv(nfac, n, FL, w, FX, 0, 0, 0, true);
+            Factorise.dsmxmulv(nfac, FC, FX, FXi);
+            Factorise.DiagMul(n, SV, w, SpecificBreakdown);
+            var factorVariance = BlasLike.ddotvec(nfac, FX, FXi);
+            BlasLike.dscalvec(nfac, 1.0 / Math.Sqrt(factorVariance), FXi);
+            var specificVariance = BlasLike.ddotvec(n, SpecificBreakdown, w);
+            BlasLike.dscalvec(n, 1.0 / Math.Sqrt(specificVariance), SpecificBreakdown);
+            ColourConsole.WriteEmbeddedColourLine($"[green]Factor Variance[/green]\t\t[yellow]{factorVariance,20:e8}[/yellow]");
+            ColourConsole.WriteEmbeddedColourLine($"[green]Specific Variance[/green]\t[yellow]{specificVariance,20:e8}[/yellow]");
+            ColourConsole.WriteEmbeddedColourLine($"[green]Total[/green]\t\t\t[yellow]{factorVariance + specificVariance,20:e8}[/yellow]");
+            if (bench != null) BlasLike.daddvec(n, w, bench, w);
         }
     }
 }

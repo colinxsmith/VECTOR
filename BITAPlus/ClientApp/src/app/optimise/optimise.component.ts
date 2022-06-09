@@ -11,7 +11,7 @@ export class OptimiseComponent {
   height = 400;
   format=d3.format('0.6f')
   opt: Array<Optimise> = [];
-  constructor(private http: HttpClient, @Inject('BASE_URL') private baseUrl: string, private element: ElementRef) {
+  constructor(private http: HttpClient, @Inject('BASE_URL') private baseUrl: string, public element: ElementRef) {
     http.get<Optimise[]>(baseUrl + 'optimise/ETL').subscribe(result => {
       this.opt.push(result[0]);
       console.log(this.opt, result);
@@ -78,5 +78,6 @@ interface Optimise {
   mctr:Array<number>,
   risk:number,
   alpha:Array<number>,
-  expreturn:number
+  expreturn:number,
+  CVARGLprob:boolean
 }

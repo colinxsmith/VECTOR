@@ -87,6 +87,7 @@ public class OptimiseController : ControllerBase
             null, op.ETLopt.GetValueOrDefault(), op.ETLmin.GetValueOrDefault(),
             op.ETLmax.GetValueOrDefault());
         op.w = opt.wback;
+        op.CVARGLprob=opt.CVARGLprob;
         op.message=Portfolio.Portfolio.OptMessages(Math.Abs(op.back.GetValueOrDefault()));
         op.breakdown = new double[op.n.GetValueOrDefault()];
         double VAR = 0;

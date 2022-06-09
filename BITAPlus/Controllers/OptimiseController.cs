@@ -29,7 +29,7 @@ public class OptimiseController : ControllerBase
     [HttpGet()]
     public IEnumerable<Optimise> Blank()
     {
-        return new[]{new Optimise()};
+        return new[] { new Optimise() };
     }
     [HttpGet("ETL")]
     public Optimise[] GetETL()
@@ -56,11 +56,14 @@ public class OptimiseController : ControllerBase
             op.n = CVarData.mapInt["n"][0];
             op.tlen = CVarData.mapInt["tlen"][0];
         }
-        BlasLike.dnegvec(op.DATA.Length,op.DATA);
+        BlasLike.dnegvec(op.DATA.Length, op.DATA);
         op.m = 1;
         op.ETLopt = false;
         op.Gstrength = 1;
-        op.tail=0.05;
+        //     op.tail=0.05;
+        op.ETLmin = -1;
+        op.ETLmax = 1;
+        op.gamma = 0;
         return new[] { op };
     }
     [HttpPost("ETL")]
@@ -69,16 +72,19 @@ public class OptimiseController : ControllerBase
         if (!op.gamma.HasValue) op.gamma = 0.5;
         if (!op.kappa.HasValue) op.kappa = op.gamma;
         double[] Q;
-        if(op.Q==null){Q = new double[op.n.GetValueOrDefault() * (op.n.GetHashCode() + 1) / 2];op.Q=Q;
-                var ij = 0;
-        for (var i = 0; i < op.n.GetValueOrDefault(); ++i)
+        if (op.Q == null)
         {
-            for (var j = 0; j <= i; ++j)
+            Q = new double[op.n.GetValueOrDefault() * (op.n.GetHashCode() + 1) / 2]; op.Q = Q;
+            var ij = 0;
+            for (var i = 0; i < op.n.GetValueOrDefault(); ++i)
             {
-                Q[ij++] = Solver.Factorise.covariance(op.tlen.GetValueOrDefault(), op.DATA, op.DATA, i * op.tlen.GetValueOrDefault(), j * op.tlen.GetValueOrDefault());
+                for (var j = 0; j <= i; ++j)
+                {
+                    Q[ij++] = Solver.Factorise.covariance(op.tlen.GetValueOrDefault(), op.DATA, op.DATA, i * op.tlen.GetValueOrDefault(), j * op.tlen.GetValueOrDefault());
+                }
             }
-        }}
-        else Q=op.Q;
+        }
+        else Q = op.Q;
         var opt = new Portfolio.Portfolio("");
         var ones = new double[op.tlen.GetValueOrDefault()];
         op.alpha = new double[op.n.GetValueOrDefault()];
@@ -92,17 +98,18 @@ public class OptimiseController : ControllerBase
             null, op.ETLopt.GetValueOrDefault(), op.ETLmin.GetValueOrDefault(),
             op.ETLmax.GetValueOrDefault());
         op.w = opt.wback;
-        op.message=Portfolio.Portfolio.OptMessages(Math.Abs(op.back.GetValueOrDefault()));
+        op.CVARGLprob = opt.CVARGLprob;
+        op.message = Portfolio.Portfolio.OptMessages(Math.Abs(op.back.GetValueOrDefault()));
         op.breakdown = new double[op.n.GetValueOrDefault()];
         double VAR = 0;
         int ind = -1;
         op.ETL = Portfolio.Portfolio.ETL(op.n.GetValueOrDefault(), op.w, op.DATA, op.tail.GetValueOrDefault(), ref VAR, ref ind, op.breakdown);
         op.VAR = VAR;
         op.VARindex = ind;
-        op.mctr=new double[op.n.GetValueOrDefault()];
-        opt.RiskBreakdown(op.w,null,op.mctr);
-        op.risk=BlasLike.ddotvec(op.n.GetValueOrDefault(),op.w,op.mctr);
-        op.expreturn=BlasLike.ddotvec(op.n.GetValueOrDefault(),op.w,op.alpha);
+        op.mctr = new double[op.n.GetValueOrDefault()];
+        opt.RiskBreakdown(op.w, null, op.mctr);
+        op.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.mctr);
+        op.expreturn = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.alpha);
         return new[] { op };
     }
     [HttpGet("test")]

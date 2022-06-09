@@ -1,6 +1,6 @@
 import { Component, Input, ElementRef, OnChanges, OnInit, Output, EventEmitter } from '@angular/core';
 import * as d3 from 'd3';
-export const convHackForMinMax=(a:number|undefined)=>a!=undefined?a:0;
+export const convHackForMinMax = (a: number | undefined) => a != undefined ? a : 0;
 
 @Component({
   selector: 'app-barplot',
@@ -16,6 +16,9 @@ export class BarplotComponent implements OnChanges, OnInit {
   @Input() height = 500;
   @Input() title = '';
   @Input() editvalues = false;
+  //caller is probably the component that calls this plotter. It's needed to try to get
+  //the tooltip positioned properly. So must use [caller] = "element.nativeElement" .
+  @Input() caller = this.element.nativeElement as string;
   abshack = Math.abs;
   scaleX = d3.scaleLinear();
   scaleY = d3.scaleLinear();
@@ -38,12 +41,12 @@ export class BarplotComponent implements OnChanges, OnInit {
   }
   info(e: MouseEvent, x: number, y: number, inout = false) {
     const tip = d3.select(this.element.nativeElement).select('div.mainTip');
-    console.log(tip);
+  //  console.log(tip);
     const Torg = ((d3.select('body').node() as HTMLElement)
     /*.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode as HTMLElement*/)
       .getBoundingClientRect().left;
     const origin = (d3
-      .select('app-optimise')
+      .select(this.caller)
       .node() as HTMLElement).getBoundingClientRect(); // Try to get position correct when the picture has scrollbars.
     const here = d3.select(e.target as HTMLElement & EventTarget);
     if (inout) {
@@ -55,7 +58,7 @@ export class BarplotComponent implements OnChanges, OnInit {
         .style('display', 'inline-block')
         .html(`x:${x} ${this.format(y)}`);
       const wwww = (tip.node() as HTMLElement).getBoundingClientRect();
-      console.log(wwww.width, origin.left - Torg);
+  //    console.log(wwww.width, origin.left - Torg);
       tip.style('left', `${e.clientX - wwww.width * 0.5 - Torg}px`);
     } else {
       here.style('opacity', 1);

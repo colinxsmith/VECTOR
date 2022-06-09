@@ -32,4 +32,5 @@ public class Optimise
     public double?expreturn{set;get;}
     public double[]?alpha{set;get;}
     public double[]?mctr{set;get;}
+    public bool?CVARGLprob{set;get;}
 }
