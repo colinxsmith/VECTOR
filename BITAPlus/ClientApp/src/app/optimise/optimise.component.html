@@ -17,8 +17,8 @@
             <td *ngIf="opt[0].var!=undefined">VAR: {{format(opt[0].var)}}</td>
             <td *ngIf="opt[0].vaRindex!=undefined">VAR index: {{opt[0].vaRindex}}</td>
             <td *ngIf="opt[0].tail!=undefined">tail: {{opt[0].tail}}</td>
-            <td *ngIf="opt[0].gamma!=undefined">gamma: {{opt[0].gamma}}<br>Set: <input class="step g" style="width:5em" [min]="0" [max]="1" [value]="opt[0].gamma"></td>
-            <td *ngIf="opt[0].etLmax!=undefined">ETLmax: {{opt[0].etLmax}}<br>Set: <input class="step E" style="width:5em" [min]="0" [max]="1" [value]="opt[0].etLmax"></td>
+            <td *ngIf="opt[0].gamma!=undefined">Set gamma: {{opt[0].gamma}}<br>Set: <input class="step g" style="width:5em" [min]="0" [max]="1" [value]="opt[0].gamma"></td>
+            <td *ngIf="opt[0].etLmax!=undefined">Set max ETL: {{opt[0].etLmax}}<br>Set: <input class="step E" style="width:5em" [min]="0" [max]="1" [value]="opt[0].etLmax"></td>
         </tr>
         <td>
             <app-barplot *ngIf="opt&&opt[0].w" [caller]="element.nativeElement" [title]="'Portfolio weights'" [height]="height" [width]="width" [DATA]="opt[0].w"></app-barplot>

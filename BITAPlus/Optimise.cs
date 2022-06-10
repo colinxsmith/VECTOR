@@ -33,4 +33,10 @@ public class Optimise
     public double[]?alpha{set;get;}
     public double[]?mctr{set;get;}
     public bool?CVARGLprob{set;get;}
+    public double[]? TargetReturn { set; get; }
+    public double? LOSS { get; set; }
+    public bool? LOSSopt { set; get; }
+    public double? LOSSmin { get; set; }
+    public double? LOSSmax { set; get; }
+
 }

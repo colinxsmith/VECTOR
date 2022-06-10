@@ -1,0 +1,25 @@
+<h1 style="text-align: center;" id="tableLabel">
+  LOSS Optimisation
+</h1>
+<div class="maindiv" *ngIf="opt&&opt[0]">
+  <button (mouseover)="over($event,true)" (mouseleave)="over($event)" (click)="sendStep()">Send New Optimisation Parameters</button>
+  <table style="width:100%">
+    <tr>
+      <td *ngIf="opt[0].back==0" style="color:rgb(47, 255, 89); text-align:justify">{{opt[0].message}}</td>
+      <td *ngIf="opt[0].back==1" style="color:rgb(255, 234, 0); text-align:justify">{{opt[0].message}}</td>
+      <td *ngIf="opt[0].CVARGLprob!=undefined&&opt[0].CVARGLprob" style="color:rgb(255, 234, 0); text-align:justify">{{opt[0].message}}</td>
+      <td *ngIf="opt[0].back==6" style="color:crimson; text-align:justify">{{opt[0].message}}</td>
+      <td *ngIf="opt[0].back==10" style="color:crimson; text-align:justify">{{opt[0].message}}</td>
+      <td *ngIf="opt[0].back>6" style="color:crimson; text-align:justify">{{opt[0].message}}</td>
+      <td *ngIf="opt[0].back>1&&opt[0].back<6" style="color:crimson; text-align:justify">{{opt[0].message}}</td>
+      <td *ngIf="opt[0].expreturn!=undefined">Return: {{format(opt[0].expreturn)}}</td>
+      <td *ngIf="opt[0].risk!=undefined">Risk: {{format(opt[0].risk)}}</td>
+      <td *ngIf="opt[0].loss!=undefined">LOSS: {{format(opt[0].loss)}}</td>
+      <td *ngIf="opt[0].gamma!=undefined">Set gamma: {{opt[0].gamma}}<br>Set: <input class="step g" style="width:5em" [min]="0" [max]="1" [value]="opt[0].gamma"></td>
+      <td *ngIf="opt[0].losSmax!=undefined">Set max LOSS: {{opt[0].losSmax}}<br>Set: <input class="step L" style="width:5em" [min]="0" [max]="1" [value]="opt[0].losSmax"></td>
+    </tr>
+    <td>
+      <app-barplot *ngIf="opt&&opt[0].w" [caller]="element.nativeElement" [title]="'Portfolio weights'" [height]="height" [width]="width" [DATA]="opt[0].w"></app-barplot>
+    </td>
+  </table>
+</div>

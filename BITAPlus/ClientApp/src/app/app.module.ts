@@ -9,6 +9,7 @@ import { NavMenuComponent } from './nav-menu/nav-menu.component';
 import { HomeComponent } from './home/home.component';
 import { OptimiseComponent } from './optimise/optimise.component';
 import { BarplotComponent } from './barplot/barplot.component';
+import { OptimiselossComponent } from './optimiseloss/optimiseloss.component';
 
 @NgModule({
   declarations: [
@@ -16,7 +17,8 @@ import { BarplotComponent } from './barplot/barplot.component';
     NavMenuComponent,
     HomeComponent,
     OptimiseComponent,
-    BarplotComponent
+    BarplotComponent,
+    OptimiselossComponent
   ],
   imports: [
     BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),
@@ -24,7 +26,8 @@ import { BarplotComponent } from './barplot/barplot.component';
     FormsModule,
     RouterModule.forRoot([
       { path: '', component: HomeComponent, pathMatch: 'full' },
-      { path: 'optimise', component: OptimiseComponent },
+      { path: 'etl', component: OptimiseComponent },
+      { path: 'loss', component: OptimiselossComponent },
     ])
   ],
   providers: [],
