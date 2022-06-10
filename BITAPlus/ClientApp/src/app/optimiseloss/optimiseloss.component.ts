@@ -1,7 +1,7 @@
 import { Component, Inject, ElementRef } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import * as d3 from 'd3';
-import { NumberValue } from 'd3';
+
 @Component({
   selector: 'app-optimiseloss',
   templateUrl: './optimiseloss.component.html',
