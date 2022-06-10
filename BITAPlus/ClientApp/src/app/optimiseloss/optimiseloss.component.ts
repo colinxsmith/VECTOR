@@ -51,8 +51,8 @@ export class OptimiselossComponent {
 }
 
 interface Optimiseloss {
-  digit: null,
-  tdigit: null,
+  digit: number, 
+  tdigit: number ,
   tlen: number, n: number, m: number,
   L: Array<number>,
   U: Array<number>,
