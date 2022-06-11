@@ -24,6 +24,9 @@ Need to add to solution
 dotnet sln add BitaServer/BitaServer.csproj
 dotnet add BitaServer/BitaServer.csproj reference BlasLike/BlasLike.csproj
 
+To trust for https localhost
+dotnet dev-certs https --trust
+
 To test the server use:
 (dotnet tool install -g Microsoft.dotnet-httprepl
 to install httprepl)
