@@ -17,7 +17,7 @@ var app = builder.Build();
 }*/
 
 app.UseHttpsRedirection();
-
+app.UseStaticFiles();
 app.UseAuthorization();
 
 app.MapControllers();
