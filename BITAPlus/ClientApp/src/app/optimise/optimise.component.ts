@@ -7,8 +7,8 @@ import * as d3 from 'd3';
   styleUrls: ['./optimise.component.css']
 })
 export class OptimiseComponent {
-  width = 500;
-  height = 400;
+  width = 1000;//width and height for weight graph
+  height = 300;
   format=d3.format('0.6f')
   opt: Array<Optimise> = [];
   constructor(private http: HttpClient, @Inject('BASE_URL') private baseUrl: string, public element: ElementRef) {
@@ -24,15 +24,12 @@ export class OptimiseComponent {
     let back = +(d3.select(this.element.nativeElement).select('input.step.g').node() as HTMLInputElement & Event).value;
     console.log(back, this.opt[0].etLmax);
     this.opt[0].gamma = back;
-    back = +(d3.select(this.element.nativeElement).select('input.step.E').node() as HTMLInputElement & Event).value;
     this.opt[0].tail = 0.05;
+    back = +(d3.select(this.element.nativeElement).select('input.step.EU').node() as HTMLInputElement & Event).value;
     this.opt[0].etLmax = back;
-    if (this.opt[0].etLmax != undefined) {
-      this.opt[0].etLopt = true;
-      this.opt[0].etLmin = back;
-    } else {
-      this.opt[0].etLopt = false;
-    }
+    back = +(d3.select(this.element.nativeElement).select('input.step.EL').node() as HTMLInputElement & Event).value;
+    this.opt[0].etLmin = back;
+    this.opt[0].etLopt = true;
     this.sendData('optimise/ETL', this.opt[0])
       .subscribe(ddd => {
         console.log(ddd);

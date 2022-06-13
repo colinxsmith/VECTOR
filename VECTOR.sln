@@ -1,17 +1,16 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30114.105
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32526.322
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlasLike", "BlasLike\BlasLike.csproj", "{4A3BF5F7-A917-4560-A434-481C06AA4014}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlasLike", "BlasLike\BlasLike.csproj", "{4A3BF5F7-A917-4560-A434-481C06AA4014}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UseBlas", "UseBlas\UseBlas.csproj", "{2A3C351F-7E1A-4429-AAC2-D4778CFB6A01}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UseBlas", "UseBlas\UseBlas.csproj", "{2A3C351F-7E1A-4429-AAC2-D4778CFB6A01}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlasLikeTest", "BlasLikeTest\BlasLikeTest.csproj", "{C3505766-72A4-427B-9DF5-D3CA7D83BBF1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BlasLikeTest", "BlasLikeTest\BlasLikeTest.csproj", "{C3505766-72A4-427B-9DF5-D3CA7D83BBF1}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitaServer", "BitaServer\BitaServer.csproj", "{6FAC66F9-D755-451F-A55C-BF07FE7A6D6D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BitaServer", "BitaServer\BitaServer.csproj", "{6FAC66F9-D755-451F-A55C-BF07FE7A6D6D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BITAPlus", "BITAPlus\BITAPlus.csproj", "{1F4495C8-6922-46E6-B3C0-337767ECE3D6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BITAPlus", "BITAPlus\BITAPlus.csproj", "{1F4495C8-6922-46E6-B3C0-337767ECE3D6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,9 +20,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{4A3BF5F7-A917-4560-A434-481C06AA4014}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -86,5 +82,11 @@ Global
 		{1F4495C8-6922-46E6-B3C0-337767ECE3D6}.Release|x64.Build.0 = Release|Any CPU
 		{1F4495C8-6922-46E6-B3C0-337767ECE3D6}.Release|x86.ActiveCfg = Release|Any CPU
 		{1F4495C8-6922-46E6-B3C0-337767ECE3D6}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BFD136F2-2171-44F5-914D-8A9A34E3CF48}
 	EndGlobalSection
 EndGlobal

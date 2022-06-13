@@ -3217,7 +3217,7 @@ namespace Portfolio
                 case 0:
                     return "Optimimal Solution";
                 case 1:
-                    return "Not all conditions for a minimum have been met, but the method could not make the utility smaller";
+                    return "Not all conditions for a minimum have been met, but the method could not make the utility smaller, relaxations e.g. in LOSS or ETL may have failed";
                 case 6:
                     return "Infeasible problem, impossible to satisfy all constraints";
                 case 10:
