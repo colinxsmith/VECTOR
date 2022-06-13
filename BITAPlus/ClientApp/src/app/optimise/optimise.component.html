@@ -15,10 +15,18 @@
       <td *ngIf="opt[0].expreturn!=undefined">Return: {{format(opt[0].expreturn)}}</td>
       <td *ngIf="opt[0].risk!=undefined">Risk: {{format(opt[0].risk)}}</td>
       <td *ngIf="opt[0].etl!=undefined">ETL: {{format(opt[0].etl)}}</td>
-      <td *ngIf="opt[0].gamma!=undefined">Set gamma: <br>Set: <input class="step g" style="width:5em" [min]="0" [max]="1" [value]="opt[0].gamma"></td>
+      <td *ngIf="opt[0].gamma!=undefined">
+        <ul (mouseover)="over($event,true)" (mouseleave)="over($event)">
+          <li>
+            Set gamma: <br>Set: <input class="step g" style="width:5em" [min]="0" [max]="1" [value]="opt[0].gamma">
+          </li>
+        </ul>
+      </td>
       <td *ngIf="opt[0].etLmax!=undefined&&opt[0].etLmin!=undefined">
-        <p>Set max/min ETL: <br>max: <input class="step EU" style="width:5em" [min]="0" [max]="1" [value]="opt[0].etLmax"></p>
-        <p><br>min: <input class="step EL" style="width:5em" [min]="0" [max]="1" [value]="opt[0].etLmin"></p>
+        <ul (mouseover)="over($event,true)" (mouseleave)="over($event)">
+          <li>Set max/min ETL: <br>max: <input class="step EU" style="width:5em" [min]="0" [max]="1" [value]="opt[0].etLmax"></li>
+          <li><br>min: <input class="step EL" style="width:5em" [min]="0" [max]="1" [value]="opt[0].etLmin"></li>
+        </ul>
       </td>
     </tr>
   </table>
