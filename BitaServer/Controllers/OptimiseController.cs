@@ -237,7 +237,7 @@ public class OptimiseController : ControllerBase
                                     /*int downrisk, double downfactor,*/
                                     int longbasket, int shortbasket,
                                     int tradebuy, int tradesell,/* double zetaS, double zetaF,*/
-                                    /*double ShortCostScale,*/ double LSValuel, double[] Abs_L)
+                                    /*double ShortCostScale,*/ double LSValuel, double[] Abs_L,double[]breakdown)
     {
         var back = -1;
         Portfolio.Portfolio op;
@@ -269,12 +269,16 @@ public class OptimiseController : ControllerBase
         op.Q = Q;
         if(initial==null)initial=new double[n];
         back=op.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, LSValue, LSValuel, Rmin, Rmax,
-        alpha, initial, buy, sell, names, false, nabs, Abs_A, Abs_L, Abs_U, mabs, I_A);
+        alpha, initial, buy, sell, names,false, nabs, Abs_A, Abs_L, Abs_U, mabs, I_A);
 BlasLike.dcopyvec(n,op.wback,w);
+for(var i=0;i<n;++i){
+    w[i]=Portfolio.Portfolio.check_digit(1e2*w[i])*1e-2;
+}
+if(breakdown!=null)op.RiskBreakdown(w,op.bench,breakdown);
         return back;
     }
     [HttpGet("general")]
-    public Optimise[] GetGen()
+    public Optimise[] GetGen(double? delta,double?gamma)
     {
         var op = new Optimise();
         using (var CVarData = new InputSomeData()){
@@ -307,8 +311,12 @@ BlasLike.dcopyvec(n,op.wback,w);
             op.mask=CVarData.mapDouble["mask"];
             op.initial=CVarData.mapDouble["initial"];
             op.delta=CVarData.mapDouble["delta"][0];
+            op.gamma=CVarData.mapDouble["gamma"][0];
+            if(delta!=null)op.delta=delta;
+            if(gamma!=null)op.gamma=gamma;
         }
         double ogamma = op.ogamma.GetValueOrDefault();
+        var breakdown=new double[op.n.GetValueOrDefault()];
         op.w = new double[op.n.GetValueOrDefault()];
         op.back = Optimise_internalCVPAFbl(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.names,
         op.w, op.m.GetValueOrDefault(), op.A, op.L, op.U, op.alpha, op.bench, op.Q, op.gamma.GetValueOrDefault(), op.initial, op.delta.GetValueOrDefault(),
@@ -317,8 +325,11 @@ BlasLike.dcopyvec(n,op.wback,w);
         op.nabs.GetValueOrDefault(), op.Abs_A, op.mabs.GetValueOrDefault(), op.I_A, op.Abs_U,
         op.FC, op.FL, op.SV, op.minRisk.GetValueOrDefault(), op.maxRisk.GetValueOrDefault(), ref ogamma,
         op.mask, op.longbasket.GetValueOrDefault(), op.shortbasket.GetValueOrDefault(), op.tradebuy.GetValueOrDefault(),
-        op.tradesell.GetValueOrDefault(), op.valuel.GetValueOrDefault(), op.Abs_L);
+        op.tradesell.GetValueOrDefault(), op.valuel.GetValueOrDefault(), op.Abs_L,breakdown);
         op.message=Portfolio.Portfolio.OptMessages(op.back.GetValueOrDefault());
+        op.mctr=breakdown;
+        op.risk=BlasLike.ddotvec(op.n.GetValueOrDefault(),op.w,op.mctr);
+        if(op.bench!=null)op.risk-=BlasLike.ddotvec(op.n.GetValueOrDefault(),op.bench,op.mctr);
         return new[] { op };
     }
 }
