@@ -298,7 +298,7 @@ BlasLike.dcopyvec(n,op.wback,w);
             op.U=CVarData.mapDouble["U"];
             op.alpha=CVarData.mapDouble["alpha"];
             op.bench=CVarData.mapDouble["bench"];
-            op.Q=CVarData.mapDouble["Q"];
+            try{op.Q=CVarData.mapDouble["Q"];}catch{op.Q=null;}
             try{            op.FL=CVarData.mapDouble["FL"];}catch{op.FL=null;}
             try{op.FC=CVarData.mapDouble["FC"];}catch{op.FC=null;}
             try{op.SV=CVarData.mapDouble["SV"];}catch{op.SV=null;}
@@ -318,6 +318,7 @@ BlasLike.dcopyvec(n,op.wback,w);
         op.FC, op.FL, op.SV, op.minRisk.GetValueOrDefault(), op.maxRisk.GetValueOrDefault(), ref ogamma,
         op.mask, op.longbasket.GetValueOrDefault(), op.shortbasket.GetValueOrDefault(), op.tradebuy.GetValueOrDefault(),
         op.tradesell.GetValueOrDefault(), op.valuel.GetValueOrDefault(), op.Abs_L);
+        op.message=Portfolio.Portfolio.OptMessages(op.back.GetValueOrDefault());
         return new[] { op };
     }
 }
