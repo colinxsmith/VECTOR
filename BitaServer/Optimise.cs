@@ -2,16 +2,46 @@ namespace BitaServer;
 
 public class Optimise
 {
+    public double? ogamma { set; get; }
+    public double? minRisk { set; get; }
+    public double? maxRisk { set; get; }
+    public double? rmax { set; get; }
+    public double? rmin { set; get; }
+    public double? min_holding { set; get; }
+    public double? min_trade { set; get; }
     public double? digit { set; get; }
     public double? tdigit { set; get; }
+    public int? basket { get; set; }
+    public int? trades { get; set; }
     public int? tlen { get; set; }
+    public int? nfac { get; set; }
+    public int? nabs { get; set; }
+    public int? mabs { get; set; }
     public int? n { get; set; }
     public int? m { get; set; }
+    public double[]? bench { get; set; }
     public double[]? L { get; set; }
     public double[]? U { get; set; }
     public double[]? A { get; set; }
     public double[]? DATA { get; set; }
+    public double[]? buy { get; set; }
+    public double[]? Abs_A { get; set; }
+    public double[]? Abs_L { get; set; }
+    public double[]? Abs_U { get; set; }
+    public double[]? mask { get; set; }
+    public int?longbasket{set;get;}
+    public int?shortbasket{set;get;}
+    public int?tradesell{set;get;}
+    public int?tradebuy{set;get;}
+    public double[]? SV { get; set; }
+    public double[]? FC { get; set; }
+    public double[]? FL { get; set; }
+    public int[]? I_A { get; set; }
+    public double[]? sell { get; set; }
+    public double? delta { set; get; }
     public double? gamma { set; get; }
+    public double? value { set; get; }
+    public double? valuel { set; get; }
     public double? kappa { set; get; }
     public double? Gstrength { get; set; }
     public double? tail { get; set; }
@@ -22,6 +52,9 @@ public class Optimise
     public double[]? initial { get; set; }
     public double[]? Q { get; set; }
     public double[]? w { get; set; }
+    public double[]? min_lot { get; set; }
+    public double[]? size_lot { get; set; }
+    public int[]? shake { get; set; }
     public double? ETL { get; set; }
     public double? VAR { get; set; }
     public int? VARindex { get; set; }

@@ -23,13 +23,18 @@ button.over {
 span {
     text-decoration: underline;
 }
+
 ul {
-  border-radius: 12px;
-  background-color: gold;
-  list-style-type: none;
-  width: 10em
+    border-radius: 12px;
+    border-color: bisque;
+    border-block-style: inherit;
+    border-width: thick;
+    background-color: gold;
+    list-style-type: none;
+    width: 10em;
+    padding: 1px;
 }
 
-  ul.over {
+ul.over {
     background-color: aqua;
-  }
+}

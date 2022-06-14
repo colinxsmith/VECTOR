@@ -4110,7 +4110,7 @@ namespace Portfolio
             if ((buysellI > 0 /*&& kappa > 1e-14*/) && (Math.Abs(cost - cost2) > BlasLike.lm_eps * 10))
                 back = 6;
             BACK = back;
-            nfixed=0;
+            nfixed = 0;
             return back;
         }
         public void GainLossSetUp(int n, int tlen, double[] DATA, string[] names, double R, double lambda, bool useIP = true)
@@ -4827,8 +4827,16 @@ namespace Portfolio
         public override int makeQ()
         {
             var nn = (nfac + 1) * ntrue;
-            Q = new double[nn];
-            return Factorise.FMP(ntrue, nfac, FC, SV, FL, Q);
+            if (FC != null && SV != null && FL != null)
+            {
+                Q = new double[nn];
+                return Factorise.FMP(ntrue, nfac, FC, SV, FL, Q);
+            }
+            else
+            {
+                Debug.Assert(Q.Length == nn);
+                return 0;
+            }
         }
         public void FactorRiskAttribution(double[] w, double[] bench = null, double[] FX = null, double[] FactorRiskBreakdown = null, double[] SpecificBreakdown = null)
         {

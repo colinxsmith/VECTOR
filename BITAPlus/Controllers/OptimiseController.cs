@@ -199,9 +199,11 @@ public class OptimiseController : ControllerBase
         return new[] { op };
     }
     [HttpGet("test")]
-    public Optimise[] Get()
+    public Optimise[] Get(double? d1)
     {
-        double testdigit = 123.9999999999;
+        double testdigit;
+        if (d1 != null) testdigit = d1.GetValueOrDefault();
+        else testdigit = 123.9999999999;
         var op = new Optimise();
         op.digit = testdigit;
         op.tdigit = Portfolio.Portfolio.check_digit(testdigit);

@@ -108,7 +108,7 @@ public class OptimiseController : ControllerBase
         op.CVARGLprob = opt.CVARGLprob;
         op.message = Portfolio.Portfolio.OptMessages(Math.Abs(op.back.GetValueOrDefault()));
         op.breakdown = new double[op.n.GetValueOrDefault()];
-        op.LOSS = Portfolio.Portfolio.LOSS(op.n.GetValueOrDefault(),op.w, op.DATA, op.TargetReturn, op.breakdown); op.mctr = new double[op.n.GetValueOrDefault()];
+        op.LOSS = Portfolio.Portfolio.LOSS(op.n.GetValueOrDefault(), op.w, op.DATA, op.TargetReturn, op.breakdown); op.mctr = new double[op.n.GetValueOrDefault()];
         var lcheck = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.breakdown);
         opt.RiskBreakdown(op.w, null, op.mctr);
         op.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.mctr);
@@ -199,9 +199,11 @@ public class OptimiseController : ControllerBase
         return new[] { op };
     }
     [HttpGet("test")]
-    public Optimise[] Get()
+    public Optimise[] Get(double? d1)
     {
-        double testdigit = 123.9999999999;
+        double testdigit;
+        if (d1 != null) testdigit = d1.GetValueOrDefault();
+        else testdigit = 123.9999999999;
         var op = new Optimise();
         op.digit = testdigit;
         op.tdigit = Portfolio.Portfolio.check_digit(testdigit);
@@ -217,6 +219,105 @@ public class OptimiseController : ControllerBase
         op.digit = testdigit;
         op.tdigit = Portfolio.Portfolio.check_digit(testdigit);
         ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green] [yellow]{op.n}[/yellow]");
+        return new[] { op };
+    }
+    int Optimise_internalCVPAFbl(int n, int nfac, string[] names, double[] w, int m,
+                                    double[] A, double[] L, double[] U, double[] alpha,
+                                    double[] benchmark, double[] Q, double gamma, double[] initial,
+                                    double delta, double[] buy, double[] sell, double kappa, int basket,
+                                    int trades, /*int revise, int costs,*/ double min_holding,
+                                    double min_trade,
+                                    /*int m_LS, int Fully_Invested, */double Rmin, double Rmax,
+                                    /*int m_Round, */double[] min_lot, double[] size_lot, int[] shake,
+                                    /*int ncomp, double[] Composite,*/ double LSValue,
+                                    /*int npiece, double[] hpiece, double[] pgrad,*/
+                                    int nabs, double[] Abs_A, int mabs, int[] I_A, double[] Abs_U,
+                                    double[] FC, double[] FL, double[] SV, double minRisk, double maxRisk,
+                                    ref double ogamma, double[] mask,/* int log, string logfile,*/
+                                    /*int downrisk, double downfactor,*/
+                                    int longbasket, int shortbasket,
+                                    int tradebuy, int tradesell,/* double zetaS, double zetaF,*/
+                                    /*double ShortCostScale,*/ double LSValuel, double[] Abs_L)
+    {
+        var back = -1;
+        Portfolio.Portfolio op;
+        if (nfac == -1)
+        {
+            var op1 = new Portfolio.Portfolio("");
+            op = op1;
+        }
+        else
+        {
+            var op1 = new Portfolio.FPortfolio("");
+            op1.nfac = nfac;
+            op = op1;
+        }
+        op.n = n;
+        op.m = m;
+        op.A = A;
+        op.L = L;
+        op.U = U;
+        op.bench = benchmark;
+        op.buy = buy;
+        op.sell = sell;
+        op.delta = delta;
+        op.gamma = gamma;
+        op.delta = delta;
+        op.initial = initial;
+        op.kappa = kappa;
+        op.names = names;
+        op.Q = Q;
+        if(initial==null)initial=new double[n];
+        back=op.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, LSValue, LSValuel, Rmin, Rmax,
+        alpha, initial, buy, sell, names, false, nabs, Abs_A, Abs_L, Abs_U, mabs, I_A);
+BlasLike.dcopyvec(n,op.wback,w);
+        return back;
+    }
+    [HttpGet("general")]
+    public Optimise[] GetGen()
+    {
+        var op = new Optimise();
+        using (var CVarData = new InputSomeData()){
+            CVarData.doubleFields="alpha bench gamma initial delta buy sell kappa min_holding min_trade minRisk maxRisk rmin rmax min_lot size_lot value valuel mask A L U Q A_abs Abs_U Abs_L SV FC FL";
+            CVarData.intFields="n nfac m basket longbasket shortbasket tradebuy tradesell tradenum nabs mabs I_A";
+            CVarData.stringFields="names";
+            try
+            {
+                CVarData.Read("./general.log");
+            }
+            catch
+            {
+                CVarData.Read("../general.log");
+            }
+            op.n=CVarData.mapInt["n"][0];
+            op.nfac=CVarData.mapInt["nfac"][0];
+            op.m=CVarData.mapInt["m"][0];
+            op.names=CVarData.mapString["names"];
+            op.A=CVarData.mapDouble["A"];
+            op.L=CVarData.mapDouble["L"];
+            op.U=CVarData.mapDouble["U"];
+            op.alpha=CVarData.mapDouble["alpha"];
+            op.bench=CVarData.mapDouble["bench"];
+            op.Q=CVarData.mapDouble["Q"];
+            try{            op.FL=CVarData.mapDouble["FL"];}catch{op.FL=null;}
+            try{op.FC=CVarData.mapDouble["FC"];}catch{op.FC=null;}
+            try{op.SV=CVarData.mapDouble["SV"];}catch{op.SV=null;}
+            op.buy=CVarData.mapDouble["buy"];
+            op.sell=CVarData.mapDouble["sell"];
+            op.mask=CVarData.mapDouble["mask"];
+            op.initial=CVarData.mapDouble["initial"];
+            op.delta=CVarData.mapDouble["delta"][0];
+        }
+        double ogamma = op.ogamma.GetValueOrDefault();
+        op.w = new double[op.n.GetValueOrDefault()];
+        op.back = Optimise_internalCVPAFbl(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.names,
+        op.w, op.m.GetValueOrDefault(), op.A, op.L, op.U, op.alpha, op.bench, op.Q, op.gamma.GetValueOrDefault(), op.initial, op.delta.GetValueOrDefault(),
+        op.buy, op.sell, op.kappa.GetValueOrDefault(), op.basket.GetValueOrDefault(), op.trades.GetValueOrDefault(), op.min_holding.GetValueOrDefault(),
+        op.min_trade.GetValueOrDefault(), op.rmin.GetValueOrDefault(), op.rmax.GetValueOrDefault(), op.min_lot, op.size_lot, op.shake, op.value.GetValueOrDefault(),
+        op.nabs.GetValueOrDefault(), op.Abs_A, op.mabs.GetValueOrDefault(), op.I_A, op.Abs_U,
+        op.FC, op.FL, op.SV, op.minRisk.GetValueOrDefault(), op.maxRisk.GetValueOrDefault(), ref ogamma,
+        op.mask, op.longbasket.GetValueOrDefault(), op.shortbasket.GetValueOrDefault(), op.tradebuy.GetValueOrDefault(),
+        op.tradesell.GetValueOrDefault(), op.valuel.GetValueOrDefault(), op.Abs_L);
         return new[] { op };
     }
 }
