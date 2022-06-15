@@ -1679,7 +1679,8 @@ namespace UseBlas
                 var trades = tradenum;
                 useIp = false;
                 Portfolio.Portfolio.OptParamRound Op = new Portfolio.Portfolio.OptParamRound();
-                Portfolio.Portfolio.INFO sendInput = new Portfolio.Portfolio.INFO(); Op.basket = basket;
+                Portfolio.Portfolio.INFO sendInput = new Portfolio.Portfolio.INFO(); 
+                Op.basket = basket;
                 Op.trades = trades;
                 Op.lower = L;
                 Op.m = m;
@@ -1710,6 +1711,7 @@ namespace UseBlas
                 sendInput.mabs = mabs;
                 sendInput.I_a = I_A;
                 sendInput.bench = bench;
+                sendInput.kappa=kappa;
                 if (nfac > -1)
                 {
                     FPortfolio opt = new FPortfolio("");
@@ -1720,7 +1722,8 @@ namespace UseBlas
                     opt.bench = bench;
                     var targetRisk = minRisk;
                     sendInput.target = targetRisk;
-                    opt.gamma = opt.kappa = 5e-2;
+                    opt.gamma = 5e-2;
+                    opt.kappa=-1;
                     opt.CalcRisk(opt.gamma, sendInput);
                     var breakdown = (double[])opt.wback.Clone();
                     var beta = (double[])null;//opt.wback.Clone();
@@ -1755,7 +1758,8 @@ namespace UseBlas
                     opt.bench = bench;
                     var targetRisk = minRisk;
                     sendInput.target = targetRisk;
-                    opt.gamma = opt.kappa = 0.5;
+                    opt.gamma = 0.5;
+                    opt.kappa=-1;
                     opt.CalcRisk(opt.gamma, sendInput);
                     opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
                     var breakdown = (double[])opt.wback.Clone();

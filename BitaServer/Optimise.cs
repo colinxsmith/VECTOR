@@ -1,10 +1,15 @@
 namespace BitaServer;
 
 public class Optimise
-{
+{public Optimise(){
+    tlen=0;
+    tail=0.05;
+    maxRisk=-1;
+    minRisk=-1;
+}
     public double? ogamma { set; get; }
-    public double? minRisk { set; get; }
-    public double? maxRisk { set; get; }
+    public double minRisk { set; get; }
+    public double maxRisk { set; get; }
     public double? rmax { set; get; }
     public double? rmin { set; get; }
     public double? min_holding { set; get; }
@@ -13,7 +18,7 @@ public class Optimise
     public double? tdigit { set; get; }
     public int? basket { get; set; }
     public int? trades { get; set; }
-    public int? tlen { get; set; }
+    public int tlen { get; set; }
     public int? nfac { get; set; }
     public int? nabs { get; set; }
     public int? mabs { get; set; }
@@ -44,7 +49,7 @@ public class Optimise
     public double? valuel { set; get; }
     public double? kappa { set; get; }
     public double? Gstrength { get; set; }
-    public double? tail { get; set; }
+    public double tail { get; set; }
     public bool? ETLopt { get; set; }
     public double? ETLmin { get; set; }
     public double? ETLmax { get; set; }
@@ -71,5 +76,5 @@ public class Optimise
     public bool? LOSSopt { set; get; }
     public double? LOSSmin { get; set; }
     public double? LOSSmax { set; get; }
-
+    public int?round{get;set;}
 }

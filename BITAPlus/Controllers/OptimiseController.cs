@@ -74,7 +74,7 @@ public class OptimiseController : ControllerBase
     public Optimise[] PostLOSS(Optimise op)
     {
         if (!op.gamma.HasValue) op.gamma = 0.5;
-        if (!op.kappa.HasValue) op.kappa = op.gamma;
+        if (!op.kappa.HasValue) op.kappa = -1;
         var TR = new double[op.tlen.GetValueOrDefault()];
         if (op.TargetReturn == null)
         {
@@ -155,7 +155,7 @@ public class OptimiseController : ControllerBase
     public Optimise[] PostETL(Optimise op)
     {
         if (!op.gamma.HasValue) op.gamma = 0.5;
-        if (!op.kappa.HasValue) op.kappa = op.gamma;
+        if (!op.kappa.HasValue) op.kappa = -1;
         double[] Q;
         if (op.Q == null)
         {

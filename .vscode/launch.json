@@ -14,6 +14,7 @@
         "program": "${workspaceFolder}/BitaServer/bin/Debug/net6.0/BitaServer.dll",
         "args": [],
         "cwd": "${workspaceFolder}/BitaServer",
+        "console": "integratedTerminal",
         "stopAtEntry": false,
         "serverReadyAction": {
             "action": "openExternally",
@@ -35,6 +36,7 @@
         "program": "${workspaceFolder}/BITAPlus/bin/Debug/net6.0/BITAPlus.dll",
         "args": [],
         "cwd": "${workspaceFolder}/BITAPlus",
+        "console": "integratedTerminal",
         "stopAtEntry": false,
         "serverReadyAction": {
             "action": "openExternally",

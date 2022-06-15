@@ -2414,7 +2414,9 @@ namespace Portfolio
         public double CalcRisk(double gam, object info)
         {
             INFO vars = (INFO)info;
-            vars.back = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, vars.L, vars.U, gam, gam, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
+            var kappa=vars.kappa;
+            if(kappa<0)kappa=gam;
+            vars.back = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, vars.L, vars.U, gam, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
                      alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR, vars.ETLorLOSSconstraint, vars.ETLorLOSSmin, vars.ETLorLOSSmax);
             double[] www = (double[])wback.Clone();
             if (vars.bench != null) BlasLike.dsubvec(vars.n, www, vars.bench, www);
@@ -3222,6 +3224,8 @@ namespace Portfolio
                     return "Infeasible problem, impossible to satisfy all constraints";
                 case 10:
                     return "At least one upper bound was less than a lower bound";
+                case 16:
+                    return "Risk constraint could not be met";
                 default:
                     return $"Optimisation failed {i}";
             }
@@ -3286,6 +3290,7 @@ namespace Portfolio
         int mabs = 0, int[] I_a = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0, double ETLorLOSSmax = 0)
         {
             int back;
+            if(kappa<0)kappa=gamma;
             if (buy == null && sell == null && delta >= 0)
             {
                 BACK = back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, -1, value, valuel, rmin, rmax, alpha, initial, buy, sell, names, useIP, nabs, A_abs, L_abs, U_abs, mabs, I_a, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax);
