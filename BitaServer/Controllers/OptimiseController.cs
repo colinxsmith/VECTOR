@@ -319,6 +319,7 @@ BlasLike.dcopyvec(n,op.wback,w);
         op.mask, op.longbasket.GetValueOrDefault(), op.shortbasket.GetValueOrDefault(), op.tradebuy.GetValueOrDefault(),
         op.tradesell.GetValueOrDefault(), op.valuel.GetValueOrDefault(), op.Abs_L);
         op.message=Portfolio.Portfolio.OptMessages(op.back.GetValueOrDefault());
+        op.ogamma=ogamma;
         return new[] { op };
     }
 }
