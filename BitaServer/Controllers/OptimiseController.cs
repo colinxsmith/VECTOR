@@ -290,6 +290,8 @@ public class OptimiseController : ControllerBase
         info.names = names;
         info.nfac = nfac;
         info.sell = sell;
+info.target=-1;
+
         info.U =(double[]) U.Clone();
         if (basket > 0 || trades > 0)
         {
