@@ -284,14 +284,19 @@ public class OptimiseController : ControllerBase
         info.delta = delta;
         info.initial = initial;
         info.kappa = kappa;
-        info.L = L;
+        info.L =(double[]) L.Clone();
         info.m = m;
         info.n = n;
         info.names = names;
         info.nfac = nfac;
         info.sell = sell;
-        info.U = U;
-        if (maxRisk > 0 && minRisk > 0)
+        info.U =(double[]) U.Clone();
+        if (basket > 0 || trades > 0)
+        {
+            op.DropRisk(basket, trades, -1, info);
+            BlasLike.dcopyvec(n, op.wback, w);back=op.BACK;
+        }
+        if (back<=1&&  maxRisk > 0 && minRisk > 0)
         {
             var riskhere = BlasLike.ddotvec(n, w, breakdown);
             if (benchmark != null) riskhere -= BlasLike.ddotvec(n, breakdown, benchmark);
@@ -301,10 +306,12 @@ public class OptimiseController : ControllerBase
                 else if (maxRisk < riskhere) info.target = maxRisk;
                 else if (minRisk > riskhere) info.target = minRisk;
                 // op.CalcRisk(gamma, info);
+                if(basket<0&&trades<0){
                 if (info.target == minRisk)
                     ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk, gamma, 1 - BlasLike.lm_eps8, 0, info);
                 else
                     ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk, 0, gamma, 0, info);
+                }else {op.DropRisk(basket,trades,info.target,info);ogamma=gamma=op.gamma;}
                 BlasLike.dcopyvec(n, op.wback, w);
                 if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
             }
@@ -313,7 +320,7 @@ public class OptimiseController : ControllerBase
         else ogamma = gamma;
         if (back <= 1 && ogamma > 1) back = 16;
         if (back > 1) return back;
-        if (round == 0 && (min_holding > 0 || min_trade > 0))
+        if (min_holding > 0 || min_trade > 0 || round == 1)
         {
             var Op = new Portfolio.Portfolio.OptParamRound();
             Op.basket = basket;
@@ -330,13 +337,25 @@ public class OptimiseController : ControllerBase
             if (minhold != null) BlasLike.dsetvec(n, min_holding, minhold);
             var roundw = (double[])op.wback.Clone();
             Op.x = op.wback; Op.MoreInfo = info;
-            op.Thresh(Op, mintrade == null ? null : initial, mintrade == null ? minhold : mintrade, roundw, mintrade == null ? null : minhold);
             for (var i = 0; i < n; ++i) shake[i] = -1;
-            for (var i = 0; i < n; ++i)
+            if (round == 1)
             {
-                roundw[i] = Portfolio.Portfolio.check_digit(1e2 * roundw[i]) * 1e-2;
+                op.Rounding(basket, trades, initial, min_lot, size_lot, roundw, null, null, info);
+                for (var i = 0; i < n; ++i)
+                {
+                    roundw[i] = Portfolio.Portfolio.check_digit(1e2 * roundw[i]) * 1e-2;
+                }
+                op.roundcheck(n, roundw, initial, min_lot, size_lot, shake);
             }
-            op.thresh_check(n, roundw, mintrade == null ? null : initial, L, U, mintrade == null ? minhold : mintrade, mintrade == null ? null : minhold, BlasLike.lm_eps8, shake);
+            else
+            {
+                op.Thresh(Op, mintrade == null ? null : initial, mintrade == null ? minhold : mintrade, roundw, mintrade == null ? null : minhold);
+                for (var i = 0; i < n; ++i)
+                {
+                    roundw[i] = Portfolio.Portfolio.check_digit(1e2 * roundw[i]) * 1e-2;
+                }
+                op.thresh_check(n, roundw, mintrade == null ? null : initial, L, U, mintrade == null ? minhold : mintrade, mintrade == null ? null : minhold, BlasLike.lm_eps8, shake);
+            }
             BlasLike.dcopyvec(n, roundw, op.wback);
             BlasLike.dcopyvec(n, op.wback, w);
             foreach (var i in shake)
@@ -348,7 +367,7 @@ public class OptimiseController : ControllerBase
         return back;
     }
     [HttpGet("general")]
-    public Optimise[] GetGen(double? delta, double? gamma, double? maxRisk, double? minRisk, double? min_holding, double? min_trade)
+    public Optimise[] GetGen(double? delta, double? gamma, double? maxRisk, double? minRisk, double? min_holding, double? min_trade, int? basket, int? trades)
     {
         var op = new Optimise();
         using (var CVarData = new InputSomeData())
@@ -390,6 +409,8 @@ public class OptimiseController : ControllerBase
             if (gamma != null) op.gamma = gamma;
             if (maxRisk != null) op.maxRisk = maxRisk.GetValueOrDefault();
             if (minRisk != null) op.minRisk = minRisk.GetValueOrDefault();
+            if (basket != null) op.basket = basket.GetValueOrDefault();
+            if (trades != null) op.trades = trades.GetValueOrDefault();
             op.Abs_A = CVarData.mapDouble["A_abs"];
             op.Abs_L = CVarData.mapDouble["Abs_L"];
             op.Abs_U = CVarData.mapDouble["Abs_U"];
@@ -411,11 +432,11 @@ public class OptimiseController : ControllerBase
         op.back = Optimise_internalCVPAFbl(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.names,
         op.w, op.m.GetValueOrDefault(), op.A, op.L, op.U, op.alpha, op.bench, op.Q, op.gamma.GetValueOrDefault(), op.initial, op.delta.GetValueOrDefault(),
         op.buy, op.sell, op.kappa.GetValueOrDefault(), op.basket.GetValueOrDefault(), op.trades.GetValueOrDefault(), op.min_holding.GetValueOrDefault(),
-        op.min_trade.GetValueOrDefault(), op.rmin.GetValueOrDefault(), op.rmax.GetValueOrDefault(), op.round.GetValueOrDefault(), op.min_lot, op.size_lot, op.shake, op.value.GetValueOrDefault(),
+        op.min_trade.GetValueOrDefault(), op.rmin, op.rmax, op.round.GetValueOrDefault(), op.min_lot, op.size_lot, op.shake, op.value,
         op.nabs.GetValueOrDefault(), op.Abs_A, op.mabs.GetValueOrDefault(), op.I_A, op.Abs_U,
         op.FC, op.FL, op.SV, op.minRisk, op.maxRisk, ref ogamma,
         op.mask, op.longbasket.GetValueOrDefault(), op.shortbasket.GetValueOrDefault(), op.tradebuy.GetValueOrDefault(),
-        op.tradesell.GetValueOrDefault(), op.valuel.GetValueOrDefault(), op.Abs_L, breakdown);
+        op.tradesell.GetValueOrDefault(), op.valuel, op.Abs_L, breakdown);
 
         op.ogamma = ogamma;
         op.message = Portfolio.Portfolio.OptMessages(op.back.GetValueOrDefault());

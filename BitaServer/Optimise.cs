@@ -6,12 +6,16 @@ public class Optimise
     tail=0.05;
     maxRisk=-1;
     minRisk=-1;
+    value=-1;
+    valuel=-1;
+    rmax=-1;
+    rmin=-1;
 }
     public double? ogamma { set; get; }
     public double minRisk { set; get; }
     public double maxRisk { set; get; }
-    public double? rmax { set; get; }
-    public double? rmin { set; get; }
+    public double rmax { set; get; }
+    public double rmin { set; get; }
     public double? min_holding { set; get; }
     public double? min_trade { set; get; }
     public double? digit { set; get; }
@@ -45,8 +49,8 @@ public class Optimise
     public double[]? sell { get; set; }
     public double? delta { set; get; }
     public double? gamma { set; get; }
-    public double? value { set; get; }
-    public double? valuel { set; get; }
+    public double value { set; get; }
+    public double valuel { set; get; }
     public double? kappa { set; get; }
     public double? Gstrength { get; set; }
     public double tail { get; set; }
