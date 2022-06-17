@@ -149,7 +149,6 @@ info.target=-1;
             }
             BlasLike.dcopyvec(n, roundw, op.wback);
             BlasLike.dcopyvec(n, op.wback, w);
-            for (var i = 0; i < n; ++i) shake[i] = -1;
             foreach (var i in shake)
             {
                 if (i != -1) ColourConsole.WriteEmbeddedColourLine($"[green]{op.names[i]}[/green][red] was not rounded properly! {w[i],26:e16}[/red]");
@@ -860,7 +859,7 @@ info.target=-1;
             }
             BlasLike.dcopyvec(m + n, rstep.L, next.L);
             BlasLike.dcopyvec(m + n, rstep.U, next.U);
-            double switch1 = 1;
+            double switch1 = 1;//TO DO find best value for switch1
             for (i = 0; i < n; ++i)
             {
                 init = initial != null ? initial[i] : 0; dd = 0;
@@ -1109,9 +1108,9 @@ info.target=-1;
                             }
                         }
                     }
-                    else if (Math.Abs(minlot[i]) - Math.Abs(testw - init) < Math.Abs(testw - init) * switch1)
+                    else if (Math.Abs(Math.Abs(minlot[i]) - Math.Abs(testw - init) )< Math.Abs(testw - init) * switch1)
                     {
-                        if (Math.Abs(minlot[i]) - Math.Abs(testw - init) < Math.Abs(testw - init) * switch1 && (thresh != null && Math.Abs(thresh[i]) - Math.Abs(testw) < Math.Abs(testw) * switch1))
+                        if (Math.Abs(Math.Abs(minlot[i]) - Math.Abs(testw - init) )< Math.Abs(testw - init) * switch1 && (thresh != null &&Math.Abs( Math.Abs(thresh[i]) - Math.Abs(testw) )< Math.Abs(testw) * switch1))
                         {
                             if (testw - init > 0)
                                 next.L[i] = Math.Max(Math.Min(rstep.kU[i], Math.Max(thresh != null ? thresh[i] : 0, minlot[i] + init)), rstep.kL[i]);

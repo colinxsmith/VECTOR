@@ -334,7 +334,7 @@ public class OptimiseController : ControllerBase
             BlasLike.daddvec(op.n.GetValueOrDefault(), op.w, op.initial, op.w);
         }
 
-
+op.expreturn=BlasLike.ddotvec(op.n.GetValueOrDefault(),op.w,op.alpha);
 
         return new[] { op };
     }
