@@ -230,13 +230,18 @@ public class OptimiseController : ControllerBase
             CVarData.doubleFields = "alpha bench gamma initial delta buy sell kappa min_holding min_trade minRisk maxRisk rmin rmax min_lot size_lot value valuel mask A L U Q A_abs Abs_U Abs_L SV FC FL";
             CVarData.intFields = "n nfac m basket longbasket shortbasket tradebuy tradesell tradenum nabs mabs I_A round";
             CVarData.stringFields = "names";
+            string file = "generalopt";
             try
             {
-                CVarData.Read("./generalopt");
+                CVarData.Read($"./{file}");
             }
             catch
             {
-                CVarData.Read("../generalopt");
+                try
+                {
+                    CVarData.Read($"../{file}");
+                }
+                catch { op.message = $"No input file \"{file}\""; return new[] { op };}
             }
             op.n = CVarData.mapInt["n"][0];
             op.nfac = CVarData.mapInt["nfac"][0];
