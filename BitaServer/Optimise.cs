@@ -10,18 +10,27 @@ public class Optimise
     valuel=-1;
     rmax=-1;
     rmin=-1;
+    basket=-1;
+    trades=-1;
+    min_holding=-1;
+    min_trade=-1;
 }
+public int achievedbasket {get;set;}
+public int achievedtrades {get;set;}
+public double achievedminhold {get;set;}
+public double achievedmintrade {get;set;}
+
     public double? ogamma { set; get; }
     public double minRisk { set; get; }
     public double maxRisk { set; get; }
     public double rmax { set; get; }
     public double rmin { set; get; }
-    public double? min_holding { set; get; }
-    public double? min_trade { set; get; }
+    public double min_holding { set; get; }
+    public double min_trade { set; get; }
     public double? digit { set; get; }
     public double? tdigit { set; get; }
-    public int? basket { get; set; }
-    public int? trades { get; set; }
+    public int basket { get; set; }
+    public int trades { get; set; }
     public int tlen { get; set; }
     public int? nfac { get; set; }
     public int? nabs { get; set; }

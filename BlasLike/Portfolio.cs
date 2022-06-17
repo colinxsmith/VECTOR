@@ -10,6 +10,155 @@ namespace Portfolio
     public class Portfolio
     {
         public int BACK;
+    public static int OptimiseGeneral(int n, int nfac, string[] names, double[] w, int m,
+                                    double[] A, double[] L, double[] U, double[] alpha,
+                                    double[] benchmark, double[] Q, double gamma, double[] initial,
+                                    double delta, double[] buy, double[] sell, double kappa, int basket,
+                                    int trades, /*int revise, int costs,*/ double min_holding,
+                                    double min_trade,
+                                    /*int m_LS, int Fully_Invested, */double Rmin, double Rmax,
+                                    int round, double[] min_lot, double[] size_lot, int[] shake,
+                                    /*int ncomp, double[] Composite,*/ double LSValue,
+                                    /*int npiece, double[] hpiece, double[] pgrad,*/
+                                    int nabs, double[] Abs_A, int mabs, int[] I_A, double[] Abs_U,
+                                    double[] FC, double[] FL, double[] SV, double minRisk, double maxRisk,
+                                    ref double ogamma, double[] mask,/* int log, string logfile,*/
+                                    /*int downrisk, double downfactor,*/
+                                    int longbasket, int shortbasket,
+                                    int tradebuy, int tradesell,/* double zetaS, double zetaF,*/
+                                    /*double ShortCostScale,*/ double LSValuel, double[] Abs_L, double[] breakdown)
+    {
+        var back = -1;
+        Portfolio op;
+        if (nfac == -1)
+        {
+            var op1 = new Portfolio("");
+            op = op1;
+        }
+        else
+        {
+            var op1 = new FPortfolio("");
+            op1.nfac = nfac;
+            op = op1;
+        }
+        op.n = n;
+        op.m = m;
+        op.A = A;
+        op.L = L;
+        op.U = U;
+        op.bench = benchmark;
+        op.buy = buy;
+        op.sell = sell;
+        op.delta = delta;
+        op.gamma = gamma;
+        op.delta = delta;
+        op.initial = initial;
+        op.kappa = kappa;
+        op.names = names;
+        op.Q = Q;
+        if (initial == null) initial = new double[n];
+        back = op.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, LSValue, LSValuel, Rmin, Rmax,
+        alpha, initial, buy, sell, names, false, nabs, Abs_A, Abs_L, Abs_U, mabs, I_A);
+        BlasLike.dcopyvec(n, op.wback, w);
+        for (var i = 0; i < n; ++i)
+        {
+            w[i] = Portfolio.check_digit(1e2 * w[i]) * 1e-2;
+        }
+        if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
+        var info = new Portfolio.INFO();
+        info.A = A;
+        info.alpha = alpha;
+        info.bench = benchmark;
+        info.buy = buy;
+        info.delta = delta;
+        info.initial = initial;
+        info.kappa = kappa;
+        info.L =(double[]) L.Clone();
+        info.m = m;
+        info.n = n;
+        info.names = names;
+        info.nfac = nfac;
+        info.sell = sell;
+info.target=-1;
+
+        info.U =(double[]) U.Clone();
+        if (basket > 0 || trades > 0)
+        {
+            op.DropRisk(basket, trades, -1, info);
+            BlasLike.dcopyvec(n, op.wback, w);back=op.BACK;
+        }
+        if (back<=1&&  maxRisk > 0 && minRisk > 0)
+        {
+            var riskhere = BlasLike.ddotvec(n, w, breakdown);
+            if (benchmark != null) riskhere -= BlasLike.ddotvec(n, breakdown, benchmark);
+            if (!(riskhere <= maxRisk && riskhere >= minRisk))
+            {
+                if (maxRisk == minRisk) info.target = maxRisk;
+                else if (maxRisk < riskhere) info.target = maxRisk;
+                else if (minRisk > riskhere) info.target = minRisk;
+                // op.CalcRisk(gamma, info);
+                if(basket<0&&trades<0){
+                if (info.target == minRisk)
+                    ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk, gamma, 1 - BlasLike.lm_eps8, 0, info);
+                else
+                    ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk, 0, gamma, 0, info);
+                }else {op.DropRisk(basket,trades,info.target,info);ogamma=gamma=op.gamma;}
+                BlasLike.dcopyvec(n, op.wback, w);
+                if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
+            }
+            else ogamma = gamma;
+        }
+        else ogamma = gamma;
+        if (back <= 1 && ogamma > 1) back = 16;
+        if (back > 1) return back;
+        if (min_holding > 0 || min_trade > 0 || round == 1)
+        {
+            var Op = new Portfolio.OptParamRound();
+            Op.basket = basket;
+            Op.trades = trades;
+            Op.lower = L;
+            Op.m = m;
+            Op.n = n;
+            Op.upper = U;
+            Op.minholdlot = null;
+            Op.mintradelot = null;
+            var mintrade = min_trade < 0 ? null : new double[n];
+            if (mintrade != null) BlasLike.dsetvec(n, min_trade, mintrade);
+            var minhold = min_holding < 0 ? null : new double[n];
+            if (minhold != null) BlasLike.dsetvec(n, min_holding, minhold);
+            var roundw = (double[])op.wback.Clone();
+            Op.x = op.wback; Op.MoreInfo = info;
+            for (var i = 0; i < n; ++i) shake[i] = -1;
+            if (round == 1)
+            {
+                op.Rounding(basket, trades, initial, min_lot, size_lot, roundw, null, null, info);
+                for (var i = 0; i < n; ++i)
+                {
+                    roundw[i] = Portfolio.check_digit(1e2 * roundw[i]) * 1e-2;
+                }
+                op.roundcheck(n, roundw, initial, min_lot, size_lot, shake);
+            }
+            else
+            {
+                op.Thresh(Op, mintrade == null ? null : initial, mintrade == null ? minhold : mintrade, roundw, mintrade == null ? null : minhold);
+                for (var i = 0; i < n; ++i)
+                {
+                    roundw[i] = Portfolio.check_digit(1e2 * roundw[i]) * 1e-2;
+                }
+                op.thresh_check(n, roundw, mintrade == null ? null : initial, L, U, mintrade == null ? minhold : mintrade, mintrade == null ? null : minhold, BlasLike.lm_eps8, shake);
+            }
+            BlasLike.dcopyvec(n, roundw, op.wback);
+            BlasLike.dcopyvec(n, op.wback, w);
+            for (var i = 0; i < n; ++i) shake[i] = -1;
+            foreach (var i in shake)
+            {
+                if (i != -1) ColourConsole.WriteEmbeddedColourLine($"[green]{op.names[i]}[/green][red] was not rounded properly! {w[i],26:e16}[/red]");
+            }
+            if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
+        }
+        return back;
+    }
+  
         public void set_repeat<T>(int n, T p, T[] a)
         {
             //while(n--){*a++ = p;}
@@ -189,10 +338,22 @@ namespace Portfolio
                         ColourConsole.WriteEmbeddedColourLine($"BAD bounds for {i} ([red]{OP.lower[i]} {OP.upper[i]}[/red])  initial is: [magenta]{start[i]}[/magenta]");
                     }
                 }
-        if(basket <0&&trades <0&&vars.target<0)     { OP.back = BACK = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, OP.lower, OP.upper, gamma, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
-                            alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR);} 
-        else  {  DropRisk(OP.basket,OP.trades,vars.target,vars);
-            OP.back=BACK=vars.back;} 
+                if (OP.basket < 0 && OP.trades < 0 && vars.target < 0)
+                {
+                    OP.back = BACK = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, OP.lower, OP.upper, gamma, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
+                                    alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR);
+                }
+                else
+                {
+                    var LKEEP = vars.L;
+                    var UKEEP = vars.U;
+                    vars.L = OP.lower;
+                    vars.U = OP.upper;
+                    DropRisk(OP.basket, OP.trades, vars.target, vars);
+                    vars.L = LKEEP;
+                    vars.U = UKEEP;
+                    OP.back = BACK = vars.back;
+                }
             }
             OP.minholdlot = minholdlot;
             OP.mintradelot = mintradelot;
@@ -207,7 +368,8 @@ namespace Portfolio
                         wback[i] = OP.upper[i];
                 }
             }
-            Debug.Assert(OP.x == wback);
+            //      Debug.Assert(OP.x == wback);
+            if (OP.x != wback) BlasLike.dcopyvec(vars.n, wback, OP.x);
             return BACK;
         }
         public delegate double UFUNC(int n, double gamma, double kappa, double[] buy, double[] sell, double[] alpha, double[] w, double[] gradient, ref int basket, ref int trades, bool print = true, double thresh = 1E-14);
@@ -959,9 +1121,9 @@ namespace Portfolio
                         else
                         {
                             if (testw - init > 0)
-                                next.L[i] = Math.Max(Math.Min(rstep.kU[i], Math.Max(thresh != null ? thresh[i] : 0, init)), rstep.kL[i]);
+                                next.U[i] = Math.Max(Math.Min(rstep.kU[i], Math.Max(thresh != null ? thresh[i] : 0, init)), rstep.kL[i]);
                             else
-                                next.U[i] = Math.Min(Math.Max(rstep.kL[i], Math.Min(thresh != null ? -thresh[i] : 0, init)), rstep.kU[i]);
+                                next.L[i] = Math.Min(Math.Max(rstep.kL[i], Math.Min(thresh != null ? -thresh[i] : 0, init)), rstep.kU[i]);
                         }
                     }
                     else
@@ -2473,7 +2635,8 @@ namespace Portfolio
                 if (back == 6) ColourConsole.WriteError("INFEASIBLE");
                 BlasLike.dcopyvec(sendInput.n, wback, w);
                 if (checkRiskAndNumber && back != 6)
-                {var oldl=(double[])sendInput.L.Clone();var oldu=(double[])sendInput.U.Clone();
+                {
+                    var oldl = (double[])sendInput.L.Clone(); var oldu = (double[])sendInput.U.Clone();
                     //BoundsSetToSign(sendInput.n, sendInput.L, sendInput.U, sendInput.initial, w, true);
                     for (var i = 0; i < sendInput.n; ++i)
                     {
@@ -2517,8 +2680,8 @@ namespace Portfolio
                         utility = PortfolioUtility(sendInput.n, gamma, kappa, sendInput.buy, sendInput.sell, sendInput.alpha, w, gradient, ref baskethere, ref tradeshere);
                         ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
                     }
-                    BlasLike.dcopyvec(sendInput.n,oldl,sendInput.L);
-                    BlasLike.dcopyvec(sendInput.n,oldu,sendInput.U);
+                    BlasLike.dcopyvec(sendInput.n, oldl, sendInput.L);
+                    BlasLike.dcopyvec(sendInput.n, oldu, sendInput.U);
                 }
             }
         }

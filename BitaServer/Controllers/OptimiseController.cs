@@ -221,153 +221,6 @@ public class OptimiseController : ControllerBase
         ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green] [yellow]{op.n}[/yellow]");
         return new[] { op };
     }
-    int Optimise_internalCVPAFbl(int n, int nfac, string[] names, double[] w, int m,
-                                    double[] A, double[] L, double[] U, double[] alpha,
-                                    double[] benchmark, double[] Q, double gamma, double[] initial,
-                                    double delta, double[] buy, double[] sell, double kappa, int basket,
-                                    int trades, /*int revise, int costs,*/ double min_holding,
-                                    double min_trade,
-                                    /*int m_LS, int Fully_Invested, */double Rmin, double Rmax,
-                                    int round, double[] min_lot, double[] size_lot, int[] shake,
-                                    /*int ncomp, double[] Composite,*/ double LSValue,
-                                    /*int npiece, double[] hpiece, double[] pgrad,*/
-                                    int nabs, double[] Abs_A, int mabs, int[] I_A, double[] Abs_U,
-                                    double[] FC, double[] FL, double[] SV, double minRisk, double maxRisk,
-                                    ref double ogamma, double[] mask,/* int log, string logfile,*/
-                                    /*int downrisk, double downfactor,*/
-                                    int longbasket, int shortbasket,
-                                    int tradebuy, int tradesell,/* double zetaS, double zetaF,*/
-                                    /*double ShortCostScale,*/ double LSValuel, double[] Abs_L, double[] breakdown)
-    {
-        var back = -1;
-        Portfolio.Portfolio op;
-        if (nfac == -1)
-        {
-            var op1 = new Portfolio.Portfolio("");
-            op = op1;
-        }
-        else
-        {
-            var op1 = new Portfolio.FPortfolio("");
-            op1.nfac = nfac;
-            op = op1;
-        }
-        op.n = n;
-        op.m = m;
-        op.A = A;
-        op.L = L;
-        op.U = U;
-        op.bench = benchmark;
-        op.buy = buy;
-        op.sell = sell;
-        op.delta = delta;
-        op.gamma = gamma;
-        op.delta = delta;
-        op.initial = initial;
-        op.kappa = kappa;
-        op.names = names;
-        op.Q = Q;
-        if (initial == null) initial = new double[n];
-        back = op.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, LSValue, LSValuel, Rmin, Rmax,
-        alpha, initial, buy, sell, names, false, nabs, Abs_A, Abs_L, Abs_U, mabs, I_A);
-        BlasLike.dcopyvec(n, op.wback, w);
-        for (var i = 0; i < n; ++i)
-        {
-            w[i] = Portfolio.Portfolio.check_digit(1e2 * w[i]) * 1e-2;
-        }
-        if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
-        var info = new Portfolio.Portfolio.INFO();
-        info.A = A;
-        info.alpha = alpha;
-        info.bench = benchmark;
-        info.buy = buy;
-        info.delta = delta;
-        info.initial = initial;
-        info.kappa = kappa;
-        info.L =(double[]) L.Clone();
-        info.m = m;
-        info.n = n;
-        info.names = names;
-        info.nfac = nfac;
-        info.sell = sell;
-info.target=-1;
-
-        info.U =(double[]) U.Clone();
-        if (basket > 0 || trades > 0)
-        {
-            op.DropRisk(basket, trades, -1, info);
-            BlasLike.dcopyvec(n, op.wback, w);back=op.BACK;
-        }
-        if (back<=1&&  maxRisk > 0 && minRisk > 0)
-        {
-            var riskhere = BlasLike.ddotvec(n, w, breakdown);
-            if (benchmark != null) riskhere -= BlasLike.ddotvec(n, breakdown, benchmark);
-            if (!(riskhere <= maxRisk && riskhere >= minRisk))
-            {
-                if (maxRisk == minRisk) info.target = maxRisk;
-                else if (maxRisk < riskhere) info.target = maxRisk;
-                else if (minRisk > riskhere) info.target = minRisk;
-                // op.CalcRisk(gamma, info);
-                if(basket<0&&trades<0){
-                if (info.target == minRisk)
-                    ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk, gamma, 1 - BlasLike.lm_eps8, 0, info);
-                else
-                    ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk, 0, gamma, 0, info);
-                }else {op.DropRisk(basket,trades,info.target,info);ogamma=gamma=op.gamma;}
-                BlasLike.dcopyvec(n, op.wback, w);
-                if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
-            }
-            else ogamma = gamma;
-        }
-        else ogamma = gamma;
-        if (back <= 1 && ogamma > 1) back = 16;
-        if (back > 1) return back;
-        if (min_holding > 0 || min_trade > 0 || round == 1)
-        {
-            var Op = new Portfolio.Portfolio.OptParamRound();
-            Op.basket = basket;
-            Op.trades = trades;
-            Op.lower = L;
-            Op.m = m;
-            Op.n = n;
-            Op.upper = U;
-            Op.minholdlot = null;
-            Op.mintradelot = null;
-            var mintrade = min_trade < 0 ? null : new double[n];
-            if (mintrade != null) BlasLike.dsetvec(n, min_trade, mintrade);
-            var minhold = min_holding < 0 ? null : new double[n];
-            if (minhold != null) BlasLike.dsetvec(n, min_holding, minhold);
-            var roundw = (double[])op.wback.Clone();
-            Op.x = op.wback; Op.MoreInfo = info;
-            for (var i = 0; i < n; ++i) shake[i] = -1;
-            if (round == 1)
-            {
-                op.Rounding(basket, trades, initial, min_lot, size_lot, roundw, null, null, info);
-                for (var i = 0; i < n; ++i)
-                {
-                    roundw[i] = Portfolio.Portfolio.check_digit(1e2 * roundw[i]) * 1e-2;
-                }
-                op.roundcheck(n, roundw, initial, min_lot, size_lot, shake);
-            }
-            else
-            {
-                op.Thresh(Op, mintrade == null ? null : initial, mintrade == null ? minhold : mintrade, roundw, mintrade == null ? null : minhold);
-                for (var i = 0; i < n; ++i)
-                {
-                    roundw[i] = Portfolio.Portfolio.check_digit(1e2 * roundw[i]) * 1e-2;
-                }
-                op.thresh_check(n, roundw, mintrade == null ? null : initial, L, U, mintrade == null ? minhold : mintrade, mintrade == null ? null : minhold, BlasLike.lm_eps8, shake);
-            }
-            BlasLike.dcopyvec(n, roundw, op.wback);
-            BlasLike.dcopyvec(n, op.wback, w);
-            foreach (var i in shake)
-            {
-                if (i != -1) ColourConsole.WriteEmbeddedColourLine($"[green]{op.names[i]}[/green][red] was not rounded properly! {op.w[i],26:e16}[/red]");
-            }
-            if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
-        }
-        return back;
-    }
     [HttpGet("general")]
     public Optimise[] GetGen(double? delta, double? gamma, double? maxRisk, double? minRisk, double? min_holding, double? min_trade, int? basket, int? trades)
     {
@@ -424,17 +277,17 @@ info.target=-1;
             op.size_lot = CVarData.mapDouble["size_lot"];
             op.min_holding = CVarData.mapDouble["min_holding"][0];
             op.min_trade = CVarData.mapDouble["min_trade"][0];
-            if (min_holding != null) op.min_holding = min_holding;
-            if (min_trade != null) op.min_trade = min_trade;
+            if (min_holding != null) op.min_holding = min_holding.GetValueOrDefault();
+            if (min_trade != null) op.min_trade = min_trade.GetValueOrDefault();
         }
         double ogamma = op.ogamma.GetValueOrDefault();
         op.shake = new int[op.n.GetValueOrDefault()];
         var breakdown = new double[op.n.GetValueOrDefault()];
         op.w = new double[op.n.GetValueOrDefault()];
-        op.back = Optimise_internalCVPAFbl(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.names,
+        op.back = Portfolio.Portfolio.OptimiseGeneral(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.names,
         op.w, op.m.GetValueOrDefault(), op.A, op.L, op.U, op.alpha, op.bench, op.Q, op.gamma.GetValueOrDefault(), op.initial, op.delta.GetValueOrDefault(),
-        op.buy, op.sell, op.kappa.GetValueOrDefault(), op.basket.GetValueOrDefault(), op.trades.GetValueOrDefault(), op.min_holding.GetValueOrDefault(),
-        op.min_trade.GetValueOrDefault(), op.rmin, op.rmax, op.round.GetValueOrDefault(), op.min_lot, op.size_lot, op.shake, op.value,
+        op.buy, op.sell, op.kappa.GetValueOrDefault(), op.basket, op.trades, op.min_holding,
+        op.min_trade, op.rmin, op.rmax, op.round.GetValueOrDefault(), op.min_lot, op.size_lot, op.shake, op.value,
         op.nabs.GetValueOrDefault(), op.Abs_A, op.mabs.GetValueOrDefault(), op.I_A, op.Abs_U,
         op.FC, op.FL, op.SV, op.minRisk, op.maxRisk, ref ogamma,
         op.mask, op.longbasket.GetValueOrDefault(), op.shortbasket.GetValueOrDefault(), op.tradebuy.GetValueOrDefault(),
@@ -446,6 +299,36 @@ info.target=-1;
         op.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.mctr);
         if (op.bench != null) op.risk -= BlasLike.ddotvec(op.n.GetValueOrDefault(), op.bench, op.mctr);
         op.risk = Portfolio.Portfolio.check_digit(1e2 * op.risk.GetValueOrDefault()) * 1e-2;
+
+        if (true)
+        {
+            op.achievedbasket = 0;
+            op.achievedminhold = BlasLike.lm_max;
+            foreach (var ww in op.w)
+            {
+                if (Math.Abs(ww) > BlasLike.lm_eps8)
+                {
+                    op.achievedbasket++;
+                    op.achievedminhold = Math.Min(Math.Abs(ww), op.achievedminhold);
+                }
+            }
+        }
+        if (op.initial != null)
+        {
+            BlasLike.dsubvec(op.n.GetValueOrDefault(), op.w, op.initial, op.w);
+            op.achievedtrades = 0;
+            op.achievedmintrade = BlasLike.lm_max;
+            foreach (var ww in op.w)
+            {
+                if (Math.Abs(ww) > BlasLike.lm_eps8)
+                {
+                    op.achievedtrades++;
+                    op.achievedmintrade = Math.Min(Math.Abs(ww), op.achievedmintrade);
+                }
+            }
+            BlasLike.daddvec(op.n.GetValueOrDefault(), op.w, op.initial, op.w);
+        }
+
 
 
         return new[] { op };
