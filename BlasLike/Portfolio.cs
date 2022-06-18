@@ -26,7 +26,8 @@ namespace Portfolio
                                     /*int downrisk, double downfactor,*/
                                     int longbasket, int shortbasket,
                                     int tradebuy, int tradesell,/* double zetaS, double zetaF,*/
-                                    /*double ShortCostScale,*/ double LSValuel, double[] Abs_L, double[] breakdown)
+                                    /*double ShortCostScale,*/ double LSValuel, double[] Abs_L, double[] breakdown, 
+                                    int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0, double ETLorLOSSmax = 0)
     {
         var back = -1;
         Portfolio op;
@@ -62,7 +63,8 @@ namespace Portfolio
         else op.Q = Q;
         if (initial == null) initial = new double[n];
         back = op.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, LSValue, LSValuel, Rmin, Rmax,
-        alpha, initial, buy, sell, names, false, nabs, Abs_A, Abs_L, Abs_U, mabs, I_A);
+        alpha, initial, buy, sell, names, false, nabs, Abs_A, Abs_L, Abs_U, mabs, I_A,tlen,DATAlambda,
+        DATA , tail,  targetR,ETLorLOSSconstraint,ETLorLOSSmin,ETLorLOSSmax);
         BlasLike.dcopyvec(n, op.wback, w);
         for (var i = 0; i < n; ++i)
         {
