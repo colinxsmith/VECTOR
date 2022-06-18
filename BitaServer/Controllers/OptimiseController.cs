@@ -222,7 +222,7 @@ public class OptimiseController : ControllerBase
         return new[] { op };
     }
     [HttpGet("general")]
-    public Optimise[] GetGen(double? delta, double? gamma, double? maxRisk, double? minRisk, double? min_holding, double? min_trade, int? basket, int? trades)
+    public Optimise[] GetGen(string? datafile, double? delta, double? gamma, double? maxRisk, double? minRisk, double? min_holding, double? min_trade, int? basket, int? trades)
     {
         var op = new Optimise();
         using (var CVarData = new InputSomeData())
@@ -230,18 +230,19 @@ public class OptimiseController : ControllerBase
             CVarData.doubleFields = "alpha bench gamma initial delta buy sell kappa min_holding min_trade minRisk maxRisk rmin rmax min_lot size_lot value valuel mask A L U Q A_abs Abs_U Abs_L SV FC FL";
             CVarData.intFields = "n nfac m basket longbasket shortbasket tradebuy tradesell tradenum nabs mabs I_A round";
             CVarData.stringFields = "names";
-            string file = "generalopt";
+            op.datafile = "generalopt";
+            if (datafile != null) op.datafile = datafile;
             try
             {
-                CVarData.Read($"./{file}");
+                CVarData.Read($"./{op.datafile}");
             }
             catch
             {
                 try
                 {
-                    CVarData.Read($"../{file}");
+                    CVarData.Read($"../{op.datafile}");
                 }
-                catch { op.message = $"No input file \"{file}\""; return new[] { op };}
+                catch { op.message = $"No input file \"{op.datafile}\""; return new[] { op }; }
             }
             op.n = CVarData.mapInt["n"][0];
             op.nfac = CVarData.mapInt["nfac"][0];
@@ -279,7 +280,19 @@ public class OptimiseController : ControllerBase
             op.I_A = CVarData.mapInt["I_A"];
             op.round = CVarData.mapInt["round"][0];
             op.min_lot = CVarData.mapDouble["min_lot"];
+            if (op.min_lot.Length == 1)
+            {
+                var keep = op.min_lot[0];
+                op.min_lot = new double[op.n.GetValueOrDefault()];
+                BlasLike.dsetvec(op.n.GetValueOrDefault(), keep, op.min_lot);
+            }
             op.size_lot = CVarData.mapDouble["size_lot"];
+            if (op.size_lot.Length == 1)
+            {
+                var keep = op.size_lot[0];
+                op.size_lot = new double[op.n.GetValueOrDefault()];
+                BlasLike.dsetvec(op.n.GetValueOrDefault(), keep, op.size_lot);
+            }
             op.min_holding = CVarData.mapDouble["min_holding"][0];
             op.min_trade = CVarData.mapDouble["min_trade"][0];
             if (min_holding != null) op.min_holding = min_holding.GetValueOrDefault();
@@ -334,7 +347,7 @@ public class OptimiseController : ControllerBase
             BlasLike.daddvec(op.n.GetValueOrDefault(), op.w, op.initial, op.w);
         }
 
-op.expreturn=BlasLike.ddotvec(op.n.GetValueOrDefault(),op.w,op.alpha);
+        op.expreturn = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.alpha);
 
         return new[] { op };
     }

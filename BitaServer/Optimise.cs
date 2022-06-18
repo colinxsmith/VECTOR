@@ -90,4 +90,5 @@ public double achievedmintrade {get;set;}
     public double? LOSSmin { get; set; }
     public double? LOSSmax { set; get; }
     public int?round{get;set;}
+    public string?datafile{get;set;}
 }

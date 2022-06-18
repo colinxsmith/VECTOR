@@ -38,6 +38,9 @@ namespace Portfolio
         else
         {
             var op1 = new FPortfolio("");
+            op1.SV=SV;
+            op1.FC=FC;
+            op1.FL=FL;
             op1.nfac = nfac;
             op = op1;
         }
@@ -55,7 +58,8 @@ namespace Portfolio
         op.initial = initial;
         op.kappa = kappa;
         op.names = names;
-        op.Q = Q;
+        if(SV!=null&&FL!=null&&FC!=null)op.makeQ();
+        else op.Q = Q;
         if (initial == null) initial = new double[n];
         back = op.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, LSValue, LSValuel, Rmin, Rmax,
         alpha, initial, buy, sell, names, false, nabs, Abs_A, Abs_L, Abs_U, mabs, I_A);
@@ -2715,7 +2719,7 @@ info.target=-1;
         ///<param name="gradient">gradient[i] is the gradient for i'th asset</param>
         ///<param name="print">print output if true</param>
         ///<param name="thresh">less than thresh means zero</param>
-        public double PortfolioUtility(int n, double gamma, double kappa, double[] buy, double[] sell, double[] alpha, double[] w, double[] gradient, ref int basket, ref int trades, bool print = true, double thresh = 1e-14)
+        public double PortfolioUtility(int n, double gamma, double kappa, double[] buy, double[] sell, double[] alpha, double[] w, double[] gradient, ref int basket, ref int trades, bool print = false, double thresh = 1e-14)
         {
             var nfixedo = nfixed; if (kappa < 0) kappa = gamma;
             nfixed = 0;//Must set this here
