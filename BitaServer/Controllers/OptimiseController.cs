@@ -222,7 +222,7 @@ public class OptimiseController : ControllerBase
         return new[] { op };
     }
     [HttpGet("general")]
-    public Optimise[] GetGen(double? min_lot, double? Gstrength, double? LOSSmax, double? LOSSmin, double? ETLmax, double? ETLmin, double? targetR, string? datafile, double? delta, double? gamma, double? maxRisk, double? minRisk, double? min_holding, double? min_trade, int? basket, int? trades)
+    public Optimise[] GetGen(double? min_lot, double? size_lot, double? Gstrength, double? LOSSmax, double? LOSSmin, double? ETLmax, double? ETLmin, double? targetR, string? datafile, double? delta, double? gamma, double? maxRisk, double? minRisk, double? min_holding, double? min_trade, int? basket, int? trades)
     {
         var op = new Optimise();
         using (var CVarData = new InputSomeData())
@@ -280,7 +280,7 @@ public class OptimiseController : ControllerBase
             try { op.I_A = CVarData.mapInt["I_A"]; } catch { op.I_A = null; }
             try { op.round = CVarData.mapInt["round"][0]; } catch { op.round = null; }
             try { op.min_lot = CVarData.mapDouble["min_lot"]; } catch { op.min_lot = null; }
-            if (min_lot != null) op.min_lot[0] = min_lot.GetValueOrDefault();
+            if (min_lot != null && op.min_lot != null) op.min_lot[0] = min_lot.GetValueOrDefault();
             if (op.min_lot != null && op.min_lot.Length == 1)
             {
                 var keep = op.min_lot[0];
@@ -288,6 +288,7 @@ public class OptimiseController : ControllerBase
                 BlasLike.dsetvec(op.n.GetValueOrDefault(), keep, op.min_lot);
             }
             try { op.size_lot = CVarData.mapDouble["size_lot"]; } catch { op.size_lot = null; }
+            if (size_lot != null && op.size_lot != null) op.size_lot[0] = size_lot.GetValueOrDefault();
             if (op.size_lot != null && op.size_lot.Length == 1)
             {
                 var keep = op.size_lot[0];
@@ -312,6 +313,26 @@ public class OptimiseController : ControllerBase
                 if (ETLmin != null) op.ETLmin = ETLmin;
                 if (op.ETLmax != null && op.ETLmin != null) op.ETLopt = true;
                 if (op.LOSSmax != null && op.LOSSmin != null) op.LOSSopt = true;
+                if (op.alpha == null)
+                {
+                    var ones = (double[])new double[op.tlen];
+                    op.alpha=new double[op.n.GetValueOrDefault()];
+                    BlasLike.dsetvec(op.tlen, 1.0 / op.tlen, ones);
+                    Factorise.dmxmulv(op.n.GetValueOrDefault(), op.tlen, op.DATA, ones, op.alpha, 0, 0, 0, true);
+                }
+                if (op.Q == null && op.nfac.GetValueOrDefault() < 0)
+                {
+                    var Q = new double[op.n.GetValueOrDefault() * (op.n.GetHashCode() + 1) / 2]; op.Q = Q;
+                    var ij = 0;
+                    for (var i = 0; i < op.n.GetValueOrDefault(); ++i)
+                    {
+                        for (var j = 0; j <= i; ++j)
+                        {
+                            Q[ij++] = Solver.Factorise.covariance(op.tlen, op.DATA, op.DATA, i * op.tlen, j * op.tlen);
+                        }
+                    }
+                    op.Q = Q;
+                }
             }
             op.TargetReturn = new double[op.tlen];
             BlasLike.dsetvec(op.tlen, targetR.GetValueOrDefault(), op.TargetReturn);
@@ -376,11 +397,15 @@ public class OptimiseController : ControllerBase
             {
                 var VAR = 0.0;
                 var VARindex = 0;
-                Portfolio.Portfolio.ETL(op.n.GetValueOrDefault(), op.w, op.DATA, op.tail, ref VAR, ref VARindex, breakd);
+                op.ETL = Portfolio.Portfolio.ETL(op.n.GetValueOrDefault(), op.w, op.DATA, op.tail, ref VAR, ref VARindex, breakd);
+                op.VAR = VAR;
+                op.VARindex = VARindex;
+                op.breakdown = breakd;
             }
             else
             {
-                Portfolio.Portfolio.LOSS(op.n.GetValueOrDefault(), op.w, op.DATA, op.TargetReturn, breakd);
+                op.LOSS = Portfolio.Portfolio.LOSS(op.n.GetValueOrDefault(), op.w, op.DATA, op.TargetReturn, breakd);
+                op.breakdown = breakd;
             }
         }
 

@@ -59,7 +59,7 @@ namespace Portfolio
         op.initial = initial;
         op.kappa = kappa;
         op.names = names;
-        if(SV!=null&&FL!=null&&FC!=null)op.makeQ();
+        if(nfac>-1&&SV!=null&&FL!=null&&FC!=null)op.makeQ();
         else op.Q = Q;
         if (initial == null) initial = new double[n];
         back = op.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, LSValue, LSValuel, Rmin, Rmax,
