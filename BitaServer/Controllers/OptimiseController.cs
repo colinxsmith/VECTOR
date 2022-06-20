@@ -348,9 +348,9 @@ public class OptimiseController : ControllerBase
         double ogamma = op.ogamma.GetValueOrDefault();
         op.shake = new int[op.n.GetValueOrDefault()];
         var breakdown = new double[op.n.GetValueOrDefault()];
-        op.w = new double[op.n.GetValueOrDefault()];
         if (op.doOpt)
         {
+        op.w = new double[op.n.GetValueOrDefault()];
             op.back = Portfolio.Portfolio.OptimiseGeneral(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.names,
             op.w, op.m.GetValueOrDefault(), op.A, op.L, op.U, op.alpha, op.bench, op.Q, op.gamma.GetValueOrDefault(), op.initial, op.delta.GetValueOrDefault(),
             op.buy, op.sell, op.kappa.GetValueOrDefault(), op.basket, op.trades, op.min_holding,
@@ -370,7 +370,7 @@ public class OptimiseController : ControllerBase
             op.risk = Portfolio.Portfolio.check_digit(1e2 * op.risk.GetValueOrDefault()) * 1e-2;
         }
         else{
-            if(op.w==null)op.w=new double[op.n.GetValueOrDefault()];
+            if(op.w==null)return new[] { op };
             if(op.mctr==null)op.mctr=new double[op.n.GetValueOrDefault()];
         }
         if (op.nfac < -1)
