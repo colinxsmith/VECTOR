@@ -89,7 +89,7 @@ full
 minRisk
 0.02
 maxRisk
--1.00000000e+00
+0.02
 rmin
 0.3
 rmax

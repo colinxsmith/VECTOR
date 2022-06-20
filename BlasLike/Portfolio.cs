@@ -85,6 +85,16 @@ namespace Portfolio
         info.names = names;
         info.nfac = nfac;
         info.sell = sell;
+        info.value=LSValue;
+        info.valuel=LSValuel;
+        info.I_a=I_A;
+        info.rmax=Rmax;
+        info.rmin=Rmin;
+        info.nabs=nabs;
+        info.mabs=mabs;
+        info.A_abs=Abs_A;
+        info.L_abs=Abs_L;
+        info.U_abs=Abs_U;
 info.target=-1;
 
         info.U =(double[]) U.Clone();
@@ -161,6 +171,7 @@ info.target=-1;
             }
             if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
         }
+        if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
         return back;
     }
   
@@ -343,7 +354,7 @@ info.target=-1;
                         ColourConsole.WriteEmbeddedColourLine($"BAD bounds for {i} ([red]{OP.lower[i]} {OP.upper[i]}[/red])  initial is: [magenta]{start[i]}[/magenta]");
                     }
                 }
-                if (OP.basket < 0 && OP.trades < 0 && vars.target < 0)
+                if (true)//OP.basket < 0 && OP.trades < 0 && vars.target < 0)
                 {
                     OP.back = BACK = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, OP.lower, OP.upper, gamma, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
                                     alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR);
@@ -4629,12 +4640,12 @@ info.target=-1;
             {
                 hessmull(w.Length, Q, bench, beta);
                 var benchvar = BlasLike.ddotvec(w.Length, beta, bench);
-                BlasLike.dscalvec(w.Length, 1.0 / benchvar, beta);
+                BlasLike.dscalvec(w.Length,benchvar>BlasLike.lm_eps8? 1.0 / benchvar:0, beta);
                 var portbeta = BlasLike.ddotvec(w.Length, w, beta);
                 BlasLike.daxpyvec(w.Length, -portbeta, bench, w);//Residual weights
                 hessmull(w.Length, Q, w, Qx);
                 var resRisk = Math.Sqrt(BlasLike.ddotvec(w.Length, w, Qx));
-                BlasLike.dscalvec(w.Length, 1.0 / resRisk, Qx);//MCRR
+                BlasLike.dscalvec(w.Length,resRisk>BlasLike.lm_eps8? 1.0 / resRisk:0, Qx);//MCRR
                 var resRisktest = BlasLike.ddotvec(w.Length, w, Qx);
                 BlasLike.daxpyvec(w.Length, portbeta, bench, w);
             }
@@ -4643,7 +4654,7 @@ info.target=-1;
                 hessmull(w.Length, Q, w, Qx);
                 var Variance = BlasLike.ddotvec(w.Length, w, Qx);//Total Variance or Active variance
                 var risk = Math.Sqrt(Variance);
-                BlasLike.dscalvec(w.Length, 1.0 / risk, Qx);
+                BlasLike.dscalvec(w.Length,risk>BlasLike.lm_eps8? 1.0 / risk:0, Qx);
                 var risktest = BlasLike.ddotvec(w.Length, w, Qx);
                 if (bench != null) BlasLike.daddvec(w.Length, w, bench, w);
             }
@@ -5061,9 +5072,9 @@ info.target=-1;
             Factorise.dsmxmulv(nfac, FC, FX, FXi);
             Factorise.DiagMul(n, SV, w, SpecificBreakdown);
             var factorVariance = BlasLike.ddotvec(nfac, FX, FXi);
-            BlasLike.dscalvec(nfac, 1.0 / Math.Sqrt(factorVariance), FXi);
+            BlasLike.dscalvec(nfac,factorVariance>BlasLike.lm_eps8?   1.0 / Math.Sqrt(factorVariance):0, FXi);
             var specificVariance = BlasLike.ddotvec(n, SpecificBreakdown, w);
-            BlasLike.dscalvec(n, 1.0 / Math.Sqrt(specificVariance), SpecificBreakdown);
+            BlasLike.dscalvec(n,specificVariance>BlasLike.lm_eps8? 1.0 / Math.Sqrt(specificVariance):0, SpecificBreakdown);
             ColourConsole.WriteEmbeddedColourLine($"[green]Factor Variance[/green]\t\t[yellow]{factorVariance,20:e8}[/yellow]");
             ColourConsole.WriteEmbeddedColourLine($"[green]Specific Variance[/green]\t[yellow]{specificVariance,20:e8}[/yellow]");
             ColourConsole.WriteEmbeddedColourLine($"[green]Total[/green]\t\t\t[yellow]{factorVariance + specificVariance,20:e8}[/yellow]");

@@ -2,6 +2,7 @@ namespace BitaServer;
 
 public class Optimise
 {public Optimise(){
+    doOpt=true;
     tlen=0;
     tail=0.05;
     maxRisk=-1;
@@ -15,6 +16,7 @@ public class Optimise
     min_holding=-1;
     min_trade=-1;
 }
+public bool doOpt{get;set;}
 public int achievedbasket {get;set;}
 public int achievedtrades {get;set;}
 public double achievedminhold {get;set;}
@@ -54,6 +56,11 @@ public double achievedmintrade {get;set;}
     public double[]? SV { get; set; }
     public double[]? FC { get; set; }
     public double[]? FL { get; set; }
+    public double[]? Fmctr{get;set;}
+    public double[]? SPmctr{get;set;}
+    public double[]? FX{get;set;}
+    public double?facrisk{get;set;}
+    public double?specrisk{get;set;}
     public int[]? I_A { get; set; }
     public double[]? sell { get; set; }
     public double? delta { set; get; }
