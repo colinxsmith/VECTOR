@@ -1,7 +1,33 @@
 namespace BitaServer;
 
 public class Optimise
-{public Optimise(){
+{public class checkv{
+    public double? gross {get;set;}
+    public double? longvalue {get;set;}
+    public double? shortvalue {get;set;}
+    public double? shortoverlong {get;set;}
+    public double? minhold {get;set;}
+    public double? mintrade {get;set;}
+    public double? cost {get;set;}
+    public double? turnover {get;set;}
+    public int?basket{get;set;}
+    public int?trades{get;set;}
+    public double? VAR { get; set; }
+    public int? VARindex { get; set; }
+    public double? ETL { get; set; }
+    public double? LOSS { get; set; }
+    public double[]? breakdown { get; set; }
+    public double?risk{set;get;}
+    public double?expreturn{set;get;}
+    public double[]?mctr{set;get;}
+    public double[]? Fmctr{get;set;}
+    public double[]? SPmctr{get;set;}
+    public double[]? FX{get;set;}
+    public double?facrisk{get;set;}
+    public double?specrisk{get;set;}
+}
+    
+    public Optimise(){
     doOpt=true;
     tlen=0;
     tail=0.05;
@@ -15,12 +41,12 @@ public class Optimise
     trades=-1;
     min_holding=-1;
     min_trade=-1;
+    Gstrength=1;
 }
 public bool doOpt{get;set;}
-public int achievedbasket {get;set;}
-public int achievedtrades {get;set;}
-public double achievedminhold {get;set;}
-public double achievedmintrade {get;set;}
+public checkv? result{get;set;}
+    public int? back{set;get;}
+    public string? message{set;get;}
 
     public double? ogamma { set; get; }
     public double minRisk { set; get; }
@@ -56,11 +82,6 @@ public double achievedmintrade {get;set;}
     public double[]? SV { get; set; }
     public double[]? FC { get; set; }
     public double[]? FL { get; set; }
-    public double[]? Fmctr{get;set;}
-    public double[]? SPmctr{get;set;}
-    public double[]? FX{get;set;}
-    public double?facrisk{get;set;}
-    public double?specrisk{get;set;}
     public int[]? I_A { get; set; }
     public double[]? sell { get; set; }
     public double? delta { set; get; }
@@ -68,7 +89,7 @@ public double achievedmintrade {get;set;}
     public double value { set; get; }
     public double valuel { set; get; }
     public double? kappa { set; get; }
-    public double? Gstrength { get; set; }
+    public double Gstrength { get; set; }
     public double tail { get; set; }
     public bool? ETLopt { get; set; }
     public double? ETLmin { get; set; }
@@ -80,19 +101,9 @@ public double achievedmintrade {get;set;}
     public double[]? min_lot { get; set; }
     public double[]? size_lot { get; set; }
     public int[]? shake { get; set; }
-    public double? ETL { get; set; }
-    public double? VAR { get; set; }
-    public int? VARindex { get; set; }
-    public double[]? breakdown { get; set; }
-    public int? back{set;get;}
-    public string? message{set;get;}
-    public double?risk{set;get;}
-    public double?expreturn{set;get;}
     public double[]?alpha{set;get;}
-    public double[]?mctr{set;get;}
     public bool?CVARGLprob{get;set;}
     public double[]? TargetReturn { set; get; }
-    public double? LOSS { get; set; }
     public bool? LOSSopt { set; get; }
     public double? LOSSmin { get; set; }
     public double? LOSSmax { set; get; }
