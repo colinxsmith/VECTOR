@@ -354,7 +354,7 @@ info.target=-1;
                         ColourConsole.WriteEmbeddedColourLine($"BAD bounds for {i} ([red]{OP.lower[i]} {OP.upper[i]}[/red])  initial is: [magenta]{start[i]}[/magenta]");
                     }
                 }
-                if (OP.basket < 0 && OP.trades < 0 && vars.target < 0)
+                if(OP.basket < 0 && OP.trades < 0 && vars.target < 0)
                 {
                     OP.back = BACK = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, OP.lower, OP.upper, gamma, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
                                     alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR);
@@ -1036,8 +1036,10 @@ info.target=-1;
                     }
                     else if (((nwU - (testw)) / (testw - nwL)) < switch1)
                     {
-                        if (nwU >= rstep.L[i] && nwU != rstep.kU[i])
+                        if (nwU >= rstep.L[i] && nwU != rstep.kU[i]){
                             next.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.L[i]));
+                            next.U[i] = Math.Max(rstep.kL[i], Math.Max(nwU, rstep.kU[i]));
+                        }
                         else
                         {
                             next.U[i] = Math.Max(rstep.kL[i], Math.Max(nwU, rstep.U[i]));
@@ -1046,8 +1048,10 @@ info.target=-1;
                     }
                     else
                     {
-                        if (nwL <= rstep.U[i] && nwL != rstep.kL[i])
+                        if (nwL <= rstep.U[i] && nwL != rstep.kL[i]){
                             next.U[i] = Math.Max(rstep.kL[i], Math.Min(nwL, rstep.U[i]));
+                            next.L[i] = Math.Min(rstep.kU[i], Math.Min(nwL, rstep.kL[i]));
+                        }
                         else
                         {
                             next.L[i] = Math.Min(rstep.kU[i], Math.Min(nwL, rstep.L[i]));
@@ -4062,7 +4066,7 @@ info.target=-1;
                     WW[i + n + buysellI] = 0;
                 }
                 this.w = WW;
-                WriteInputs("./optinput2");
+               // WriteInputs("./optinput2");
                 back = ActiveOpt(0, WW, LAMBDAS);
                 if (ETLorLOSSconstraint)
                 {

@@ -106,7 +106,7 @@ public class OptimiseController : ControllerBase
             op.Gstrength, op.DATA, 0.0, op.TargetReturn, op.LOSSopt.GetValueOrDefault(), op.LOSSmin.GetValueOrDefault(), op.LOSSmax.GetValueOrDefault());
         op.w = opt.wback;
         op.CVARGLprob = opt.CVARGLprob;
-            op.result=new Optimise.checkv();
+        op.result = new Optimise.checkv();
         op.message = Portfolio.Portfolio.OptMessages(Math.Abs(op.back.GetValueOrDefault()));
         op.result.breakdown = new double[op.n.GetValueOrDefault()];
         op.result.LOSS = Portfolio.Portfolio.LOSS(op.n.GetValueOrDefault(), op.w, op.DATA, op.TargetReturn, op.result.breakdown); op.result.mctr = new double[op.n.GetValueOrDefault()];
@@ -186,7 +186,7 @@ public class OptimiseController : ControllerBase
             op.ETLmax.GetValueOrDefault());
         op.w = opt.wback;
         op.CVARGLprob = opt.CVARGLprob;
-        op.result=new Optimise.checkv();
+        op.result = new Optimise.checkv();
         op.message = Portfolio.Portfolio.OptMessages(Math.Abs(op.back.GetValueOrDefault()));
         op.result.breakdown = new double[op.n.GetValueOrDefault()];
         double VAR = 0;
@@ -224,10 +224,10 @@ public class OptimiseController : ControllerBase
         return new[] { op };
     }
     [HttpGet("general")]
-    public Optimise[] GetGen(bool?doOpt,int ?round,  double? min_lot, double? size_lot, double? Gstrength, double? LOSSmax, double? LOSSmin, double? ETLmax, double? ETLmin, double? targetR, string? datafile, double? delta, double? gamma, double? maxRisk, double? minRisk, double? min_holding, double? min_trade, int? basket, int? trades)
+    public Optimise[] GetGen(bool? doOpt, int? round, double? min_lot, double? size_lot, double? Gstrength, double? LOSSmax, double? LOSSmin, double? ETLmax, double? ETLmin, double? targetR, string? datafile, double? delta, double? gamma, double? maxRisk, double? minRisk, double? min_holding, double? min_trade, int? basket, int? trades)
     {
         var op = new Optimise();
-        if(doOpt!=null)op.doOpt=doOpt.GetValueOrDefault();
+        if (doOpt != null) op.doOpt = doOpt.GetValueOrDefault();
         using (var CVarData = new InputSomeData())
         {
             CVarData.doubleFields = "alpha bench gamma initial delta buy sell kappa min_holding min_trade minRisk maxRisk rmin rmax min_lot size_lot value valuel mask A L U Q A_abs Abs_U Abs_L SV FC FL DATA tail R";
@@ -255,10 +255,10 @@ public class OptimiseController : ControllerBase
             op.L = CVarData.mapDouble["L"];
             op.U = CVarData.mapDouble["U"];
             op.alpha = CVarData.mapDouble["alpha"];
-            try{op.value=CVarData.mapDouble["value"][0];}catch{op.value=-1;}
-            try{op.rmin=CVarData.mapDouble["rmin"][0];}catch{op.rmin=-1;}
-            try{op.rmax=CVarData.mapDouble["rmax"][0];}catch{op.rmax=-1;}
-            try{op.valuel=CVarData.mapDouble["valuel"][0];}catch{op.valuel=-1;}
+            try { op.value = CVarData.mapDouble["value"][0]; } catch { op.value = -1; }
+            try { op.rmin = CVarData.mapDouble["rmin"][0]; } catch { op.rmin = -1; }
+            try { op.rmax = CVarData.mapDouble["rmax"][0]; } catch { op.rmax = -1; }
+            try { op.valuel = CVarData.mapDouble["valuel"][0]; } catch { op.valuel = -1; }
             try { op.bench = CVarData.mapDouble["bench"]; } catch { op.bench = null; }
             op.basket = CVarData.mapInt["basket"][0];
             try { op.trades = CVarData.mapInt["tradenum"][0]; } catch { op.trades = -1; }
@@ -275,8 +275,8 @@ public class OptimiseController : ControllerBase
             op.kappa = CVarData.mapDouble["kappa"][0];
             if (delta != null) op.delta = delta;
             if (gamma != null) op.gamma = gamma;
-            op.maxRisk=CVarData.mapDouble["maxRisk"][0];
-            op.minRisk=CVarData.mapDouble["minRisk"][0];
+            op.maxRisk = CVarData.mapDouble["maxRisk"][0];
+            op.minRisk = CVarData.mapDouble["minRisk"][0];
             if (maxRisk != null) op.maxRisk = maxRisk.GetValueOrDefault();
             if (minRisk != null) op.minRisk = minRisk.GetValueOrDefault();
             if (basket != null) op.basket = basket.GetValueOrDefault();
@@ -308,13 +308,13 @@ public class OptimiseController : ControllerBase
             try { op.min_trade = CVarData.mapDouble["min_trade"][0]; } catch { op.min_trade = -1; }
             if (min_holding != null) op.min_holding = min_holding.GetValueOrDefault();
             if (min_trade != null) op.min_trade = min_trade.GetValueOrDefault();
-            if(round!=null)op.round=round.GetValueOrDefault();
+            if (round != null) op.round = round.GetValueOrDefault();
             try { op.tlen = CVarData.mapInt["tlen"][0]; } catch { op.tlen = 0; }
             if (op.tlen > 0)
             {
                 op.DATA = CVarData.mapDouble["DATA"];
                 try { op.tail = CVarData.mapDouble["tail]"][0]; } catch { op.tail = 0.05; }
-                try{targetR = CVarData.mapDouble["R"][0];}catch{targetR=null;}
+                try { targetR = CVarData.mapDouble["R"][0]; } catch { targetR = null; }
                 if (Gstrength != null) op.Gstrength = Gstrength.GetValueOrDefault();
                 if (LOSSmin != null) op.LOSSmin = LOSSmin;
                 if (LOSSmax != null) op.LOSSmax = LOSSmax;
@@ -343,19 +343,21 @@ public class OptimiseController : ControllerBase
                     op.Q = Q;
                 }
             }
-            if(targetR!=null){
-            op.TargetReturn = new double[op.tlen];
-            BlasLike.dsetvec(op.tlen, targetR.GetValueOrDefault(), op.TargetReturn);}
-            else op.TargetReturn=null;  //probably redundant
+            if (targetR != null)
+            {
+                op.TargetReturn = new double[op.tlen];
+                BlasLike.dsetvec(op.tlen, targetR.GetValueOrDefault(), op.TargetReturn);
+            }
+            else op.TargetReturn = null;  //probably redundant
         }
 
         double ogamma = op.ogamma.GetValueOrDefault();
         op.shake = new int[op.n.GetValueOrDefault()];
         var breakdown = new double[op.n.GetValueOrDefault()];
-            op.result=new Optimise.checkv();
+        op.result = new Optimise.checkv();
         if (op.doOpt)
         {
-        op.w = new double[op.n.GetValueOrDefault()];
+            op.w = new double[op.n.GetValueOrDefault()];
             op.back = Portfolio.Portfolio.OptimiseGeneral(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.names,
             op.w, op.m.GetValueOrDefault(), op.A, op.L, op.U, op.alpha, op.bench, op.Q, op.gamma.GetValueOrDefault(), op.initial, op.delta.GetValueOrDefault(),
             op.buy, op.sell, op.kappa.GetValueOrDefault(), op.basket, op.trades, op.min_holding,
@@ -374,12 +376,15 @@ public class OptimiseController : ControllerBase
             if (op.bench != null) op.result.risk -= BlasLike.ddotvec(op.n.GetValueOrDefault(), op.bench, op.result.mctr);
             op.result.risk = Portfolio.Portfolio.check_digit(1e2 * op.result.risk.GetValueOrDefault()) * 1e-2;
         }
-        else{
-            if(op.w==null){
-                op.result=null;
-                op.shake=null;
-                op.ogamma=null;
-                return new[] { op };}
+        else
+        {
+            if (op.w == null)
+            {
+                op.result = null;
+                op.shake = null;
+                op.ogamma = null;
+                return new[] { op };
+            }
         }
         if (op.nfac < 0)
         {
@@ -396,7 +401,7 @@ public class OptimiseController : ControllerBase
             var fac = new Portfolio.FPortfolio("");
             fac.ntrue = op.n.GetValueOrDefault();
             fac.nfac = op.nfac.GetValueOrDefault();
-            if (op.SV != null&&op.nfac>-1)
+            if (op.SV != null && op.nfac > -1)
             {
                 fac.SV = op.SV;
                 fac.FC = op.FC;
@@ -407,33 +412,37 @@ public class OptimiseController : ControllerBase
             fac.RiskBreakdown(op.w, op.bench, op.result.mctr);
             op.result.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.result.mctr);
             if (op.bench != null) op.result.risk -= op.result.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.bench, op.result.mctr);
-            if (op.SV != null&&op.nfac>-1)
-            {op.result.FX=new double[op.nfac.GetValueOrDefault()];
-            op.result.Fmctr=new double[op.nfac.GetValueOrDefault()];
-            op.result.SPmctr=new double[op.n.GetValueOrDefault()];
+            if (op.SV != null && op.nfac > -1)
+            {
+                op.result.FX = new double[op.nfac.GetValueOrDefault()];
+                op.result.Fmctr = new double[op.nfac.GetValueOrDefault()];
+                op.result.SPmctr = new double[op.n.GetValueOrDefault()];
                 fac.FactorRiskAttribution(op.w, op.bench, op.result.FX, op.result.Fmctr, op.result.SPmctr);
                 op.result.facrisk = BlasLike.ddotvec(op.nfac.GetValueOrDefault(), op.result.FX, op.result.Fmctr);
                 op.result.specrisk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.result.SPmctr);
-                if(op.bench!=null)op.result.specrisk-=BlasLike.ddotvec(op.n.GetValueOrDefault(), op.bench, op.result.SPmctr);
+                if (op.bench != null) op.result.specrisk -= BlasLike.ddotvec(op.n.GetValueOrDefault(), op.bench, op.result.SPmctr);
             }
         }
         if (true)
         {
             op.result.basket = 0;
-            op.result.trades=0;
+            op.result.trades = 0;
             op.result.minhold = BlasLike.lm_max;
-            op.result.gross=0;
-            op.result.longvalue=0;op.result.shortvalue=0;
+            op.result.gross = 0;
+            op.result.longvalue = 0; op.result.shortvalue = 0;
             foreach (var ww in op.w)
             {
-                if(ww>0){
-                    op.result.longvalue+=ww;
-            op.result.gross+=ww;
-                }else{
-                    op.result.gross-=ww;
-                    op.result.shortvalue-=ww;
+                if (ww > 0)
+                {
+                    op.result.longvalue += ww;
+                    op.result.gross += ww;
                 }
-                if(op.result.longvalue>0)op.result.shortoverlong=op.result.shortvalue/op.result.longvalue;
+                else
+                {
+                    op.result.gross -= ww;
+                    op.result.shortvalue -= ww;
+                }
+                if (op.result.longvalue > 0) op.result.shortoverlong = op.result.shortvalue / op.result.longvalue;
                 if (Math.Abs(ww) > BlasLike.lm_eps8)
                 {
                     op.result.basket++;
@@ -446,12 +455,16 @@ public class OptimiseController : ControllerBase
             BlasLike.dsubvec(op.n.GetValueOrDefault(), op.w, op.initial, op.w);
             op.result.trades = 0;
             op.result.mintrade = BlasLike.lm_max;
-            op.result.turnover=0;
-            if(op.buy!=null&&op.sell!=null){op.result.cost=0;
-            for(var i=0;i<op.n.GetValueOrDefault();++i){
-                op.result.cost+=op.w[i]>0?op.w[i]*op.buy[i]:-op.w[i]*op.sell[i];
-                op.result.turnover+=Math.Abs(op.w[i]);
-            }op.result.turnover*=0.5;
+            op.result.turnover = 0;
+            if (op.buy != null && op.sell != null)
+            {
+                op.result.cost = 0;
+                for (var i = 0; i < op.n.GetValueOrDefault(); ++i)
+                {
+                    op.result.cost += op.w[i] > 0 ? op.w[i] * op.buy[i] : -op.w[i] * op.sell[i];
+                    op.result.turnover += Math.Abs(op.w[i]);
+                }
+                op.result.turnover *= 0.5;
             }
             foreach (var ww in op.w)
             {
@@ -487,47 +500,86 @@ public class OptimiseController : ControllerBase
         return new[] { op };
     }
     [HttpPost("general")]
-    public Optimise[] PostGen(Optimise op){
-                op.w = new double[op.n.GetValueOrDefault()];
-                var breakdown = new double[op.n.GetValueOrDefault()];
-                op.shake=new int[op.n.GetValueOrDefault()];
-                double ogamma=0;
-                op.result=new Optimise.checkv();
-            op.back = Portfolio.Portfolio.OptimiseGeneral(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.names,
-            op.w, op.m.GetValueOrDefault(), op.A, op.L, op.U, op.alpha, op.bench, op.Q, op.gamma.GetValueOrDefault(), op.initial, op.delta.GetValueOrDefault(),
-            op.buy, op.sell, op.kappa.GetValueOrDefault(), op.basket, op.trades, op.min_holding,
-            op.min_trade, op.rmin, op.rmax, op.round.GetValueOrDefault(), op.min_lot, op.size_lot, op.shake, op.value,
-            op.nabs.GetValueOrDefault(), op.Abs_A, op.mabs.GetValueOrDefault(), op.I_A, op.Abs_U,
-            op.FC, op.FL, op.SV, op.minRisk, op.maxRisk, ref ogamma,
-            op.mask, op.longbasket.GetValueOrDefault(), op.shortbasket.GetValueOrDefault(), op.tradebuy.GetValueOrDefault(),
-            op.tradesell.GetValueOrDefault(), op.valuel, op.Abs_L, breakdown, op.tlen, op.Gstrength,
-            op.DATA, op.tail, op.TargetReturn, op.ETLopt.GetValueOrDefault() || op.LOSSopt.GetValueOrDefault(), op.TargetReturn == null ? op.ETLmin.GetValueOrDefault() : op.LOSSmin.GetValueOrDefault(),
-            op.TargetReturn == null ? op.ETLmax.GetValueOrDefault() : op.LOSSmax.GetValueOrDefault());
+    public Optimise PostGen(Optimise op)
+    {
+        var breakdown = new double[op.n.GetValueOrDefault()];
+        op.result = new Optimise.checkv();
+        if(op.doOpt){
+        op.w = new double[op.n.GetValueOrDefault()];
+        op.shake = new int[op.n.GetValueOrDefault()];
+        double ogamma = 0;
+        op.back = Portfolio.Portfolio.OptimiseGeneral(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.names,
+        op.w, op.m.GetValueOrDefault(), op.A, op.L, op.U, op.alpha, op.bench, op.Q, op.gamma.GetValueOrDefault(), op.initial, op.delta.GetValueOrDefault(),
+        op.buy, op.sell, op.kappa.GetValueOrDefault(), op.basket, op.trades, op.min_holding,
+        op.min_trade, op.rmin, op.rmax, op.round.GetValueOrDefault(), op.min_lot, op.size_lot, op.shake, op.value,
+        op.nabs.GetValueOrDefault(), op.Abs_A, op.mabs.GetValueOrDefault(), op.I_A, op.Abs_U,
+        op.FC, op.FL, op.SV, op.minRisk, op.maxRisk, ref ogamma,
+        op.mask, op.longbasket.GetValueOrDefault(), op.shortbasket.GetValueOrDefault(), op.tradebuy.GetValueOrDefault(),
+        op.tradesell.GetValueOrDefault(), op.valuel, op.Abs_L, breakdown, op.tlen, op.Gstrength,
+        op.DATA, op.tail, op.TargetReturn, op.ETLopt.GetValueOrDefault() || op.LOSSopt.GetValueOrDefault(), op.TargetReturn == null ? op.ETLmin.GetValueOrDefault() : op.LOSSmin.GetValueOrDefault(),
+        op.TargetReturn == null ? op.ETLmax.GetValueOrDefault() : op.LOSSmax.GetValueOrDefault());
 
-            op.ogamma = ogamma;
-            op.message = Portfolio.Portfolio.OptMessages(op.back.GetValueOrDefault());
-            op.result.mctr = breakdown;
+        op.ogamma = ogamma;
+        op.message = Portfolio.Portfolio.OptMessages(op.back.GetValueOrDefault());
+        }
+op.result.mctr=new double[op.n.GetValueOrDefault()];
+        if (op.nfac < 0)
+        {
+            var cov = new Portfolio.Portfolio("");
+            cov.ntrue = op.n.GetValueOrDefault();
+            cov.Q = op.Q;
+
+            cov.RiskBreakdown(op.w, op.bench, op.result.mctr);
             op.result.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.result.mctr);
-            if (op.bench != null) op.result.risk -= BlasLike.ddotvec(op.n.GetValueOrDefault(), op.bench, op.result.mctr);
-            op.result.risk = Portfolio.Portfolio.check_digit(1e2 * op.result.risk.GetValueOrDefault()) * 1e-2;
-        
+            if (op.bench != null) op.result.risk -= op.result.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.bench, op.result.mctr);
+        }
+        else
+        {
+            var fac = new Portfolio.FPortfolio("");
+            fac.ntrue = op.n.GetValueOrDefault();
+            fac.nfac = op.nfac.GetValueOrDefault();
+            if (op.SV != null && op.nfac > -1)
+            {
+                fac.SV = op.SV;
+                fac.FC = op.FC;
+                fac.FL = op.FL;
+                fac.makeQ();
+            }
+            else fac.Q = op.Q;
+            fac.RiskBreakdown(op.w, op.bench, op.result.mctr);
+            op.result.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.result.mctr);
+            if (op.bench != null) op.result.risk -= op.result.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.bench, op.result.mctr);
+            if (op.SV != null && op.nfac > -1)
+            {
+                op.result.FX = new double[op.nfac.GetValueOrDefault()];
+                op.result.Fmctr = new double[op.nfac.GetValueOrDefault()];
+                op.result.SPmctr = new double[op.n.GetValueOrDefault()];
+                fac.FactorRiskAttribution(op.w, op.bench, op.result.FX, op.result.Fmctr, op.result.SPmctr);
+                op.result.facrisk = BlasLike.ddotvec(op.nfac.GetValueOrDefault(), op.result.FX, op.result.Fmctr);
+                op.result.specrisk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.result.SPmctr);
+                if (op.bench != null) op.result.specrisk -= BlasLike.ddotvec(op.n.GetValueOrDefault(), op.bench, op.result.SPmctr);
+            }
+        }
         if (true)
         {
             op.result.basket = 0;
-            op.result.trades=0;
+            op.result.trades = 0;
             op.result.minhold = BlasLike.lm_max;
-            op.result.gross=0;
-            op.result.longvalue=0;op.result.shortvalue=0;
+            op.result.gross = 0;
+            op.result.longvalue = 0; op.result.shortvalue = 0;
             foreach (var ww in op.w)
             {
-                if(ww>0){
-                    op.result.longvalue+=ww;
-            op.result.gross+=ww;
-                }else{
-                    op.result.gross-=ww;
-                    op.result.shortvalue-=ww;
+                if (ww > 0)
+                {
+                    op.result.longvalue += ww;
+                    op.result.gross += ww;
                 }
-                if(op.result.longvalue>0)op.result.shortoverlong=op.result.shortvalue/op.result.longvalue;
+                else
+                {
+                    op.result.gross -= ww;
+                    op.result.shortvalue -= ww;
+                }
+                if (op.result.longvalue > 0) op.result.shortoverlong = op.result.shortvalue / op.result.longvalue;
                 if (Math.Abs(ww) > BlasLike.lm_eps8)
                 {
                     op.result.basket++;
@@ -540,12 +592,16 @@ public class OptimiseController : ControllerBase
             BlasLike.dsubvec(op.n.GetValueOrDefault(), op.w, op.initial, op.w);
             op.result.trades = 0;
             op.result.mintrade = BlasLike.lm_max;
-            op.result.turnover=0;
-            if(op.buy!=null&&op.sell!=null){op.result.cost=0;
-            for(var i=0;i<op.n.GetValueOrDefault();++i){
-                op.result.cost+=op.w[i]>0?op.w[i]*op.buy[i]:-op.w[i]*op.sell[i];
-                op.result.turnover+=Math.Abs(op.w[i]);
-            }op.result.turnover*=0.5;
+            op.result.turnover = 0;
+            if (op.buy != null && op.sell != null)
+            {
+                op.result.cost = 0;
+                for (var i = 0; i < op.n.GetValueOrDefault(); ++i)
+                {
+                    op.result.cost += op.w[i] > 0 ? op.w[i] * op.buy[i] : -op.w[i] * op.sell[i];
+                    op.result.turnover += Math.Abs(op.w[i]);
+                }
+                op.result.turnover *= 0.5;
             }
             foreach (var ww in op.w)
             {
@@ -577,6 +633,6 @@ public class OptimiseController : ControllerBase
                 op.result.breakdown = breakd;
             }
         }
-        return new[] { op };
+        return  op ;
     }
 }
