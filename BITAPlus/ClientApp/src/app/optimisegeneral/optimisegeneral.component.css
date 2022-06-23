@@ -1,0 +1,40 @@
+div.maindiv {
+    text-align: center;
+}
+
+button {
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    border-radius: 100%;
+    width: 50%;
+    background-image: linear-gradient(brown, cyan);
+}
+
+button.over {
+    background-image: linear-gradient(yellow, blue);
+}
+
+span {
+    text-decoration: underline;
+}
+
+ul {
+    border-radius: 12px;
+    border-color: bisque;
+    border-block-style: inherit;
+    border-width: thick;
+    background-color: gold;
+    list-style-type: none;
+    width: 10em;
+    padding: 1px;
+}
+
+ul.over {
+    background-color: aqua;
+}

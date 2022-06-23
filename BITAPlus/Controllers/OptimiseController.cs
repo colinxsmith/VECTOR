@@ -223,7 +223,8 @@ public class OptimiseController : ControllerBase
         ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green] [yellow]{op.n}[/yellow]");
         return  op;
     }
-    [HttpGet("general")]
+    [HttpGet]
+    [Route("general")]
     public Optimise GetGen(bool? doOpt, int? round, double? min_lot, double? size_lot, double? Gstrength, double? LOSSmax, double? LOSSmin, double? ETLmax, double? ETLmin, double? targetR, string? datafile, double? delta, double? gamma, double? maxRisk, double? minRisk, double? min_holding, double? min_trade, int? basket, int? trades)
     {
         var op = new Optimise();
@@ -462,18 +463,18 @@ public class OptimiseController : ControllerBase
                 for (var i = 0; i < op.n.GetValueOrDefault(); ++i)
                 {
                     op.result.cost += op.w[i] > 0 ? op.w[i] * op.buy[i] : -op.w[i] * op.sell[i];
-                    op.result.turnover += Math.Abs(op.w[i]);
                 }
-                op.result.turnover *= 0.5;
             }
             foreach (var ww in op.w)
             {
+                    op.result.turnover += Math.Abs(ww);
                 if (Math.Abs(ww) > BlasLike.lm_eps8)
                 {
                     op.result.trades++;
                     op.result.mintrade = Math.Min(Math.Abs(ww), op.result.mintrade.GetValueOrDefault());
                 }
             }
+                op.result.turnover *= 0.5;
             BlasLike.daddvec(op.n.GetValueOrDefault(), op.w, op.initial, op.w);
         }
 
@@ -599,18 +600,18 @@ op.result.mctr=new double[op.n.GetValueOrDefault()];
                 for (var i = 0; i < op.n.GetValueOrDefault(); ++i)
                 {
                     op.result.cost += op.w[i] > 0 ? op.w[i] * op.buy[i] : -op.w[i] * op.sell[i];
-                    op.result.turnover += Math.Abs(op.w[i]);
                 }
-                op.result.turnover *= 0.5;
             }
             foreach (var ww in op.w)
             {
+                    op.result.turnover += Math.Abs(ww);
                 if (Math.Abs(ww) > BlasLike.lm_eps8)
                 {
                     op.result.trades++;
                     op.result.mintrade = Math.Min(Math.Abs(ww), op.result.mintrade.GetValueOrDefault());
                 }
             }
+                op.result.turnover *= 0.5;
             BlasLike.daddvec(op.n.GetValueOrDefault(), op.w, op.initial, op.w);
         }
 

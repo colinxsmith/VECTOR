@@ -10,6 +10,7 @@ import { HomeComponent } from './home/home.component';
 import { OptimiseComponent } from './optimise/optimise.component';
 import { BarplotComponent } from './barplot/barplot.component';
 import { OptimiselossComponent } from './optimiseloss/optimiseloss.component';
+import { OptimisegeneralComponent } from './optimisegeneral/optimisegeneral.component';
 
 @NgModule({
   declarations: [
@@ -18,7 +19,8 @@ import { OptimiselossComponent } from './optimiseloss/optimiseloss.component';
     HomeComponent,
     OptimiseComponent,
     BarplotComponent,
-    OptimiselossComponent
+    OptimiselossComponent,
+    OptimisegeneralComponent
   ],
   imports: [
     BrowserModule.withServerTransition({ appId: 'ng-cli-universal' }),
@@ -26,6 +28,7 @@ import { OptimiselossComponent } from './optimiseloss/optimiseloss.component';
     FormsModule,
     RouterModule.forRoot([
       { path: '', component: HomeComponent, pathMatch: 'full' },
+      {path:'general',component:OptimisegeneralComponent},
       { path: 'etl', component: OptimiseComponent },
       { path: 'loss', component: OptimiselossComponent },
     ])

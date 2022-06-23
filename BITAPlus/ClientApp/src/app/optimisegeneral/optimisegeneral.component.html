@@ -1,0 +1,54 @@
+<h1 style="text-align: center;" id="tableLabel">
+    General Optimisation
+</h1>
+<div class="maindiv" *ngIf="opt">
+    <button (mouseover)="over($event,true)" (mouseleave)="over($event)" (click)="sendStep()">Send New Optimisation Parameters</button>
+    <table style="width:100%">
+        <tr>
+            <td *ngIf="opt.back==0" style="color:rgb(47, 255, 89); text-align:justify">{{opt.message}}</td>
+            <td *ngIf="opt.back==1" style="color:rgb(255, 234, 0); text-align:justify">{{opt.message}}</td>
+            <td *ngIf="opt.cvargLprob!=undefined&&opt.cvargLprob" style="color:rgb(255, 234, 0); text-align:justify">{{opt.message}}</td>
+            <td *ngIf="opt.back==6" style="color:crimson; text-align:justify">{{opt.message}}</td>
+            <td *ngIf="opt.back==10" style="color:crimson; text-align:justify">{{opt.message}}</td>
+            <td *ngIf="opt.back>6&&opt.back<10" style="color:crimson; text-align:justify">{{opt.message}}</td>
+            <td *ngIf="opt.back>10" style="color:crimson; text-align:justify">{{opt.message}}</td>
+            <td *ngIf="opt.back>1&&opt.back<6" style="color:crimson; text-align:justify">{{opt.message}}</td>
+            <td *ngIf="opt.result!=undefined&&opt.result.expreturn!=undefined">Return: {{format(opt.result.expreturn)}}</td>
+            <td *ngIf="opt.result!=undefined&&opt.result.risk!=undefined">Risk: {{format(opt.result.risk)}}</td>
+            <td *ngIf="opt.result!=undefined&&opt.result.etl!=undefined">ETL: {{format(opt.result.etl)}}</td>
+            <td *ngIf="opt.result!=undefined&&opt.result.loss!=undefined">LOSS: {{format(opt.result.loss)}}</td>
+            <td *ngIf="opt.result!=undefined&&opt.result.turnover!=undefined">turnover: {{format(opt.result.turnover)}}</td>
+            <td *ngIf="opt.gamma!=undefined">
+                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                    <li>
+                        Set gamma: <br><input class="step g" style="width:5em" [min]="0" [max]="1" [value]="opt.gamma">
+                    </li>
+                </ul>
+            </td>
+            <td *ngIf="opt.losSmax!=undefined&&opt.losSmin!=undefined">
+                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                    <li>Set LOSS: <br>max: <input class="step LU" style="width:5em" [min]="0" [max]="1" [value]="opt.losSmax"></li>
+                    <li><br>min: <input class="step LL" style="width:5em" [min]="0" [max]="1" [value]="opt.losSmin"></li>
+                </ul>
+            </td>
+            <td *ngIf="opt.minRisk!=undefined&&opt.maxRisk!=undefined">
+                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                    <li>Set RISK: <br>max: <input class="step RU" style="width:5em" [min]="0" [max]="1" [value]="opt.maxRisk"></li>
+                    <li><br>min: <input class="step RL" style="width:5em" [min]="0" [max]="1" [value]="opt.minRisk"></li>
+                </ul>
+            </td>
+            <td *ngIf="opt.etLmin!=undefined&&opt.etLmax!=undefined">
+                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                    <li>Set ETL: <br>max: <input class="step EU" style="width:5em" [min]="0" [max]="1" [value]="opt.etLmax"></li>
+                    <li><br>min: <input class="step EL" style="width:5em" [min]="0" [max]="1" [value]="opt.etLmin"></li>
+                </ul>
+            </td>
+            <td *ngIf="opt.delta!=undefined">
+                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                    <li>Set Turnover: <br>max: <input class="step delt" style="width:5em" [min]="0" [max]="1" [value]="opt.delta"></li>
+                </ul>
+            </td>
+        </tr>
+    </table>
+    <app-barplot *ngIf="opt.w" [caller]="element.nativeElement" [title]="'Portfolio weights'" [height]="height" [width]="width" [DATA]="opt.w"></app-barplot>
+</div>
