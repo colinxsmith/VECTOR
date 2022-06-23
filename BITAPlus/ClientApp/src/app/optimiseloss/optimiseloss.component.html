@@ -1,35 +1,35 @@
 <h1 style="text-align: center;" id="tableLabel">
     LOSS Optimisation
 </h1>
-<div class="maindiv" *ngIf="opt&&opt[0]">
+<div class="maindiv" *ngIf="opt">
     <button (mouseover)="over($event,true)" (mouseleave)="over($event)" (click)="sendStep()">Send New Optimisation Parameters</button>
     <table style="width:100%">
         <tr>
-            <td *ngIf="opt[0].back==0" style="color:rgb(47, 255, 89); text-align:justify">{{opt[0].message}}</td>
-            <td *ngIf="opt[0].back==1" style="color:rgb(255, 234, 0); text-align:justify">{{opt[0].message}}</td>
-            <td *ngIf="opt[0].CVARGLprob!=undefined&&opt[0].CVARGLprob" style="color:rgb(255, 234, 0); text-align:justify">{{opt[0].message}}</td>
-            <td *ngIf="opt[0].back==6" style="color:crimson; text-align:justify">{{opt[0].message}}</td>
-            <td *ngIf="opt[0].back==10" style="color:crimson; text-align:justify">{{opt[0].message}}</td>
-            <td *ngIf="opt[0].back>6&&opt[0].back<10" style="color:crimson; text-align:justify">{{opt[0].message}}</td>
-            <td *ngIf="opt[0].back>10" style="color:crimson; text-align:justify">{{opt[0].message}}</td>
-            <td *ngIf="opt[0].back>1&&opt[0].back<6" style="color:crimson; text-align:justify">{{opt[0].message}}</td>
-            <td *ngIf="opt[0].expreturn!=undefined">Return: {{format(opt[0].expreturn)}}</td>
-            <td *ngIf="opt[0].risk!=undefined">Risk: {{format(opt[0].risk)}}</td>
-            <td *ngIf="opt[0].loss!=undefined">LOSS: {{format(opt[0].loss)}}</td>
-            <td *ngIf="opt[0].gamma!=undefined">
+            <td *ngIf="opt.back==0" style="color:rgb(47, 255, 89); text-align:justify">{{opt.message}}</td>
+            <td *ngIf="opt.back==1" style="color:rgb(255, 234, 0); text-align:justify">{{opt.message}}</td>
+            <td *ngIf="opt.CVARGLprob!=undefined&&opt.CVARGLprob" style="color:rgb(255, 234, 0); text-align:justify">{{opt.message}}</td>
+            <td *ngIf="opt.back==6" style="color:crimson; text-align:justify">{{opt.message}}</td>
+            <td *ngIf="opt.back==10" style="color:crimson; text-align:justify">{{opt.message}}</td>
+            <td *ngIf="opt.back>6&&opt.back<10" style="color:crimson; text-align:justify">{{opt.message}}</td>
+            <td *ngIf="opt.back>10" style="color:crimson; text-align:justify">{{opt.message}}</td>
+            <td *ngIf="opt.back>1&&opt.back<6" style="color:crimson; text-align:justify">{{opt.message}}</td>
+            <td *ngIf="opt.result!=undefined&&opt.result.expreturn!=undefined">Return: {{format(opt.result.expreturn)}}</td>
+            <td *ngIf="opt.result!=undefined&&opt.result.risk!=undefined">Risk: {{format(opt.result.risk)}}</td>
+            <td *ngIf="opt.result!=undefined&&opt.result.loss!=undefined">LOSS: {{format(opt.result.loss)}}</td>
+            <td *ngIf="opt.gamma!=undefined">
                 <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
                     <li>
-                        Set gamma: <br><input class="step g" style="width:5em" [min]="0" [max]="1" [value]="opt[0].gamma">
+                        Set gamma: <br><input class="step g" style="width:5em" [min]="0" [max]="1" [value]="opt.gamma">
                     </li>
                 </ul>
             </td>
-            <td *ngIf="opt[0].losSmax!=undefined&&opt[0].losSmin!=undefined">
+            <td *ngIf="opt.losSmax!=undefined&&opt.losSmin!=undefined">
                 <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
-                    <li>Set LOSS: <br>max: <input class="step LU" style="width:5em" [min]="0" [max]="1" [value]="opt[0].losSmax"></li>
-                    <li><br>min: <input class="step LL" style="width:5em" [min]="0" [max]="1" [value]="opt[0].losSmin"></li>
+                    <li>Set LOSS: <br>max: <input class="step LU" style="width:5em" [min]="0" [max]="1" [value]="opt.losSmax"></li>
+                    <li><br>min: <input class="step LL" style="width:5em" [min]="0" [max]="1" [value]="opt.losSmin"></li>
                 </ul>
             </td>
         </tr>
     </table>
-    <app-barplot *ngIf="opt&&opt[0].w" [caller]="element.nativeElement" [title]="'Portfolio weights'" [height]="height" [width]="width" [DATA]="opt[0].w"></app-barplot>
+    <app-barplot *ngIf="opt.w" [caller]="element.nativeElement" [title]="'Portfolio weights'" [height]="height" [width]="width" [DATA]="opt.w"></app-barplot>
 </div>

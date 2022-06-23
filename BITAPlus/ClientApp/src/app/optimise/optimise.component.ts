@@ -10,10 +10,10 @@ export class OptimiseComponent {
   width = 1000;//width and height for weight graph
   height = 300;
   format=d3.format('0.6f')
-  opt: Array<Optimise> = [];
+  opt: Optimise = {}as Optimise;
   constructor(private http: HttpClient, @Inject('BASE_URL') private baseUrl: string, public element: ElementRef) {
-    http.get<Optimise[]>(baseUrl + 'optimise/ETL').subscribe(result => {
-      this.opt.push(result[0]);
+    http.get<Optimise>(baseUrl + 'optimise/ETL').subscribe(result => {
+      this.opt=result;
       console.log(this.opt, result);
     }, error => console.error(error));
   }
@@ -22,20 +22,19 @@ export class OptimiseComponent {
   }
   sendStep() {
     let back = +(d3.select(this.element.nativeElement).select('input.step.g').node() as HTMLInputElement & Event).value;
-    console.log(back, this.opt[0].etLmax);
-    this.opt[0].gamma = back;
-    this.opt[0].tail = 0.05;
+    console.log(back, this.opt.etLmax);
+    this.opt.gamma = back;
+    this.opt.tail = 0.05;
     back = +(d3.select(this.element.nativeElement).select('input.step.EU').node() as HTMLInputElement & Event).value;
-    this.opt[0].etLmax = back;
+    this.opt.etLmax = back;
     back = +(d3.select(this.element.nativeElement).select('input.step.EL').node() as HTMLInputElement & Event).value;
-    this.opt[0].etLmin = back;
-    this.opt[0].etLopt = true;
-    this.sendData('optimise/ETL', this.opt[0])
+    this.opt.etLmin = back;
+    this.opt.etLopt = true;
+    this.sendData('optimise/ETL', this.opt)
       .subscribe(ddd => {
         console.log(ddd);
-        this.opt = []
-        this.opt.push(ddd[0]);
-        console.log(this.opt[0].w);
+        this.opt = ddd
+        console.log(this.opt.w);
       }, error => console.error(error));
   }
   sendData(key = 'optimise/ETL', sendObject: Optimise) {
@@ -43,7 +42,7 @@ export class OptimiseComponent {
       headers: new HttpHeaders()
         .set('Content-Type', 'application/json')
     };
-    return this.http.post<Array<Optimise>>(`${this.baseUrl}${key}`, sendObject, options);
+    return this.http.post<Optimise>(`${this.baseUrl}${key}`, sendObject, options);
   }
 }
 
@@ -76,5 +75,34 @@ interface Optimise {
   risk:number,
   alpha:Array<number>,
   expreturn:number,
-  CVARGLprob:boolean
+  CVARGLprob:boolean,
+  result:Result
+}
+interface Result{
+  
+
+  gross: number,
+  longvalue: number,
+  shortvalue: number,
+  shortoverlong: number,
+  minhold: number,
+  mintrade: number,
+  cost: number,
+  turnover: number,
+  basket: number,
+  trades: number,
+  var: number,
+  vaRindex: number,
+  etl: number,
+  loss: number,
+  breakdown: Array<number>,
+  risk: number,
+  expreturn: number,
+  mctr: Array<number>,
+  fmctr: Array<number>,
+  sPmctr: Array<number>,
+  fx: Array<number>,
+  facrisk: number,
+  specrisk: number
+  
 }

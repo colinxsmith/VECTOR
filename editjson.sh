@@ -1,5 +1,5 @@
 sed -i "s/^\[//;s/\]$//" $1
-tr "," "\n" < $1 |sed -i "/null$/d" |tr "\n" ","  > kk
+tr "," "\n" < $1 |sed  "/null$/d" | sed "/doOpt/s/false/true/" | tr "\n" ","  > kk
 mv kk $1
 echo curl -X POST -H "\"Content-type: application/json\"" -d > t2  #need to get rid of \ here
 cat $1 >> t2

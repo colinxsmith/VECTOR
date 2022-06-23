@@ -17,22 +17,22 @@ public class OptimiseController : ControllerBase
         _logger = logger;
     }
     [HttpPost("test")]
-    public Optimise[] Post(Optimise op)
+    public Optimise Post(Optimise op)
     {
         if (op.digit != null)
         {
             op.tdigit = op.digit != null ? Portfolio.Portfolio.check_digit((double)op.digit) : null;
         }
         ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green] [yellow]{op.n}[/yellow]");
-        return new[] { op };
+        return op ;
     }
     [HttpGet()]
-    public IEnumerable<Optimise> Blank()
+    public Optimise Blank()
     {
-        return new[] { new Optimise() };
+        return new Optimise() ;
     }
     [HttpGet("LOSS")]
-    public Optimise[] GetLOSS()
+    public Optimise GetLOSS()
     {
         var op = new Optimise();
         var targetR = 0.0;
@@ -67,11 +67,11 @@ public class OptimiseController : ControllerBase
         op.LOSSmin = -1;
         op.LOSSmax = 10;
         op.gamma = 0;
-        return new[] { op };
+        return  op ;
     }
 
     [HttpPost("LOSS")]
-    public Optimise[] PostLOSS(Optimise op)
+    public Optimise PostLOSS(Optimise op)
     {
         if (!op.gamma.HasValue) op.gamma = 0.5;
         if (!op.kappa.HasValue) op.kappa = -1;
@@ -114,11 +114,11 @@ public class OptimiseController : ControllerBase
         opt.RiskBreakdown(op.w, null, op.result.mctr);
         op.result.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.result.mctr);
         op.result.expreturn = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.alpha);
-        return new[] { op };
+        return op;
     }
 
     [HttpGet("ETL")]
-    public Optimise[] GetETL()
+    public Optimise GetETL()
     {
         var op = new Optimise();
         using (var CVarData = new InputSomeData())
@@ -150,10 +150,10 @@ public class OptimiseController : ControllerBase
         op.ETLmin = -1;
         op.ETLmax = 1;
         op.gamma = 0;
-        return new[] { op };
+        return  op;
     }
     [HttpPost("ETL")]
-    public Optimise[] PostETL(Optimise op)
+    public Optimise PostETL(Optimise op)
     {
         if (!op.gamma.HasValue) op.gamma = 0.5;
         if (!op.kappa.HasValue) op.kappa = -1;
@@ -198,10 +198,10 @@ public class OptimiseController : ControllerBase
         opt.RiskBreakdown(op.w, null, op.result.mctr);
         op.result.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.result.mctr);
         op.result.expreturn = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.alpha);
-        return new[] { op };
+        return op;
     }
     [HttpGet("test")]
-    public Optimise[] Get(double? d1)
+    public Optimise Get(double? d1)
     {
         double testdigit;
         if (d1 != null) testdigit = d1.GetValueOrDefault();
@@ -210,10 +210,10 @@ public class OptimiseController : ControllerBase
         op.digit = testdigit;
         op.tdigit = Portfolio.Portfolio.check_digit(testdigit);
         ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green] [yellow]{op.n}[/yellow]");
-        return new[] { op };
+        return op ;
     }
     [HttpGet("test/n")]
-    public Optimise[] Getn()
+    public Optimise Getn()
     {
         double testdigit = 11.000000000001;
         var op = new Optimise();
@@ -221,10 +221,10 @@ public class OptimiseController : ControllerBase
         op.digit = testdigit;
         op.tdigit = Portfolio.Portfolio.check_digit(testdigit);
         ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green] [yellow]{op.n}[/yellow]");
-        return new[] { op };
+        return  op;
     }
     [HttpGet("general")]
-    public Optimise[] GetGen(bool? doOpt, int? round, double? min_lot, double? size_lot, double? Gstrength, double? LOSSmax, double? LOSSmin, double? ETLmax, double? ETLmin, double? targetR, string? datafile, double? delta, double? gamma, double? maxRisk, double? minRisk, double? min_holding, double? min_trade, int? basket, int? trades)
+    public Optimise GetGen(bool? doOpt, int? round, double? min_lot, double? size_lot, double? Gstrength, double? LOSSmax, double? LOSSmin, double? ETLmax, double? ETLmin, double? targetR, string? datafile, double? delta, double? gamma, double? maxRisk, double? minRisk, double? min_holding, double? min_trade, int? basket, int? trades)
     {
         var op = new Optimise();
         if (doOpt != null) op.doOpt = doOpt.GetValueOrDefault();
@@ -245,7 +245,7 @@ public class OptimiseController : ControllerBase
                 {
                     CVarData.Read($"../{op.datafile}");
                 }
-                catch { op.message = $"No input file \"{op.datafile}\""; return new[] { op }; }
+                catch { op.message = $"No input file \"{op.datafile}\""; return op; }
             }
             op.n = CVarData.mapInt["n"][0];
             op.nfac = CVarData.mapInt["nfac"][0];
@@ -383,7 +383,7 @@ public class OptimiseController : ControllerBase
                 op.result = null;
                 op.shake = null;
                 op.ogamma = null;
-                return new[] { op };
+                return op;
             }
         }
         if (op.nfac < 0)
@@ -497,7 +497,7 @@ public class OptimiseController : ControllerBase
             }
         }
 
-        return new[] { op };
+        return op;
     }
     [HttpPost("general")]
     public Optimise PostGen(Optimise op)
