@@ -11,7 +11,7 @@ import * as d3 from 'd3';
 export class OptimisegeneralComponent {
   width = 1000;//width and height for weight graph
   height = 300;
- @Input() generalfile="costlog";
+ @Input() generalfile="GLdist";
   shortside=false;
   format = d3.format('0.6f')
   opt: Optimise = {} as Optimise;

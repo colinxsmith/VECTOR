@@ -359,6 +359,7 @@ public class OptimiseController : ControllerBase
         if (op.doOpt)
         {
             op.w = new double[op.n.GetValueOrDefault()];
+            bool CVARGLprob=false;
             op.back = Portfolio.Portfolio.OptimiseGeneral(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.names,
             op.w, op.m.GetValueOrDefault(), op.A, op.L, op.U, op.alpha, op.bench, op.Q, op.gamma.GetValueOrDefault(), op.initial, op.delta.GetValueOrDefault(),
             op.buy, op.sell, op.kappa.GetValueOrDefault(), op.basket, op.trades, op.min_holding,
@@ -366,10 +367,12 @@ public class OptimiseController : ControllerBase
             op.nabs.GetValueOrDefault(), op.Abs_A, op.mabs.GetValueOrDefault(), op.I_A, op.Abs_U,
             op.FC, op.FL, op.SV, op.minRisk, op.maxRisk, ref ogamma,
             op.mask, op.longbasket.GetValueOrDefault(), op.shortbasket.GetValueOrDefault(), op.tradebuy.GetValueOrDefault(),
-            op.tradesell.GetValueOrDefault(), op.valuel, op.Abs_L, breakdown, op.tlen, op.Gstrength,
+            op.tradesell.GetValueOrDefault(), op.valuel, op.Abs_L, breakdown,ref CVARGLprob, op.tlen, op.Gstrength,
             op.DATA, op.tail, op.TargetReturn, op.ETLopt.GetValueOrDefault() || op.LOSSopt.GetValueOrDefault(), op.TargetReturn == null ? op.ETLmin.GetValueOrDefault() : op.LOSSmin.GetValueOrDefault(),
             op.TargetReturn == null ? op.ETLmax.GetValueOrDefault() : op.LOSSmax.GetValueOrDefault());
 
+
+        op.CVARGLprob = CVARGLprob;
             op.ogamma = ogamma;
             op.message = Portfolio.Portfolio.OptMessages(op.back.GetValueOrDefault());
             op.result.mctr = breakdown;
@@ -509,6 +512,7 @@ public class OptimiseController : ControllerBase
         op.w = new double[op.n.GetValueOrDefault()];
         op.shake = new int[op.n.GetValueOrDefault()];
         double ogamma = 0;
+        bool CVARGLprob=false;
         op.back = Portfolio.Portfolio.OptimiseGeneral(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.names,
         op.w, op.m.GetValueOrDefault(), op.A, op.L, op.U, op.alpha, op.bench, op.Q, op.gamma.GetValueOrDefault(), op.initial, op.delta.GetValueOrDefault(),
         op.buy, op.sell, op.kappa.GetValueOrDefault(), op.basket, op.trades, op.min_holding,
@@ -516,10 +520,12 @@ public class OptimiseController : ControllerBase
         op.nabs.GetValueOrDefault(), op.Abs_A, op.mabs.GetValueOrDefault(), op.I_A, op.Abs_U,
         op.FC, op.FL, op.SV, op.minRisk, op.maxRisk, ref ogamma,
         op.mask, op.longbasket.GetValueOrDefault(), op.shortbasket.GetValueOrDefault(), op.tradebuy.GetValueOrDefault(),
-        op.tradesell.GetValueOrDefault(), op.valuel, op.Abs_L, breakdown, op.tlen, op.Gstrength,
+        op.tradesell.GetValueOrDefault(), op.valuel, op.Abs_L, breakdown,ref CVARGLprob, op.tlen, op.Gstrength,
         op.DATA, op.tail, op.TargetReturn, op.ETLopt.GetValueOrDefault() || op.LOSSopt.GetValueOrDefault(), op.TargetReturn == null ? op.ETLmin.GetValueOrDefault() : op.LOSSmin.GetValueOrDefault(),
         op.TargetReturn == null ? op.ETLmax.GetValueOrDefault() : op.LOSSmax.GetValueOrDefault());
 
+
+        op.CVARGLprob = CVARGLprob;
         op.ogamma = ogamma;
         op.message = Portfolio.Portfolio.OptMessages(op.back.GetValueOrDefault());
         }

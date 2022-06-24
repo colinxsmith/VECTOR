@@ -26,7 +26,7 @@ namespace Portfolio
                                         /*int downrisk, double downfactor,*/
                                         int longbasket, int shortbasket,
                                         int tradebuy, int tradesell,/* double zetaS, double zetaF,*/
-                                        /*double ShortCostScale,*/ double LSValuel, double[] Abs_L, double[] breakdown,
+                                        /*double ShortCostScale,*/ double LSValuel, double[] Abs_L, double[] breakdown,ref bool CVARGLprob,
                                         int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0, double ETLorLOSSmax = 0)
         {
             var back = -1;
@@ -96,6 +96,9 @@ namespace Portfolio
             info.L_abs = Abs_L;
             info.U_abs = Abs_U;
             info.target = -1;
+            info.ETLorLOSSmax=ETLorLOSSmax;
+            info.ETLorLOSSmin=ETLorLOSSmin;
+            info.ETLorLOSSconstraint=ETLorLOSSconstraint;
 
             info.U = (double[])U.Clone();
             if (basket > 0 || trades > 0)
@@ -174,6 +177,7 @@ namespace Portfolio
                 if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
             }
             if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
+            CVARGLprob=op.CVARGLprob;
             return back;
         }
 
