@@ -343,13 +343,18 @@ public class OptimiseController : ControllerBase
                     }
                     op.Q = Q;
                 }
-            }
+            
             if (targetR != null)
             {
+                if(op.LOSSmin==null)op.LOSSmin=-100;
+                if(op.LOSSmax==null)op.LOSSmax=100;
                 op.TargetReturn = new double[op.tlen];
                 BlasLike.dsetvec(op.tlen, targetR.GetValueOrDefault(), op.TargetReturn);
             }
-            else op.TargetReturn = null;  //probably redundant
+            else {op.TargetReturn = null;  //probably redundant
+            
+                if(op.ETLmin==null)op.ETLmin=-100;
+                if(op.ETLmax==null)op.ETLmax=100;}}
         }
 
         double ogamma = op.ogamma.GetValueOrDefault();

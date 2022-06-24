@@ -1,5 +1,5 @@
-import { Component, Inject, ElementRef } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { Component, Inject, ElementRef,Input } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import * as d3 from 'd3';
 
 @Component({
@@ -11,12 +11,19 @@ import * as d3 from 'd3';
 export class OptimisegeneralComponent {
   width = 1000;//width and height for weight graph
   height = 300;
+ @Input() generalfile="costlog";
+  shortside=false;
   format = d3.format('0.6f')
   opt: Optimise = {} as Optimise;
   constructor(private http: HttpClient, @Inject('BASE_URL') private baseUrl: string, public element: ElementRef) {
-    http.get<Optimise>(baseUrl + 'optimise/general').subscribe(result => {
+    http.get<Optimise>(baseUrl + 'optimise/general?datafile='+this.generalfile).subscribe(result => {
       this.opt = result;
       console.log(this.opt, result);
+      this.shortside=false;
+      for(let i=0;i<this.opt.n;++i){
+        if(this.opt.l[i]<0)this.shortside=true;
+      }
+      console.log(this.shortside);
     }, error => console.error(error));
   }
   over(e: MouseEvent, inout = false) {
@@ -27,6 +34,14 @@ export class OptimisegeneralComponent {
     this.opt.gamma = back;
     back = +(d3.select(this.element.nativeElement).select('input.step.delt').node() as HTMLInputElement & Event).value;
     this.opt.delta = back;
+    back = +(d3.select(this.element.nativeElement).select('input.step.basket').node() as HTMLInputElement & Event).value;
+    this.opt.basket = back;
+    back = +(d3.select(this.element.nativeElement).select('input.step.trades').node() as HTMLInputElement & Event).value;
+    this.opt.trades = back;
+    back = +(d3.select(this.element.nativeElement).select('input.step.minhold').node() as HTMLInputElement & Event).value;
+    this.opt.min_holding = back;
+    back = +(d3.select(this.element.nativeElement).select('input.step.mintrade').node() as HTMLInputElement & Event).value;
+    this.opt.min_trade = back;
     try { back = +(d3.select(this.element.nativeElement).select('input.step.EU').node() as HTMLInputElement & Event).value; } catch { back = null; }
     if (back != undefined) this.opt.etLmax = back;
     try { back = +(d3.select(this.element.nativeElement).select('input.step.EL').node() as HTMLInputElement & Event).value; } catch { back = null; }
@@ -39,6 +54,14 @@ export class OptimisegeneralComponent {
     if (back != undefined) this.opt.maxRisk = back;
     if (back != undefined) try { back = +(d3.select(this.element.nativeElement).select('input.step.RL').node() as HTMLInputElement & Event).value; } catch { back = null; }
     if (back != undefined) this.opt.minRisk = back;
+    try { back = +(d3.select(this.element.nativeElement).select('input.step.VU').node() as HTMLInputElement & Event).value; } catch { back = null; }
+    if (back != undefined) this.opt.value = back;
+    if (back != undefined) try { back = +(d3.select(this.element.nativeElement).select('input.step.VL').node() as HTMLInputElement & Event).value; } catch { back = null; }
+    if (back != undefined) this.opt.valuel = back;
+    try { back = +(d3.select(this.element.nativeElement).select('input.step.RMU').node() as HTMLInputElement & Event).value; } catch { back = null; }
+    if (back != undefined) this.opt.rmax = back;
+    if (back != undefined) try { back = +(d3.select(this.element.nativeElement).select('input.step.RML').node() as HTMLInputElement & Event).value; } catch { back = null; }
+    if (back != undefined) this.opt.rmin = back;
     if (this.opt.losSmax != null && this.opt.losSmin != null) this.opt.losSopt = true;
     else if (this.opt.etLmax != null && this.opt.etLmin != null) this.opt.etLopt = true;
     this.sendData('optimise/general', this.opt)
@@ -46,6 +69,11 @@ export class OptimisegeneralComponent {
         console.log(ddd);
         this.opt = ddd;
         console.log(this.opt.w);
+        this.shortside=false;
+        for(let i=0;i<this.opt.n;++i){
+          if(this.opt.l[i]<0)this.shortside=true;
+        }
+        console.log(this.shortside);
       }, error => console.error(error));
   }
   sendData(key = 'optimise/general', sendObject: Optimise) {
