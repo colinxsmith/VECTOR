@@ -99,6 +99,10 @@ namespace Portfolio
             info.ETLorLOSSmax=ETLorLOSSmax;
             info.ETLorLOSSmin=ETLorLOSSmin;
             info.ETLorLOSSconstraint=ETLorLOSSconstraint;
+            info.tlen=tlen;
+            info.DATA=DATA;
+            info.targetR=targetR;
+            info.tail=tail;
 
             info.U = (double[])U.Clone();
             if (basket > 0 || trades > 0)
