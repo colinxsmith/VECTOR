@@ -1,6 +1,7 @@
 <h1 style="text-align: center;" id="tableLabel">
     General Optimisation
 </h1>
+<input (change)="file($event)" value="">
 <div class="maindiv" *ngIf="opt">
     <button (mouseover)="over($event,true)" (mouseleave)="over($event)" (click)="sendStep()">Send New Optimisation Parameters</button>
     <table style="width:100%">

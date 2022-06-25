@@ -76,6 +76,20 @@ export class OptimisegeneralComponent {
         console.log(this.shortside);
       }, error => console.error(error));
   }
+  file(e:any){
+    console.log(e);
+        this.generalfile=(d3.select(e.target as HTMLInputElement & EventTarget).node() as HTMLInputElement & Event).value;
+        console.log(this.generalfile);    
+        this.http.get<Optimise>(this.baseUrl + 'optimise/general?datafile='+this.generalfile).subscribe(result => {
+          this.opt = result;
+          console.log(this.opt, result);
+          this.shortside=false;
+          for(let i=0;i<this.opt.n;++i){
+            if(this.opt.l[i]<0)this.shortside=true;
+          }
+          console.log(this.shortside);
+        }, error => console.error(error));
+  }
   sendData(key = 'optimise/general', sendObject: Optimise) {
     const options = {
       headers: new HttpHeaders()
