@@ -530,7 +530,10 @@ public class OptimiseController : ControllerBase
 
         op.ogamma = ogamma;
         op.message = Portfolio.Portfolio.OptMessages(op.back.GetValueOrDefault());
-
+for(var i=0;i<op.n.GetValueOrDefault();++i){
+    if(op.shake[i]==i)if(op.names==null){op.message+=$"\nAsset {i+1} was not rounded properly";}
+    else {op.message+=$"\n{op.names[i]} was not rounded properly";}
+}
         op.CVARGLprob = CVARGLprob;
         }
 op.result.mctr=new double[op.n.GetValueOrDefault()];

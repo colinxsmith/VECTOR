@@ -26,9 +26,10 @@ namespace Portfolio
                                         /*int downrisk, double downfactor,*/
                                         int longbasket, int shortbasket,
                                         int tradebuy, int tradesell,/* double zetaS, double zetaF,*/
-                                        /*double ShortCostScale,*/ double LSValuel, double[] Abs_L, double[] breakdown,ref bool CVARGLprob,
+                                        /*double ShortCostScale,*/ double LSValuel, double[] Abs_L, double[] breakdown, ref bool CVARGLprob,
                                         int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0, double ETLorLOSSmax = 0)
         {
+                for (var i = 0; i < n; ++i) shake[i] = -1;
             var back = -1;
             Portfolio op;
             if (nfac == -1)
@@ -96,13 +97,13 @@ namespace Portfolio
             info.L_abs = Abs_L;
             info.U_abs = Abs_U;
             info.target = -1;
-            info.ETLorLOSSmax=ETLorLOSSmax;
-            info.ETLorLOSSmin=ETLorLOSSmin;
-            info.ETLorLOSSconstraint=ETLorLOSSconstraint;
-            info.tlen=tlen;
-            info.DATA=DATA;
-            info.targetR=targetR;
-            info.tail=tail;
+            info.ETLorLOSSmax = ETLorLOSSmax;
+            info.ETLorLOSSmin = ETLorLOSSmin;
+            info.ETLorLOSSconstraint = ETLorLOSSconstraint;
+            info.tlen = tlen;
+            info.DATA = DATA;
+            info.targetR = targetR;
+            info.tail = tail;
 
             info.U = (double[])U.Clone();
             if (basket > 0 || trades > 0)
@@ -153,7 +154,6 @@ namespace Portfolio
                 if (minhold != null) BlasLike.dsetvec(n, min_holding, minhold);
                 var roundw = (double[])op.wback.Clone();
                 Op.x = op.wback; Op.MoreInfo = info;
-                for (var i = 0; i < n; ++i) shake[i] = -1;
                 if (round == 1)
                 {
                     op.Rounding(basket, trades, initial, min_lot, size_lot, roundw, null, null, info);
@@ -181,7 +181,7 @@ namespace Portfolio
                 if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
             }
             if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
-            CVARGLprob=op.CVARGLprob;
+            CVARGLprob = op.CVARGLprob;
             return back;
         }
 
@@ -367,7 +367,7 @@ namespace Portfolio
                 if (OP.basket < 0 && OP.trades < 0 && vars.target < 0)
                 {
                     OP.back = BACK = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, OP.lower, OP.upper, gamma, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
-                                    alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR);
+                                    alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR, vars.ETLorLOSSconstraint, vars.ETLorLOSSmin, vars.ETLorLOSSmax);
                 }
                 else
                 {
@@ -1143,7 +1143,7 @@ namespace Portfolio
                     }
                     else if (Math.Abs(Math.Abs(minlot[i]) - Math.Abs(testw - init)) < Math.Abs(testw - init) * switch1)
                     {
-                        if (Math.Abs(Math.Abs(minlot[i]) - Math.Abs(testw - init)) < Math.Abs(testw - init) * switch1 && (thresh != null && Math.Abs(Math.Abs(thresh[i]) - Math.Abs(testw)) < Math.Abs(testw) * switch1))
+                        if (Math.Abs(Math.Abs(minlot[i]) - Math.Abs(testw - init)) < Math.Abs(testw - init) * switch1 && (thresh == null || (Math.Abs(Math.Abs(thresh[i]) - Math.Abs(testw)) < Math.Abs(testw) * switch1)))
                         {
                             if (testw - init > 0)
                                 next.L[i] = Math.Max(Math.Min(rstep.kU[i], Math.Max(thresh != null ? thresh[i] : 0, minlot[i] + init)), rstep.kL[i]);
@@ -1152,20 +1152,20 @@ namespace Portfolio
                         }
                         else
                         {
-                            if (testw - init > 0)
-                                next.U[i] = Math.Max(Math.Min(rstep.kU[i], Math.Max(thresh != null ? thresh[i] : 0, init)), rstep.kL[i]);
+                            if (testw - init > 0)//Swapping L and U can give better results
+                                next.L[i] = Math.Max(Math.Min(rstep.kU[i], Math.Max(thresh != null ? thresh[i] : 0, init)), rstep.kL[i]);
                             else
-                                next.L[i] = Math.Min(Math.Max(rstep.kL[i], Math.Min(thresh != null ? -thresh[i] : 0, init)), rstep.kU[i]);
+                                next.U[i] = Math.Min(Math.Max(rstep.kL[i], Math.Min(thresh != null ? -thresh[i] : 0, init)), rstep.kU[i]);
                         }
                     }
                     else
                     {
-                        if (info.x[i] - init > 0)
+                        if (info.x[i] - init < 0)
                             next.L[i] = Math.Max(Math.Min(rstep.kU[i], 0), rstep.kL[i]);
                         else
                             next.U[i] = Math.Min(Math.Max(rstep.kL[i], 0), rstep.kU[i]);
                     }
-                }
+    }
             }
             if (bestround >= n - 2 && next.count > maxstage /*&& rstep.back <= 1*/) { rstep.util = info.UtilityFunc(info); return; }
             if (rstep.nround == n && next.count == 2 && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
