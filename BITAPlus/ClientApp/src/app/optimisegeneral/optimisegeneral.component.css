@@ -37,9 +37,23 @@ ul {
 
 ul.over {
     background-color: aqua;
-}input[type=text] {
-  width: 100%;
-  padding: 12px 20px;
-  margin: 8px 0;
-  box-sizing: border-box;
+}
+
+input[type=text] {
+    width: 50%;
+    padding: 1px 2px;
+    margin: 8px 0;
+    background-color: azure;
+}
+
+label {
+    background-color: #d8fdff;
+    border-radius: 1%;
+    text-align: center;
+    width: 100%;
+    font-size: x-large;
+}
+
+label.over {
+    background-color: rgb(240, 139, 139);
 }

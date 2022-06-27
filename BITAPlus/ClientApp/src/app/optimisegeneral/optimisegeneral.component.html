@@ -1,10 +1,12 @@
 <h1 style="text-align: center;" id="tableLabel">
     General Optimisation
 </h1>
-<input type="text" (change)="file($event)" value="">
+<label (mouseover)="over($event,true)" (mouseleave)="over($event)">
+    Optimisation data from log file:  <input type="text" class="filer" (change)="file($event)" value="">
+</label>
 <div class="maindiv" *ngIf="opt">
     <button (mouseover)="over($event,true)" (mouseleave)="over($event)" (click)="sendStep()">Send New Optimisation Parameters</button>
-    <table style="width:100%">
+    <table>
         <tr>
             <td *ngIf="opt.back==0" style="color:rgb(47, 255, 89); text-align:justify">{{opt.message}}</td>
             <td *ngIf="opt.back==1" style="color:rgb(255, 234, 0); text-align:justify">{{opt.message}}</td>
@@ -22,10 +24,11 @@
             <td *ngIf="opt.result!=undefined&&opt.result.basket!=undefined">basket: {{format(opt.result.basket)}}</td>
             <td *ngIf="opt.result!=undefined&&opt.result.trades!=undefined">number of trades: {{format(opt.result.trades)}}</td>
             <td *ngIf="opt.result!=undefined&&opt.result.minhold!=undefined">min. holding: {{format(opt.result.minhold)}}</td>
-            <td *ngIf="opt.result!=undefined&&opt.result.mintrade!=undefined">min. trade: {{format(opt.result.mintrade)}}</td>
         </tr>
         <tr>
+            <td *ngIf="opt.result!=undefined&&opt.result.mintrade!=undefined">min. trade: {{format(opt.result.mintrade)}}</td>
             <td *ngIf="opt.result!=undefined&&opt.result.longvalue!=undefined">Long Value: {{format(opt.result.longvalue)}}</td>
+
             <td *ngIf="opt.result!=undefined&&opt.result.shortoverlong!=undefined">Short / Long: {{format(opt.result.shortoverlong)}}</td>
             <td *ngIf="opt.gamma!=undefined">
                 <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
@@ -54,6 +57,8 @@
                     <li>Set basket: <br>max: <input class="step basket" style="width:5em" [min]="0" [max]="1" [value]="opt.basket"></li>
                 </ul>
             </td>
+        </tr>
+        <tr>
             <td *ngIf="opt.trades!=undefined">
                 <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
                     <li>Set trade number: <br>max: <input class="step trades" style="width:5em" [min]="0" [max]="1" [value]="opt.trades"></li>

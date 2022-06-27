@@ -1,4 +1,4 @@
-import { Component, Inject, ElementRef,Input } from '@angular/core';
+import { Component, Inject, ElementRef, OnInit } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import * as d3 from 'd3';
 
@@ -8,26 +8,29 @@ import * as d3 from 'd3';
   styleUrls: ['./optimisegeneral.component.css']
 })
 
-export class OptimisegeneralComponent {
-  width = 1000;//width and height for weight graph
+export class OptimisegeneralComponent implements OnInit {
+  width = 1100;//width and height for weight graph
   height = 300;
- @Input() generalfile="GLdist";
-  shortside=false;
+  generalfile = "GLdist";
+  shortside = false;
   format = d3.format('0.6f')
   opt: Optimise = {} as Optimise;
   constructor(private http: HttpClient, @Inject('BASE_URL') private baseUrl: string, public element: ElementRef) {
-    http.get<Optimise>(baseUrl + 'optimise/general?datafile='+this.generalfile).subscribe(result => {
+    http.get<Optimise>(baseUrl + 'optimise/general?datafile=' + this.generalfile).subscribe(result => {
       this.opt = result;
       console.log(this.opt, result);
-      this.shortside=false;
-      for(let i=0;i<this.opt.n;++i){
-        if(this.opt.l[i]<0)this.shortside=true;
+      this.shortside = false;
+      for (let i = 0; i < this.opt.n; ++i) {
+        if (this.opt.l[i] < 0) this.shortside = true;
       }
       console.log(this.shortside);
     }, error => console.error(error));
   }
   over(e: MouseEvent, inout = false) {
     d3.select(e.target as HTMLInputElement & EventTarget).classed('over', inout);
+  }
+  ngOnInit(): void {
+    d3.select(this.element.nativeElement).select('input.filer').attr('value', this.generalfile);
   }
   sendStep() {
     let back: string | number | null | undefined = +(d3.select(this.element.nativeElement).select('input.step.g').node() as HTMLInputElement & Event).value;
@@ -69,26 +72,29 @@ export class OptimisegeneralComponent {
         console.log(ddd);
         this.opt = ddd;
         console.log(this.opt.w);
-        this.shortside=false;
-        for(let i=0;i<this.opt.n;++i){
-          if(this.opt.l[i]<0)this.shortside=true;
+        this.shortside = false;
+        for (let i = 0; i < this.opt.n; ++i) {
+          if (this.opt.l[i] < 0) this.shortside = true;
         }
         console.log(this.shortside);
       }, error => console.error(error));
   }
-  file(e:any){
-    console.log(e);
-        this.generalfile=(d3.select(e.target as HTMLInputElement & EventTarget).node() as HTMLInputElement & Event).value;
-        console.log(this.generalfile);    
-        this.http.get<Optimise>(this.baseUrl + 'optimise/general?datafile='+this.generalfile).subscribe(result => {
-          this.opt = result;
-          console.log(this.opt, result);
-          this.shortside=false;
-          for(let i=0;i<this.opt.n;++i){
-            if(this.opt.l[i]<0)this.shortside=true;
-          }
-          console.log(this.shortside);
-        }, error => console.error(error));
+  file(e: Event) {
+    console.log(e.target);//Must use .node() to get the updated value
+    //   console.log((d3.select(this.element.nativeElement).select('input.filer').node() as HTMLInputElement & Event).value);
+    this.generalfile = (d3.select(e.target as HTMLInputElement & EventTarget).node() as HTMLInputElement & Event).value;
+    //console.log(d3.select(e.target as HTMLInputElement & EventTarget).attr('value'));
+    //console.log(d3.select(e.target as HTMLInputElement).attr('value'));
+    //   console.log(this.generalfile);
+    this.http.get<Optimise>(this.baseUrl + 'optimise/general?datafile=' + this.generalfile).subscribe(result => {
+      this.opt = result;
+      console.log(this.opt, result);
+      this.shortside = false;
+      for (let i = 0; i < this.opt.n; ++i) {
+        if (this.opt.l[i] < 0) this.shortside = true;
+      }
+      console.log(this.shortside);
+    }, error => console.error(error));
   }
   sendData(key = 'optimise/general', sendObject: Optimise) {
     const options = {
