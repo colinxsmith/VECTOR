@@ -29,6 +29,92 @@ namespace Portfolio
                                         /*double ShortCostScale,*/ double LSValuel, double[] Abs_L, double[] breakdown, ref bool CVARGLprob,
                                         int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0, double ETLorLOSSmax = 0)
         {
+            var logfile="logger";
+            using(StreamWriter ww=new StreamWriter(logfile)){
+                ww.WriteLine("n");
+                ww.WriteLine(n);
+                ww.WriteLine("m");
+                ww.WriteLine(m);
+                ww.WriteLine("nfac");
+                ww.WriteLine(nfac);
+                ww.WriteLine("gamma");
+                ww.WriteLine(gamma);
+                ww.WriteLine("kappa");
+                ww.WriteLine(kappa);
+                ww.WriteLine("delta");
+                ww.WriteLine(delta);
+                ww.WriteLine("basket");
+                ww.WriteLine(basket);
+                ww.WriteLine("longbasket");
+                ww.WriteLine(longbasket);
+                ww.WriteLine("shortbasket");
+                ww.WriteLine(shortbasket);
+                ww.WriteLine("tradenum");
+                ww.WriteLine(trades);
+                ww.WriteLine("tradebuy");
+                ww.WriteLine(tradebuy);
+                ww.WriteLine("tradesell");
+                ww.WriteLine(tradesell);
+                ww.WriteLine("min_holding");
+                ww.WriteLine(min_holding);
+                ww.WriteLine("min_trade");
+                ww.WriteLine(min_trade);
+                ww.WriteLine("rmin");
+                ww.WriteLine(Rmin);
+                ww.WriteLine("rmax");
+                ww.WriteLine(Rmax);
+                ww.WriteLine("round");
+                ww.WriteLine(round);
+                ww.WriteLine("value");
+                ww.WriteLine(LSValue);
+                ww.WriteLine("valuel");
+                ww.WriteLine(LSValuel);
+                ww.WriteLine("nabs");
+                ww.WriteLine(nabs);
+                ww.WriteLine("mabs");
+                ww.WriteLine(mabs);
+                ww.WriteLine("minRisk");
+                ww.WriteLine(minRisk);
+                ww.WriteLine("maxRisk");
+                ww.WriteLine(maxRisk);
+                ww.WriteLine("CVARGLprob");
+                ww.WriteLine(CVARGLprob);
+                ww.WriteLine("tlen");
+                ww.WriteLine(tlen);
+                ww.WriteLine("lambda");
+                ww.WriteLine(DATAlambda);
+                ww.WriteLine("tail");
+                ww.WriteLine(tail);
+                ww.WriteLine("ETLorLOSSconstraint");
+                ww.WriteLine(ETLorLOSSconstraint);
+                ww.WriteLine("ETLorLOSSmax");
+                ww.WriteLine(ETLorLOSSmax);
+                ww.WriteLine("ETLorLOSSmin");
+                ww.WriteLine(ETLorLOSSmin);
+                printVector("names",names,ww);
+                printVector("A",A,ww,m);
+                printVector("L",L,ww);
+                printVector("U",U,ww);
+                printVector("alpha",alpha,ww);
+                printVector("bench",benchmark,ww);
+                printVector("initial",initial,ww);
+                if(nfac==-1)printVector("Q",Q,ww,true);
+                else if(SV==null)printVector("Q",Q,ww,nfac+1);
+                printVector("buy",buy,ww);
+                printVector("sell",sell,ww);
+                printVector("min_lot",min_lot,ww);
+                printVector("size_lot",size_lot,ww);
+                printVector("A_abs",Abs_A,ww);
+                printVector("Abs_U",Abs_U,ww);
+                printVector("Abs_L",Abs_L,ww);
+                printVector("I_A",I_A,ww);
+                printVector("FC",FC,ww,true);
+                printVector("FL",FL,ww,n);
+                printVector("SV",SV,ww);
+                printVector("mask",mask,ww);
+                printVector("DATA",DATA,ww,tlen);
+                printVector("R",targetR,ww);
+            }
                 for (var i = 0; i < n; ++i) shake[i] = -1;
             var back = -1;
             Portfolio op;
@@ -121,6 +207,7 @@ namespace Portfolio
                     else if (maxRisk < riskhere) info.target = maxRisk;
                     else if (minRisk > riskhere) info.target = minRisk;
                     // op.CalcRisk(gamma, info);
+                    op.BoundsSetToSign(n,info.L,info.U,initial,w);
                     if (basket < 0 && trades < 0)
                     {
                         if (info.target == minRisk)
@@ -364,7 +451,7 @@ namespace Portfolio
                         ColourConsole.WriteEmbeddedColourLine($"BAD bounds for {i} ([red]{OP.lower[i]} {OP.upper[i]}[/red])  initial is: [magenta]{start[i]}[/magenta]");
                     }
                 }
-                if(true)// (OP.basket < 0 && OP.trades < 0 && vars.target < 0)
+                if(OP.basket < 0 && OP.trades < 0 && vars.target < 0)
                 {
                     OP.back = BACK = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, OP.lower, OP.upper, gamma, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
                                     alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR, vars.ETLorLOSSconstraint, vars.ETLorLOSSmin, vars.ETLorLOSSmax);
@@ -4939,17 +5026,22 @@ namespace Portfolio
         }
         public static void printVector<T>(string name, T[] a, StreamWriter dave, int linelimit = 1)
         {
-            if (a == null) return;
+            if (a == null){
+                dave.WriteLine(name);
+                dave.WriteLine("");
+                 return;}
             if (linelimit == 1) linelimit = a.Length; //Hack so that line with one item is not treated as a scalar
             dave.WriteLine(name);
             for (int i = 0; i < a.Length; ++i)
             {
                 var p = a[i].GetType();
-                if (p.FullName == "System.Double")
-                    dave.Write($"{a[i],20:F16} ");
-                else
-                    dave.Write($"{a[i]} ");
-                if (i % linelimit == (linelimit - 1)) dave.Write("\n");
+                if (p.FullName == "System.Double"){
+                    dave.Write(a[i]);
+                    dave.Write(' ');
+                }else{
+                    dave.Write(a[i]);
+                    dave.Write(' ');
+                }if (i % linelimit == (linelimit - 1)) dave.Write("\n");
             }
         }
 
@@ -4962,21 +5054,25 @@ namespace Portfolio
                 for (int i = 0, ij = 1, ic = 0; ij <= n; ++i, ic++)
                 {
                     var p = a[ic].GetType();
-                    if (p.FullName == "System.Double")
-                        dave.Write($"{a[ic],20:F16} ");
-                    else
-                        dave.Write($"{a[ic]} ");
-                    if (i % (ij) == (ij - 1)) { dave.Write("\n"); ij++; i = -1; }
+                    if (p.FullName == "System.Double"){
+                        dave.Write(a[ic]);
+                    dave.Write(' ');
+                    }else{
+                        dave.Write(a[ic]);
+                    dave.Write(' ');
+                    }if (i % (ij) == (ij - 1)) { dave.Write("\n"); ij++; i = -1; }
                 }
             else
                 for (int i = 0, ij = n, ic = 0; ic < a.Length; ++i, ic++)
                 {
                     var p = a[ic].GetType();
-                    if (p.FullName == "System.Double")
-                        dave.Write($"{a[ic],12:F8} ");
-                    else
-                        dave.Write($"{a[ic]} ");
-                    if (i % (ij) == (ij - 1)) { dave.Write("\n"); ij--; i = -1; }
+                    if (p.FullName == "System.Double"){
+                        dave.Write(a[ic]);
+                    dave.Write(' ');
+                        }else{
+                        dave.Write(a[ic]);
+                    dave.Write(' ');
+                    }if (i % (ij) == (ij - 1)) { dave.Write("\n"); ij--; i = -1; }
                 }
         }
     }

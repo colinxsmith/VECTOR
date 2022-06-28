@@ -39,6 +39,10 @@ public class Optimise
     rmin=-1;
     basket=-1;
     trades=-1;
+    longbasket=-1;
+    shortbasket=-1;
+    tradebuy=-1;
+    tradesell=-1;
     min_holding=-1;
     min_trade=-1;
     Gstrength=1;
