@@ -30,10 +30,18 @@
             <td *ngIf="opt.result!=undefined&&opt.result.longvalue!=undefined">Long Value: {{format(opt.result.longvalue)}}</td>
 
             <td *ngIf="opt.result!=undefined&&opt.result.shortoverlong!=undefined">Short / Long: {{format(opt.result.shortoverlong)}}</td>
+        </tr>
+        <tr>
             <td *ngIf="opt.gamma!=undefined">
                 <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
                     <li>
                         Set gamma: <br><input class="step g" style="width:5em" [min]="0" [max]="1" [value]="(opt.ogamma<1.1)?opt.ogamma:opt.gamma">
+                    </li>
+                </ul>
+            </td> <td *ngIf="opt.round!=undefined">
+                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                    <li>
+                        Set round: <br><input class="step round" style="width:5em" [min]="0" [max]="1" [value]="opt.round">
                     </li>
                 </ul>
             </td>
@@ -57,8 +65,6 @@
                     <li>Set basket: <br>max: <input class="step basket" style="width:5em" [min]="0" [max]="1" [value]="opt.basket"></li>
                 </ul>
             </td>
-        </tr>
-        <tr>
             <td *ngIf="opt.trades!=undefined">
                 <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
                     <li>Set trade number: <br>max: <input class="step trades" style="width:5em" [min]="0" [max]="1" [value]="opt.trades"></li>
@@ -70,6 +76,8 @@
                     <li><br>min: <input class="step LL" style="width:5em" [min]="0" [max]="1" [value]="opt.losSmin"></li>
                 </ul>
             </td>
+        </tr>
+        <tr>
             <td *ngIf="opt.minRisk!=undefined&&opt.maxRisk!=undefined">
                 <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
                     <li>Set RISK: <br>max: <input class="step RU" style="width:5em" [min]="0" [max]="1" [value]="opt.maxRisk"></li>

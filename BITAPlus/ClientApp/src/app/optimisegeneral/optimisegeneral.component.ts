@@ -35,6 +35,8 @@ export class OptimisegeneralComponent implements OnInit {
   sendStep() {
     let back: string | number | null | undefined = +(d3.select(this.element.nativeElement).select('input.step.g').node() as HTMLInputElement & Event).value;
     this.opt.gamma = back;
+    back= +(d3.select(this.element.nativeElement).select('input.step.round').node() as HTMLInputElement & Event).value;
+    this.opt.round = back;
     back = +(d3.select(this.element.nativeElement).select('input.step.delt').node() as HTMLInputElement & Event).value;
     this.opt.delta = back;
     back = +(d3.select(this.element.nativeElement).select('input.step.basket').node() as HTMLInputElement & Event).value;
