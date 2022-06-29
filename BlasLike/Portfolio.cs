@@ -525,6 +525,7 @@ namespace Portfolio
         double unround = 1e60;
         double round_eps = BlasLike.lm_eps8;
         int i6limit;
+        int i6 = 0;
         ///<summary>Return the position of w in the roundlot ladder. If this is a whole number, then w is on a rung</summary>
         ///<param name="w">weight</param>
         ///<param name="initial">initial weight</param>
@@ -755,7 +756,7 @@ namespace Portfolio
 
             rstep.nround = 0;
             bool fixup = false;
-            int i, j, i6 = 0;
+            int i, j;
             double init = 0, nwL = 0, nwU = 0;
             long dd;
             roundstep next = rstep.next = new roundstep(), roundstuck;
@@ -1262,7 +1263,9 @@ namespace Portfolio
                     }
                 }
             }
-            i6limit = bestround >= n - 2 ? 6 : n;
+           // i6limit = bestround >= n - 2 ? 6 : n;
+            i6limit=n;
+            i6=i6%n;
             if (bestround >= n - 2 && next.count > maxstage /*&& rstep.back <= 1*/) { rstep.util = info.UtilityFunc(info); return; }
             if (rstep.nround == n && next.count == 2 && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
             if (!next.success && rstep.nround == n && rstep.back <= 1)
@@ -1277,6 +1280,7 @@ namespace Portfolio
         public bool treestart(OptParamRound info, bool passedfromthresh, double[] initial, double[] minlot,
                         double[] sizelot, double[] roundw, double[] thresh = null)
         {
+            i6 = 0;
             int i;
             int n = info.n;
             int m = info.m;
