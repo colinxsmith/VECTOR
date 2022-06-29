@@ -27,95 +27,98 @@ namespace Portfolio
                                         int longbasket, int shortbasket,
                                         int tradebuy, int tradesell,/* double zetaS, double zetaF,*/
                                         /*double ShortCostScale,*/ double LSValuel, double[] Abs_L, double[] breakdown, ref bool CVARGLprob,
-                                        int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0, double ETLorLOSSmax = 0)
+                                        int tlen = 0, double DATAlambda = 1, double[] DATA = null,
+                                        double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0,
+                                        double ETLorLOSSmax = 0, string logfile = "", int revise = 0)
         {
-            var logfile="logger";
-            using(StreamWriter ww=new StreamWriter(logfile)){
-                ww.WriteLine("n");
-                ww.WriteLine(n);
-                ww.WriteLine("m");
-                ww.WriteLine(m);
-                ww.WriteLine("nfac");
-                ww.WriteLine(nfac);
-                ww.WriteLine("gamma");
-                ww.WriteLine(gamma);
-                ww.WriteLine("kappa");
-                ww.WriteLine(kappa);
-                ww.WriteLine("delta");
-                ww.WriteLine(delta);
-                ww.WriteLine("basket");
-                ww.WriteLine(basket);
-                ww.WriteLine("longbasket");
-                ww.WriteLine(longbasket);
-                ww.WriteLine("shortbasket");
-                ww.WriteLine(shortbasket);
-                ww.WriteLine("tradenum");
-                ww.WriteLine(trades);
-                ww.WriteLine("tradebuy");
-                ww.WriteLine(tradebuy);
-                ww.WriteLine("tradesell");
-                ww.WriteLine(tradesell);
-                ww.WriteLine("min_holding");
-                ww.WriteLine(min_holding);
-                ww.WriteLine("min_trade");
-                ww.WriteLine(min_trade);
-                ww.WriteLine("rmin");
-                ww.WriteLine(Rmin);
-                ww.WriteLine("rmax");
-                ww.WriteLine(Rmax);
-                ww.WriteLine("round");
-                ww.WriteLine(round);
-                ww.WriteLine("value");
-                ww.WriteLine(LSValue);
-                ww.WriteLine("valuel");
-                ww.WriteLine(LSValuel);
-                ww.WriteLine("nabs");
-                ww.WriteLine(nabs);
-                ww.WriteLine("mabs");
-                ww.WriteLine(mabs);
-                ww.WriteLine("minRisk");
-                ww.WriteLine(minRisk);
-                ww.WriteLine("maxRisk");
-                ww.WriteLine(maxRisk);
-                ww.WriteLine("CVARGLprob");
-                ww.WriteLine(CVARGLprob);
-                ww.WriteLine("tlen");
-                ww.WriteLine(tlen);
-                ww.WriteLine("lambda");
-                ww.WriteLine(DATAlambda);
-                ww.WriteLine("tail");
-                ww.WriteLine(tail);
-                ww.WriteLine("ETLorLOSSconstraint");
-                ww.WriteLine(ETLorLOSSconstraint);
-                ww.WriteLine("ETLorLOSSmax");
-                ww.WriteLine(ETLorLOSSmax);
-                ww.WriteLine("ETLorLOSSmin");
-                ww.WriteLine(ETLorLOSSmin);
-                printVector("names",names,ww);
-                printVector("A",A,ww,m);
-                printVector("L",L,ww);
-                printVector("U",U,ww);
-                printVector("alpha",alpha,ww);
-                printVector("bench",benchmark,ww);
-                printVector("initial",initial,ww);
-                if(nfac==-1)printVector("Q",Q,ww,true);
-                else if(SV==null)printVector("Q",Q,ww,nfac+1);
-                printVector("buy",buy,ww);
-                printVector("sell",sell,ww);
-                printVector("min_lot",min_lot,ww);
-                printVector("size_lot",size_lot,ww);
-                printVector("A_abs",Abs_A,ww);
-                printVector("Abs_U",Abs_U,ww);
-                printVector("Abs_L",Abs_L,ww);
-                printVector("I_A",I_A,ww);
-                printVector("FC",FC,ww,true);
-                printVector("FL",FL,ww,n);
-                printVector("SV",SV,ww);
-                printVector("mask",mask,ww);
-                printVector("DATA",DATA,ww,tlen);
-                printVector("R",targetR,ww);
-            }
-                for (var i = 0; i < n; ++i) shake[i] = -1;
+            if (logfile != "" && logfile != null)
+                using (StreamWriter ww = new StreamWriter(logfile))
+                {
+                    ww.WriteLine("n");
+                    ww.WriteLine(n);
+                    ww.WriteLine("m");
+                    ww.WriteLine(m);
+                    ww.WriteLine("nfac");
+                    ww.WriteLine(nfac);
+                    ww.WriteLine("gamma");
+                    ww.WriteLine(gamma);
+                    ww.WriteLine("kappa");
+                    ww.WriteLine(kappa);
+                    ww.WriteLine("delta");
+                    ww.WriteLine(delta);
+                    ww.WriteLine("basket");
+                    ww.WriteLine(basket);
+                    ww.WriteLine("longbasket");
+                    ww.WriteLine(longbasket);
+                    ww.WriteLine("shortbasket");
+                    ww.WriteLine(shortbasket);
+                    ww.WriteLine("tradenum");
+                    ww.WriteLine(trades);
+                    ww.WriteLine("tradebuy");
+                    ww.WriteLine(tradebuy);
+                    ww.WriteLine("tradesell");
+                    ww.WriteLine(tradesell);
+                    ww.WriteLine("min_holding");
+                    ww.WriteLine(min_holding);
+                    ww.WriteLine("min_trade");
+                    ww.WriteLine(min_trade);
+                    ww.WriteLine("rmin");
+                    ww.WriteLine(Rmin);
+                    ww.WriteLine("rmax");
+                    ww.WriteLine(Rmax);
+                    ww.WriteLine("round");
+                    ww.WriteLine(round);
+                    ww.WriteLine("value");
+                    ww.WriteLine(LSValue);
+                    ww.WriteLine("valuel");
+                    ww.WriteLine(LSValuel);
+                    ww.WriteLine("nabs");
+                    ww.WriteLine(nabs);
+                    ww.WriteLine("mabs");
+                    ww.WriteLine(mabs);
+                    ww.WriteLine("minRisk");
+                    ww.WriteLine(minRisk);
+                    ww.WriteLine("maxRisk");
+                    ww.WriteLine(maxRisk);
+                    ww.WriteLine("CVARGLprob");
+                    ww.WriteLine(CVARGLprob);
+                    ww.WriteLine("tlen");
+                    ww.WriteLine(tlen);
+                    ww.WriteLine("lambda");
+                    ww.WriteLine(DATAlambda);
+                    ww.WriteLine("tail");
+                    ww.WriteLine(tail);
+                    ww.WriteLine("ETLorLOSSconstraint");
+                    ww.WriteLine(ETLorLOSSconstraint);
+                    ww.WriteLine("ETLorLOSSmax");
+                    ww.WriteLine(ETLorLOSSmax);
+                    ww.WriteLine("ETLorLOSSmin");
+                    ww.WriteLine(ETLorLOSSmin);
+                    printVector("names", names, ww);
+                    printVector("A", A, ww, m);
+                    printVector("L", L, ww);
+                    printVector("U", U, ww);
+                    printVector("alpha", alpha, ww);
+                    printVector("bench", benchmark, ww);
+                    printVector("initial", initial, ww);
+                    if (nfac == -1) printVector("Q", Q, ww, true);
+                    else if (SV == null) printVector("Q", Q, ww, nfac + 1);
+                    printVector("buy", buy, ww);
+                    printVector("sell", sell, ww);
+                    printVector("min_lot", min_lot, ww);
+                    printVector("size_lot", size_lot, ww);
+                    printVector("A_abs", Abs_A, ww);
+                    printVector("Abs_U", Abs_U, ww);
+                    printVector("Abs_L", Abs_L, ww);
+                    printVector("I_A", I_A, ww);
+                    printVector("FC", FC, ww, true);
+                    printVector("FL", FL, ww, n);
+                    printVector("SV", SV, ww);
+                    printVector("mask", mask, ww);
+                    printVector("DATA", DATA, ww, tlen);
+                    printVector("R", targetR, ww);
+                }
+            for (var i = 0; i < n; ++i) shake[i] = -1;
             var back = -1;
             Portfolio op;
             if (nfac == -1)
@@ -207,7 +210,7 @@ namespace Portfolio
                     else if (maxRisk < riskhere) info.target = maxRisk;
                     else if (minRisk > riskhere) info.target = minRisk;
                     // op.CalcRisk(gamma, info);
-                    op.BoundsSetToSign(n,info.L,info.U,initial,w);
+                    op.BoundsSetToSign(n, info.L, info.U, initial, w);
                     if (basket < 0 && trades < 0)
                     {
                         if (info.target == minRisk)
@@ -243,12 +246,12 @@ namespace Portfolio
                 Op.x = op.wback; Op.MoreInfo = info;
                 if (round == 1)
                 {
-                    op.Rounding(basket, trades, initial, min_lot, size_lot, roundw, null, null, info);
+                    op.Rounding(basket, trades, revise == 1 ? initial : null, min_lot, size_lot, roundw, null, null, info);
                     for (var i = 0; i < n; ++i)
                     {
                         roundw[i] = Portfolio.check_digit(1e2 * roundw[i]) * 1e-2;
                     }
-                    op.roundcheck(n, roundw, initial, min_lot, size_lot, shake);
+                    op.roundcheck(n, roundw, revise == 1 ? initial : null, min_lot, size_lot, shake);
                 }
                 else
                 {
@@ -451,7 +454,7 @@ namespace Portfolio
                         ColourConsole.WriteEmbeddedColourLine($"BAD bounds for {i} ([red]{OP.lower[i]} {OP.upper[i]}[/red])  initial is: [magenta]{start[i]}[/magenta]");
                     }
                 }
-                if(OP.basket < 0 && OP.trades < 0 && vars.target < 0)
+                if (OP.basket < 0 && OP.trades < 0 && vars.target < 0)
                 {
                     OP.back = BACK = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, OP.lower, OP.upper, gamma, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
                                     alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR, vars.ETLorLOSSconstraint, vars.ETLorLOSSmin, vars.ETLorLOSSmax);
@@ -521,6 +524,7 @@ namespace Portfolio
         }
         double unround = 1e60;
         double round_eps = BlasLike.lm_eps8;
+        int i6limit;
         ///<summary>Return the position of w in the roundlot ladder. If this is a whole number, then w is on a rung</summary>
         ///<param name="w">weight</param>
         ///<param name="initial">initial weight</param>
@@ -700,16 +704,18 @@ namespace Portfolio
                         shake[i] = -1;
                         nround++;
                     }
-                    else shake[i] = i;
+                    else
+                        shake[i] = i;
                 }
                 else if (minlot != null && minlot[i] > BlasLike.lm_eps)
                 {
-                    if (Math.Abs(x[i] - init) >= minlot[i] || Math.Abs(x[i] - init) < BlasLike.lm_eps)
+                    if (Math.Abs(x[i] - init) - minlot[i] > -BlasLike.lm_eps || Math.Abs(x[i] - init) < BlasLike.lm_eps)
                     {
                         shake[i] = -1;
                         nround++;
                     }
-                    else shake[i] = i;
+                    else
+                        shake[i] = i;
                 }
                 else
                 {
@@ -778,7 +784,7 @@ namespace Portfolio
             else
                 fixup = false;
 
-            while (rstep.back == 6 && i6 < 10)
+            while (rstep.back == 6 && i6 < i6limit)
             {
                 for (j = i6; j < n; ++j)
                 {
@@ -1042,20 +1048,22 @@ namespace Portfolio
             ColourConsole.WriteEmbeddedColourLine($"[green]then  nround=[/green][cyan]{rstep.nround}[/cyan]");
             Ordering.Order.getorder(n, bound_error, next.bound_order, null);//printorder(n,neinfo.xt.bound_order);
                                                                             //	for(j=rstep.nround;j<min(n/4+rstep.nround,n);++j)
-            roundy = Math.Max(((int)(rstep.nround * .5 + n * .5)), (rstep.nround + 1));
-            //	stuck=(rstep.prev&&(rstep.prev.nround==rstep.nround))?true:false;
+                                                                            //roundy = Math.Max(((int)(rstep.nround * .5 + n * .5)), (rstep.nround + 1));
+                                                                            //	stuck=(rstep.prev&&(rstep.prev.nround==rstep.nround))?true:false;
             stuck = 0; roundstuck = rstep;
             var bestround = 0;
             roundstep test = rstep, best = null;
-            while ((test = test.prev) != null)
+            while ((test) != null)
             {
-                if (bestround < test.nround)
+                if (bestround < test.nround && test.back < 2)
                 {
                     bestround = test.nround;
                     best = test;
                 }
+                test = test.prev;
             }
-            if (best != null && best.nround == rstep.nround)
+            roundy = Math.Max(((int)(bestround * .5 + n * .5)), (bestround + 1));
+            if (rstep != null && rstep.prev != null && rstep.nround == rstep.prev.nround)
             {
                 stuck++;
                 roundstuck = best;
@@ -1252,12 +1260,13 @@ namespace Portfolio
                         else
                             next.U[i] = Math.Min(Math.Max(rstep.kL[i], 0), rstep.kU[i]);
                     }
-    }
+                }
             }
+            i6limit = bestround >= n - 2 ? 6 : n;
             if (bestround >= n - 2 && next.count > maxstage /*&& rstep.back <= 1*/) { rstep.util = info.UtilityFunc(info); return; }
             if (rstep.nround == n && next.count == 2 && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
             if (!next.success && rstep.nround == n && rstep.back <= 1)
-                next.success = true;
+            { next.success = true; i6limit = 6; }
             if (next.success && passedfromthresh && next.count > maxstage) { rstep.util = info.UtilityFunc(info); return; }
             if ((rstep.nround < n && next.count < (firstlim * 2) && !next.success) || (next.count < firstlim/*&&info.TimeOptData==0*/))
             {
@@ -5026,22 +5035,28 @@ namespace Portfolio
         }
         public static void printVector<T>(string name, T[] a, StreamWriter dave, int linelimit = 1)
         {
-            if (a == null){
+            if (a == null)
+            {
                 dave.WriteLine(name);
                 dave.WriteLine("");
-                 return;}
+                return;
+            }
             if (linelimit == 1) linelimit = a.Length; //Hack so that line with one item is not treated as a scalar
             dave.WriteLine(name);
             for (int i = 0; i < a.Length; ++i)
             {
                 var p = a[i].GetType();
-                if (p.FullName == "System.Double"){
+                if (p.FullName == "System.Double")
+                {
                     dave.Write(a[i]);
                     dave.Write(' ');
-                }else{
+                }
+                else
+                {
                     dave.Write(a[i]);
                     dave.Write(' ');
-                }if (i % linelimit == (linelimit - 1)) dave.Write("\n");
+                }
+                if (i % linelimit == (linelimit - 1)) dave.Write("\n");
             }
         }
 
@@ -5054,25 +5069,33 @@ namespace Portfolio
                 for (int i = 0, ij = 1, ic = 0; ij <= n; ++i, ic++)
                 {
                     var p = a[ic].GetType();
-                    if (p.FullName == "System.Double"){
+                    if (p.FullName == "System.Double")
+                    {
                         dave.Write(a[ic]);
-                    dave.Write(' ');
-                    }else{
+                        dave.Write(' ');
+                    }
+                    else
+                    {
                         dave.Write(a[ic]);
-                    dave.Write(' ');
-                    }if (i % (ij) == (ij - 1)) { dave.Write("\n"); ij++; i = -1; }
+                        dave.Write(' ');
+                    }
+                    if (i % (ij) == (ij - 1)) { dave.Write("\n"); ij++; i = -1; }
                 }
             else
                 for (int i = 0, ij = n, ic = 0; ic < a.Length; ++i, ic++)
                 {
                     var p = a[ic].GetType();
-                    if (p.FullName == "System.Double"){
+                    if (p.FullName == "System.Double")
+                    {
                         dave.Write(a[ic]);
-                    dave.Write(' ');
-                        }else{
+                        dave.Write(' ');
+                    }
+                    else
+                    {
                         dave.Write(a[ic]);
-                    dave.Write(' ');
-                    }if (i % (ij) == (ij - 1)) { dave.Write("\n"); ij--; i = -1; }
+                        dave.Write(' ');
+                    }
+                    if (i % (ij) == (ij - 1)) { dave.Write("\n"); ij--; i = -1; }
                 }
         }
     }

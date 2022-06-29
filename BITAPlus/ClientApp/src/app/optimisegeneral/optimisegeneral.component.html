@@ -38,7 +38,8 @@
                         Set gamma: <br><input class="step g" style="width:5em" [min]="0" [max]="1" [value]="(opt.ogamma<1.1)?opt.ogamma:opt.gamma">
                     </li>
                 </ul>
-            </td> <td *ngIf="opt.round!=undefined">
+            </td>
+            <td *ngIf="opt.round!=undefined&&opt.min_lot!=undefined&&opt.size_lot!=undefined">
                 <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
                     <li>
                         Set round: <br><input class="step round" style="width:5em" [min]="0" [max]="1" [value]="opt.round">

@@ -79,6 +79,7 @@ public checkv? result{get;set;}
     public double[]? Abs_L { get; set; }
     public double[]? Abs_U { get; set; }
     public double[]? mask { get; set; }
+    public string?logfile{set;get;}
     public int?longbasket{set;get;}
     public int?shortbasket{set;get;}
     public int?tradesell{set;get;}

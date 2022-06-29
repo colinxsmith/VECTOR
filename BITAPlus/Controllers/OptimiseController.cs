@@ -24,12 +24,12 @@ public class OptimiseController : ControllerBase
             op.tdigit = op.digit != null ? Portfolio.Portfolio.check_digit((double)op.digit) : null;
         }
         ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green] [yellow]{op.n}[/yellow]");
-        return op ;
+        return op;
     }
     [HttpGet()]
     public Optimise Blank()
     {
-        return new Optimise() ;
+        return new Optimise();
     }
     [HttpGet("LOSS")]
     public Optimise GetLOSS()
@@ -67,7 +67,7 @@ public class OptimiseController : ControllerBase
         op.LOSSmin = -1;
         op.LOSSmax = 10;
         op.gamma = 0;
-        return  op ;
+        return op;
     }
 
     [HttpPost("LOSS")]
@@ -150,7 +150,7 @@ public class OptimiseController : ControllerBase
         op.ETLmin = -1;
         op.ETLmax = 1;
         op.gamma = 0;
-        return  op;
+        return op;
     }
     [HttpPost("ETL")]
     public Optimise PostETL(Optimise op)
@@ -210,7 +210,7 @@ public class OptimiseController : ControllerBase
         op.digit = testdigit;
         op.tdigit = Portfolio.Portfolio.check_digit(testdigit);
         ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green] [yellow]{op.n}[/yellow]");
-        return op ;
+        return op;
     }
     [HttpGet("test/n")]
     public Optimise Getn()
@@ -221,11 +221,15 @@ public class OptimiseController : ControllerBase
         op.digit = testdigit;
         op.tdigit = Portfolio.Portfolio.check_digit(testdigit);
         ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green] [yellow]{op.n}[/yellow]");
-        return  op;
+        return op;
     }
     [HttpGet]
     [Route("general")]
-    public Optimise GetGen(bool? doOpt, int? round, double? min_lot, double? size_lot, double? Gstrength, double? LOSSmax, double? LOSSmin, double? ETLmax, double? ETLmin, double? targetR, string? datafile, double? delta, double? gamma, double? maxRisk, double? minRisk, double? min_holding, double? min_trade, int? basket, int? trades)
+    public Optimise GetGen(bool? doOpt, int? round, double? min_lot, double? size_lot,
+     double? Gstrength, double? LOSSmax, double? LOSSmin, double? ETLmax, double? ETLmin,
+      double? targetR, string? datafile, double? delta, double? gamma, double? maxRisk,
+      double? minRisk, double? min_holding, double? min_trade, int? basket, int? trades,
+      string? logfile)
     {
         var op = new Optimise();
         if (doOpt != null) op.doOpt = doOpt.GetValueOrDefault();
@@ -256,19 +260,19 @@ public class OptimiseController : ControllerBase
             op.L = CVarData.mapDouble["L"];
             op.U = CVarData.mapDouble["U"];
             op.alpha = CVarData.mapDouble["alpha"];
-            try { op.value = CVarData.mapDouble["value"][0]; } catch { ; }
-            try { op.value = CVarData.mapDouble["LSvalue"][0]; } catch { ; }
-            try { op.Gstrength = CVarData.mapDouble["lambda"][0]; } catch { ; }
-            try { op.rmin = CVarData.mapDouble["rmin"][0]; } catch { ; }
-            try { op.rmax = CVarData.mapDouble["rmax"][0]; } catch { ; }
-            try { op.rmin = CVarData.mapDouble["Rmin"][0]; } catch { ; }
-            try { op.rmax = CVarData.mapDouble["Rmax"][0]; } catch { ; }
-            try { op.valuel = CVarData.mapDouble["valuel"][0]; } catch { ; }
-            try { op.valuel = CVarData.mapDouble["LSvaluel"][0]; } catch { ; }
+            try { op.value = CVarData.mapDouble["value"][0]; } catch {; }
+            try { op.value = CVarData.mapDouble["LSvalue"][0]; } catch {; }
+            try { op.Gstrength = CVarData.mapDouble["lambda"][0]; } catch {; }
+            try { op.rmin = CVarData.mapDouble["rmin"][0]; } catch {; }
+            try { op.rmax = CVarData.mapDouble["rmax"][0]; } catch {; }
+            try { op.rmin = CVarData.mapDouble["Rmin"][0]; } catch {; }
+            try { op.rmax = CVarData.mapDouble["Rmax"][0]; } catch {; }
+            try { op.valuel = CVarData.mapDouble["valuel"][0]; } catch {; }
+            try { op.valuel = CVarData.mapDouble["LSvaluel"][0]; } catch {; }
             try { op.bench = CVarData.mapDouble["bench"]; } catch { op.bench = null; }
             op.basket = CVarData.mapInt["basket"][0];
-            try { op.trades = CVarData.mapInt["tradenum"][0]; } catch { ; }
-            try { op.trades = CVarData.mapInt["trades"][0]; } catch { ; }
+            try { op.trades = CVarData.mapInt["tradenum"][0]; } catch {; }
+            try { op.trades = CVarData.mapInt["trades"][0]; } catch {; }
             try { op.Q = CVarData.mapDouble["Q"]; } catch { op.Q = null; }
             try { op.FL = CVarData.mapDouble["FL"]; } catch { op.FL = null; }
             try { op.FC = CVarData.mapDouble["FC"]; } catch { op.FC = null; }
@@ -288,10 +292,10 @@ public class OptimiseController : ControllerBase
             if (minRisk != null) op.minRisk = minRisk.GetValueOrDefault();
             if (basket != null) op.basket = basket.GetValueOrDefault();
             if (trades != null) op.trades = trades.GetValueOrDefault();
-            try { op.Abs_A = CVarData.mapDouble["Abs_A"]; } catch { ; }
-            try { op.Abs_A = CVarData.mapDouble["A_abs"]; } catch { ; }
-            try { op.Abs_L = CVarData.mapDouble["Abs_L"]; } catch { ; }
-            try { op.Abs_U = CVarData.mapDouble["Abs_U"]; } catch { ; }
+            try { op.Abs_A = CVarData.mapDouble["Abs_A"]; } catch {; }
+            try { op.Abs_A = CVarData.mapDouble["A_abs"]; } catch {; }
+            try { op.Abs_L = CVarData.mapDouble["Abs_L"]; } catch {; }
+            try { op.Abs_U = CVarData.mapDouble["Abs_U"]; } catch {; }
             try { op.nabs = CVarData.mapInt["nabs"][0]; } catch { op.nabs = null; }
             try { op.mabs = CVarData.mapInt["mabs"][0]; } catch { op.mabs = null; }
             try { op.I_A = CVarData.mapInt["I_A"]; } catch { op.I_A = null; }
@@ -318,8 +322,9 @@ public class OptimiseController : ControllerBase
             if (min_trade != null) op.min_trade = min_trade.GetValueOrDefault();
             if (round != null) op.round = round.GetValueOrDefault();
             try { op.tlen = CVarData.mapInt["tlen"][0]; } catch { op.tlen = 0; }
+            if (logfile != null) op.logfile = logfile;
             if (op.tlen > 0)
-            {
+            {if(op.nfac==null)op.nfac=-1;
                 op.DATA = CVarData.mapDouble["DATA"];
                 try { op.tail = CVarData.mapDouble["tail]"][0]; } catch { op.tail = 0.05; }
                 try { targetR = CVarData.mapDouble["R"][0]; } catch { targetR = null; }
@@ -350,18 +355,22 @@ public class OptimiseController : ControllerBase
                     }
                     op.Q = Q;
                 }
-            
-            if (targetR != null)
-            {
-                if(op.LOSSmin==null)op.LOSSmin=-100;
-                if(op.LOSSmax==null)op.LOSSmax=100;
-                op.TargetReturn = new double[op.tlen];
-                BlasLike.dsetvec(op.tlen, targetR.GetValueOrDefault(), op.TargetReturn);
+
+                if (targetR != null)
+                {
+                    if (op.LOSSmin == null) op.LOSSmin = -100;
+                    if (op.LOSSmax == null) op.LOSSmax = 100;
+                    op.TargetReturn = new double[op.tlen];
+                    BlasLike.dsetvec(op.tlen, targetR.GetValueOrDefault(), op.TargetReturn);
+                }
+                else
+                {
+                    op.TargetReturn = null;  //probably redundant
+
+                    if (op.ETLmin == null) op.ETLmin = -100;
+                    if (op.ETLmax == null) op.ETLmax = 100;
+                }
             }
-            else {op.TargetReturn = null;  //probably redundant
-            
-                if(op.ETLmin==null)op.ETLmin=-100;
-                if(op.ETLmax==null)op.ETLmax=100;}}
         }
 
         double ogamma = op.ogamma.GetValueOrDefault();
@@ -371,7 +380,7 @@ public class OptimiseController : ControllerBase
         if (op.doOpt)
         {
             op.w = new double[op.n.GetValueOrDefault()];
-            bool CVARGLprob=false;
+            bool CVARGLprob = false;
             op.back = Portfolio.Portfolio.OptimiseGeneral(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.names,
             op.w, op.m.GetValueOrDefault(), op.A, op.L, op.U, op.alpha, op.bench, op.Q, op.gamma.GetValueOrDefault(), op.initial, op.delta.GetValueOrDefault(),
             op.buy, op.sell, op.kappa.GetValueOrDefault(), op.basket, op.trades, op.min_holding,
@@ -379,17 +388,19 @@ public class OptimiseController : ControllerBase
             op.nabs.GetValueOrDefault(), op.Abs_A, op.mabs.GetValueOrDefault(), op.I_A, op.Abs_U,
             op.FC, op.FL, op.SV, op.minRisk, op.maxRisk, ref ogamma,
             op.mask, op.longbasket.GetValueOrDefault(), op.shortbasket.GetValueOrDefault(), op.tradebuy.GetValueOrDefault(),
-            op.tradesell.GetValueOrDefault(), op.valuel, op.Abs_L, breakdown,ref CVARGLprob, op.tlen, op.Gstrength,
+            op.tradesell.GetValueOrDefault(), op.valuel, op.Abs_L, breakdown, ref CVARGLprob, op.tlen, op.Gstrength,
             op.DATA, op.tail, op.TargetReturn, op.ETLopt.GetValueOrDefault() || op.LOSSopt.GetValueOrDefault(), op.TargetReturn == null ? op.ETLmin.GetValueOrDefault() : op.LOSSmin.GetValueOrDefault(),
-            op.TargetReturn == null ? op.ETLmax.GetValueOrDefault() : op.LOSSmax.GetValueOrDefault());
+            op.TargetReturn == null ? op.ETLmax.GetValueOrDefault() : op.LOSSmax.GetValueOrDefault(), op.logfile);
 
             op.ogamma = ogamma;
-            op.CVARGLprob=CVARGLprob;
+            op.CVARGLprob = CVARGLprob;
             op.message = Portfolio.Portfolio.OptMessages(op.back.GetValueOrDefault());
- for(var i=0;i<op.n.GetValueOrDefault();++i){
-    if(op.shake[i]==i)if(op.names==null){op.message+=$"\nAsset {i+1} was not rounded properly";}
-    else {op.message+=$"\n{op.names[i]} was not rounded properly";}
-}           op.result.mctr = breakdown;
+            for (var i = 0; i < op.n.GetValueOrDefault(); ++i)
+            {
+                if (op.shake[i] == i) if (op.names == null) { op.message += $"\nAsset {i + 1} was not rounded properly"; }
+                    else { op.message += $"\n{op.names[i]} was not rounded properly"; }
+            }
+            op.result.mctr = breakdown;
             op.result.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.result.mctr);
             if (op.bench != null) op.result.risk -= BlasLike.ddotvec(op.n.GetValueOrDefault(), op.bench, op.result.mctr);
             op.result.risk = Portfolio.Portfolio.check_digit(1e2 * op.result.risk.GetValueOrDefault()) * 1e-2;
@@ -484,14 +495,14 @@ public class OptimiseController : ControllerBase
             }
             foreach (var ww in op.w)
             {
-                    op.result.turnover += Math.Abs(ww);
+                op.result.turnover += Math.Abs(ww);
                 if (Math.Abs(ww) > BlasLike.lm_eps8)
                 {
                     op.result.trades++;
                     op.result.mintrade = Math.Min(Math.Abs(ww), op.result.mintrade.GetValueOrDefault());
                 }
             }
-                op.result.turnover *= 0.5;
+            op.result.turnover *= 0.5;
             BlasLike.daddvec(op.n.GetValueOrDefault(), op.w, op.initial, op.w);
         }
 
@@ -522,32 +533,56 @@ public class OptimiseController : ControllerBase
     {
         var breakdown = new double[op.n.GetValueOrDefault()];
         op.result = new Optimise.checkv();
-        if(op.doOpt){
-        op.w = new double[op.n.GetValueOrDefault()];
-        op.shake = new int[op.n.GetValueOrDefault()];
-        double ogamma = 0;
-        bool CVARGLprob=false;
-        op.back = Portfolio.Portfolio.OptimiseGeneral(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.names,
-        op.w, op.m.GetValueOrDefault(), op.A, op.L, op.U, op.alpha, op.bench, op.Q, op.gamma.GetValueOrDefault(), op.initial, op.delta.GetValueOrDefault(),
-        op.buy, op.sell, op.kappa.GetValueOrDefault(), op.basket, op.trades, op.min_holding,
-        op.min_trade, op.rmin, op.rmax, op.round.GetValueOrDefault(), op.min_lot, op.size_lot, op.shake, op.value,
-        op.nabs.GetValueOrDefault(), op.Abs_A, op.mabs.GetValueOrDefault(), op.I_A, op.Abs_U,
-        op.FC, op.FL, op.SV, op.minRisk, op.maxRisk, ref ogamma,
-        op.mask, op.longbasket.GetValueOrDefault(), op.shortbasket.GetValueOrDefault(), op.tradebuy.GetValueOrDefault(),
-        op.tradesell.GetValueOrDefault(), op.valuel, op.Abs_L, breakdown,ref CVARGLprob, op.tlen, op.Gstrength,
-        op.DATA, op.tail, op.TargetReturn, op.ETLopt.GetValueOrDefault() || op.LOSSopt.GetValueOrDefault(), op.TargetReturn == null ? op.ETLmin.GetValueOrDefault() : op.LOSSmin.GetValueOrDefault(),
-        op.TargetReturn == null ? op.ETLmax.GetValueOrDefault() : op.LOSSmax.GetValueOrDefault());
-
-
-        op.CVARGLprob = CVARGLprob;
-        op.ogamma = ogamma;
-        op.message = Portfolio.Portfolio.OptMessages(op.back.GetValueOrDefault());
-for(var i=0;i<op.n.GetValueOrDefault();++i){
-    if(op.shake[i]==i)if(op.names==null){op.message+=$"\nAsset {i+1} was not rounded properly";}
-    else {op.message+=$"\n{op.names[i]} was not rounded properly";}
-}
+        if(op.tlen>0){if(op.nfac==null)op.nfac=-1;
+            if (op.alpha == null)
+        {
+            var ones = (double[])new double[op.tlen];
+            op.alpha = new double[op.n.GetValueOrDefault()];
+            BlasLike.dsetvec(op.tlen, 1.0 / op.tlen, ones);
+            Factorise.dmxmulv(op.n.GetValueOrDefault(), op.tlen, op.DATA, ones, op.alpha, 0, 0, 0, true);
         }
-op.result.mctr=new double[op.n.GetValueOrDefault()];
+        if (op.Q == null && op.nfac.GetValueOrDefault() < 0)
+        {
+            var Q = new double[op.n.GetValueOrDefault() * (op.n.GetHashCode() + 1) / 2]; op.Q = Q;
+            var ij = 0;
+            for (var i = 0; i < op.n.GetValueOrDefault(); ++i)
+            {
+                for (var j = 0; j <= i; ++j)
+                {
+                    Q[ij++] = Solver.Factorise.covariance(op.tlen, op.DATA, op.DATA, i * op.tlen, j * op.tlen);
+                }
+            }
+            op.Q = Q;
+        }}
+
+        if (op.doOpt)
+        {
+            op.w = new double[op.n.GetValueOrDefault()];
+            op.shake = new int[op.n.GetValueOrDefault()];
+            double ogamma = 0;
+            bool CVARGLprob = false;
+            op.back = Portfolio.Portfolio.OptimiseGeneral(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.names,
+            op.w, op.m.GetValueOrDefault(), op.A, op.L, op.U, op.alpha, op.bench, op.Q, op.gamma.GetValueOrDefault(), op.initial, op.delta.GetValueOrDefault(),
+            op.buy, op.sell, op.kappa.GetValueOrDefault(), op.basket, op.trades, op.min_holding,
+            op.min_trade, op.rmin, op.rmax, op.round.GetValueOrDefault(), op.min_lot, op.size_lot, op.shake, op.value,
+            op.nabs.GetValueOrDefault(), op.Abs_A, op.mabs.GetValueOrDefault(), op.I_A, op.Abs_U,
+            op.FC, op.FL, op.SV, op.minRisk, op.maxRisk, ref ogamma,
+            op.mask, op.longbasket.GetValueOrDefault(), op.shortbasket.GetValueOrDefault(), op.tradebuy.GetValueOrDefault(),
+            op.tradesell.GetValueOrDefault(), op.valuel, op.Abs_L, breakdown, ref CVARGLprob, op.tlen, op.Gstrength,
+            op.DATA, op.tail, op.TargetReturn, op.ETLopt.GetValueOrDefault() || op.LOSSopt.GetValueOrDefault(), op.TargetReturn == null ? op.ETLmin.GetValueOrDefault() : op.LOSSmin.GetValueOrDefault(),
+            op.TargetReturn == null ? op.ETLmax.GetValueOrDefault() : op.LOSSmax.GetValueOrDefault(), op.logfile);
+
+
+            op.CVARGLprob = CVARGLprob;
+            op.ogamma = ogamma;
+            op.message = Portfolio.Portfolio.OptMessages(op.back.GetValueOrDefault());
+            for (var i = 0; i < op.n.GetValueOrDefault(); ++i)
+            {
+                if (op.shake[i] == i) if (op.names == null) { op.message += $"\nAsset {i + 1} was not rounded properly"; }
+                    else { op.message += $"\n{op.names[i]} was not rounded properly"; }
+            }
+        }
+        op.result.mctr = new double[op.n.GetValueOrDefault()];
         if (op.nfac < 0)
         {
             var cov = new Portfolio.Portfolio("");
@@ -628,14 +663,14 @@ op.result.mctr=new double[op.n.GetValueOrDefault()];
             }
             foreach (var ww in op.w)
             {
-                    op.result.turnover += Math.Abs(ww);
+                op.result.turnover += Math.Abs(ww);
                 if (Math.Abs(ww) > BlasLike.lm_eps8)
                 {
                     op.result.trades++;
                     op.result.mintrade = Math.Min(Math.Abs(ww), op.result.mintrade.GetValueOrDefault());
                 }
             }
-                op.result.turnover *= 0.5;
+            op.result.turnover *= 0.5;
             BlasLike.daddvec(op.n.GetValueOrDefault(), op.w, op.initial, op.w);
         }
 
@@ -658,6 +693,6 @@ op.result.mctr=new double[op.n.GetValueOrDefault()];
                 op.result.breakdown = breakd;
             }
         }
-        return  op ;
+        return op;
     }
 }
