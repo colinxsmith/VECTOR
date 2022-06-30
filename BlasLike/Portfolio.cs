@@ -745,12 +745,16 @@ namespace Portfolio
                 info.OptFunc(info);
                 //	rstep.util=info.utility_base(n,x,c,H);
                 rstep.util = info.UtilityFunc(info);
-                if (info.back == 10) {info.back = 6;
-                            
-                for(var ii=0;ii<n;++ii){
-                    if(rstep.U[ii]<rstep.L[ii])Console.WriteLine($"bound {ii} of {n} lower>upper");
-                
-            }}
+                if (info.back == 10)
+                {
+                    info.back = 6;
+
+                    for (var ii = 0; ii < n; ++ii)
+                    {
+                        if (rstep.U[ii] < rstep.L[ii]) Console.WriteLine($"bound {ii} of {n} lower>upper");
+
+                    }
+                }
                 rstep.back = info.back;
                 if (info.x != wback) BlasLike.dcopyvec(n, wback, info.x);
                 BlasLike.dcopyvec(n, info.x, rstep.w);
@@ -962,12 +966,16 @@ namespace Portfolio
                 info.OptFunc(info);
                 //		rstep.util=info.utility_base(n,x,c,H);
                 rstep.util = info.UtilityFunc(info);
-                if(info.back==10){info.back=6;
-                            
-                for(var ii=0;ii<n;++ii){
-                    if(rstep.U[ii]<rstep.L[ii])Console.WriteLine($"bound {ii} of {n} lower>upper");
-                
-            }}
+                if (info.back == 10)
+                {
+                    info.back = 6;
+
+                    for (var ii = 0; ii < n; ++ii)
+                    {
+                        if (rstep.U[ii] < rstep.L[ii]) Console.WriteLine($"bound {ii} of {n} lower>upper");
+
+                    }
+                }
                 rstep.back = info.back;
                 if (rstep.back == 6)
                 {
@@ -1274,9 +1282,9 @@ namespace Portfolio
                     }
                 }
             }
-           // i6limit = bestround >= n - 2 ? 6 : n;
-            i6limit=n;
-            i6=i6%n;
+            // i6limit = bestround >= n - 2 ? 6 : n;
+            i6limit = n;
+            i6 = i6 % n;
             if (bestround >= n - 2 && next.count > maxstage /*&& rstep.back <= 1*/) { rstep.util = info.UtilityFunc(info); return; }
             if (rstep.nround == n && next.count == 2 && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
             if (!next.success && rstep.nround == n && rstep.back <= 1)
