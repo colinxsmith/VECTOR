@@ -1276,9 +1276,9 @@ namespace Portfolio
                     else
                     {
                         if (info.x[i] - init < 0)
-                            next.L[i] = Math.Max(Math.Min(rstep.kU[i], 0), rstep.kL[i]);
+                            next.L[i] = Math.Max(Math.Min(rstep.kU[i], next.U[i]), rstep.kL[i]);
                         else
-                            next.U[i] = Math.Min(Math.Max(rstep.kL[i], 0), rstep.kU[i]);
+                            next.U[i] = Math.Min(Math.Max(rstep.kL[i], next.L[i]), rstep.kU[i]);
                     }
                 }
             }
@@ -4459,12 +4459,13 @@ namespace Portfolio
                 ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio constraint {(i + 1),3}:[/magenta]\t[cyan]{ccval,20:f16}[/cyan]\t([red]{L[i + n],20:f16},{U[i + n],20:f16}[/red])");
             }
             //            ActiveSet.Optimise.printV("optimal weights", WW, n);
+            if(back!=10){
             if (longshortI > 0 && (Math.Abs(shortside + shortsideS) > BlasLike.lm_rooteps * 2))
                 back = 6;
             if ((buysellI > 0 /*&& longshortI == 0*/) && (Math.Abs(turnover * 0.5 - turn2) > BlasLike.lm_rooteps))
                 back = 6;
             if ((buysellI > 0 /*&& kappa > 1e-14*/) && (Math.Abs(cost - cost2) > BlasLike.lm_eps * 10))
-                back = 6;
+                back = 6;}
             BACK = back;
             nfixed = 0;
             return back;
