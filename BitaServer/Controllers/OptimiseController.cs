@@ -237,7 +237,7 @@ public class OptimiseController : ControllerBase
         {
             CVarData.doubleFields = "alpha bench gamma initial delta buy sell kappa min_holding min_trade minRisk lambda maxRisk rmin rmax Rmin Rmax min_lot size_lot LSvalue LSvaluel value valuel mask A L U Q A_abs Abs_A Abs_U Abs_L SV FC FL DATA tail R";
             CVarData.intFields = "n nfac m basket longbasket shortbasket trades tradebuy tradesell tradenum nabs mabs I_A round tlen";
-            CVarData.stringFields = "names";
+            CVarData.stringFields = "names logfile";
             op.datafile = "generalopt";
             if (datafile != null) op.datafile = datafile;
             try
@@ -260,6 +260,7 @@ public class OptimiseController : ControllerBase
             op.L = CVarData.mapDouble["L"];
             op.U = CVarData.mapDouble["U"];
             op.alpha = CVarData.mapDouble["alpha"];
+            try { op.logfile = CVarData.mapString["logfile"][0]; } catch {; }
             try { op.value = CVarData.mapDouble["value"][0]; } catch {; }
             try { op.value = CVarData.mapDouble["LSvalue"][0]; } catch {; }
             try { op.Gstrength = CVarData.mapDouble["lambda"][0]; } catch {; }
