@@ -4,14 +4,14 @@ using System.Text.RegularExpressions;
 /// Console Colour Helper class that provides Colouring to individual commands
 /// </summary>
 public static class ColourConsole
-{
+{public static bool print=true;
     /// <summary>
     /// WriteLine with Colour
     /// </summary>
     /// <param name="text"></param>
     /// <param name="Colour"></param>
     public static void WriteLine(string text, ConsoleColor? Colour = null)
-    {
+    {if(!print) return;
         if (Colour.HasValue)
         {
             var oldColour = System.Console.ForegroundColor;
@@ -34,7 +34,7 @@ public static class ColourConsole
     /// <param name="text">Text to write</param>
     /// <param name="Colour">A console Colour. Must match ConsoleColours collection names (case insensitive)</param>
     public static void WriteLine(string text, string Colour)
-    {
+    {if(!print) return;
         if (string.IsNullOrEmpty(Colour))
         {
             WriteLine(text);
@@ -57,7 +57,7 @@ public static class ColourConsole
     /// <param name="text"></param>
     /// <param name="Colour"></param>
     public static void Write(string text, ConsoleColor? Colour = null)
-    {
+    {if(!print) return;
         if (Colour.HasValue)
         {
             var oldColour = System.Console.ForegroundColor;
@@ -80,7 +80,7 @@ public static class ColourConsole
     /// <param name="text">Text to write</param>
     /// <param name="Colour">A console Colour. Must match ConsoleColours collection names (case insensitive)</param>
     public static void Write(string text, string Colour)
-    {
+    {if(!print) return;
         if (string.IsNullOrEmpty(Colour))
         {
             Write(text);
@@ -115,7 +115,7 @@ public static class ColourConsole
                                             char wrapperChar = '-',
                                             ConsoleColor headerColour = ConsoleColor.Yellow,
                                             ConsoleColor dashColour = ConsoleColor.DarkGray)
-    {
+    {if(!print) return;
         if (string.IsNullOrEmpty(headerText))
             return;
 
@@ -137,7 +137,7 @@ public static class ColourConsole
     /// <param name="text">Text to display</param>
     /// <param name="baseTextColour">Base text Colour</param>
     public static void WriteEmbeddedColourLine(string text, ConsoleColor? baseTextColour = null)
-    {
+    {if(!print) return;
         if (baseTextColour == null)
             baseTextColour = Console.ForegroundColor;
 
