@@ -1289,6 +1289,7 @@ namespace Portfolio
             if (rstep.nround == n && next.count == 2 && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
             if (!next.success && rstep.nround == n && rstep.back <= 1)
             { next.success = true; i6limit = 6; }
+            if (next.success && (i6>10)) { rstep.util = info.UtilityFunc(info); return; }
             if (next.success && passedfromthresh && next.count > maxstage) { rstep.util = info.UtilityFunc(info); return; }
             if ((rstep.nround < n && next.count < (firstlim * 2) && !next.success) || (next.count < firstlim/*&&info.TimeOptData==0*/))
             {
