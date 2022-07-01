@@ -1287,6 +1287,7 @@ namespace Portfolio
             // i6limit = bestround >= n - 2 ? 6 : n;
             i6limit = n;
             i6 = i6 % n;
+            if (next.count > 300) { rstep.util = info.UtilityFunc(info); return; }
             if (bestround >= n - 2 && next.count > maxstage /*&& rstep.back <= 1*/) { rstep.util = info.UtilityFunc(info); return; }
             if (rstep.nround == n && next.count == 2 && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
             if (!next.success && rstep.nround == n && rstep.back <= 1)
