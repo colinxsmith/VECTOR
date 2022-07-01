@@ -18,7 +18,7 @@
       <g [attr.transform]="translatehack(scaleX(0),0)" *ngFor="let y of scaleY.domain()">
           <text class="lab" x="-0.5em" [attr.y]="scaleY(y)">{{formatL(y)}}</text>
       </g>
-      <g *ngFor="let x of DATA;let i=index;">
+      <g *ngFor="let x of FDATA;let i=index;">
           <rect  [attr.class]="x>=0?'ongraph plus':'ongraph minus'" (mouseleave)="info($event, i, x)"
               (click)="getnewChange(i)"
               (mouseenter)="info($event, i, x, true)" [attr.width]="scaleX(1)-scaleX(0)"

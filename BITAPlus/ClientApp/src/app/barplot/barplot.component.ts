@@ -9,6 +9,7 @@ export const convHackForMinMax = (a: number | undefined) => a != undefined ? a :
 })
 export class BarplotComponent implements OnChanges, OnInit {
   @Input() DATA: Array<number> = [];
+  FDATA: Array<number> = [];
   @Input() editdata: Array<number> = [];
   @Output() editChange: EventEmitter<Array<number>> = new EventEmitter<Array<number>>();
   dataToChange: Array<number> = [];
@@ -16,6 +17,7 @@ export class BarplotComponent implements OnChanges, OnInit {
   @Input() height = 500;
   @Input() title = '';
   @Input() editvalues = false;
+  @Input() filterzero = false;
   //caller is probably the component that calls this plotter. It's needed to try to get
   //the tooltip positioned properly. So must use [caller] = "element.nativeElement" .
   @Input() caller = this.element.nativeElement as string;
@@ -30,18 +32,26 @@ export class BarplotComponent implements OnChanges, OnInit {
   constructor(private element: ElementRef) { }
 
   ngOnChanges() {
-    this.dataToChange = this.DATA.map(d => d);
-    console.log(this.DATA);
+    this.FDATA=this.DATA;
+    console.log(this.FDATA);
+    if (this.filterzero) this.FDATA = this.DATA.filter(x => Math.abs(x) > 1e-12);
+    console.log(this.FDATA);
+    this.dataToChange = this.FDATA.map(d => d);
     setTimeout(() => {
       this.update();
     }, 100);
   }
   ngOnInit() {
-    this.dataToChange = this.DATA.map(d => d);
+    console.log(this.filterzero);
+    this.FDATA=this.DATA;
+    console.log(this.FDATA);
+    if (this.filterzero) this.FDATA = this.FDATA.filter(x => Math.abs(x) > 1e-12);
+    console.log(this.FDATA);
+    this.dataToChange = this.FDATA.map(d => d);
   }
   info(e: MouseEvent, x: number, y: number, inout = false) {
     const tip = d3.select(this.element.nativeElement).select('div.mainTip');
-  //  console.log(tip);
+    //  console.log(tip);
     const Torg = ((d3.select('body').node() as HTMLElement)
     /*.parentNode.parentNode.parentNode.parentNode.parentNode.parentNode as HTMLElement*/)
       .getBoundingClientRect().left;
@@ -52,13 +62,13 @@ export class BarplotComponent implements OnChanges, OnInit {
     if (inout) {
       here.style('opacity', 0.5);
       tip // The tooltip
-        .style('left', `${e.clientX - 60 - 0 * origin.left + 0 * this.width / this.DATA.length}px`)
+        .style('left', `${e.clientX - 60 - 0 * origin.left + 0 * this.width / this.FDATA.length}px`)
         .style('top', `${e.clientY - origin.top}px`)
         .style('opacity', 1)
         .style('display', 'inline-block')
         .html(`x:${x} ${this.format(y)}`);
       const wwww = (tip.node() as HTMLElement).getBoundingClientRect();
-  //    console.log(wwww.width, origin.left - Torg);
+      //    console.log(wwww.width, origin.left - Torg);
       tip.style('left', `${e.clientX - wwww.width * 0.5 - Torg}px`);
     } else {
       here.style('opacity', 1);
@@ -78,11 +88,11 @@ export class BarplotComponent implements OnChanges, OnInit {
     this.scaleX
       .domain([0, this.dataToChange.length])
       .range([this.width * this.rimX, this.width * (1 - 0.5 * this.rimX)]);
-    const useforscale = this.editvalues ? this.dataToChange : this.DATA;
+    const useforscale = this.editvalues ? this.dataToChange : this.FDATA;
     this.scaleY
       .domain([Math.min(convHackForMinMax(d3.min(useforscale)), 0), convHackForMinMax(d3.max(useforscale))])
       .range([this.height * (1 - this.rimY), this.height * this.rimY]);
-    d3.select(this.element.nativeElement).selectAll('rect.ongraph').data(this.DATA)
+    d3.select(this.element.nativeElement).selectAll('rect.ongraph').data(this.FDATA)
       .transition()
       .duration(2000)
       .attrTween('y', d => t => {

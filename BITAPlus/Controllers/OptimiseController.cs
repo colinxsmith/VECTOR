@@ -412,7 +412,7 @@ public class OptimiseController : ControllerBase
             {
                 op.result = null;
                 op.shake = null;
-                op.ogamma = null;
+                op.ogamma = op.gamma;
                 return op;
             }
         }

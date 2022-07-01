@@ -12,12 +12,14 @@ export class OptimisegeneralComponent implements OnInit {
   width = 1100;//width and height for weight graph
   height = 300;
   generalfile = "GLdist";
+  filterzero = false;
   shortside = false;
   format = d3.format('0.6f')
   opt: Optimise = {} as Optimise;
   constructor(private http: HttpClient, @Inject('BASE_URL') private baseUrl: string, public element: ElementRef) {
-    http.get<Optimise>(baseUrl + 'optimise/general?datafile=' + this.generalfile).subscribe(result => {
+    http.get<Optimise>(baseUrl + 'optimise/general?doOpt=false&datafile=' + this.generalfile).subscribe(result => {
       this.opt = result;
+      d3.select(this.element.nativeElement).select('input.checkzero').attr('value',this.filterzero);
       console.log(this.opt, result);
       this.shortside = false;
       for (let i = 0; i < this.opt.n; ++i) {
@@ -30,13 +32,15 @@ export class OptimisegeneralComponent implements OnInit {
     d3.select(e.target as HTMLInputElement & EventTarget).classed('over', inout);
   }
   ngOnInit(): void {
+    d3.select(this.element.nativeElement).select('input.checkzero').attr('value', this.filterzero);
     d3.select(this.element.nativeElement).select('input.filer').attr('value', this.generalfile);
   }
   sendStep() {
+    this.opt.doOpt=true;
     let back: string | number | null | undefined = +(d3.select(this.element.nativeElement).select('input.step.g').node() as HTMLInputElement & Event).value;
     this.opt.gamma = back;
-    try{back= +(d3.select(this.element.nativeElement).select('input.step.round').node() as HTMLInputElement & Event).value;}catch{back=null;}
-    if(back!=undefined)this.opt.round = back;
+    try { back = +(d3.select(this.element.nativeElement).select('input.step.round').node() as HTMLInputElement & Event).value; } catch { back = null; }
+    if (back != undefined) this.opt.round = back;
     back = +(d3.select(this.element.nativeElement).select('input.step.delt').node() as HTMLInputElement & Event).value;
     this.opt.delta = back;
     back = +(d3.select(this.element.nativeElement).select('input.step.basket').node() as HTMLInputElement & Event).value;
@@ -75,11 +79,19 @@ export class OptimisegeneralComponent implements OnInit {
         this.opt = ddd;
         console.log(this.opt.w);
         this.shortside = false;
+        d3.select(this.element.nativeElement).select('input.checkzero').attr('value',this.filterzero);
         for (let i = 0; i < this.opt.n; ++i) {
           if (this.opt.l[i] < 0) this.shortside = true;
         }
         console.log(this.shortside);
       }, error => console.error(error));
+  }
+  zerooff(e: Event) {
+    this.filterzero = !this.filterzero;
+    d3.select(this.element.nativeElement).select('input.checkzero').attr('value', this.filterzero);
+    console.log((d3.select(e.target as HTMLInputElement & EventTarget).node() as HTMLInputElement & Event).value);
+    console.log((d3.select(this.element.nativeElement).select('input.checkzero').attr('value')));
+    this.opt=this.opt;
   }
   file(e: Event) {
     console.log(e.target);//Must use .node() to get the updated value
@@ -88,8 +100,9 @@ export class OptimisegeneralComponent implements OnInit {
     //console.log(d3.select(e.target as HTMLInputElement & EventTarget).attr('value'));
     //console.log(d3.select(e.target as HTMLInputElement).attr('value'));
     //   console.log(this.generalfile);
-    this.http.get<Optimise>(this.baseUrl + 'optimise/general?datafile=' + this.generalfile).subscribe(result => {
+    this.http.get<Optimise>(this.baseUrl + 'optimise/general?doOpt=false&datafile=' + this.generalfile).subscribe(result => {
       this.opt = result;
+      d3.select(this.element.nativeElement).select('input.checkzero').attr('value',this.filterzero);
       console.log(this.opt, result);
       this.shortside = false;
       for (let i = 0; i < this.opt.n; ++i) {

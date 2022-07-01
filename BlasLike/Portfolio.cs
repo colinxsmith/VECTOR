@@ -745,6 +745,7 @@ namespace Portfolio
                 info.OptFunc(info);
                 //	rstep.util=info.utility_base(n,x,c,H);
                 rstep.util = info.UtilityFunc(info);
+                if(info.back==66)info.back=6;
                 if (info.back == 10)
                 {
                     info.back = 6;
@@ -966,6 +967,7 @@ namespace Portfolio
                 info.OptFunc(info);
                 //		rstep.util=info.utility_base(n,x,c,H);
                 rstep.util = info.UtilityFunc(info);
+                if(info.back==66)info.back=6;
                 if (info.back == 10)
                 {
                     info.back = 6;
@@ -1276,9 +1278,9 @@ namespace Portfolio
                     else
                     {
                         if (info.x[i] - init < 0)
-                            next.L[i] = Math.Max(Math.Min(rstep.kU[i], next.U[i]), rstep.kL[i]);
+                            next.L[i] = Math.Max(Math.Min(rstep.kU[i], init), rstep.kL[i]);
                         else
-                            next.U[i] = Math.Min(Math.Max(rstep.kL[i], next.L[i]), rstep.kU[i]);
+                            next.U[i] = Math.Min(Math.Max(rstep.kL[i], init), rstep.kU[i]);
                     }
                 }
             }

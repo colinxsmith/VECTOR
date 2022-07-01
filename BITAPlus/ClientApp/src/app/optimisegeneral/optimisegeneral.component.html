@@ -2,7 +2,8 @@
     General Optimisation
 </h1>
 <label (mouseover)="over($event,true)" (mouseleave)="over($event)">
-    Optimisation data from log file:  <input type="text" class="filer" (change)="file($event)" value="">
+    <div>Optimisation data from log file:  <input type="text" class="filer" (change)="file($event)" value=""></div>
+    <div>Filter zero in graph: <input type="checkbox" class="checkzero" (change)="zerooff($event)"></div>
 </label>
 <div class="maindiv" *ngIf="opt">
     <button (mouseover)="over($event,true)" (mouseleave)="over($event)" (click)="sendStep()">Send New Optimisation Parameters</button>
@@ -105,5 +106,5 @@
             </td>
         </tr>
     </table>
-    <app-barplot *ngIf="opt.w" [caller]="element.nativeElement" [title]="'Portfolio weights'" [height]="height" [width]="width" [DATA]="opt.w"></app-barplot>
+    <app-barplot *ngIf="opt.w" [filterzero]="filterzero" [caller]="element.nativeElement" [title]="'Portfolio weights'" [height]="height" [width]="width" [DATA]="opt.w"></app-barplot>
 </div>
