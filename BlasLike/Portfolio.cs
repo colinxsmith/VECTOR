@@ -745,7 +745,7 @@ namespace Portfolio
                 info.OptFunc(info);
                 //	rstep.util=info.utility_base(n,x,c,H);
                 rstep.util = info.UtilityFunc(info);
-                if(info.back==66)info.back=6;
+                if (info.back == 66) info.back = 6;
                 if (info.back == 10)
                 {
                     info.back = 6;
@@ -967,7 +967,7 @@ namespace Portfolio
                 info.OptFunc(info);
                 //		rstep.util=info.utility_base(n,x,c,H);
                 rstep.util = info.UtilityFunc(info);
-                if(info.back==66)info.back=6;
+                if (info.back == 66) info.back = 6;
                 if (info.back == 10)
                 {
                     info.back = 6;
@@ -1292,7 +1292,7 @@ namespace Portfolio
             if (rstep.nround == n && next.count == 2 && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
             if (!next.success && rstep.nround == n && rstep.back <= 1)
             { next.success = true; i6limit = 6; }
-            if (next.success && (i6>10)) { rstep.util = info.UtilityFunc(info); return; }
+            if (next.success && (i6 > 10)) { rstep.util = info.UtilityFunc(info); return; }
             if (next.success && passedfromthresh && next.count > maxstage) { rstep.util = info.UtilityFunc(info); return; }
             if ((rstep.nround < n && next.count < (firstlim * 2) && !next.success) || (next.count < firstlim/*&&info.TimeOptData==0*/))
             {
@@ -4463,13 +4463,15 @@ namespace Portfolio
                 ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio constraint {(i + 1),3}:[/magenta]\t[cyan]{ccval,20:f16}[/cyan]\t([red]{L[i + n],20:f16},{U[i + n],20:f16}[/red])");
             }
             //            ActiveSet.Optimise.printV("optimal weights", WW, n);
-            if(back!=10){
-            if (longshortI > 0 && (Math.Abs(shortside + shortsideS) > BlasLike.lm_rooteps * 2))
-                back = 6;
-            if ((buysellI > 0 /*&& longshortI == 0*/) && (Math.Abs(turnover * 0.5 - turn2) > BlasLike.lm_rooteps))
-                back = 6;
-            if ((buysellI > 0 /*&& kappa > 1e-14*/) && (Math.Abs(cost - cost2) > BlasLike.lm_eps * 10))
-                back = 6;}
+            if (back != 10)
+            {
+                if (longshortI > 0 && (Math.Abs(shortside + shortsideS) > BlasLike.lm_rooteps * 2))
+                    back = 6;
+                if ((buysellI > 0 /*&& longshortI == 0*/) && (Math.Abs(turnover * 0.5 - turn2) > BlasLike.lm_rooteps))
+                    back = 6;
+                if ((buysellI > 0 /*&& kappa > 1e-14*/) && (Math.Abs(cost - cost2) > BlasLike.lm_eps * 10))
+                    back = 6;
+            }
             BACK = back;
             nfixed = 0;
             return back;

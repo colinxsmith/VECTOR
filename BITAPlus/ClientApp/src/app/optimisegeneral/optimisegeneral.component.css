@@ -49,11 +49,12 @@ input[type=text] {
 label {
     background-color: #d8fdff;
     border-radius: 1%;
-    text-align: center;
+    text-align: left;
     width: 100%;
     font-size: x-large;
 }
 
 label.over {
-    background-color: rgb(240, 139, 139);
+    background-color: #cdc172;
+    border-radius: 5%;
 }

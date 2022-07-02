@@ -30,6 +30,7 @@ export class OptimisegeneralComponent implements OnInit {
   }
   over(e: MouseEvent, inout = false) {
     d3.select(e.target as HTMLInputElement & EventTarget).classed('over', inout);
+    console.log(e.target);
   }
   ngOnInit(): void {
     d3.select(this.element.nativeElement).select('input.checkzero').attr('value', this.filterzero);
