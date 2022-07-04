@@ -30,7 +30,7 @@ export class OptimisegeneralComponent implements OnInit {
   }
   over(e: MouseEvent, inout = false) {
     d3.select(e.target as HTMLInputElement & EventTarget).classed('over', inout);
-    console.log(e.target);
+    //console.log(e.target);
   }
   ngOnInit(): void {
     d3.select(this.element.nativeElement).select('input.checkzero').attr('value', this.filterzero);
@@ -92,7 +92,7 @@ export class OptimisegeneralComponent implements OnInit {
     d3.select(this.element.nativeElement).select('input.checkzero').attr('value', this.filterzero);
     console.log((d3.select(e.target as HTMLInputElement & EventTarget).node() as HTMLInputElement & Event).value);
     console.log((d3.select(this.element.nativeElement).select('input.checkzero').attr('value')));
-    this.opt=this.opt;
+ //   this.opt=this.opt;
   }
   file(e: Event) {
     console.log(e.target);//Must use .node() to get the updated value

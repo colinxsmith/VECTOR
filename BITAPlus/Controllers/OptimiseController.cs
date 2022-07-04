@@ -460,6 +460,7 @@ public class OptimiseController : ControllerBase
             op.result.minhold = BlasLike.lm_max;
             op.result.gross = 0;
             op.result.longvalue = 0; op.result.shortvalue = 0;
+            var iii=0;
             foreach (var ww in op.w)
             {
                 if (ww > 0)
@@ -476,8 +477,9 @@ public class OptimiseController : ControllerBase
                 if (Math.Abs(ww) > BlasLike.lm_eps8)
                 {
                     op.result.basket++;
-                    op.result.minhold = Math.Min(Math.Abs(ww), op.result.minhold.GetValueOrDefault());
+                    if(op.L!=null&&op.U!=null&&op.L[iii]!=op.U[iii])                 op.result.minhold = Math.Min(Math.Abs(ww), op.result.minhold.GetValueOrDefault());
                 }
+                iii++;
             }
         }
         if (op.initial != null)
@@ -494,14 +496,16 @@ public class OptimiseController : ControllerBase
                     op.result.cost += op.w[i] > 0 ? op.w[i] * op.buy[i] : -op.w[i] * op.sell[i];
                 }
             }
+            var iii=0;
             foreach (var ww in op.w)
             {
                 op.result.turnover += Math.Abs(ww);
                 if (Math.Abs(ww) > BlasLike.lm_eps8)
                 {
                     op.result.trades++;
-                    op.result.mintrade = Math.Min(Math.Abs(ww), op.result.mintrade.GetValueOrDefault());
+                   if(op.L!=null&&op.U!=null&&op.L[iii]!=op.U[iii]) op.result.mintrade = Math.Min(Math.Abs(ww), op.result.mintrade.GetValueOrDefault());
                 }
+                iii++;
             }
             op.result.turnover *= 0.5;
             BlasLike.daddvec(op.n.GetValueOrDefault(), op.w, op.initial, op.w);
@@ -628,6 +632,7 @@ public class OptimiseController : ControllerBase
             op.result.minhold = BlasLike.lm_max;
             op.result.gross = 0;
             op.result.longvalue = 0; op.result.shortvalue = 0;
+            var iii=0;
             foreach (var ww in op.w)
             {
                 if (ww > 0)
@@ -644,8 +649,9 @@ public class OptimiseController : ControllerBase
                 if (Math.Abs(ww) > BlasLike.lm_eps8)
                 {
                     op.result.basket++;
-                    op.result.minhold = Math.Min(Math.Abs(ww), op.result.minhold.GetValueOrDefault());
+                    if(op.L!=null&&op.U!=null&&op.L[iii]!=op.U[iii])op.result.minhold = Math.Min(Math.Abs(ww), op.result.minhold.GetValueOrDefault());
                 }
+                iii++;
             }
         }
         if (op.initial != null)
@@ -662,14 +668,16 @@ public class OptimiseController : ControllerBase
                     op.result.cost += op.w[i] > 0 ? op.w[i] * op.buy[i] : -op.w[i] * op.sell[i];
                 }
             }
+            var iii=0;
             foreach (var ww in op.w)
             {
                 op.result.turnover += Math.Abs(ww);
                 if (Math.Abs(ww) > BlasLike.lm_eps8)
                 {
                     op.result.trades++;
-                    op.result.mintrade = Math.Min(Math.Abs(ww), op.result.mintrade.GetValueOrDefault());
+                    if(op.L!=null&&op.U!=null&&op.L[iii]!=op.U[iii])op.result.mintrade = Math.Min(Math.Abs(ww), op.result.mintrade.GetValueOrDefault());
                 }
+                iii++;
             }
             op.result.turnover *= 0.5;
             BlasLike.daddvec(op.n.GetValueOrDefault(), op.w, op.initial, op.w);

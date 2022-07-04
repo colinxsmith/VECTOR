@@ -210,7 +210,7 @@ namespace Portfolio
                     else if (maxRisk < riskhere) info.target = maxRisk;
                     else if (minRisk > riskhere) info.target = minRisk;
                     // op.CalcRisk(gamma, info);
-                    op.BoundsSetToSign(n, info.L, info.U, initial, w);
+                    //  op.BoundsSetToSign(n, info.L, info.U, initial, w);
                     if (basket < 0 && trades < 0)
                     {
                         if (info.target == minRisk)
@@ -229,6 +229,7 @@ namespace Portfolio
             if (back > 1) return back;
             if (min_holding > 0 || min_trade > 0 || round == 1)
             {
+                op.BoundsSetToSign(n, info.L, info.U, initial, w);
                 var Op = new Portfolio.OptParamRound();
                 Op.basket = basket;
                 Op.trades = trades;
@@ -236,6 +237,7 @@ namespace Portfolio
                 Op.m = m;
                 Op.n = n;
                 Op.upper = U;
+                op.BoundsSetToSign(n, Op.lower, Op.upper, initial, w);
                 Op.minholdlot = null;
                 Op.mintradelot = null;
                 var mintrade = min_trade < 0 ? null : new double[n];
@@ -1747,6 +1749,11 @@ namespace Portfolio
                                     naive[kbranch] = digit2w(OP.x[kbranch], init, dd - 1, minlot[kbranch], 0, 0);
                                     L[kbranch] = Lfirst[kbranch];
                                     U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], naive[kbranch]), Ufirst[kbranch]);
+                                }
+                                else
+                                {
+                                    L[kbranch] = Math.Max(Math.Min(Ufirst[kbranch], init), Lfirst[kbranch]);
+                                    U[kbranch] = Math.Min(Math.Max(Lfirst[kbranch], init), Ufirst[kbranch]);
                                 }
 
                                 doopt = true; doit = kk; break;
