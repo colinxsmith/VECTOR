@@ -46,7 +46,7 @@ input[type=text] {
     background-color: azure;
 }
 
-label {
+form {
     background-color: #d8fdff;
     border-radius: 1%;
     text-align: left;
@@ -54,7 +54,10 @@ label {
     font-size: x-large;
 }
 
-label.over {
-    background-color: #ffd8f7;
-    border-radius: 5%;
+form.over {
+ /*   background-color: #ffd8f7;*/
+    background-image: linear-gradient(rgb(255, 81, 0), rgb(140, 0, 255));
+    border-radius: 75%;
+    width: 80%;
+    text-align: center;
 }

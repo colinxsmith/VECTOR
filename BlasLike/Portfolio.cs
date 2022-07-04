@@ -229,7 +229,7 @@ namespace Portfolio
             if (back > 1) return back;
             if (min_holding > 0 || min_trade > 0 || round == 1)
             {
-                op.BoundsSetToSign(n, info.L, info.U, initial, w);
+               // op.BoundsSetToSign(n, info.L, info.U, initial, w);
                 var Op = new Portfolio.OptParamRound();
                 Op.basket = basket;
                 Op.trades = trades;
@@ -237,7 +237,7 @@ namespace Portfolio
                 Op.m = m;
                 Op.n = n;
                 Op.upper = U;
-                op.BoundsSetToSign(n, Op.lower, Op.upper, initial, w);
+              //  op.BoundsSetToSign(n, Op.lower, Op.upper, initial, w);
                 Op.minholdlot = null;
                 Op.mintradelot = null;
                 var mintrade = min_trade < 0 ? null : new double[n];
