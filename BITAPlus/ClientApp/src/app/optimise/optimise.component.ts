@@ -76,7 +76,8 @@ interface Optimise {
   alpha:Array<number>,
   expreturn:number,
   CVARGLprob:boolean,
-  result:Result
+  result:Result,
+  delta:number
 }
 interface Result{
   

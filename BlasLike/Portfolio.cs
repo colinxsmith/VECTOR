@@ -2799,7 +2799,7 @@ namespace Portfolio
                 if (checkRiskAndNumber && back != 6)
                 {
                     var oldl = (double[])sendInput.L.Clone(); var oldu = (double[])sendInput.U.Clone();
-                    //BoundsSetToSign(sendInput.n, sendInput.L, sendInput.U, sendInput.initial, w, true);
+                    BoundsSetToSign(sendInput.n, sendInput.L, sendInput.U, sendInput.initial, w, true);
                     for (var i = 0; i < sendInput.n; ++i)
                     {
                         if (basket > 0)

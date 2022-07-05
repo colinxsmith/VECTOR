@@ -81,7 +81,8 @@ interface Optimiseloss {
   losSopt: boolean,
   losSmin: number,
   losSmax: number,
-  result:Result
+  result:Result,
+  delta:number
 }
 
 interface Result{
