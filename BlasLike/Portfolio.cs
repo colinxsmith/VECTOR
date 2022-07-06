@@ -528,6 +528,7 @@ namespace Portfolio
         double round_eps = BlasLike.lm_eps8;
         int i6limit;
         int i6 = 0;
+        int stuck=0;
         ///<summary>Return the position of w in the roundlot ladder. If this is a whole number, then w is on a rung</summary>
         ///<param name="w">weight</param>
         ///<param name="initial">initial weight</param>
@@ -683,11 +684,11 @@ namespace Portfolio
             for (var i = 0; i < n; ++i)
             {
                 var init = initial != null ? initial[i] : 0;
-                var dd = 0L;
+                var dd = 0;
                 double nwL, nwU;
                 if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
                 {
-                    dd = (long)digitisei(x[i], init, minlot[i], sizelot[i]);
+                    dd = (int)digitisei(x[i], init, minlot[i], sizelot[i]);
                     if (x[i] > init)
                     {
                         nwL = digit2w(x[i], init, dd, minlot[i], sizelot[i]);
@@ -736,7 +737,6 @@ namespace Portfolio
             int n = info.n;
             int m = info.m;
             int firstlim = (n < 100) ? n : n, roundy = n;
-            int stuck;
             double[] bound_error = new double[n];
 
             if (rstep.prev != null)
@@ -770,7 +770,7 @@ namespace Portfolio
             bool fixup = false;
             int i, j;
             double init = 0, nwL = 0, nwU = 0;
-            long dd;
+            int dd;
             roundstep next = rstep.next = new roundstep(), roundstuck;
             if (next == null) return;
             next.can_repeat = rstep.can_repeat;
@@ -790,7 +790,7 @@ namespace Portfolio
             next.util = BlasLike.lm_max;
             next.count = next.prev.count + 1;
             next.back = info.back;
-            if (rstep.prev != null && rstep.prev.nround == n && rstep.back < 2)
+            if (stuck>2||(rstep.prev != null && rstep.prev.nround == n && rstep.back < 2))
             {
                 rstep.back = 6; fixup = true;
             }
@@ -816,7 +816,7 @@ namespace Portfolio
                             {
                                 if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
                                 {
-                                    dd = (long)digitisei(rstep.prev.w[i], init, minlot[i], sizelot[i]);
+                                    dd = (int)digitisei(rstep.prev.w[i], init, minlot[i], sizelot[i]);
                                     if (rstep.prev.w[i] > init)
                                     {
                                         nwL = digit2w(rstep.prev.w[i], init, dd, minlot[i], sizelot[i]);
@@ -849,7 +849,7 @@ namespace Portfolio
                             {
                                 if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
                                 {
-                                    dd = (long)digitisei(rstep.prev.w[i], init, minlot[i], sizelot[i]);
+                                    dd = (int)digitisei(rstep.prev.w[i], init, minlot[i], sizelot[i]);
                                     if (rstep.prev.w[i] > init)
                                     {
                                         nwL = digit2w(rstep.prev.w[i], init, dd, minlot[i], sizelot[i]);
@@ -900,7 +900,7 @@ namespace Portfolio
                             double wuse = fixup ? rstep.w[i] : rstep.prev.w[i];
                             if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
                             {
-                                dd = (long)digitisei(wuse, init, minlot[i], sizelot[i]);
+                                dd = (int)digitisei(wuse, init, minlot[i], sizelot[i]);
                                 if (wuse > init)
                                 {
                                     nwL = Math.Max((digit2w(wuse, init, dd - 1, minlot[i], sizelot[i])), rstep.kL[i]);
@@ -1009,7 +1009,7 @@ namespace Portfolio
                 init = initial != null ? initial[i] : 0; dd = 0;
                 if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
                 {
-                    dd = (long)digitisei(info.x[i], init, minlot[i], sizelot[i]);
+                    dd = (int)digitisei(info.x[i], init, minlot[i], sizelot[i]);
                     if (info.x[i] > init)
                     {
                         nwL = digit2w(info.x[i], init, dd, minlot[i], sizelot[i]);
@@ -1074,7 +1074,7 @@ namespace Portfolio
                                                                             //	for(j=rstep.nround;j<min(n/4+rstep.nround,n);++j)
                                                                             //roundy = Math.Max(((int)(rstep.nround * .5 + n * .5)), (rstep.nround + 1));
                                                                             //	stuck=(rstep.prev&&(rstep.prev.nround==rstep.nround))?true:false;
-            stuck = 0; roundstuck = rstep;
+            roundstuck = rstep;
             var bestround = 0;
             roundstep test = rstep, best = null;
             while ((test) != null)
@@ -1091,59 +1091,61 @@ namespace Portfolio
             {
                 stuck++;
                 roundstuck = best;
-            }
+            }else stuck=0;
             for (j = 0; j < Math.Min(Math.Max(1, roundy), n); ++j)
             {
                 //		i=next.bound_order[n-j-1];
                 i = next.bound_order[j]; dd = 0;
                 var testw = info.x[i];
-                if (testw < rstep.kL[i])
+        /*        if (testw < rstep.kL[i])
                     testw = rstep.kL[i];
                 else if (testw > rstep.kU[i])
-                    testw = rstep.kU[i];
+                    testw = rstep.kU[i];*/
                 init = initial != null ? initial[i] : 0;
                 if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
                 {
-                    dd = (long)digitisei(testw, init, minlot[i], sizelot[i]);
+                    dd = (int)digitisei(testw, init, minlot[i], sizelot[i]);
                     if (testw > init)
                     {
                         if (!(j % 2 != 0 && next.count % 2 != 0))
                         {
                             nwL = digit2w(testw, init, dd - 1, minlot[i], sizelot[i]);
-                            nwU = digit2w(testw, init, dd + (long)stuck, minlot[i], sizelot[i]);
-                            if (nwL < rstep.kL[i])
-                            {
-                                nwL = digit2w(testw, init, dd, minlot[i], sizelot[i]);
-                                nwU = digit2w(testw, init, dd + 1 + (long)stuck, minlot[i], sizelot[i]);
+                            nwU = digit2w(testw, init, dd + stuck, minlot[i], sizelot[i]);
+                            while (nwL < rstep.kL[i])
+                            {dd=dd+1;
+                                nwL = digit2w(testw, init, dd-1, minlot[i], sizelot[i]);
+                                nwU = digit2w(testw, init, dd + stuck, minlot[i], sizelot[i]);
+                                if(nwU>rstep.kU[i])break;
                             }
                         }
                         else
                         {
                             nwL = digit2w(testw, init, dd, minlot[i], sizelot[i]);
-                            nwU = digit2w(testw, init, dd + 1 + (long)stuck, minlot[i], sizelot[i]);
+                            nwU = digit2w(testw, init, dd + 1 + stuck, minlot[i], sizelot[i]);
                         }
                     }
                     else if (testw < init)
                     {
                         if (!(j % 2 != 0 && next.count % 2 != 0))
                         {
-                            nwL = digit2w(testw, init, dd - (long)stuck, minlot[i], sizelot[i]);
+                            nwL = digit2w(testw, init, dd - stuck, minlot[i], sizelot[i]);
                             nwU = digit2w(testw, init, dd + 1, minlot[i], sizelot[i]);
-                            if (nwU > rstep.kU[i])
-                            {
-                                nwL = digit2w(testw, init, dd - 1 - (long)stuck, minlot[i], sizelot[i]);
-                                nwU = digit2w(testw, init, dd, minlot[i], sizelot[i]);
+                            while (nwU > rstep.kU[i])
+                            {dd=dd-1;
+                                nwL = digit2w(testw, init, dd - stuck, minlot[i], sizelot[i]);
+                                nwU = digit2w(testw, init, dd+1, minlot[i], sizelot[i]);
+                                if(nwL<rstep.kL[i])break;
                             }
                         }
                         else
                         {
-                            nwL = digit2w(testw, init, dd - 1 - (long)stuck, minlot[i], sizelot[i]);
+                            nwL = digit2w(testw, init, dd - 1 - stuck, minlot[i], sizelot[i]);
                             nwU = digit2w(testw, init, dd, minlot[i], sizelot[i]);
                         }
                     }
                     else
                     {
-                        nwL = digit2w(testw, init, -(long)stuck, minlot[i], sizelot[i]);
+                        nwL = digit2w(testw, init, -stuck, minlot[i], sizelot[i]);
                         nwU = digit2w(testw, init, 0, minlot[i], sizelot[i]);
                     }
                     //  ColourConsole.WriteEmbeddedColourLine($"[cyan]closeness {names[i]}[/cyan] [green]{testw-nwL}[/green] [darkgreen]{testw-nwU}[/darkgreen] [yellow]{testw}[/yellow]");
@@ -1289,8 +1291,8 @@ namespace Portfolio
             // i6limit = bestround >= n - 2 ? 6 : n;
             i6limit = n;
             i6 = i6 % n;
-            if (next.count > 300) { rstep.util = info.UtilityFunc(info); return; }
-            if (bestround >= n - 2 && next.count > maxstage /*&& rstep.back <= 1*/) { rstep.util = info.UtilityFunc(info); return; }
+            if (stuck>10||next.count>40) { rstep.util = info.UtilityFunc(info); return; }
+            if (bestround >= n - 4 && next.count > maxstage /*&& rstep.back <= 1*/) { rstep.util = info.UtilityFunc(info); return; }
             if (rstep.nround == n && next.count == 2 && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
             if (!next.success && rstep.nround == n && rstep.back <= 1)
             { next.success = true; i6limit = 6; }
@@ -1306,6 +1308,7 @@ namespace Portfolio
                         double[] sizelot, double[] roundw, double[] thresh = null)
         {
             i6 = 0;
+            stuck=0;
             int i;
             int n = info.n;
             int m = info.m;
@@ -2132,14 +2135,14 @@ namespace Portfolio
                 }
                 /*  else if (OP.lower[i] == init)//Probably does nothing
                   {
-                      var dd = (long)digitisei(OP.lower[i], init, minlot[i], 0);
+                      var dd = (int)digitisei(OP.lower[i], init, minlot[i], 0);
                       var newL = digit2w(OP.lower[i], init, dd, minlot[i], 0);
                       ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {OP.lower[i]}[/green][red] to {newL}[/red]");
                       OP.lower[i] = newL;
                   }
                   else if (OP.upper[i] == init)//Probably does nothing
                   {
-                      var dd = (long)digitisei(OP.upper[i], init, minlot[i], 0);
+                      var dd = (int)digitisei(OP.upper[i], init, minlot[i], 0);
                       var newU = digit2w(OP.upper[i], init, dd, minlot[i], 0);
                       ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {OP.upper[i]}[/green][red] to {newU}[/red]");
                       OP.upper[i] = newU;
@@ -2672,28 +2675,28 @@ namespace Portfolio
                 var init = initial != null ? initial[i] : 0.0;
                 if (Op.lower[i] > init)
                 {
-                    var dd = (long)digitisei(Op.lower[i], init, minlot[i], sizelot[i]);
+                    var dd = (int)digitisei(Op.lower[i], init, minlot[i], sizelot[i]);
                     var newL = digit2w(Op.lower[i], init, dd + 1, minlot[i], sizelot[i]);
                     ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {Op.lower[i]}[/green][red] to {newL}[/red]");
                     Op.lower[i] = newL; changed = true;
                 }
                 else if (Op.upper[i] < init)
                 {
-                    var dd = (long)digitisei(Op.upper[i], init, minlot[i], sizelot[i]);
+                    var dd = (int)digitisei(Op.upper[i], init, minlot[i], sizelot[i]);
                     var newU = digit2w(Op.upper[i], init, dd - 1, minlot[i], sizelot[i]);
                     ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {Op.upper[i]}[/green][red] to {newU}[/red]");
                     Op.upper[i] = newU; changed = true;
                 }
                 /*               else if (Op.lower[i] == init)//Probably does nothing
                                {
-                                   var dd = (long)digitisei(Op.lower[i], init, minlot[i], sizelot[i]);
+                                   var dd = (int)digitisei(Op.lower[i], init, minlot[i], sizelot[i]);
                                    var newL = digit2w(Op.lower[i], init, dd, minlot[i], sizelot[i]);
                                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {Op.lower[i]}[/green][red] to {newL}[/red]");
                                    Op.lower[i] = newL;changed=true;
                                }
                                else if (Op.upper[i] == init)//Probably does nothing
                                {
-                                   var dd = (long)digitisei(Op.upper[i], init, minlot[i], sizelot[i]);
+                                   var dd = (int)digitisei(Op.upper[i], init, minlot[i], sizelot[i]);
                                    var newU = digit2w(Op.upper[i], init, dd, minlot[i], sizelot[i]);
                                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {Op.upper[i]}[/green][red] to {newU}[/red]");
                                    Op.upper[i] = newU;changed=true;
