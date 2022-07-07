@@ -529,6 +529,7 @@ namespace Portfolio
         int i6limit;
         int i6 = 0;
         int stuck=0;
+        bool updateAllIfInfeasible=true;
         ///<summary>Return the position of w in the roundlot ladder. If this is a whole number, then w is on a rung</summary>
         ///<param name="w">weight</param>
         ///<param name="initial">initial weight</param>
@@ -960,7 +961,8 @@ namespace Portfolio
                                 }
                             }
                         }
-                        i6 = j + 1; break;
+                        i6 = j + 1;
+                        if(!updateAllIfInfeasible)break;
                     }
                 }
                 BlasLike.dcopyvec(m + n, rstep.L, info.lower);
@@ -983,8 +985,11 @@ namespace Portfolio
                 rstep.back = info.back;
                 if (rstep.back == 6)
                 {
-                    j = i6 - 1;
-                    i = rstep.bound_order[j];
+                   if(!updateAllIfInfeasible) j = i6 - 1;
+                   for(var jj=0;jj<((updateAllIfInfeasible)?n:1);++jj)
+                    {
+                       if(updateAllIfInfeasible) j=jj;
+                        i = rstep.bound_order[j];
                     if (rstep.U[i] == rstep.kU[i])//&&rstep.prev.bound_order[j]!=rstep.bound_order[j])
                     {
                         rstep.U[i] = rstep.L[i];
@@ -994,7 +999,7 @@ namespace Portfolio
                     {
                         rstep.L[i] = rstep.U[i];
                         rstep.U[i] = rstep.kU[i];
-                    }
+                    }}
                     BlasLike.dcopyvec(n, rstep.w, info.x);
                 }
                 BlasLike.dcopyvec(n, info.x, rstep.w);
@@ -1096,12 +1101,14 @@ namespace Portfolio
             {
                 //		i=next.bound_order[n-j-1];
                 i = next.bound_order[j]; dd = 0;
+                init = initial != null ? initial[i] : 0;
+                if(Math.Abs(info.x[i])<BlasLike.lm_eps)info.x[i]=0;
+                else if(Math.Abs(info.x[i]-init)<BlasLike.lm_eps)info.x[i]=init;
                 var testw = info.x[i];
         /*        if (testw < rstep.kL[i])
                     testw = rstep.kL[i];
                 else if (testw > rstep.kU[i])
                     testw = rstep.kU[i];*/
-                init = initial != null ? initial[i] : 0;
                 if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
                 {
                     dd = (int)digitisei(testw, init, minlot[i], sizelot[i]);
@@ -1109,12 +1116,12 @@ namespace Portfolio
                     {
                         if (!(j % 2 != 0 && next.count % 2 != 0))
                         {
-                            nwL = digit2w(testw, init, dd - 1, minlot[i], sizelot[i]);
-                            nwU = digit2w(testw, init, dd + stuck, minlot[i], sizelot[i]);
+                            nwL = digit2w(testw, init, dd , minlot[i], sizelot[i]);
+                            nwU = digit2w(testw, init, dd + stuck+1, minlot[i], sizelot[i]);
                             while (nwL < rstep.kL[i])
                             {dd=dd+1;
-                                nwL = digit2w(testw, init, dd-1, minlot[i], sizelot[i]);
-                                nwU = digit2w(testw, init, dd + stuck, minlot[i], sizelot[i]);
+                                nwL = digit2w(testw, init, dd, minlot[i], sizelot[i]);
+                                nwU = digit2w(testw, init, dd + stuck+1, minlot[i], sizelot[i]);
                                 if(nwU>rstep.kU[i])break;
                             }
                         }
@@ -1156,7 +1163,7 @@ namespace Portfolio
                     }
                     if (Math.Abs((nwU - (testw)) - (testw - nwL)) < BlasLike.lm_rooteps)
                     {
-                        if (false && !(j % 2 != 0 && next.count % 2 != 0))
+                        if ( !(j % 2 != 0 && next.count % 2 != 0))
                         {
                             next.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.L[i]));
                         }
