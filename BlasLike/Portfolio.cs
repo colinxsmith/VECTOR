@@ -156,10 +156,6 @@ namespace Portfolio
             alpha, initial, buy, sell, names, false, nabs, Abs_A, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda,
             DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax);
             BlasLike.dcopyvec(n, op.wback, w);
-            for (var i = 0; i < n; ++i)
-            {
-                w[i] = Portfolio.check_digit(1e2 * w[i]) * 1e-2;
-            }
             if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
             var info = new Portfolio.INFO();
             info.A = A;
@@ -229,7 +225,7 @@ namespace Portfolio
             if (back > 1) return back;
             if (min_holding > 0 || min_trade > 0 || round == 1)
             {
-               // op.BoundsSetToSign(n, info.L, info.U, initial, w);
+                // op.BoundsSetToSign(n, info.L, info.U, initial, w);
                 var Op = new Portfolio.OptParamRound();
                 Op.basket = basket;
                 Op.trades = trades;
@@ -237,7 +233,7 @@ namespace Portfolio
                 Op.m = m;
                 Op.n = n;
                 Op.upper = U;
-              //  op.BoundsSetToSign(n, Op.lower, Op.upper, initial, w);
+                //  op.BoundsSetToSign(n, Op.lower, Op.upper, initial, w);
                 Op.minholdlot = null;
                 Op.mintradelot = null;
                 var mintrade = min_trade < 0 ? null : new double[n];
@@ -248,20 +244,12 @@ namespace Portfolio
                 Op.x = op.wback; Op.MoreInfo = info;
                 if (round == 1)
                 {
-                    op.Rounding(basket, trades, revise == 1 ? initial : null, min_lot, size_lot, roundw, null, null, info);
-                    for (var i = 0; i < n; ++i)
-                    {
-                        roundw[i] = Portfolio.check_digit(1e2 * roundw[i]) * 1e-2;
-                    }
+                    op.Rounding(basket, trades, revise == 1 ? initial : null, min_lot, size_lot, roundw, minhold, mintrade, info);
                     op.roundcheck(n, roundw, revise == 1 ? initial : null, min_lot, size_lot, shake);
                 }
                 else
                 {
                     op.Thresh(Op, mintrade == null ? null : initial, mintrade == null ? minhold : mintrade, roundw, mintrade == null ? null : minhold);
-                    for (var i = 0; i < n; ++i)
-                    {
-                        roundw[i] = Portfolio.check_digit(1e2 * roundw[i]) * 1e-2;
-                    }
                     op.thresh_check(n, roundw, mintrade == null ? null : initial, L, U, mintrade == null ? minhold : mintrade, mintrade == null ? null : minhold, BlasLike.lm_eps8, shake);
                 }
                 BlasLike.dcopyvec(n, roundw, op.wback);
@@ -429,19 +417,19 @@ namespace Portfolio
             OP.mintradelot = null;
             if (minholdlot != null && mintradelot != null)
             {
-                double[] w = new double[n];
+                double[] w = new double[vars.n];
                 Thresh(OP, vars.initial, mintradelot, w, minholdlot); vars.back = (OP.back == 2 ? 6 : OP.back);
                 BlasLike.dcopyvec(vars.n, w, wback);
             }
             else if (minholdlot != null)
             {
-                double[] w = new double[n];
+                double[] w = new double[vars.n];
                 Thresh(OP, null, minholdlot, w, null); vars.back = (OP.back == 2 ? 6 : OP.back);
                 BlasLike.dcopyvec(vars.n, w, wback);
             }
             else if (mintradelot != null)
             {
-                double[] w = new double[n];
+                double[] w = new double[vars.n];
                 Thresh(OP, vars.initial, mintradelot, w, null); vars.back = (OP.back == 2 ? 6 : OP.back);
                 BlasLike.dcopyvec(vars.n, w, wback);
             }
@@ -528,8 +516,8 @@ namespace Portfolio
         double round_eps = BlasLike.lm_eps8;
         int i6limit;
         int i6 = 0;
-        int stuck=0;
-        bool updateAllIfInfeasible=true;
+        int stuck = 0;
+        bool updateAllIfInfeasible = true;
         ///<summary>Return the position of w in the roundlot ladder. If this is a whole number, then w is on a rung</summary>
         ///<param name="w">weight</param>
         ///<param name="initial">initial weight</param>
@@ -571,10 +559,10 @@ namespace Portfolio
         public static double check_digit(double digit)
         {
             if (Math.Abs(digit) < BlasLike.lm_eps) return 0.0;
-            double delta = Math.Abs(Math.Abs(digit - (long)(digit)) - 1);
+            double delta = Math.Abs(Math.Abs(digit - (int)(digit)) - 1);
             if (delta <= (BlasLike.lm_rooteps))
             {
-                long ndelta = (long)(delta / BlasLike.lm_eps);
+                int ndelta = (int)(delta / BlasLike.lm_eps);
                 if (digit > 0)
                 {
                     digit += ndelta * BlasLike.lm_eps;
@@ -585,10 +573,10 @@ namespace Portfolio
                 }
                 return digit;
             }
-            delta = Math.Abs(Math.Abs(digit - (long)(digit)));
+            delta = Math.Abs(Math.Abs(digit - (int)(digit)));
             if (delta <= (BlasLike.lm_rooteps))
             {
-                long ndelta = (long)(delta / BlasLike.lm_eps);
+                int ndelta = (int)(delta / BlasLike.lm_eps);
                 if (digit > 0)
                 {
                     digit -= ndelta * BlasLike.lm_eps;
@@ -791,7 +779,7 @@ namespace Portfolio
             next.util = BlasLike.lm_max;
             next.count = next.prev.count + 1;
             next.back = info.back;
-            if (stuck>2||(rstep.prev != null && rstep.prev.nround == n && rstep.back < 2))
+            if (stuck > 2 || (rstep.prev != null && rstep.prev.nround == n && rstep.back < 2))
             {
                 rstep.back = 6; fixup = true;
             }
@@ -962,7 +950,7 @@ namespace Portfolio
                             }
                         }
                         i6 = j + 1;
-                        if(!updateAllIfInfeasible)break;
+                        if (!updateAllIfInfeasible) break;
                     }
                 }
                 BlasLike.dcopyvec(m + n, rstep.L, info.lower);
@@ -985,21 +973,22 @@ namespace Portfolio
                 rstep.back = info.back;
                 if (rstep.back == 6)
                 {
-                   if(!updateAllIfInfeasible) j = i6 - 1;
-                   for(var jj=0;jj<((updateAllIfInfeasible)?n:1);++jj)
+                    if (!updateAllIfInfeasible) j = i6 - 1;
+                    for (var jj = 0; jj < ((updateAllIfInfeasible) ? n : 1); ++jj)
                     {
-                       if(updateAllIfInfeasible) j=jj;
+                        if (updateAllIfInfeasible) j = jj;
                         i = rstep.bound_order[j];
-                    if (rstep.U[i] == rstep.kU[i])//&&rstep.prev.bound_order[j]!=rstep.bound_order[j])
-                    {
-                        rstep.U[i] = rstep.L[i];
-                        rstep.L[i] = rstep.kL[i];
+                        if (rstep.U[i] == rstep.kU[i])//&&rstep.prev.bound_order[j]!=rstep.bound_order[j])
+                        {
+                            rstep.U[i] = rstep.L[i];
+                            rstep.L[i] = rstep.kL[i];
+                        }
+                        else if (rstep.L[i] == rstep.kL[i])//&&rstep.prev.bound_order[j]!=rstep.bound_order[j])
+                        {
+                            rstep.L[i] = rstep.U[i];
+                            rstep.U[i] = rstep.kU[i];
+                        }
                     }
-                    else if (rstep.L[i] == rstep.kL[i])//&&rstep.prev.bound_order[j]!=rstep.bound_order[j])
-                    {
-                        rstep.L[i] = rstep.U[i];
-                        rstep.U[i] = rstep.kU[i];
-                    }}
                     BlasLike.dcopyvec(n, rstep.w, info.x);
                 }
                 BlasLike.dcopyvec(n, info.x, rstep.w);
@@ -1096,19 +1085,20 @@ namespace Portfolio
             {
                 stuck++;
                 roundstuck = best;
-            }else stuck=0;
+            }
+            else stuck = 0;
             for (j = 0; j < Math.Min(Math.Max(1, roundy), n); ++j)
             {
                 //		i=next.bound_order[n-j-1];
                 i = next.bound_order[j]; dd = 0;
                 init = initial != null ? initial[i] : 0;
-                if(Math.Abs(info.x[i])<BlasLike.lm_eps)info.x[i]=0;
-                else if(Math.Abs(info.x[i]-init)<BlasLike.lm_eps)info.x[i]=init;
+                if (Math.Abs(info.x[i]) < BlasLike.lm_eps) info.x[i] = 0;
+                else if (Math.Abs(info.x[i] - init) < BlasLike.lm_eps) info.x[i] = init;
                 var testw = info.x[i];
-        /*        if (testw < rstep.kL[i])
-                    testw = rstep.kL[i];
-                else if (testw > rstep.kU[i])
-                    testw = rstep.kU[i];*/
+                /*        if (testw < rstep.kL[i])
+                            testw = rstep.kL[i];
+                        else if (testw > rstep.kU[i])
+                            testw = rstep.kU[i];*/
                 if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
                 {
                     dd = (int)digitisei(testw, init, minlot[i], sizelot[i]);
@@ -1116,13 +1106,14 @@ namespace Portfolio
                     {
                         if (!(j % 2 != 0 && next.count % 2 != 0))
                         {
-                            nwL = digit2w(testw, init, dd , minlot[i], sizelot[i]);
-                            nwU = digit2w(testw, init, dd + stuck+1, minlot[i], sizelot[i]);
+                            nwL = digit2w(testw, init, dd, minlot[i], sizelot[i]);
+                            nwU = digit2w(testw, init, dd + stuck + 1, minlot[i], sizelot[i]);
                             while (nwL < rstep.kL[i])
-                            {dd=dd+1;
+                            {
+                                dd = dd + 1;
                                 nwL = digit2w(testw, init, dd, minlot[i], sizelot[i]);
-                                nwU = digit2w(testw, init, dd + stuck+1, minlot[i], sizelot[i]);
-                                if(nwU>rstep.kU[i])break;
+                                nwU = digit2w(testw, init, dd + stuck + 1, minlot[i], sizelot[i]);
+                                if (nwU > rstep.kU[i]) break;
                             }
                         }
                         else
@@ -1138,10 +1129,11 @@ namespace Portfolio
                             nwL = digit2w(testw, init, dd - stuck, minlot[i], sizelot[i]);
                             nwU = digit2w(testw, init, dd + 1, minlot[i], sizelot[i]);
                             while (nwU > rstep.kU[i])
-                            {dd=dd-1;
+                            {
+                                dd = dd - 1;
                                 nwL = digit2w(testw, init, dd - stuck, minlot[i], sizelot[i]);
-                                nwU = digit2w(testw, init, dd+1, minlot[i], sizelot[i]);
-                                if(nwL<rstep.kL[i])break;
+                                nwU = digit2w(testw, init, dd + 1, minlot[i], sizelot[i]);
+                                if (nwL < rstep.kL[i]) break;
                             }
                         }
                         else
@@ -1163,7 +1155,7 @@ namespace Portfolio
                     }
                     if (Math.Abs((nwU - (testw)) - (testw - nwL)) < BlasLike.lm_rooteps)
                     {
-                        if ( !(j % 2 != 0 && next.count % 2 != 0))
+                        if (!(j % 2 != 0 && next.count % 2 != 0))
                         {
                             next.L[i] = Math.Min(rstep.kU[i], Math.Max(nwU, rstep.L[i]));
                         }
@@ -1298,7 +1290,7 @@ namespace Portfolio
             // i6limit = bestround >= n - 2 ? 6 : n;
             i6limit = n;
             i6 = i6 % n;
-            if (stuck>10||next.count>40) { rstep.util = info.UtilityFunc(info); return; }
+            if (stuck > 10 || next.count > 40) { rstep.util = info.UtilityFunc(info); return; }
             if (bestround >= n - 4 && next.count > maxstage /*&& rstep.back <= 1*/) { rstep.util = info.UtilityFunc(info); return; }
             if (rstep.nround == n && next.count == 2 && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
             if (!next.success && rstep.nround == n && rstep.back <= 1)
@@ -1315,7 +1307,7 @@ namespace Portfolio
                         double[] sizelot, double[] roundw, double[] thresh = null)
         {
             i6 = 0;
-            stuck=0;
+            stuck = 0;
             int i;
             int n = info.n;
             int m = info.m;
