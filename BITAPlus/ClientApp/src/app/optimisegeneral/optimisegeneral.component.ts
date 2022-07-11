@@ -74,6 +74,7 @@ export class OptimisegeneralComponent implements OnInit {
     if (back != undefined) this.opt.rmin = back;
     if (this.opt.losSmax != null && this.opt.losSmin != null) this.opt.losSopt = true;
     else if (this.opt.etLmax != null && this.opt.etLmin != null) this.opt.etLopt = true;
+    this.opt.logfile="bitapluslog";
     this.sendData('optimise/general', this.opt)
       .subscribe(ddd => {
         console.log(ddd);
@@ -211,5 +212,6 @@ interface Optimise {
   losSmin: number,
   losSmax: number,
   round: number,
-  datafile: string
+  datafile: string,
+  logfile:string
 }

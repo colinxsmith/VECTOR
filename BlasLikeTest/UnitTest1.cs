@@ -787,6 +787,12 @@ namespace BlasLikeTest
             Assert.IsTrue(Portfolio.Portfolio.check_digit(d1) == 2.0, $"{Portfolio.Portfolio.check_digit(d1)}");
         }
         [TestMethod]
+        public void Test_round()
+        {
+            var d1 =0.010099999999999998;
+            Assert.IsTrue(Portfolio.Portfolio.dround(d1) == 0.0101, $"{Portfolio.Portfolio.dround(d1)}"); 
+        }
+        [TestMethod]
         public void Test_sigfig()
         {
             var d1 = 23123.45567;

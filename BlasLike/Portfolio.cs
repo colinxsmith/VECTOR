@@ -242,21 +242,34 @@ namespace Portfolio
                 if (minhold != null) BlasLike.dsetvec(n, min_holding, minhold);
                 var roundw = (double[])op.wback.Clone();
                 Op.x = op.wback; Op.MoreInfo = info;
+                var roundfac = 1e5;
                 if (round == 1)
                 {
                     op.Rounding(basket, trades, revise == 1 ? initial : null, min_lot, size_lot, roundw, minhold, mintrade, info);
+                    for (var iw = 0; iw < n; ++iw)
+                    {
+                        //roundw[iw] = check_digit(roundw[iw] * roundfac) / roundfac;
+                        roundw[iw] = dround(roundw[iw], roundfac);
+                    }
                     op.roundcheck(n, roundw, revise == 1 ? initial : null, min_lot, size_lot, shake);
                 }
                 else
                 {
                     op.Thresh(Op, mintrade == null ? null : initial, mintrade == null ? minhold : mintrade, roundw, mintrade == null ? null : minhold);
+                    for (var iw = 0; iw < n; ++iw)
+                    {
+                        roundw[iw] = dround(roundw[iw], roundfac);
+                        //roundw[iw] = check_digit(roundw[iw] * roundfac) / roundfac;
+                    }
                     op.thresh_check(n, roundw, mintrade == null ? null : initial, L, U, mintrade == null ? minhold : mintrade, mintrade == null ? null : minhold, BlasLike.lm_eps8, shake);
                 }
+
                 BlasLike.dcopyvec(n, roundw, op.wback);
                 BlasLike.dcopyvec(n, op.wback, w);
                 foreach (var i in shake)
                 {
-                    if (i != -1) ColourConsole.WriteEmbeddedColourLine($"[green]{op.names[i]}[/green][red] was not rounded properly! {w[i],26:e16}[/red]");
+                    double init;
+                    if (i != -1) { init = initial != null ? initial[i] : 0; ColourConsole.WriteEmbeddedColourLine($"[green]{op.names[i]}[/green][red] was not rounded properly! {w[i],26:e16}{init,26:e16}[/red]"); }
                 }
                 if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
             }
@@ -264,7 +277,24 @@ namespace Portfolio
             CVARGLprob = op.CVARGLprob;
             return back;
         }
-
+        public static double dround(double a, double fac = 1e6)
+        {
+            a = fac * a;
+            var delt = a - (int)a;
+            if (Math.Abs(delt) < 1e-4)
+            {
+                a = (int)a;
+            }
+            else
+            {
+                delt = a - (int)a - (int)1;
+                if (Math.Abs(delt) < 1e-4)
+                {
+                    a = (int)(a + 1);
+                }
+            }
+            return a / fac;
+        }
         public void set_repeat<T>(int n, T p, T[] a)
         {
             //while(n--){*a++ = p;}
@@ -1845,6 +1875,7 @@ namespace Portfolio
                     doit = 0;
                     for (kbranch = 0; kbranch < n; ++kbranch)
                     {
+                        if (minlot != null && minlot[kbranch] == 0) continue; if (minlot1 != null && minlot1[kbranch] == 0) continue;
                         init = initial != null ? initial[kbranch] : 0;
                         if (Math.Abs(KB.oldw[kbranch] - init) <= minlot[kbranch] + rounderror && (minlot1 != null && Math.Abs(KB.oldw[kbranch]) <= minlot1[kbranch] + rounderror))
                         {
