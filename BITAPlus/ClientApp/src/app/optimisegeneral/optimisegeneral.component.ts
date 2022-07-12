@@ -19,7 +19,7 @@ export class OptimisegeneralComponent implements OnInit {
   constructor(private http: HttpClient, @Inject('BASE_URL') private baseUrl: string, public element: ElementRef) {
     http.get<Optimise>(baseUrl + 'optimise/general?doOpt=false&datafile=' + this.generalfile).subscribe(result => {
       this.opt = result;
-      d3.select(this.element.nativeElement).select('input.checkzero').attr('value',this.filterzero);
+      d3.select(this.element.nativeElement).select('input.checkzero').attr('value', this.filterzero);
       console.log(this.opt, result);
       this.shortside = false;
       for (let i = 0; i < this.opt.n; ++i) {
@@ -37,7 +37,7 @@ export class OptimisegeneralComponent implements OnInit {
     d3.select(this.element.nativeElement).select('input.filer').attr('value', this.generalfile);
   }
   sendStep() {
-    this.opt.doOpt=true;
+    this.opt.doOpt = true;
     let back: string | number | null | undefined = +(d3.select(this.element.nativeElement).select('input.step.g').node() as HTMLInputElement & Event).value;
     this.opt.gamma = back;
     try { back = +(d3.select(this.element.nativeElement).select('input.step.round').node() as HTMLInputElement & Event).value; } catch { back = null; }
@@ -74,14 +74,26 @@ export class OptimisegeneralComponent implements OnInit {
     if (back != undefined) this.opt.rmin = back;
     if (this.opt.losSmax != null && this.opt.losSmin != null) this.opt.losSopt = true;
     else if (this.opt.etLmax != null && this.opt.etLmin != null) this.opt.etLopt = true;
-    this.opt.logfile="bitapluslog";
+    this.opt.logfile = "bitapluslog";
     this.sendData('optimise/general', this.opt)
       .subscribe(ddd => {
         console.log(ddd);
         this.opt = ddd;
+        this.opt.w.forEach((x, i) => {//Try to keep rounded weights looking rounded
+          const ff = 1e6;
+          let delt = x * ff - Math.ceil(x * ff);
+          if (delt < 1e-4) {
+            this.opt.w[i] = Math.ceil(x * ff) / ff;
+          } else {
+            delt = x * ff - Math.floor(x * ff);
+            if (delt < 1e-4) {
+              this.opt.w[i] = Math.floor(x * ff) / ff;
+            }
+          }
+        });
         console.log(this.opt.w);
         this.shortside = false;
-        d3.select(this.element.nativeElement).select('input.checkzero').attr('value',this.filterzero);
+        d3.select(this.element.nativeElement).select('input.checkzero').attr('value', this.filterzero);
         for (let i = 0; i < this.opt.n; ++i) {
           if (this.opt.l[i] < 0) this.shortside = true;
         }
@@ -93,7 +105,7 @@ export class OptimisegeneralComponent implements OnInit {
     d3.select(this.element.nativeElement).select('input.checkzero').attr('value', this.filterzero);
     console.log((d3.select(e.target as HTMLInputElement & EventTarget).node() as HTMLInputElement & Event).value);
     console.log((d3.select(this.element.nativeElement).select('input.checkzero').attr('value')));
- //   this.opt=this.opt;
+    //   this.opt=this.opt;
   }
   file(e: Event) {
     console.log(e.target);//Must use .node() to get the updated value
@@ -104,7 +116,7 @@ export class OptimisegeneralComponent implements OnInit {
     //   console.log(this.generalfile);
     this.http.get<Optimise>(this.baseUrl + 'optimise/general?doOpt=false&datafile=' + this.generalfile).subscribe(result => {
       this.opt = result;
-      d3.select(this.element.nativeElement).select('input.checkzero').attr('value',this.filterzero);
+      d3.select(this.element.nativeElement).select('input.checkzero').attr('value', this.filterzero);
       console.log(this.opt, result);
       this.shortside = false;
       for (let i = 0; i < this.opt.n; ++i) {
@@ -213,5 +225,5 @@ interface Optimise {
   losSmax: number,
   round: number,
   datafile: string,
-  logfile:string
+  logfile: string
 }

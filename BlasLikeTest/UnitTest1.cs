@@ -790,7 +790,9 @@ namespace BlasLikeTest
         public void Test_round()
         {
             var d1 =0.010099999999999998;
-            Assert.IsTrue(Portfolio.Portfolio.dround(d1) == 0.0101, $"{Portfolio.Portfolio.dround(d1)}"); 
+            Assert.IsTrue(Portfolio.Portfolio.dround(d1,1e7) == 0.0101, $"{Portfolio.Portfolio.dround(d1,1e7)}"); 
+            d1=0.008900000000000009;
+            Assert.IsTrue(Portfolio.Portfolio.dround(d1,1e5) == 0.0089, $"{Portfolio.Portfolio.dround(d1,1e5)}"); 
         }
         [TestMethod]
         public void Test_sigfig()
