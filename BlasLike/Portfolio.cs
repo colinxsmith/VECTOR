@@ -277,6 +277,11 @@ namespace Portfolio
             CVARGLprob = op.CVARGLprob;
             return back;
         }
+        ///<summary>Change something like 0.20000000001 to 0.2
+        ///or 23.99999999991 to 24
+        ///    </summary>
+        ///<param name="x">The number to be changed</param>
+        ///<param name="ff">Controls the magnitude of the number expected in x</param>
         public static double digitRound(double x, double ff = 1e5)
         {
             double limit = BlasLike.lm_rooteps;
