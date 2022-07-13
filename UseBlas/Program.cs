@@ -1467,7 +1467,7 @@ namespace UseBlas
                     var Uhere = (double[])U.Clone();
                     opt.BoundsSetToSign(n, Lhere, Uhere, initial, opt.wback);
                     back = opt.BasicOptimisation(n, m, -1, A, Lhere, Uhere, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR);
-                        if(opt.CVARGLprob)ColourConsole.WriteError($"Extra data constraints failed");
+                    if (opt.CVARGLprob) ColourConsole.WriteError($"Extra data constraints failed");
                     for (var i = 0; i < n; i++)
                     {
                         ColourConsole.WriteEmbeddedColourLine($"[green]{names[i],16}[/green]\t[cyan]{opt.wback[i],16:E8}[/cyan]\t[darkcyan]{x[i],16:E8}[/darkcyan]");
@@ -1495,7 +1495,7 @@ namespace UseBlas
                 delta = 0.45;
                 dlambda = 1e-5;
                 back = opt.BasicOptimisation(n, m, -1, A, L, U, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR);
-                        if(opt.CVARGLprob)ColourConsole.WriteError($"Extra data constraints failed");
+                if (opt.CVARGLprob) ColourConsole.WriteError($"Extra data constraints failed");
                 if (true)
                 {
                     ColourConsole.WriteError("NEED TO REPEAT");
@@ -1503,7 +1503,7 @@ namespace UseBlas
                     var Uhere = (double[])U.Clone();
                     //      opt.BoundsSetToSign(n, Lhere, Uhere, initial, opt.wback);
                     back = opt.BasicOptimisation(n, m, -1, A, Lhere, Uhere, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR);
-                        if(opt.CVARGLprob)ColourConsole.WriteError($"Extra data constraints failed");
+                    if (opt.CVARGLprob) ColourConsole.WriteError($"Extra data constraints failed");
                     if (tarR == null)
                     {
                         var VARnow = 1e-8;
@@ -1514,7 +1514,7 @@ namespace UseBlas
                         var ETLmin = 0.0;
                         ColourConsole.WriteEmbeddedColourLine($"[green]ETLmin {ETLmin,12:e16}[/green]  [yellow]ETLmax {ETLmax,12:e16}[/yellow]");
                         back = opt.BasicOptimisation(n, m, -1, A, Lhere, Uhere, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR, true, ETLmin, ETLmax);
-                        if(opt.CVARGLprob)ColourConsole.WriteError($"Extra data constraints failed");
+                        if (opt.CVARGLprob) ColourConsole.WriteError($"Extra data constraints failed");
                         ColourConsole.WriteInfo($"back is {back}");
                         var ETLbreakdown = (double[])new double[nstocks];
                         ETLnow = Portfolio.Portfolio.ETL(nstocks, opt.wback, DATA, tail, ref VARnow, ref varIndexnow, ETLbreakdown);
@@ -1530,7 +1530,7 @@ namespace UseBlas
                         var Lossmin = 0.0;
                         ColourConsole.WriteEmbeddedColourLine($"[green]Lossmin {Lossmin,12:e16}[/green]  [yellow]Lossmax {Lossmax,12:e16}[/yellow]");
                         back = opt.BasicOptimisation(n, m, -1, A, Lhere, Uhere, 0.5, 0.5, delta, -1, -1, -1, -1, alpha, initial, null, null, names, useIP, 0, null, null, null, 0, null, tlen, dlambda, DATA, tail, tarR, true, Lossmin, Lossmax);
-                        if(opt.CVARGLprob)ColourConsole.WriteError($"Extra data constraints failed");
+                        if (opt.CVARGLprob) ColourConsole.WriteError($"Extra data constraints failed");
                         ColourConsole.WriteInfo($"back is {back}");
                         var LOSSbreakdown = (double[])new double[n];
                         Lossnow = Portfolio.Portfolio.LOSS(n, opt.wback, DATA, tarR, LOSSbreakdown);
@@ -1572,7 +1572,7 @@ namespace UseBlas
                 opt.GainLossSetUp(n, tlen, DATA, names, R, lambda, useIP);
             }
             {
-                var filename = "costlogC";
+                var filename = "costlog";
                 Console.WriteLine("BUY/SELL and LONG/SHORT");
                 double[] SV = null, FC = null, FL = null, L = null, U = null, alpha = null, initial = null, A = null;
                 double[] buy = null, sell = null, bench = null, Q = null, A_abs = null, Abs_U = null, Abs_L = null;
@@ -1679,7 +1679,7 @@ namespace UseBlas
                 var trades = tradenum;
                 useIp = false;
                 Portfolio.Portfolio.OptParamRound Op = new Portfolio.Portfolio.OptParamRound();
-                Portfolio.Portfolio.INFO sendInput = new Portfolio.Portfolio.INFO(); 
+                Portfolio.Portfolio.INFO sendInput = new Portfolio.Portfolio.INFO();
                 Op.basket = basket;
                 Op.trades = trades;
                 Op.lower = L;
@@ -1711,7 +1711,7 @@ namespace UseBlas
                 sendInput.mabs = mabs;
                 sendInput.I_a = I_A;
                 sendInput.bench = bench;
-                sendInput.kappa=kappa;
+                sendInput.kappa = kappa;
                 if (nfac > -1)
                 {
                     FPortfolio opt = new FPortfolio("");
@@ -1723,27 +1723,29 @@ namespace UseBlas
                     var targetRisk = minRisk;
                     sendInput.target = targetRisk;
                     opt.gamma = 5e-2;
-                    opt.kappa=-1;
+                    opt.kappa = -1;
                     opt.CalcRisk(opt.gamma, sendInput);
                     var breakdown = (double[])opt.wback.Clone();
                     var beta = (double[])null;//opt.wback.Clone();
                     opt.RiskBreakdown(opt.wback, opt.bench, breakdown, beta);
                     opt.DropRisk(basket, trades, targetRisk, sendInput);
-                    var FX=new double[nfac];
-                    var Fbreak=new double[nfac];
-                    var Sbreak=new double[opt.wback.Length];
-                    opt.FactorRiskAttribution(opt.wback,opt.bench,FX,Fbreak,Sbreak);
-                  //  opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
+                    var FX = new double[nfac];
+                    var Fbreak = new double[nfac];
+                    var Sbreak = new double[opt.wback.Length];
+                    opt.FactorRiskAttribution(opt.wback, opt.bench, FX, Fbreak, Sbreak);
+                    //  opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
                     sendInput.useIP = false;
                     if (round == 1)
                     {
                         opt.Rounding(basket, trades, initial, minlot, sizelot, roundw, null, null, sendInput);
+                        for (var i = 0; i < n; ++i) roundw[i] = Portfolio.Portfolio.digitRound(roundw[i]);
                         opt.roundcheck(n, roundw, initial, minlot, sizelot, shake);
                     }
                     else
                     {
                         Op.x = opt.wback; Op.MoreInfo = sendInput;
                         opt.Thresh(Op, mintrade == null ? null : initial, mintrade == null ? minhold : mintrade, roundw, mintrade == null ? null : minhold);
+                        for (var i = 0; i < n; ++i) roundw[i] = Portfolio.Portfolio.digitRound(roundw[i]);
                         opt.thresh_check(n, roundw, mintrade == null ? null : initial, L, U, mintrade == null ? minhold : mintrade, mintrade == null ? null : minhold, BlasLike.lm_eps8, shake);
                     }
                     foreach (var i in shake)
@@ -1759,7 +1761,7 @@ namespace UseBlas
                     var targetRisk = minRisk;
                     sendInput.target = targetRisk;
                     opt.gamma = 0.5;
-                    opt.kappa=-1;
+                    opt.kappa = -1;
                     opt.CalcRisk(opt.gamma, sendInput);
                     opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
                     var breakdown = (double[])opt.wback.Clone();
@@ -1770,12 +1772,14 @@ namespace UseBlas
                     if (round == 1)
                     {
                         opt.Rounding(basket, trades, initial, minlot, sizelot, roundw, null, null, sendInput);
+                        for (var i = 0; i < n; ++i) roundw[i] = Portfolio.Portfolio.digitRound(roundw[i]);
                         opt.roundcheck(n, roundw, initial, minlot, sizelot, shake);
                     }
                     else
                     {
                         Op.x = opt.wback; Op.MoreInfo = sendInput;
                         opt.Thresh(Op, mintrade == null ? null : initial, mintrade == null ? minhold : mintrade, roundw, mintrade == null ? null : minhold);
+                        for (var i = 0; i < n; ++i) roundw[i] = Portfolio.Portfolio.digitRound(roundw[i]);
                         opt.thresh_check(n, roundw, mintrade == null ? null : initial, L, U, mintrade == null ? minhold : mintrade, mintrade == null ? null : minhold, BlasLike.lm_eps8, shake);
                     }
                     foreach (var i in shake)
