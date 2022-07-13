@@ -249,7 +249,7 @@ namespace Portfolio
                     for (var iw = 0; iw < n; ++iw)
                     {
                         //roundw[iw] = check_digit(roundw[iw] * roundfac) / roundfac;
-                        roundw[iw] = dround(roundw[iw], roundfac);
+                        roundw[iw] = digitRound(roundw[iw], roundfac);
                     }
                     op.roundcheck(n, roundw, revise == 1 ? initial : null, min_lot, size_lot, shake);
                 }
@@ -258,7 +258,7 @@ namespace Portfolio
                     op.Thresh(Op, mintrade == null ? null : initial, mintrade == null ? minhold : mintrade, roundw, mintrade == null ? null : minhold);
                     for (var iw = 0; iw < n; ++iw)
                     {
-                        roundw[iw] = dround(roundw[iw], roundfac);
+                        roundw[iw] = digitRound(roundw[iw], roundfac);
                         //roundw[iw] = check_digit(roundw[iw] * roundfac) / roundfac;
                     }
                     op.thresh_check(n, roundw, mintrade == null ? null : initial, L, U, mintrade == null ? minhold : mintrade, mintrade == null ? null : minhold, BlasLike.lm_eps8, shake);
@@ -277,24 +277,25 @@ namespace Portfolio
             CVARGLprob = op.CVARGLprob;
             return back;
         }
-        public static double dround(double a, double fac = 1e6)
+        public static double digitRound(double x, double ff = 1e5)
         {
-            a = fac * a;
-            var delt = a - (int)a;
-            if (Math.Abs(delt) < 1e-4)
+            double limit = BlasLike.lm_rooteps;
+            double xff = x * ff;
+            double cxff = Math.Ceiling(xff);
+            double delt = x * ff - cxff;
+            if (Math.Abs(delt) < limit)
             {
-                a = (int)a;
+                return cxff / ff;
             }
-            else
+            double fxff = Math.Floor(xff);
+            delt = x * ff - fxff;
+            if (Math.Abs(delt) < limit)
             {
-                delt = a - (int)a - (int)1;
-                if (Math.Abs(delt) < 1e-4)
-                {
-                    a = (int)(a + 1);
-                }
+                return fxff / ff;
             }
-            return a / fac;
+            return x;
         }
+
         public void set_repeat<T>(int n, T p, T[] a)
         {
             //while(n--){*a++ = p;}

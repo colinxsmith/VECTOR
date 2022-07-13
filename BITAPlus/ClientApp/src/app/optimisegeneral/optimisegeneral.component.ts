@@ -2,6 +2,20 @@ import { Component, Inject, ElementRef, OnInit } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import * as d3 from 'd3';
 
+export const digitRound = (x: number, ff = 1e5) => {
+  const xff = x * ff;
+  const cxff = Math.ceil(xff);
+  let delt = xff - cxff;
+  if (Math.abs(delt) < 1e-8) {
+    return cxff / ff;
+  }
+  const fxff = Math.floor(xff);
+  delt = xff - fxff;
+  if (Math.abs(delt) < 1e-8) {
+    return fxff / ff;
+  }
+  return x;
+}
 @Component({
   selector: 'app-optimisegeneral',
   templateUrl: './optimisegeneral.component.html',
@@ -79,18 +93,7 @@ export class OptimisegeneralComponent implements OnInit {
       .subscribe(ddd => {
         console.log(ddd);
         this.opt = ddd;
-        this.opt.w.forEach((x, i) => {//Try to keep rounded weights looking rounded
-          const ff = 1e6;
-          let delt = x * ff - Math.ceil(x * ff);
-          if (delt < 1e-4) {
-            this.opt.w[i] = Math.ceil(x * ff) / ff;
-          } else {
-            delt = x * ff - Math.floor(x * ff);
-            if (delt < 1e-4) {
-              this.opt.w[i] = Math.floor(x * ff) / ff;
-            }
-          }
-        });
+        this.opt.w = this.opt.w.map(x => digitRound(x));
         console.log(this.opt.w);
         this.shortside = false;
         d3.select(this.element.nativeElement).select('input.checkzero').attr('value', this.filterzero);
