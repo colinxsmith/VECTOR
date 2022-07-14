@@ -1572,7 +1572,7 @@ namespace UseBlas
                 opt.GainLossSetUp(n, tlen, DATA, names, R, lambda, useIP);
             }
             {
-                var filename = "costlog";
+                var filename = "costlogC";
                 Console.WriteLine("BUY/SELL and LONG/SHORT");
                 double[] SV = null, FC = null, FL = null, L = null, U = null, alpha = null, initial = null, A = null;
                 double[] buy = null, sell = null, bench = null, Q = null, A_abs = null, Abs_U = null, Abs_L = null;
@@ -1763,7 +1763,7 @@ namespace UseBlas
                     opt.gamma = 0.5;
                     opt.kappa = -1;
                     opt.CalcRisk(opt.gamma, sendInput);
-                    opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
+                   // opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
                     var breakdown = (double[])opt.wback.Clone();
                     var beta = (double[])null;//opt.wback.Clone();
                     opt.RiskBreakdown(opt.wback, opt.bench, breakdown, beta);
