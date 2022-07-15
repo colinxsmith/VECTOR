@@ -1324,7 +1324,9 @@ namespace Portfolio
                 }
             }
             // i6limit = bestround >= n - 2 ? 6 : n;
-            i6limit = n;
+            if(info.back==6&&updateAllIfInfeasible&&next.count<10)updateAllIfInfeasible=false;
+            else updateAllIfInfeasible=next.success||next.count%2==0;
+             i6limit = n;
             i6 = i6 % n;
             if (stuck > 10 || next.count > 40) { rstep.util = info.UtilityFunc(info); return; }
             if (bestround >= n - 4 && next.count > maxstage /*&& rstep.back <= 1*/) { rstep.util = info.UtilityFunc(info); return; }

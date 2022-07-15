@@ -95,7 +95,7 @@ round
 min_lot
 1e-3
 size_lot
-1e-3
+1e-8
 ncomp
 0
 Composites
