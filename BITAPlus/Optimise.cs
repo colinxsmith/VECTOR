@@ -59,8 +59,6 @@ public checkv? result{get;set;}
     public double rmin { set; get; }
     public double min_holding { set; get; }
     public double min_trade { set; get; }
-    public double? digit { set; get; }
-    public double? tdigit { set; get; }
     public int basket { get; set; }
     public int trades { get; set; }
     public int tlen { get; set; }

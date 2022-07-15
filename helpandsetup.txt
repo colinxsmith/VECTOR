@@ -43,8 +43,7 @@ Transfer-Encoding: chunked
 [
   {
     "digit": 22222.00000001,
-    "tdigit": 22222,
-    "n": null
+    "tdigit": 22222
   }
 ]
 

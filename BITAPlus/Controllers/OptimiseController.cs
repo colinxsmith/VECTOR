@@ -17,13 +17,13 @@ public class OptimiseController : ControllerBase
         _logger = logger;
     }
     [HttpPost("test")]
-    public Optimise Post(Optimise op)
+    public Test Post(Test op)
     {
         if (op.digit != null)
         {
             op.tdigit = op.digit != null ? Portfolio.Portfolio.check_digit((double)op.digit) : null;
         }
-        ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green] [yellow]{op.n}[/yellow]");
+        ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green]");
         return op;
     }
     [HttpGet()]
@@ -203,26 +203,23 @@ public class OptimiseController : ControllerBase
         return op;
     }
     [HttpGet("test")]
-    public Optimise Get(double? d1)
+    public Test Get(double? d1)
     {
         double testdigit;
         if (d1 != null) testdigit = d1.GetValueOrDefault();
         else testdigit = 123.9999999999;
-        var op = new Optimise();
+        var op = new Test();
         op.digit = testdigit;
         op.tdigit = Portfolio.Portfolio.check_digit(testdigit);
-        ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green] [yellow]{op.n}[/yellow]");
+        ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green]");
         return op;
     }
     [HttpGet("test/n")]
     public Optimise Getn()
     {
-        double testdigit = 11.000000000001;
         var op = new Optimise();
         op.n = 500;
-        op.digit = testdigit;
-        op.tdigit = Portfolio.Portfolio.check_digit(testdigit);
-        ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green] [yellow]{op.n}[/yellow]");
+        ColourConsole.WriteEmbeddedColourLine($"[yellow]{op.n}[/yellow]");
         return op;
     }
     [HttpGet]
