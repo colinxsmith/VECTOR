@@ -554,6 +554,7 @@ namespace Portfolio
         int i6 = 0;
         int stuck = 0;
         bool updateAllIfInfeasible = true;
+        int infeaseCount=0;
         ///<summary>Return the position of w in the roundlot ladder. If this is a whole number, then w is on a rung</summary>
         ///<param name="w">weight</param>
         ///<param name="initial">initial weight</param>
@@ -770,6 +771,9 @@ namespace Portfolio
                 BlasLike.dcopyvec(m + n, rstep.U, info.upper);
                 //	info.OptSetup(basket,trades);
                 info.OptFunc(info);
+                if(info.back==6)infeaseCount++;
+                else if(info.back<2)infeaseCount=0;
+                ColourConsole.WriteEmbeddedColourLine($"[red]infeaseCount=[/red][cyan]{infeaseCount}[/cyan]");
                 //	rstep.util=info.utility_base(n,x,c,H);
                 rstep.util = info.UtilityFunc(info);
                 if (info.back == 66) info.back = 6;
@@ -993,7 +997,8 @@ namespace Portfolio
                 BlasLike.dcopyvec(m + n, rstep.U, info.upper);
                 //		info.OptSetup(basket,trades);
                 info.OptFunc(info);
-                //		rstep.util=info.utility_base(n,x,c,H);
+                if(info.back<2)infeaseCount=0;
+                ColourConsole.WriteEmbeddedColourLine($"[red]infeaseCount=[/red][cyan]{infeaseCount}[/cyan]");
                 rstep.util = info.UtilityFunc(info);
                 if (info.back == 66) info.back = 6;
                 if (info.back == 10)
@@ -1326,6 +1331,9 @@ namespace Portfolio
             // i6limit = bestround >= n - 2 ? 6 : n;
           //  if(info.back==6&&updateAllIfInfeasible&&next.count<10)updateAllIfInfeasible=false;
           //  else updateAllIfInfeasible=next.success||next.count%2==0;
+         // if(infeaseCount>10)updateAllIfInfeasible=false;
+         // else updateAllIfInfeasible=true;
+       //   updateAllIfInfeasible=true;
              i6limit = n;
             i6 = i6 % n;
             if (stuck > 10 || next.count > 40) { rstep.util = info.UtilityFunc(info); return; }

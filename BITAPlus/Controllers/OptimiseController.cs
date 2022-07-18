@@ -301,7 +301,7 @@ public class OptimiseController : ControllerBase
             try { op.I_A = CVarData.mapInt["I_A"]; } catch { op.I_A = null; }
             try { op.round = CVarData.mapInt["round"][0]; } catch { op.round = null; }
             try { op.min_lot = CVarData.mapDouble["min_lot"]; } catch { op.min_lot = null; }
-            if (min_lot != null && op.min_lot != null) op.min_lot[0] = min_lot.GetValueOrDefault();
+            if (min_lot != null && op.min_lot != null) { op.min_lot=new double[1];    op.min_lot[0] = min_lot.GetValueOrDefault();}
             if (op.min_lot != null && op.min_lot.Length == 1)
             {
                 var keep = op.min_lot[0];
@@ -309,7 +309,7 @@ public class OptimiseController : ControllerBase
                 BlasLike.dsetvec(op.n.GetValueOrDefault(), keep, op.min_lot);
             }
             try { op.size_lot = CVarData.mapDouble["size_lot"]; } catch { op.size_lot = null; }
-            if (size_lot != null && op.size_lot != null) op.size_lot[0] = size_lot.GetValueOrDefault();
+            if (size_lot != null && op.size_lot != null) {  op.size_lot=new double[1];  op.size_lot[0] = size_lot.GetValueOrDefault();}
             if (op.size_lot != null && op.size_lot.Length == 1)
             {
                 var keep = op.size_lot[0];
