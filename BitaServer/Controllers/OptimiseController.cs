@@ -228,7 +228,7 @@ public class OptimiseController : ControllerBase
      double? Gstrength, double? LOSSmax, double? LOSSmin, double? ETLmax, double? ETLmin,
       double? targetR, string? datafile, double? delta, double? gamma, double? maxRisk,
       double? minRisk, double? min_holding, double? min_trade, int? basket, int? trades,
-      string? logfile)
+      string? logfile,bool negdata=false)
     {
         var op = new Optimise();
         if (doOpt != null) op.doOpt = doOpt.GetValueOrDefault();
@@ -252,7 +252,7 @@ public class OptimiseController : ControllerBase
                 catch { op.message = $"Input file error \"{op.datafile}\""; return op; }
             }
             op.n = CVarData.mapInt["n"][0];
-            op.nfac = CVarData.mapInt["nfac"][0];
+            try{op.nfac = CVarData.mapInt["nfac"][0];}catch{op.nfac=-1;}
             op.m = CVarData.mapInt["m"][0];
             op.names = CVarData.mapString["names"];
             op.A = CVarData.mapDouble["A"];
@@ -283,11 +283,11 @@ public class OptimiseController : ControllerBase
             try { op.initial = CVarData.mapDouble["initial"]; } catch { op.initial = null; }
             try { op.delta = CVarData.mapDouble["delta"][0]; } catch { op.delta = null; }
             op.gamma = CVarData.mapDouble["gamma"][0];
-            op.kappa = CVarData.mapDouble["kappa"][0];
+            try{op.kappa = CVarData.mapDouble["kappa"][0];}catch{op.kappa=-1;}
             if (delta != null) op.delta = delta;
             if (gamma != null) op.gamma = gamma;
-            op.maxRisk = CVarData.mapDouble["maxRisk"][0];
-            op.minRisk = CVarData.mapDouble["minRisk"][0];
+            try{op.maxRisk = CVarData.mapDouble["maxRisk"][0];}catch{;}
+            try{op.minRisk = CVarData.mapDouble["minRisk"][0];}catch{;}
             if (maxRisk != null) op.maxRisk = maxRisk.GetValueOrDefault();
             if (minRisk != null) op.minRisk = minRisk.GetValueOrDefault();
             if (basket != null) op.basket = basket.GetValueOrDefault();
@@ -327,8 +327,9 @@ public class OptimiseController : ControllerBase
             {
                 if (op.nfac == null) op.nfac = -1;
                 op.DATA = CVarData.mapDouble["DATA"];
+                if(negdata)BlasLike.dnegvec(op.DATA.Length,op.DATA);
                 try { op.tail = CVarData.mapDouble["tail]"][0]; } catch { op.tail = 0.05; }
-                try { targetR = CVarData.mapDouble["R"][0]; } catch { targetR = null; }
+                if(targetR==null)                try { targetR = CVarData.mapDouble["R"][0]; } catch { targetR = null; }
                 if (Gstrength != null) op.Gstrength = Gstrength.GetValueOrDefault();
                 if (LOSSmin != null) op.LOSSmin = LOSSmin;
                 if (LOSSmax != null) op.LOSSmax = LOSSmax;
