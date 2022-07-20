@@ -82,7 +82,7 @@ namespace DataFile
                 string line;
                 bool setData = false;
                 while ((line = inF.ReadLine()) != null)
-                {
+                {if(line.Contains("---------"))break;
                     line = line.Trim();
                     var lf = line.Split(dataSep);
                     setData = false;
