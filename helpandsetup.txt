@@ -51,3 +51,8 @@ or with curl on linux
 curl -X POST -H "Content-type: application/json" -d '{"digit":22222.00000001}' https://localhost:7020/optimise/test
 or on windows
 curl -X POST -H "Content-type: application/json" -d "{\"digit\":22222.00000001}" https://localhost:7020/optimise/test
+
+
+publish with
+
+dotnet publish -c Release -r win-x64 --sc
