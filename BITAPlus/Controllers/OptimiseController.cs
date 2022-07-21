@@ -381,6 +381,7 @@ public class OptimiseController : ControllerBase
         op.result = new Optimise.checkv();
         if (op.doOpt)
         {
+            if(op.names!=null && op.names.Length<op.n.GetValueOrDefault())op.names=null;
             op.w = new double[op.n.GetValueOrDefault()];
             bool CVARGLprob = false;
             op.back = Portfolio.Portfolio.OptimiseGeneral(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.names,
@@ -563,7 +564,7 @@ public class OptimiseController : ControllerBase
                 op.Q = Q;
             }
         }
-
+ if(op.names!=null && op.names.Length<op.n.GetValueOrDefault())op.names=null;
         if (op.doOpt)
         {
             op.w = new double[op.n.GetValueOrDefault()];

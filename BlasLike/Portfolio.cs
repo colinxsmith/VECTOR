@@ -3234,7 +3234,7 @@ namespace Portfolio
             var old = Console.ForegroundColor;
             ColourConsole.WriteEmbeddedColourLine($"[red]Effective model with non-linear extra part projected out[/red]");
             ColourConsole.WriteEmbeddedColourLine($"\t\t\t\t\t[green]Weight[/green]\t\t\t[cyan]Effective Utility Gradient[/cyan]");
-            for (var i = 0; i < ntrue; ++i)
+            for (var i = 0; names!=null&&i < ntrue; ++i)
             {
                 ColourConsole.WriteEmbeddedColourLine($"[darkred]{i + 1,5}[/darkred][red]{names[i],30}[/red][green]{w[i],12:F8}[/green]\t\t\t[cyan]{Ceff[i],20:e12}[/cyan]");
             }
@@ -4283,7 +4283,7 @@ namespace Portfolio
                 {
                     var ind = buysellIndex_inverse[i];
                     var c1 = BlasLike.ddot(N, AA, M, WW, 1, ind + m);
-                    if (Math.Abs(WW[i] - initial[i]) > 1e-6)
+                    if (names!=null&&Math.Abs(WW[i] - initial[i]) > 1e-6)
                     {
                         if (WW[i] <= initial[i]) ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i],12}[/yellow]\t[cyan]{(WW[i] - initial[i]),25:F8}[/cyan]\t[red]{WW[ind + n],12:F8}[/red]\t[darkcyan]{(c1 - initial[i]),12:F8}[/darkcyan]\t[green]{initial[i],12:F8}[/green]\t\t[darkmagenta]{(!useIP ? (UU[ind + N + m] - c1) : 10),12:f2}[/darkmagenta]");
                         else ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i],12}[/yellow]  [cyan]{(WW[i] - initial[i]),25:F8}[/cyan]\t[red]{WW[ind + n],12:F8}[/red]\t[darkcyan]{(c1 - initial[i]),12:F8}[/darkcyan]\t[green]{initial[i],12:F8}[/green]\t\t[darkmagenta]{(!useIP ? (UU[ind + N + m] - c1) : 10),12:f2}[/darkmagenta]");
