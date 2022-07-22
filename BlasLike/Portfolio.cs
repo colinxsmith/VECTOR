@@ -268,8 +268,9 @@ namespace Portfolio
                 BlasLike.dcopyvec(n, op.wback, w);
                 foreach (var i in shake)
                 {
+                    string name = op.names != null ? op.names[i] : $"Asset {i + 1}";
                     double init;
-                    if (i != -1) { init = initial != null ? initial[i] : 0; ColourConsole.WriteEmbeddedColourLine($"[green]{op.names[i]}[/green][red] was not rounded properly! {w[i],26:e16}{init,26:e16}[/red]"); }
+                    if (i != -1) { init = initial != null ? initial[i] : 0; ColourConsole.WriteEmbeddedColourLine($"[green]{name}[/green][red] was not rounded properly! {w[i],26:e16}{init,26:e16}[/red]"); }
                 }
                 if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
             }
@@ -554,7 +555,7 @@ namespace Portfolio
         int i6 = 0;
         int stuck = 0;
         bool updateAllIfInfeasible = true;
-        int infeaseCount=0;
+        int infeaseCount = 0;
         ///<summary>Return the position of w in the roundlot ladder. If this is a whole number, then w is on a rung</summary>
         ///<param name="w">weight</param>
         ///<param name="initial">initial weight</param>
@@ -675,6 +676,7 @@ namespace Portfolio
                 badi = false;
                 if (Math.Abs(Math.Abs(w[i]) - Math.Abs(round_weight(w[i], init, minlot[i], sizelot != null ? sizelot[i] : 0))) > eps)
                 {
+                    string name = names != null ? names[i] : $"Asset {i + 1}";
                     if (Math.Abs(Math.Abs(w[i] - init) - minlot[i]) > eps)
                     {
                         if (sizelot != null && sizelot[i] > BlasLike.lm_eps)
@@ -682,17 +684,18 @@ namespace Portfolio
                             kk = (long)((Math.Abs(w[i] - init) - minlot[i]) / sizelot[i]);
                             if (Math.Abs(kk * sizelot[i] + minlot[i] - Math.Abs(w[i] - init)) > eps)
                             {
-                                badi = true; ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red] {L[i]} (w-init) {w[i] - init} {kk} {U[i]}");
+                                badi = true; ColourConsole.WriteEmbeddedColourLine($"[yellow]{name}[/yellow][red] BAD[/red] {L[i]} (w-init) {w[i] - init} {kk} {U[i]}");
                             }
                         }
                         else if (Math.Abs(w[i] - init) - Math.Abs(minlot[i]) < -eps && Math.Abs(w[i] - init) > eps)
-                        { badi = true; ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red] {L[i]} (w-init) {w[i] - init} base {U[i]}"); }
+                        { badi = true; ColourConsole.WriteEmbeddedColourLine($"[yellow]{name}[/yellow][red] BAD[/red] {L[i]} (w-init) {w[i] - init} base {U[i]}"); }
                     }
                 }
                 if (L[i] == U[i]) continue;
                 if (w[i] < L[i] - BlasLike.lm_eps8 || w[i] > U[i] + BlasLike.lm_eps8)
                 {
-                    badi = true; ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i]}[/yellow][red] BAD[/red] {L[i]} (w) {w[i]} {U[i]}");
+                    string name = names != null ? names[i] : $"Asset {i + 1}";
+                    badi = true; ColourConsole.WriteEmbeddedColourLine($"[yellow]{name}[/yellow][red] BAD[/red] {L[i]} (w) {w[i]} {U[i]}");
                 }
                 if (badi) bad++;
             }
@@ -771,8 +774,8 @@ namespace Portfolio
                 BlasLike.dcopyvec(m + n, rstep.U, info.upper);
                 //	info.OptSetup(basket,trades);
                 info.OptFunc(info);
-                if(info.back==6)infeaseCount++;
-                else if(info.back<2)infeaseCount=0;
+                if (info.back == 6) infeaseCount++;
+                else if (info.back < 2) infeaseCount = 0;
                 ColourConsole.WriteEmbeddedColourLine($"[red]infeaseCount=[/red][cyan]{infeaseCount}[/cyan]");
                 //	rstep.util=info.utility_base(n,x,c,H);
                 rstep.util = info.UtilityFunc(info);
@@ -997,7 +1000,7 @@ namespace Portfolio
                 BlasLike.dcopyvec(m + n, rstep.U, info.upper);
                 //		info.OptSetup(basket,trades);
                 info.OptFunc(info);
-                if(info.back<2)infeaseCount=0;
+                if (info.back < 2) infeaseCount = 0;
                 ColourConsole.WriteEmbeddedColourLine($"[red]infeaseCount=[/red][cyan]{infeaseCount}[/cyan]");
                 rstep.util = info.UtilityFunc(info);
                 if (info.back == 66) info.back = 6;
@@ -1132,6 +1135,7 @@ namespace Portfolio
             {
                 //		i=next.bound_order[n-j-1];
                 i = next.bound_order[j]; dd = 0;
+                string name = names != null ? names[i] : $"Asset {i + 1}";
                 init = initial != null ? initial[i] : 0;
                 if (Math.Abs(info.x[i]) < BlasLike.lm_eps) info.x[i] = 0;
                 else if (Math.Abs(info.x[i] - init) < BlasLike.lm_eps) info.x[i] = init;
@@ -1188,7 +1192,7 @@ namespace Portfolio
                         nwL = digit2w(testw, init, -stuck, minlot[i], sizelot[i]);
                         nwU = digit2w(testw, init, 0, minlot[i], sizelot[i]);
                     }
-                    //  ColourConsole.WriteEmbeddedColourLine($"[cyan]closeness {names[i]}[/cyan] [green]{testw-nwL}[/green] [darkgreen]{testw-nwU}[/darkgreen] [yellow]{testw}[/yellow]");
+                    //  ColourConsole.WriteEmbeddedColourLine($"[cyan]closeness {name}[/cyan] [green]{testw-nwL}[/green] [darkgreen]{testw-nwU}[/darkgreen] [yellow]{testw}[/yellow]");
                     if (Math.Abs(info.x[i] - nwL) < round_eps || Math.Abs(info.x[i] - nwU) < round_eps || Math.Abs(testw - init) < BlasLike.lm_eps)
                     {
                         continue;
@@ -1329,12 +1333,12 @@ namespace Portfolio
                 }
             }
             // i6limit = bestround >= n - 2 ? 6 : n;
-          //  if(info.back==6&&updateAllIfInfeasible&&next.count<10)updateAllIfInfeasible=false;
-          //  else updateAllIfInfeasible=next.success||next.count%2==0;
-         // if(infeaseCount>10)updateAllIfInfeasible=false;
-         // else updateAllIfInfeasible=true;
-       //   updateAllIfInfeasible=true;
-             i6limit = n;
+            //  if(info.back==6&&updateAllIfInfeasible&&next.count<10)updateAllIfInfeasible=false;
+            //  else updateAllIfInfeasible=next.success||next.count%2==0;
+            // if(infeaseCount>10)updateAllIfInfeasible=false;
+            // else updateAllIfInfeasible=true;
+            //   updateAllIfInfeasible=true;
+            i6limit = n;
             i6 = i6 % n;
             if (stuck > 10 || next.count > 40) { rstep.util = info.UtilityFunc(info); return; }
             if (bestround >= n - 4 && next.count > maxstage /*&& rstep.back <= 1*/) { rstep.util = info.UtilityFunc(info); return; }
@@ -2161,13 +2165,14 @@ namespace Portfolio
             if (ffi > 0) ColourConsole.WriteEmbeddedColourLine($"[cyan]Changed lot for[/cyan] [red]{ffi}[/red][cyan] lots due to fixed bounds[/cyan]");
             for (i = 0; i < OP.n; ++i)
             {
+                string name = names != null ? names[i] : $"Asset {i + 1}";
                 if (OP.lower[i] == OP.upper[i]) continue;
                 var init = initial != null ? initial[i] : 0.0;
                 if (OP.lower[i] > init)
                 {
                     if (OP.lower[i] < minlot[i] + init)
                     {
-                        ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {OP.lower[i]}[/green][red] to {minlot[i] + init}[/red]");
+                        ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {name}[/cyan][green] {OP.lower[i]}[/green][red] to {minlot[i] + init}[/red]");
                         OP.lower[i] = minlot[i] + init;
                     }
                 }
@@ -2175,7 +2180,7 @@ namespace Portfolio
                 {
                     if (OP.upper[i] > -minlot[i] + init)
                     {
-                        ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {OP.upper[i]}[/green][red] to {-minlot[i] + init}[/red]");
+                        ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {name}[/cyan][green] {OP.upper[i]}[/green][red] to {-minlot[i] + init}[/red]");
                         OP.upper[i] = -minlot[i] + init;
                     }
                 }
@@ -2212,6 +2217,7 @@ namespace Portfolio
             bool bad = false;
             for (i = 0; i < n; ++i)
             {
+                string name = names != null ? names[i] : $"Asset {i + 1}";
                 double init = initial != null ? initial[i] : 0, newb;
                 if (upper[i] + BlasLike.lm_eps8 < minlot[i] + init)
                 {
@@ -2221,7 +2227,7 @@ namespace Portfolio
                         if (upper[i] != newb)
                         {
                             changed = true;
-                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {name}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
                             upper[i] = newb;
                         }
                     }
@@ -2230,7 +2236,7 @@ namespace Portfolio
                         newb = Math.Min(upper[i], (Math.Max(init - minlot[i], lower[i])));
                         if (upper[i] != newb)
                         {
-                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {name}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
                             changed = true; upper[i] = newb;
                         }
                     }
@@ -2243,7 +2249,7 @@ namespace Portfolio
                         if (lower[i] != newb)
                         {
                             changed = true;
-                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {name}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
                             lower[i] = newb;
                         }
                     }
@@ -2253,7 +2259,7 @@ namespace Portfolio
                         if (lower[i] != newb)
                         {
                             changed = true;
-                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {name}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
                             lower[i] = newb;
                         }
                     }
@@ -2264,6 +2270,7 @@ namespace Portfolio
             {
                 for (i = 0; i < n; ++i)
                 {
+                    string name = names != null ? names[i] : $"Asset {i + 1}";
                     double init = initial != null ? initial[i] : 0, newb;
                     if (upper[i] + BlasLike.lm_eps8 < minlot1[i])
                     {
@@ -2273,7 +2280,7 @@ namespace Portfolio
                             if (upper[i] != newb)
                             {
                                 changed = true;
-                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {name}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
                                 upper[i] = newb;
                             }
                         }
@@ -2283,12 +2290,12 @@ namespace Portfolio
                             if (upper[i] != newb)
                             {
                                 changed = true;
-                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {name}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
                                 upper[i] = newb;
                                 if (upper[i] - init < -minlot[i])
                                 {
                                     upper[i] = Math.Min(upper[i], (Math.Max(-minlot[i] + init, lower[i])));
-                                    ColourConsole.WriteEmbeddedColourLine($"[red]Decrease {names[i]} further to [/red][magenta]{upper[i]}[/magenta]");
+                                    ColourConsole.WriteEmbeddedColourLine($"[red]Decrease {name} further to [/red][magenta]{upper[i]}[/magenta]");
                                 }
                             }
                         }
@@ -2301,7 +2308,7 @@ namespace Portfolio
                             if (lower[i] != newb)
                             {
                                 changed = true;
-                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {name}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
                                 lower[i] = newb;
                             }
                         }
@@ -2311,12 +2318,12 @@ namespace Portfolio
                             if (lower[i] != newb)
                             {
                                 changed = true;
-                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {name}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
                                 lower[i] = newb;
                                 if (lower[i] - init < minlot[i])
                                 {
                                     lower[i] = Math.Max(lower[i], (Math.Min(minlot[i] + init, upper[i])));
-                                    ColourConsole.WriteEmbeddedColourLine($"[green]Increase {names[i]} further to [/green][darkgreen]{lower[i]}[/darkgreen]");
+                                    ColourConsole.WriteEmbeddedColourLine($"[green]Increase {name} further to [/green][darkgreen]{lower[i]}[/darkgreen]");
                                 }
                             }
                         }
@@ -2329,7 +2336,7 @@ namespace Portfolio
                             if (lower[i] != newb)
                             {
                                 changed = true;
-                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {name}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
                                 lower[i] = newb;
                             }
                         }
@@ -2339,7 +2346,7 @@ namespace Portfolio
                             if (lower[i] != newb)
                             {
                                 changed = true;
-                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {name}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
                                 lower[i] = newb;
                             }
                         }
@@ -2352,7 +2359,7 @@ namespace Portfolio
                             if (upper[i] != newb)
                             {
                                 changed = true;
-                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {name}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
                                 upper[i] = newb;
                             }
                         }
@@ -2362,7 +2369,7 @@ namespace Portfolio
                             if (upper[i] != newb)
                             {
                                 changed = true;
-                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {name}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
                                 upper[i] = newb;
                             }
                         }
@@ -2497,14 +2504,15 @@ namespace Portfolio
                 double compromise = BlasLike.lm_rooteps; bad = false;
                 for (i = 0; i < n; ++i)
                 {
+                    string name = names != null ? names[i] : $"Asset {i + 1}";
                     double init = initial != null ? initial[i] : 0;
                     if (Math.Abs(Math.Abs(roundw[i]) - Math.Abs(round_weight(roundw[i], init, minlot[i], 0))) > compromise && Math.Abs(Math.Abs(roundw[i] - init) - minlot[i]) > compromise)
                     {
-                        ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for trade [green]{names[i]}[/green]; threshold is [cyan]{roundw[i] - init}[/cyan]"); bad = true;
+                        ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for trade [green]{name}[/green]; threshold is [cyan]{roundw[i] - init}[/cyan]"); bad = true;
                     }
                     if (minlot1 != null && Math.Abs(Math.Abs(roundw[i]) - Math.Abs(round_weight(roundw[i], 0, minlot1[i], 0))) > compromise && Math.Abs(Math.Abs(roundw[i]) - minlot1[i]) > compromise)
                     {
-                        ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for stock [green]{names[i]}[/green]; threshold is [cyan]{roundw[i]}[/cyan]");
+                        ColourConsole.WriteEmbeddedColourLine($"Threshold constraint failed for stock [green]{name}[/green]; threshold is [cyan]{roundw[i]}[/cyan]");
                         bad = true;
                     }
                 }
@@ -2554,6 +2562,7 @@ namespace Portfolio
             var minlot1 = minholdlot;
             for (var i = 0; i < Op.n; ++i)
             {
+                string name = names != null ? names[i] : $"Asset {i + 1}";
                 if (Op.lower[i] == Op.upper[i]) continue;
                 double init = initial != null ? initial[i] : 0, newb;
                 if (upper[i] + BlasLike.lm_eps8 < minlot[i] + init)
@@ -2564,7 +2573,7 @@ namespace Portfolio
                         if (upper[i] != newb)
                         {
                             changed = true;
-                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {name}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
                             upper[i] = newb;
                         }
                     }
@@ -2573,7 +2582,7 @@ namespace Portfolio
                         newb = Math.Min(upper[i], (Math.Max(init - minlot[i], lower[i])));
                         if (upper[i] != newb)
                         {
-                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                            ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {name}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
                             changed = true; upper[i] = newb;
                         }
                     }
@@ -2586,7 +2595,7 @@ namespace Portfolio
                         if (lower[i] != newb)
                         {
                             changed = true;
-                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {name}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
                             lower[i] = newb;
                         }
                     }
@@ -2596,7 +2605,7 @@ namespace Portfolio
                         if (lower[i] != newb)
                         {
                             changed = true;
-                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                            ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {name}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
                             lower[i] = newb;
                         }
                     }
@@ -2607,6 +2616,7 @@ namespace Portfolio
             {
                 for (var i = 0; i < Op.n; ++i)
                 {
+                    string name = names != null ? names[i] : $"Asset {i + 1}";
                     if (Op.lower[i] == Op.upper[i]) continue;
                     double init = initial != null ? initial[i] : 0, newb;
                     if (upper[i] + BlasLike.lm_eps8 < minlot1[i])
@@ -2617,7 +2627,7 @@ namespace Portfolio
                             if (upper[i] != newb)
                             {
                                 changed = true;
-                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {name}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
                                 upper[i] = newb;
                             }
                         }
@@ -2627,12 +2637,12 @@ namespace Portfolio
                             if (upper[i] != newb)
                             {
                                 changed = true;
-                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {name}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
                                 upper[i] = newb;
                                 if (upper[i] - init < -minlot[i])
                                 {
                                     upper[i] = Math.Min(upper[i], (Math.Max(-minlot[i] + init, lower[i])));
-                                    ColourConsole.WriteEmbeddedColourLine($"[red]Decrease {names[i]} further to [/red][magenta]{upper[i]}[/magenta]");
+                                    ColourConsole.WriteEmbeddedColourLine($"[red]Decrease {name} further to [/red][magenta]{upper[i]}[/magenta]");
                                 }
                             }
                         }
@@ -2645,7 +2655,7 @@ namespace Portfolio
                             if (lower[i] != newb)
                             {
                                 changed = true;
-                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {name}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
                                 lower[i] = newb;
                             }
                         }
@@ -2655,12 +2665,12 @@ namespace Portfolio
                             if (lower[i] != newb)
                             {
                                 changed = true;
-                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {name}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
                                 lower[i] = newb;
                                 if (lower[i] - init < minlot[i])
                                 {
                                     lower[i] = Math.Max(lower[i], (Math.Min(minlot[i] + init, upper[i])));
-                                    ColourConsole.WriteEmbeddedColourLine($"[green]Increase {names[i]} further to [/green][darkgreen]{lower[i]}[/darkgreen]");
+                                    ColourConsole.WriteEmbeddedColourLine($"[green]Increase {name} further to [/green][darkgreen]{lower[i]}[/darkgreen]");
                                 }
                             }
                         }
@@ -2673,7 +2683,7 @@ namespace Portfolio
                             if (lower[i] != newb)
                             {
                                 changed = true;
-                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {name}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
                                 lower[i] = newb;
                             }
                         }
@@ -2683,7 +2693,7 @@ namespace Portfolio
                             if (lower[i] != newb)
                             {
                                 changed = true;
-                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {names[i]}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
+                                ColourConsole.WriteEmbeddedColourLine($"[green]Increase lower for {name}[/green] [darkgreen]{lower[i]} to {newb}[/darkgreen]");
                                 lower[i] = newb;
                             }
                         }
@@ -2696,7 +2706,7 @@ namespace Portfolio
                             if (upper[i] != newb)
                             {
                                 changed = true;
-                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {name}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
                                 upper[i] = newb;
                             }
                         }
@@ -2706,7 +2716,7 @@ namespace Portfolio
                             if (upper[i] != newb)
                             {
                                 changed = true;
-                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {names[i]}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
+                                ColourConsole.WriteEmbeddedColourLine($"[red]Decrease upper for {name}[/red] [magenta]{upper[i]} to {newb}[/magenta]");
                                 upper[i] = newb;
                             }
                         }
@@ -2717,20 +2727,21 @@ namespace Portfolio
 
             for (var i = 0; i < Op.n; ++i)
             {
+                string name = names != null ? names[i] : $"Asset {i + 1}";
                 if (Op.lower[i] == Op.upper[i]) continue;
                 var init = initial != null ? initial[i] : 0.0;
                 if (Op.lower[i] > init)
                 {
                     var dd = (int)digitisei(Op.lower[i], init, minlot[i], sizelot[i]);
                     var newL = digit2w(Op.lower[i], init, dd + 1, minlot[i], sizelot[i]);
-                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {names[i]}[/cyan][green] {Op.lower[i]}[/green][red] to {newL}[/red]");
+                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Increase Lower bound for {name}[/cyan][green] {Op.lower[i]}[/green][red] to {newL}[/red]");
                     Op.lower[i] = newL; changed = true;
                 }
                 else if (Op.upper[i] < init)
                 {
                     var dd = (int)digitisei(Op.upper[i], init, minlot[i], sizelot[i]);
                     var newU = digit2w(Op.upper[i], init, dd - 1, minlot[i], sizelot[i]);
-                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {names[i]}[/cyan][green] {Op.upper[i]}[/green][red] to {newU}[/red]");
+                    ColourConsole.WriteEmbeddedColourLine($"[cyan]Decrease Upper bound for {name}[/cyan][green] {Op.upper[i]}[/green][red] to {newU}[/red]");
                     Op.upper[i] = newU; changed = true;
                 }
                 /*               else if (Op.lower[i] == init)//Probably does nothing
@@ -3234,9 +3245,10 @@ namespace Portfolio
             var old = Console.ForegroundColor;
             ColourConsole.WriteEmbeddedColourLine($"[red]Effective model with non-linear extra part projected out[/red]");
             ColourConsole.WriteEmbeddedColourLine($"\t\t\t\t\t[green]Weight[/green]\t\t\t[cyan]Effective Utility Gradient[/cyan]");
-            for (var i = 0; names!=null&&i < ntrue; ++i)
+            for (var i = 0; i < ntrue; ++i)
             {
-                ColourConsole.WriteEmbeddedColourLine($"[darkred]{i + 1,5}[/darkred][red]{names[i],30}[/red][green]{w[i],12:F8}[/green]\t\t\t[cyan]{Ceff[i],20:e12}[/cyan]");
+                string name = names != null ? names[i] : $"Asset {i + 1}";
+                ColourConsole.WriteEmbeddedColourLine($"[darkred]{i + 1,5}[/darkred][red]{name,30}[/red][green]{w[i],12:F8}[/green]\t\t\t[cyan]{Ceff[i],20:e12}[/cyan]");
             }
             ColourConsole.WriteEmbeddedColourLine($"Primal:\t[magenta]{primal,12:F8}[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"Dual:\t[cyan]{dual,12:F8}[/cyan]");
@@ -3456,6 +3468,7 @@ namespace Portfolio
             var cost = 0.0;
             for (var i = 0; i < n; ++i)
             {
+                string name = names != null ? names[i] : $"Asset {i + 1}";
                 turnover += Math.Abs(WW[i] - initial[i]);
                 if ((buy != null) && (sell != null))
                 {
@@ -3466,13 +3479,13 @@ namespace Portfolio
                 if (bothsellbuy)
                 {
                     var c2 = BlasLike.ddot(N, AA, M, WW, 1, n + i + m);
-                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]),12:F8}\t{WW[i + n],12:F8} {c1,12:F8} {WW[i + n + n],12:F8} {c2,12:F8} {initial[i],12:F8}");
-                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]),12:F8}\t{WW[i + n],12:F8} {c1,12:F8} {WW[i + n + n],12:F8} {c2,12:F8} {initial[i],12:F8}");
+                    if (WW[i] <= initial[i]) Console.WriteLine($"{name}\t{(WW[i] - initial[i]),12:F8}\t{WW[i + n],12:F8} {c1,12:F8} {WW[i + n + n],12:F8} {c2,12:F8} {initial[i],12:F8}");
+                    else Console.WriteLine($"{name} {(WW[i] - initial[i]),12:F8}\t{WW[i + n],12:F8} {c1,12:F8} {WW[i + n + n],12:F8} {c2,12:F8} {initial[i],12:F8}");
                 }
                 else
                 {
-                    if (WW[i] <= initial[i]) Console.WriteLine($"{names[i]}\t{(WW[i] - initial[i]),12:F8}\t{WW[i + n],12:F8} {(c1 - initial[i]),12:F8}  {initial[i],12:F8}\t\t{(!useIP ? (UU[i + N + m] - c1) : 10):f2}");
-                    else Console.WriteLine($"{names[i]} {(WW[i] - initial[i]),12:F8}\t{WW[i + n],12:F8} {(c1 - initial[i]),12:F8}  {initial[i],12:F8}\t\t{(!useIP ? (UU[i + N + m] - c1) : 10):f2}");
+                    if (WW[i] <= initial[i]) Console.WriteLine($"{name}\t{(WW[i] - initial[i]),12:F8}\t{WW[i + n],12:F8} {(c1 - initial[i]),12:F8}  {initial[i],12:F8}\t\t{(!useIP ? (UU[i + N + m] - c1) : 10):f2}");
+                    else Console.WriteLine($"{name} {(WW[i] - initial[i]),12:F8}\t{WW[i + n],12:F8} {(c1 - initial[i]),12:F8}  {initial[i],12:F8}\t\t{(!useIP ? (UU[i + N + m] - c1) : 10):f2}");
                 }
             }
             var eret = BlasLike.ddotvec(n, alpha, WW);
@@ -4283,10 +4296,11 @@ namespace Portfolio
                 {
                     var ind = buysellIndex_inverse[i];
                     var c1 = BlasLike.ddot(N, AA, M, WW, 1, ind + m);
-                    if (names!=null&&Math.Abs(WW[i] - initial[i]) > 1e-6)
+                    if (Math.Abs(WW[i] - initial[i]) > 1e-6)
                     {
-                        if (WW[i] <= initial[i]) ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i],12}[/yellow]\t[cyan]{(WW[i] - initial[i]),25:F8}[/cyan]\t[red]{WW[ind + n],12:F8}[/red]\t[darkcyan]{(c1 - initial[i]),12:F8}[/darkcyan]\t[green]{initial[i],12:F8}[/green]\t\t[darkmagenta]{(!useIP ? (UU[ind + N + m] - c1) : 10),12:f2}[/darkmagenta]");
-                        else ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i],12}[/yellow]  [cyan]{(WW[i] - initial[i]),25:F8}[/cyan]\t[red]{WW[ind + n],12:F8}[/red]\t[darkcyan]{(c1 - initial[i]),12:F8}[/darkcyan]\t[green]{initial[i],12:F8}[/green]\t\t[darkmagenta]{(!useIP ? (UU[ind + N + m] - c1) : 10),12:f2}[/darkmagenta]");
+                        string name = names != null ? names[i] : $"Asset {i + 1}";
+                        if (WW[i] <= initial[i]) ColourConsole.WriteEmbeddedColourLine($"[yellow]{name,12}[/yellow]\t[cyan]{(WW[i] - initial[i]),25:F8}[/cyan]\t[red]{WW[ind + n],12:F8}[/red]\t[darkcyan]{(c1 - initial[i]),12:F8}[/darkcyan]\t[green]{initial[i],12:F8}[/green]\t\t[darkmagenta]{(!useIP ? (UU[ind + N + m] - c1) : 10),12:f2}[/darkmagenta]");
+                        else ColourConsole.WriteEmbeddedColourLine($"[yellow]{name,12}[/yellow]  [cyan]{(WW[i] - initial[i]),25:F8}[/cyan]\t[red]{WW[ind + n],12:F8}[/red]\t[darkcyan]{(c1 - initial[i]),12:F8}[/darkcyan]\t[green]{initial[i],12:F8}[/green]\t\t[darkmagenta]{(!useIP ? (UU[ind + N + m] - c1) : 10),12:f2}[/darkmagenta]");
                     }
                 }
                 if (longshortI > 0 && longshortIndex_inverse[i] != -1)
@@ -4295,8 +4309,9 @@ namespace Portfolio
                     var c1 = BlasLike.ddot(N, AA, M, WW, 1, ind + m + buysellI);
                     if (Math.Abs(WW[i]) > 1e-6)
                     {
-                        if (WW[i] <= 0) ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i],12}[/yellow]\t[cyan]{(WW[i]),25:F8}[/cyan]\t[red]{WW[ind + n + buysellI],12:F8}[/red]\t[darkcyan]{(c1),12:F8}[/darkcyan]\t[green]{0,12:F8}[/green]\t\t[darkmagenta]{(!useIP ? (UU[ind + N + m + buysellI] - c1) : 10),12:f2}[/darkmagenta]");
-                        else ColourConsole.WriteEmbeddedColourLine($"[yellow]{names[i],12}[/yellow] [cyan]{(WW[i]),25:F8}[/cyan]\t[red]{WW[ind + n + buysellI],12:F8}[/red]\t[darkcyan]{(c1),12:F8}[/darkcyan]\t[green]{0,12:F8}[/green]\t\t[darkmagenta]{(!useIP ? (UU[ind + N + m + buysellI] - c1) : 10),12:f2}[/darkmagenta]");
+                        string name = names != null ? names[i] : $"Asset {i + 1}";
+                        if (WW[i] <= 0) ColourConsole.WriteEmbeddedColourLine($"[yellow]{name,12}[/yellow]\t[cyan]{(WW[i]),25:F8}[/cyan]\t[red]{WW[ind + n + buysellI],12:F8}[/red]\t[darkcyan]{(c1),12:F8}[/darkcyan]\t[green]{0,12:F8}[/green]\t\t[darkmagenta]{(!useIP ? (UU[ind + N + m + buysellI] - c1) : 10),12:f2}[/darkmagenta]");
+                        else ColourConsole.WriteEmbeddedColourLine($"[yellow]{name,12}[/yellow] [cyan]{(WW[i]),25:F8}[/cyan]\t[red]{WW[ind + n + buysellI],12:F8}[/red]\t[darkcyan]{(c1),12:F8}[/darkcyan]\t[green]{0,12:F8}[/green]\t\t[darkmagenta]{(!useIP ? (UU[ind + N + m + buysellI] - c1) : 10),12:f2}[/darkmagenta]");
                     }
                 }
             }
@@ -4398,7 +4413,8 @@ namespace Portfolio
             var printAlphas = false;
             for (var i = 0; printAlphas && i < n; ++i)
             {
-                ColourConsole.WriteEmbeddedColourLine($"[magenta]{names[i]}[/magenta] [green]{alpha[i],12:f8}[/green] [red]{wback[i],12:f8}[/red]");
+                string name = names != null ? names[i] : $"Asset {i + 1}";
+                ColourConsole.WriteEmbeddedColourLine($"[magenta]{name}[/magenta] [green]{alpha[i],12:f8}[/green] [red]{wback[i],12:f8}[/red]");
             }
             var nfixedold = nfixed;
             nfixed = 0;
@@ -4645,7 +4661,8 @@ namespace Portfolio
             Console.WriteLine($"Utility {-expret + lossV * lambda / tlen + 0.5 * variance}");
             for (var i = 0; i < n; ++i)
             {
-                Console.WriteLine($"{names[i]}\t{ww[i],12:F8}");
+                string name = names != null ? names[i] : $"Asset {i + 1}";
+                Console.WriteLine($"{name}\t{ww[i],12:F8}");
             }
             for (var i = 0; i < M; ++i)
             {
