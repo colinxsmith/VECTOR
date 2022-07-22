@@ -147,6 +147,7 @@ interface Result {
   minhold: number,
   mintrade: number,
   cost: number,
+  cval:Array<number>,
   turnover: number,
   basket: number,
   trades: number,

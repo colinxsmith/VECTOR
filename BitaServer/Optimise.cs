@@ -12,6 +12,7 @@ public class Optimise
     public double? turnover {get;set;}
     public int?basket{get;set;}
     public int?trades{get;set;}
+    public double[]? cval{set;get;}
     public double? VAR { get; set; }
     public int? VARindex { get; set; }
     public double? ETL { get; set; }
