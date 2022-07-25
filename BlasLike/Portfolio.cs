@@ -268,9 +268,12 @@ namespace Portfolio
                 BlasLike.dcopyvec(n, op.wback, w);
                 foreach (var i in shake)
                 {
-                    string name = op.names != null ? op.names[i] : $"Asset {i + 1}";
                     double init;
-                    if (i != -1) { init = initial != null ? initial[i] : 0; ColourConsole.WriteEmbeddedColourLine($"[green]{name}[/green][red] was not rounded properly! {w[i],26:e16}{init,26:e16}[/red]"); }
+                    if (i != -1)
+                    {
+                        string name = op.names != null ? op.names[i] : $"Asset {i + 1}";
+                        init = initial != null ? initial[i] : 0; ColourConsole.WriteEmbeddedColourLine($"[green]{name}[/green][red] was not rounded properly! {w[i],26:e16}{init,26:e16}[/red]");
+                    }
                 }
                 if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
             }
