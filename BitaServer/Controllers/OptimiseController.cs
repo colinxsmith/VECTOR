@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Blas;
 using Solver;
 using DataFile;
-
+using Microsoft.Extensions.Hosting.WindowsServices;
 namespace BitaServer.Controllers;
 
 [ApiController]
@@ -239,9 +239,10 @@ public class OptimiseController : ControllerBase
             CVarData.stringFields = "names logfile";
             op.datafile = "generalopt";
             if (datafile != null) op.datafile = datafile;
+            var ContentRootPath = WindowsServiceHelpers.IsWindowsService() ? AppContext.BaseDirectory : ".";
             try
             {
-                CVarData.Read($"./{op.datafile}");
+                CVarData.Read($"{ContentRootPath}/{op.datafile}");
             }
             catch
             {

@@ -19,7 +19,7 @@ if (OperatingSystem.IsWindows())
     builder.Services.Configure<EventLogSettings>(conf =>
     {
         conf.LogName = "BitaServer";
-        conf.SourceName = "BitaServer";
+        conf.SourceName = "Optimiser Server";
     });
 }
 var app = builder.Build();

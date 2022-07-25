@@ -59,3 +59,10 @@ publish with
 dotnet publish -c Release -r win-x64 --sc
 OR
 dotnet publish -c Release -r linux-x64 --sc
+
+To make service 
+
+sc create "BITA+" binPath= c:\server\BitaServer.exe DisplayName="Optimiser Server"
+sc start "BITA+"
+sc stop "BITA+"
+sc delete "BITA+"
