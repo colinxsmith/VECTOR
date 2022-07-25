@@ -17,6 +17,7 @@ Now we want to add a web server
 dotnet new webapi -o BitaServer
 cd BitaServer
 dotnet add package Microsoft.EntityFrameworkCore.InMemory
+dotnet add package Microsoft.Extensions.Hosting.WindowsServices
 cd ..
 
 Need to add to solution
