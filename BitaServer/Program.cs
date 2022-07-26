@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging.EventLog;
+using Microsoft.Extensions.Hosting.Systemd;
 var options = new WebApplicationOptions
 {
     Args = args,
@@ -12,16 +13,28 @@ var builder = WebApplication.CreateBuilder(options);
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Host.UseWindowsService();
-//builder.Services.AddSwaggerGen();
 if (OperatingSystem.IsWindows())
-{//Seems not to work for getting log info
+{
+    builder.Host
+    .UseWindowsService()
+    .ConfigureLogging((_, logging) => logging.AddEventLog())
+    .ConfigureLogging(logging =>
+    {
+        logging.ClearProviders();
+        logging.AddConsole();
+    });//Seems not to work for getting log info
     builder.Services.Configure<EventLogSettings>(conf =>
     {
         conf.LogName = "BitaServer";
         conf.SourceName = "Optimiser Server";
+        conf.MachineName = null;
     });
 }
+else if (OperatingSystem.IsLinux())
+{
+    builder.Host.UseSystemd();
+}
+//builder.Services.AddSwaggerGen();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

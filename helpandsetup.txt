@@ -69,3 +69,11 @@ these will help
 sc start "BITA+"
 sc stop "BITA+"
 sc delete "BITA+"
+
+For unix service
+set up BitaService.service in  /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl start BitaServer
+sudo systemctl enable BitaServer (to make it start at system up)
+sudo systemctl status BitaServer
+journeyctl -u BitaServer

@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Mvc;
 using Blas;
 using Solver;
 using DataFile;
-
 namespace BITAPlus.Controllers;
 
 [ApiController]
@@ -24,6 +23,7 @@ public class OptimiseController : ControllerBase
             op.tdigit = op.digit != null ? Portfolio.Portfolio.check_digit((double)op.digit) : null;
         }
         ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green]");
+        _logger.LogInformation($"POST test at {DateTimeOffset.Now}");
         return op;
     }
     [HttpGet()]
@@ -68,6 +68,7 @@ public class OptimiseController : ControllerBase
         op.LOSSmin = -1;
         op.LOSSmax = 10;
         op.gamma = 0;
+        _logger.LogInformation($"GET LOSS at {DateTimeOffset.Now}");
         return op;
     }
 
@@ -115,6 +116,7 @@ public class OptimiseController : ControllerBase
         opt.RiskBreakdown(op.w, null, op.result.mctr);
         op.result.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.result.mctr);
         op.result.expreturn = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.alpha);
+        _logger.LogInformation($"POST LOSS at {DateTimeOffset.Now}");
         return op;
     }
 
@@ -152,6 +154,7 @@ public class OptimiseController : ControllerBase
         op.ETLmin = -1;
         op.ETLmax = 1;
         op.gamma = 0;
+        _logger.LogInformation($"GET ETL at {DateTimeOffset.Now}");
         return op;
     }
     [HttpPost("ETL")]
@@ -200,6 +203,7 @@ public class OptimiseController : ControllerBase
         opt.RiskBreakdown(op.w, null, op.result.mctr);
         op.result.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.result.mctr);
         op.result.expreturn = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.alpha);
+        _logger.LogInformation($"POST ETL at {DateTimeOffset.Now}");
         return op;
     }
     [HttpGet("test")]
@@ -212,6 +216,7 @@ public class OptimiseController : ControllerBase
         op.digit = testdigit;
         op.tdigit = Portfolio.Portfolio.check_digit(testdigit);
         ColourConsole.WriteEmbeddedColourLine($"[red]{op.digit}[/red] [green]{op.tdigit}[/green]");
+        _logger.LogInformation($"GET test at {DateTimeOffset.Now}");
         return op;
     }
     [HttpGet("test/n")]
@@ -239,9 +244,10 @@ public class OptimiseController : ControllerBase
             CVarData.stringFields = "names logfile";
             op.datafile = "generalopt";
             if (datafile != null) op.datafile = datafile;
+            var ContentRootPath = ".";
             try
             {
-                CVarData.Read($"./{op.datafile}");
+                CVarData.Read($"{ContentRootPath}/{op.datafile}");
             }
             catch
             {
@@ -541,6 +547,7 @@ public class OptimiseController : ControllerBase
             }
         }
 
+        _logger.LogInformation($"GET general at {DateTimeOffset.Now}");
         return op;
     }
     [HttpPost("general")]
@@ -734,6 +741,7 @@ public class OptimiseController : ControllerBase
                 op.result.breakdown = breakd;
             }
         }
+        _logger.LogInformation($"POST general at {DateTimeOffset.Now}");
         return op;
     }
 }

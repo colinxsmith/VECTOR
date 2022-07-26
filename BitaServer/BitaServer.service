@@ -1,0 +1,11 @@
+[Unit]
+Description=Bita Server
+
+[Service]
+Type=notify
+ExecStart=/usr/sbin/bitaserver
+TimeoutSec=infinity
+Restart=on-abnormal
+
+[Install]
+WantedBy=multi-user.target
