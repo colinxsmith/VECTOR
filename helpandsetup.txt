@@ -76,4 +76,4 @@ sudo systemctl daemon-reload
 sudo systemctl start BitaServer
 sudo systemctl enable BitaServer (to make it start at system up)
 sudo systemctl status BitaServer
-journeyctl -u BitaServer
+journalctl -u BitaServer

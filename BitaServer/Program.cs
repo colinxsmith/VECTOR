@@ -4,10 +4,9 @@ using Microsoft.Extensions.Hosting.Systemd;
 var options = new WebApplicationOptions
 {
     Args = args,
-    ContentRootPath = WindowsServiceHelpers.IsWindowsService() ? AppContext.BaseDirectory : default
+    ContentRootPath = (WindowsServiceHelpers.IsWindowsService() || SystemdHelpers.IsSystemdService()) ? AppContext.BaseDirectory : default
 };
 var builder = WebApplication.CreateBuilder(options);
-
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -34,6 +33,7 @@ else if (OperatingSystem.IsLinux())
 {
     builder.Host.UseSystemd();
 }
+//builder.WebHost.UseUrls("http://*:7779"); //Don't do this
 //builder.Services.AddSwaggerGen();
 var app = builder.Build();
 

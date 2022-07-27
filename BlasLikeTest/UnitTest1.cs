@@ -789,12 +789,12 @@ namespace BlasLikeTest
         [TestMethod]
         public void Test_round()
         {
-            var d1 =0.010099999999999998;
-            Assert.IsTrue(Portfolio.Portfolio.digitRound(d1,1e7) == 0.0101, $"{Portfolio.Portfolio.digitRound(d1,1e7)}"); 
-            d1=0.008900000000000002;
-            Assert.IsTrue(Portfolio.Portfolio.digitRound(d1) == 0.0089, $"{Portfolio.Portfolio.digitRound(d1)}");  
-            d1=0.0001234556789;
-            Assert.IsTrue(Portfolio.Portfolio.digitRound(d1) == 0.0001234556789, $"{Portfolio.Portfolio.digitRound(d1)}"); 
+            var d1 = 0.010099999999999998;
+            Assert.IsTrue(Portfolio.Portfolio.digitRound(d1, 1e7) == 0.0101, $"{Portfolio.Portfolio.digitRound(d1, 1e7)}");
+            d1 = 0.008900000000000002;
+            Assert.IsTrue(Portfolio.Portfolio.digitRound(d1) == 0.0089, $"{Portfolio.Portfolio.digitRound(d1)}");
+            d1 = 0.0001234556789;
+            Assert.IsTrue(Portfolio.Portfolio.digitRound(d1) == 0.0001234556789, $"{Portfolio.Portfolio.digitRound(d1)}");
         }
         [TestMethod]
         public void Test_sigfig()
@@ -874,6 +874,21 @@ namespace BlasLikeTest
             Assert.IsTrue(Math.Abs(VAR - 16.000000000000092) < BlasLike.lm_eps, $"{VAR - 16.000000000000092}");
             Assert.IsTrue(VARindex == 6, $"{VARindex}");
             Assert.IsTrue(numberInTail == 1, $"{numberInTail}");
+        }
+        [TestMethod]
+        public void Test_readLicence()
+        {
+            var licence = new Licensing.Licence();
+            Assert.IsTrue(licence.fromRegistry());
+            var testlicence = licence.licenceByteValue;
+            var vv = new Licensing.validator_t();
+            vv.b = new byte[16];
+            for (var i = 0; i < vv.b.Length; ++i)
+            {
+                vv.b[i] = testlicence[i];
+            }
+            var vvstring = $"{vv.pad} {vv.start} {vv.stop} {vv.hid}";
+           Assert.IsTrue (licence.check_valid(ref vv));
         }
     }
 }

@@ -29,8 +29,9 @@ namespace Portfolio
                                         /*double ShortCostScale,*/ double LSValuel, double[] Abs_L, double[] breakdown, ref bool CVARGLprob,
                                         int tlen = 0, double DATAlambda = 1, double[] DATA = null,
                                         double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0,
-                                        double ETLorLOSSmax = 0, string logfile = "", int revise = 0,bool colourPrint=true)
-        {ColourConsole.print=colourPrint;
+                                        double ETLorLOSSmax = 0, string logfile = "", int revise = 0, bool colourPrint = true)
+        {
+            ColourConsole.print = colourPrint;
             if (logfile != "" && logfile != null)
                 using (StreamWriter ww = new StreamWriter(logfile))
                 {
