@@ -173,12 +173,12 @@ namespace Licensing
         {
             int i, j, k;
             byte c;
-            validator_t v;
+            validator_t v =new validator_t() ;
 
             for (j = 0; j < 48; j += 16) krypton(validator_m_byte, j);
             for (k = 0; k < 48; k++)
             {
-                v = vp;
+                v.b=(byte[]) vp.b.Clone();
                 //	printf((char*)"k=%d\n",k);
                 //	printf((char*)"%8.8lX %8.8lX %8.8lX %8.8lX\n",
                 //		v.t.start,v.t.stop,v.t.pad,v.t.hid);
