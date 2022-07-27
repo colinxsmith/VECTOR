@@ -20,9 +20,8 @@ namespace Licensing
     public class validator_t
     {
         public byte[] b;
-        byteint conv = new byteint();
         public int pad
-        {
+        {byteint conv = new byteint(); 
             get
             {
                 conv.mainint = 0;
@@ -42,7 +41,7 @@ namespace Licensing
             }
         }
         public int start
-        {
+        {byteint conv = new byteint();
             get
             {
                 conv.mainint = 0;
@@ -62,7 +61,7 @@ namespace Licensing
             }
         }
         public int stop
-        {
+        {byteint conv = new byteint();
             get
             {
                 conv.mainint = 0;
@@ -82,7 +81,7 @@ namespace Licensing
             }
         }
         public int hid
-        {
+        {byteint conv = new byteint();
             get
             {
                 conv.mainint = 0;
