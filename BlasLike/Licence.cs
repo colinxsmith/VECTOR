@@ -4,8 +4,8 @@ using System.Runtime.InteropServices;
 namespace Licensing
 {
     [StructLayout(LayoutKind.Explicit)]
-    struct byteint
-    {
+    public struct byteint
+    {//1 int has length 4 bytes
         [FieldOffset(0)]
         public int mainint;
         [FieldOffset(0)]
@@ -25,7 +25,7 @@ namespace Licensing
             back.b = (byte[])this.b.Clone();
             return back;
         }
-        public byte[] b;
+        public byte[] b = new byte[16];
         public int pad
         {
             get
@@ -215,6 +215,13 @@ namespace Licensing
             /*		vp->t.start,vp->t.stop,vp->t.pad,vp->t.hid); */
             for (j = 0; j < 48; j += 16) krypton(validator_m_byte, j);
         }
+        public DateTime UnixTimeStampToDateTime(double unixTimeStamp)
+        {
+            // Unix timestamp is seconds past epoch
+            System.DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
+            dtDateTime = dtDateTime.AddSeconds(unixTimeStamp).ToLocalTime();
+            return dtDateTime;
+        }
         public bool check_valid(ref validator_t vp)
         {
             int i, j, k;
@@ -224,7 +231,7 @@ namespace Licensing
             for (j = 0; j < 48; j += 16) krypton(validator_m_byte, j);
             for (k = 0; k < 48; k++)
             {
-                v=vp.Copy();
+                v = vp.Copy();
                 //	printf((char*)"k=%d\n",k);
                 //	printf((char*)"%8.8lX %8.8lX %8.8lX %8.8lX\n",
                 //		v.t.start,v.t.stop,v.t.pad,v.t.hid);
@@ -257,6 +264,23 @@ namespace Licensing
             //	std::cout<< "compare "<<strcmp(validator_m,vv)<<std::endl;
 
             return k != 48;
+        }
+        public void convert(byte[] s, ref int hid, ref int start,ref  int stop)
+        {//Helper for make_valid and check_valid
+            validator_t validator = new validator_t();
+            if (hid != 0)
+            {
+                make_valid(validator, start, stop, hid);
+                for (var i = 0; i < 16; ++i) s[i] = validator.b[i];
+            }
+            else
+            {
+               for (var i = 0; i < 16; ++i)  validator.b[i]=s[i];
+                check_valid(ref validator);
+                hid = validator.hid;
+                start = validator.start;
+                stop = validator.stop;
+            }
         }
     }
 }

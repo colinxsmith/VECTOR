@@ -878,17 +878,49 @@ namespace BlasLikeTest
         [TestMethod]
         public void Test_readLicence()
         {
+            ColourConsole.WriteLine($"1 int has length {(double)sizeof(int) / (double)sizeof(byte)} bytes");
             var licence = new Licensing.Licence();
             Assert.IsTrue(licence.fromRegistry());
             var testlicence = licence.licenceByteValue;
             var vv = new Licensing.validator_t();
-            vv.b = new byte[16];
             for (var i = 0; i < vv.b.Length; ++i)
             {
                 vv.b[i] = testlicence[i];
             }
-            var vvstring = $"{vv.pad} {vv.start} {vv.stop} {vv.hid}";
-           Assert.IsTrue (licence.check_valid(ref vv));
+            Assert.IsTrue(licence.check_valid(ref vv));
+            var aStart = licence.UnixTimeStampToDateTime((double)vv.start);
+            ColourConsole.WriteLine($"Start time {aStart}");
+            var aStop = licence.UnixTimeStampToDateTime((double)vv.stop);
+            ColourConsole.WriteLine($"Start time {aStop}");
+            var uStart = new DateTimeOffset(aStart).ToUnixTimeSeconds();
+            var uStop = new DateTimeOffset(aStop).ToUnixTimeSeconds();
+            ColourConsole.WriteLine($"{vv.start} {uStart}");
+            ColourConsole.WriteLine($"{vv.stop} {uStop}");
+            Assert.IsTrue(uStart == vv.start);
+            Assert.IsTrue(uStop == vv.stop);
+        }
+        [TestMethod]
+        public void Test_convert_licence()
+        {
+            var licence = new Licensing.Licence();
+            Assert.IsTrue(licence.fromRegistry());
+            var testlicence = licence.licenceByteValue;
+            Licensing.byteint curveKeys=new Licensing.byteint();
+            curveKeys.byte1=testlicence[16];
+            curveKeys.byte2=testlicence[17];
+            curveKeys.byte3=testlicence[18];
+            curveKeys.byte4=testlicence[19];
+            ColourConsole.WriteLine($"Curve Keys integer {curveKeys.mainint}");
+            int hid = 0, start = 0, stop = 0;
+            licence.convert(testlicence, ref hid, ref start, ref stop);
+            var newbytes = new byte[16];
+            int newhid = hid;
+            int newstart = start;
+            int newstop = stop;
+            licence.convert(newbytes, ref newhid, ref newstart, ref newstop);
+            var check = true;
+            for (var i = 0; i < 16; i++) check &= newbytes[i] == testlicence[i];
+            Assert.IsTrue(check);
         }
     }
 }
