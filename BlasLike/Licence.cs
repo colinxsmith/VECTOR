@@ -19,11 +19,18 @@ namespace Licensing
     }
     public class validator_t
     {
+        public validator_t Copy()
+        {
+            var back = new validator_t();
+            back.b = (byte[])this.b.Clone();
+            return back;
+        }
         public byte[] b;
         public int pad
-        {byteint conv = new byteint(); 
+        {
             get
             {
+                byteint conv = new byteint();
                 conv.mainint = 0;
                 conv.byte1 = b[0];
                 conv.byte2 = b[1];
@@ -33,6 +40,7 @@ namespace Licensing
             }
             set
             {
+                byteint conv = new byteint();
                 conv.mainint = value;
                 b[0] = conv.byte1;
                 b[1] = conv.byte2;
@@ -41,9 +49,10 @@ namespace Licensing
             }
         }
         public int start
-        {byteint conv = new byteint();
+        {
             get
             {
+                byteint conv = new byteint();
                 conv.mainint = 0;
                 conv.byte1 = b[4];
                 conv.byte2 = b[5];
@@ -53,6 +62,7 @@ namespace Licensing
             }
             set
             {
+                byteint conv = new byteint();
                 conv.mainint = value;
                 b[4] = conv.byte1;
                 b[5] = conv.byte2;
@@ -61,9 +71,10 @@ namespace Licensing
             }
         }
         public int stop
-        {byteint conv = new byteint();
+        {
             get
             {
+                byteint conv = new byteint();
                 conv.mainint = 0;
                 conv.byte1 = b[8];
                 conv.byte2 = b[9];
@@ -73,6 +84,7 @@ namespace Licensing
             }
             set
             {
+                byteint conv = new byteint();
                 conv.mainint = value;
                 b[8] = conv.byte1;
                 b[9] = conv.byte2;
@@ -81,9 +93,10 @@ namespace Licensing
             }
         }
         public int hid
-        {byteint conv = new byteint();
+        {
             get
             {
+                byteint conv = new byteint();
                 conv.mainint = 0;
                 conv.byte1 = b[12];
                 conv.byte2 = b[13];
@@ -93,6 +106,7 @@ namespace Licensing
             }
             set
             {
+                byteint conv = new byteint();
                 conv.mainint = value;
                 b[12] = conv.byte1;
                 b[13] = conv.byte2;
@@ -169,16 +183,48 @@ namespace Licensing
                 b[i + bstart] = (byte)((z[15 - i] << (byte)4) | (w[15 - i]));
             }
         }
+        public void make_valid(validator_t vp, int start, int stop, int hid)
+        {
+            int i, j, k;
+            byte c;
+
+            for (j = 0; j < 48; j += 16) krypton(validator_m_byte, j);
+            vp.pad = 0x13101955 + bitaopt;
+            vp.start = start;
+            vp.stop = stop;
+            vp.hid = hid;
+            for (i = j = 0; i < 16; i++) j += vp.b[i];
+            k = (j * 147) % 48;
+
+            vp.pad += stop - start;
+            vp.pad ^= hid;
+            vp.start ^= vp.pad;
+            vp.hid ^= stop;
+
+            krypton(vp.b);
+            for (j = 0; j < 3; j++)
+            {
+                for (i = 0; i < 16; i++) vp.b[i] ^= validator_c(i + j * 16, k);
+                krypton(vp.b);
+                for (c = vp.b[i = 0]; i < 15; i++) vp.b[i] = vp.b[i + 1];
+                vp.b[i] = c;
+            }
+            for (i = 0; i < 16; i++) vp.b[i] ^= validator_c(i + j * 16, k);
+
+            /*	printf((char*)"%8.8lX %8.8lX %8.8lX %8.8lX\n", */
+            /*		vp->t.start,vp->t.stop,vp->t.pad,vp->t.hid); */
+            for (j = 0; j < 48; j += 16) krypton(validator_m_byte, j);
+        }
         public bool check_valid(ref validator_t vp)
         {
             int i, j, k;
             byte c;
-            validator_t v =new validator_t() ;
+            validator_t v = vp.Copy();
 
             for (j = 0; j < 48; j += 16) krypton(validator_m_byte, j);
             for (k = 0; k < 48; k++)
             {
-                v.b=(byte[]) vp.b.Clone();
+                v=vp.Copy();
                 //	printf((char*)"k=%d\n",k);
                 //	printf((char*)"%8.8lX %8.8lX %8.8lX %8.8lX\n",
                 //		v.t.start,v.t.stop,v.t.pad,v.t.hid);
