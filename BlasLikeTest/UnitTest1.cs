@@ -905,11 +905,11 @@ namespace BlasLikeTest
             var licence = new Licensing.Licence();
             Assert.IsTrue(licence.fromRegistry());
             var testlicence = licence.licenceByteValue;
-            Licensing.byteint curveKeys=new Licensing.byteint();
-            curveKeys.byte1=testlicence[16];
-            curveKeys.byte2=testlicence[17];
-            curveKeys.byte3=testlicence[18];
-            curveKeys.byte4=testlicence[19];
+            Licensing.byteint curveKeys = new Licensing.byteint();
+            curveKeys.byte1 = testlicence[16];
+            curveKeys.byte2 = testlicence[17];
+            curveKeys.byte3 = testlicence[18];
+            curveKeys.byte4 = testlicence[19];
             ColourConsole.WriteLine($"Curve Keys integer {curveKeys.mainint}");
             int hid = 0, start = 0, stop = 0;
             licence.convert(testlicence, ref hid, ref start, ref stop);
@@ -921,6 +921,31 @@ namespace BlasLikeTest
             var check = true;
             for (var i = 0; i < 16; i++) check &= newbytes[i] == testlicence[i];
             Assert.IsTrue(check);
+        }
+        [TestMethod]
+        public void Test_adapters()
+        {
+            var licence = new Licensing.Licence();
+            var testhid = licence.VolId();
+            ColourConsole.WriteInfo($"Volid {testhid}  {testhid:x}");
+            Assert.IsTrue(licence.fromRegistry());
+            var testlicence = licence.licenceByteValue;
+            int hid = 0, start = 0, stop = 0;
+            licence.convert(testlicence, ref hid, ref start, ref stop);
+            Licensing.byteint curveKeys = new Licensing.byteint();
+            curveKeys.byte1 = testlicence[16];
+            curveKeys.byte2 = testlicence[17];
+            curveKeys.byte3 = testlicence[18];
+            curveKeys.byte4 = testlicence[19];
+            ColourConsole.WriteLine($"Curve Keys integer {curveKeys.mainint}");
+            hid-=curveKeys.mainint;
+            DateTimeOffset now=new DateTimeOffset( DateTime.Now);
+            var timenow=now.ToUnixTimeSeconds();
+            var pass=true;
+            pass=pass&&(timenow<stop);
+            pass=pass&&(timenow>start);
+            pass=pass&&(hid==testhid);
+            Assert.IsTrue(pass);
         }
     }
 }

@@ -1,4 +1,6 @@
 using System;
+using System.Text;
+using System.Net.NetworkInformation;
 using Microsoft.Win32;
 using System.Runtime.InteropServices;
 namespace Licensing
@@ -265,7 +267,7 @@ namespace Licensing
 
             return k != 48;
         }
-        public void convert(byte[] s, ref int hid, ref int start,ref  int stop)
+        public void convert(byte[] s, ref int hid, ref int start, ref int stop)
         {//Helper for make_valid and check_valid
             validator_t validator = new validator_t();
             if (hid != 0)
@@ -275,12 +277,68 @@ namespace Licensing
             }
             else
             {
-               for (var i = 0; i < 16; ++i)  validator.b[i]=s[i];
+                for (var i = 0; i < 16; ++i) validator.b[i] = s[i];
                 check_valid(ref validator);
                 hid = validator.hid;
                 start = validator.start;
                 stop = validator.stop;
             }
+        }
+        public UInt32 VolId()
+        {
+            var hex = "facc0ff5";//Start with this in case there are no more
+            var output = Convert.ToUInt32(hex, 16);
+            ColourConsole.WriteEmbeddedColourLine($"[green]{hex} =[/green] [cyan]{output}[/cyan] [yellow]{output:x}[/yellow]");
+            foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
+            {
+                if (nic.NetworkInterfaceType.ToString().Contains("Ethernet"))//&& nic.NetworkInterfaceType.ToString().Contains("USB"))
+                {if(nic.Description.ToString().Contains("Virtual"))continue;
+                    /*   Console.WriteLine(nic.Name);
+                       Console.WriteLine(nic.GetType());
+                       Console.WriteLine(nic.NetworkInterfaceType);
+                       Console.WriteLine(nic.GetPhysicalAddress());
+                       Console.WriteLine();*/
+                    var address = nic.GetPhysicalAddress().ToString();
+                    ColourConsole.WriteInfo($"Adapter: {address}");
+                    var bAddress = new UInt32[6];
+                    for (var i = 0; i < 6; i++) {bAddress[i] = Convert.ToUInt32(address.Substring(i * 2, 2), 16);
+                    ColourConsole.Write($"{bAddress[i]} ");}
+                  var order=new int[6];  
+				for(var s=0;s<6;s++)order[s]=s;
+				var top=5;
+				while(top>0)
+				{
+					for(var s=0;s<top;s++)
+					{
+						if(bAddress[order[s]]<bAddress[order[top]])
+						{var kk=order[s];
+                        order[s]=order[top];
+                        order[top]=kk;
+						}
+					}
+					top--;
+				}
+                var bAddressC=(uint[])bAddress.Clone();
+                for(var i=0;i<6;++i)bAddress[i]=bAddressC[order[i]];
+    /*                Array.Sort(bAddress);
+                    Array.Reverse(bAddress);*/
+                    for (var i = 0; i < 6; i++) ColourConsole.Write($"{bAddress[i],2:x} ", ConsoleColor.DarkMagenta);
+                    Console.WriteLine();
+                    var newByte = new UInt32[4];
+                    newByte[0] = bAddress[0];
+                    newByte[1] = bAddress[1];
+                    newByte[2] = ((bAddress[2] + bAddress[3]) / 2) & 0xff;
+                    newByte[3] = ((bAddress[4] + bAddress[5]) / 2) & 0xff;
+                    var bStr = $"{newByte[0],2:x2}{newByte[1],2:x2}{newByte[2],2:x2}{newByte[3],2:x2}";
+                    ColourConsole.WriteInfo(bStr);
+                    bStr = bStr.Replace(" ", "");
+                    var bStrInt = Convert.ToUInt32(bStr, 16);
+                    ColourConsole.WriteEmbeddedColourLine($"[green]{bStr} =[/green] [cyan]{bStrInt}[/cyan] [yellow]{bStrInt:x}[/yellow]");
+                    output ^= bStrInt;
+                }
+            }
+            ColourConsole.WriteEmbeddedColourLine($"Finally [cyan]{output}[/cyan] [yellow]{output:x}[/yellow]");
+            return output;
         }
     }
 }
