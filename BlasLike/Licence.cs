@@ -292,7 +292,9 @@ namespace Licensing
             foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
             {
                 if (nic.NetworkInterfaceType.ToString().Contains("Ethernet"))//&& nic.NetworkInterfaceType.ToString().Contains("USB"))
-                {if(nic.Description.ToString().Contains("Virtual"))continue;
+                {
+                    if (nic.Description.ToString().Contains("Virtual")) continue;
+                    if (nic.Description.ToString().Contains("USB")) continue;
                     /*   Console.WriteLine(nic.Name);
                        Console.WriteLine(nic.GetType());
                        Console.WriteLine(nic.NetworkInterfaceType);
@@ -301,27 +303,13 @@ namespace Licensing
                     var address = nic.GetPhysicalAddress().ToString();
                     ColourConsole.WriteInfo($"Adapter: {address}");
                     var bAddress = new UInt32[6];
-                    for (var i = 0; i < 6; i++) {bAddress[i] = Convert.ToUInt32(address.Substring(i * 2, 2), 16);
-                    ColourConsole.Write($"{bAddress[i]} ");}
-                  var order=new int[6];  
-				for(var s=0;s<6;s++)order[s]=s;
-				var top=5;
-				while(top>0)
-				{
-					for(var s=0;s<top;s++)
-					{
-						if(bAddress[order[s]]<bAddress[order[top]])
-						{var kk=order[s];
-                        order[s]=order[top];
-                        order[top]=kk;
-						}
-					}
-					top--;
-				}
-                var bAddressC=(uint[])bAddress.Clone();
-                for(var i=0;i<6;++i)bAddress[i]=bAddressC[order[i]];
-    /*                Array.Sort(bAddress);
-                    Array.Reverse(bAddress);*/
+                    for (var i = 0; i < 6; i++)
+                    {
+                        bAddress[i] = Convert.ToUInt32(address.Substring(i * 2, 2), 16);
+                        ColourConsole.Write($"{bAddress[i]} ");
+                    }
+                    Array.Sort(bAddress);
+                    Array.Reverse(bAddress);
                     for (var i = 0; i < 6; i++) ColourConsole.Write($"{bAddress[i],2:x} ", ConsoleColor.DarkMagenta);
                     Console.WriteLine();
                     var newByte = new UInt32[4];

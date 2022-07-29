@@ -878,7 +878,7 @@ namespace BlasLikeTest
         [TestMethod]
         public void Test_readLicence()
         {
-            ColourConsole.WriteLine($"1 int has length {(double)sizeof(int) / (double)sizeof(byte)} bytes");
+            ColourConsole.WriteLine($"1 int has length {(double)sizeof(UInt32) / (double)sizeof(byte)} bytes");
             var licence = new Licensing.Licence();
             Assert.IsTrue(licence.fromRegistry());
             var testlicence = licence.licenceByteValue;
