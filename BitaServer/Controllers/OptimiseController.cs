@@ -237,7 +237,6 @@ public class OptimiseController : ControllerBase
       double? minRisk, double? min_holding, double? min_trade, int? basket, int? trades,
       string? logfile, bool negdata = false)
     {
-        var isService = SystemdHelpers.IsSystemdService() || WindowsServiceHelpers.IsWindowsService();
         var op = new Optimise();
         if (doOpt != null) op.doOpt = doOpt.GetValueOrDefault();
         using (var CVarData = new InputSomeData())
@@ -402,7 +401,7 @@ public class OptimiseController : ControllerBase
             op.mask, op.longbasket.GetValueOrDefault(), op.shortbasket.GetValueOrDefault(), op.tradebuy.GetValueOrDefault(),
             op.tradesell.GetValueOrDefault(), op.valuel, op.Abs_L, breakdown, ref CVARGLprob, op.tlen, op.Gstrength,
             op.DATA, op.tail, op.TargetReturn, op.ETLopt.GetValueOrDefault() || op.LOSSopt.GetValueOrDefault(), op.TargetReturn == null ? op.ETLmin.GetValueOrDefault() : op.LOSSmin.GetValueOrDefault(),
-            op.TargetReturn == null ? op.ETLmax.GetValueOrDefault() : op.LOSSmax.GetValueOrDefault(), op.logfile,0,!isService);
+            op.TargetReturn == null ? op.ETLmax.GetValueOrDefault() : op.LOSSmax.GetValueOrDefault(), op.logfile);
 
             op.ogamma = ogamma;
             op.CVARGLprob = CVARGLprob;
@@ -556,7 +555,6 @@ public class OptimiseController : ControllerBase
     [HttpPost("general")]
     public Optimise PostGen(Optimise op)
     {
-        var isService = SystemdHelpers.IsSystemdService() || WindowsServiceHelpers.IsWindowsService();
         var breakdown = new double[op.n.GetValueOrDefault()];
         op.result = new Optimise.checkv();
         if (op.tlen > 0)
@@ -599,7 +597,7 @@ public class OptimiseController : ControllerBase
             op.mask, op.longbasket.GetValueOrDefault(), op.shortbasket.GetValueOrDefault(), op.tradebuy.GetValueOrDefault(),
             op.tradesell.GetValueOrDefault(), op.valuel, op.Abs_L, breakdown, ref CVARGLprob, op.tlen, op.Gstrength,
             op.DATA, op.tail, op.TargetReturn, op.ETLopt.GetValueOrDefault() || op.LOSSopt.GetValueOrDefault(), op.TargetReturn == null ? op.ETLmin.GetValueOrDefault() : op.LOSSmin.GetValueOrDefault(),
-            op.TargetReturn == null ? op.ETLmax.GetValueOrDefault() : op.LOSSmax.GetValueOrDefault(), op.logfile,0,!isService);
+            op.TargetReturn == null ? op.ETLmax.GetValueOrDefault() : op.LOSSmax.GetValueOrDefault(), op.logfile,0);
 
 
             op.CVARGLprob = CVARGLprob;

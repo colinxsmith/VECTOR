@@ -5,6 +5,8 @@ using Ordering;
 using System.IO;
 using DataFile;
 using System.Diagnostics;
+using Microsoft.Extensions.Hosting.WindowsServices;
+using Microsoft.Extensions.Hosting.Systemd;
 namespace Portfolio
 {
     public class Portfolio
@@ -29,11 +31,12 @@ namespace Portfolio
                                         /*double ShortCostScale,*/ double LSValuel, double[] Abs_L, double[] breakdown, ref bool CVARGLprob,
                                         int tlen = 0, double DATAlambda = 1, double[] DATA = null,
                                         double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0,
-                                        double ETLorLOSSmax = 0, string logfile = "", int revise = 0, bool colourPrint = true)
+                                        double ETLorLOSSmax = 0, string logfile = "", int revise = 0)
         {
-            ColourConsole.print = colourPrint;
+            ColourConsole.print = !(WindowsServiceHelpers.IsWindowsService() || SystemdHelpers.IsSystemdService());
+            var rootPath = (WindowsServiceHelpers.IsWindowsService() || SystemdHelpers.IsSystemdService()) ? AppContext.BaseDirectory : ".";
             if (logfile != "" && logfile != null)
-                using (StreamWriter ww = new StreamWriter(logfile))
+                using (StreamWriter ww = new StreamWriter(rootPath+"/"+logfile))
                 {
                     ww.WriteLine("n");
                     ww.WriteLine(n);
