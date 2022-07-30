@@ -1,4 +1,4 @@
-using System;
+D3using System;
 using System.Text;
 using System.Net.NetworkInformation;
 using Microsoft.Win32;
@@ -139,6 +139,7 @@ namespace Licensing
         {
             bool worked = true;
             if(WindowsServiceHelpers.IsWindowsService()){
+worked = false;
             try
             {
                 RegistryKey safekey = Registry.CurrentUser, newkey;
