@@ -882,6 +882,7 @@ namespace BlasLikeTest
             var licence = new Licensing.Licence();
             Assert.IsTrue(licence.fromRegistry());
             var testlicence = licence.licenceByteValue;
+            if(testlicence==null)return;
             var vv = new Licensing.validator_t();
             for (var i = 0; i < vv.b.Length; ++i)
             {
@@ -905,6 +906,7 @@ namespace BlasLikeTest
             var licence = new Licensing.Licence();
             Assert.IsTrue(licence.fromRegistry());
             var testlicence = licence.licenceByteValue;
+            if(testlicence==null)return;
             Licensing.byteint curveKeys = new Licensing.byteint();
             curveKeys.byte1 = testlicence[16];
             curveKeys.byte2 = testlicence[17];
@@ -930,6 +932,7 @@ namespace BlasLikeTest
             ColourConsole.WriteInfo($"Volid {testhid}  {testhid:x}");
             Assert.IsTrue(licence.fromRegistry());
             var testlicence = licence.licenceByteValue;
+            if(testlicence==null)return;
             int hid = 0, start = 0, stop = 0;
             licence.convert(testlicence, ref hid, ref start, ref stop);
             Licensing.byteint curveKeys = new Licensing.byteint();

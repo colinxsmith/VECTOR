@@ -3,6 +3,8 @@ using System.Text;
 using System.Net.NetworkInformation;
 using Microsoft.Win32;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Hosting.WindowsServices;
+using Microsoft.Extensions.Hosting.Systemd;
 namespace Licensing
 {
     [StructLayout(LayoutKind.Explicit)]
@@ -132,10 +134,11 @@ namespace Licensing
         public byte[] validator_m_byte;
         byte validator_c(int z, int k) => validator_m_byte[(z + k) % 48];
         string licence = "";
-        public byte[] licenceByteValue;
+        public byte[] licenceByteValue=null;
         public bool fromRegistry(string ourkey = "Software\\safeqp")
         {
-            bool worked = false;
+            bool worked = true;
+            if(WindowsServiceHelpers.IsWindowsService()){
             try
             {
                 RegistryKey safekey = Registry.CurrentUser, newkey;
@@ -167,7 +170,7 @@ namespace Licensing
             catch (Exception prob)
             {
                 ColourConsole.WriteError("exception" + prob);
-            }
+            }}
             return worked;
         }
         public void krypton(byte[] b = null, int bstart = 0)
@@ -289,6 +292,7 @@ namespace Licensing
             var hex = "facc0ff5";//Start with this in case there are no more
             var output = Convert.ToUInt32(hex, 16);
             ColourConsole.WriteEmbeddedColourLine($"[green]{hex} =[/green] [cyan]{output}[/cyan] [yellow]{output:x}[/yellow]");
+            if(WindowsServiceHelpers.IsWindowsService())
             foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
             {
                 if (nic.NetworkInterfaceType.ToString().Contains("Ethernet"))//&& nic.NetworkInterfaceType.ToString().Contains("USB"))
