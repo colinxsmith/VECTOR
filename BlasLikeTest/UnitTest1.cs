@@ -947,7 +947,7 @@ namespace BlasLikeTest
             var pass=true;
             pass=pass&&(timenow<stop);
             pass=pass&&(timenow>start);
-            pass=pass&&(hid==testhid);
+            pass=pass&&(hid==testhid||hid==0x13101955);
             Assert.IsTrue(pass);
         }
     }
