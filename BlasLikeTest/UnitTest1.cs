@@ -949,6 +949,17 @@ namespace BlasLikeTest
             pass=pass&&(timenow>start);
             pass=pass&&(hid==testhid||hid==0x13101955);
             Assert.IsTrue(pass);
+            start=(int)timenow;
+            hid=(int)testhid;
+            //try binary 111100111 for keys
+            curveKeys.mainint=0x1e7; 
+            testlicence[16]=          curveKeys.byte1;
+            testlicence[17]=          curveKeys.byte2;
+            testlicence[18]=          curveKeys.byte3;
+            testlicence[19]=          curveKeys.byte4;
+            hid+=curveKeys.mainint;
+            licence.convert(testlicence,ref hid, ref start, ref stop);
+            Assert.IsTrue(licence.toRegistry());
         }
     }
 }
