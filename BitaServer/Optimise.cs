@@ -1,4 +1,5 @@
-using System;
+using Microsoft.Extensions.Hosting.WindowsServices;
+using Microsoft.Extensions.Hosting.Systemd;
 namespace BitaServer;
 
 public class Optimise
@@ -49,6 +50,7 @@ public class Optimise
     min_trade=-1;
     Gstrength=1;
     basedirectory=AppContext.BaseDirectory;
+    service=WindowsServiceHelpers.IsWindowsService() || SystemdHelpers.IsSystemdService();
 }
 public bool doOpt{get;set;}
 public checkv? result{get;set;}
@@ -116,4 +118,5 @@ public checkv? result{get;set;}
     public int?round{get;set;}
     public string?datafile{get;set;}
     public string basedirectory{get;}
+    public bool service{get;}
 }

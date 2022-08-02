@@ -882,7 +882,7 @@ namespace BlasLikeTest
             var licence = new Licensing.Licence();
             Assert.IsTrue(licence.fromRegistry());
             var testlicence = licence.licenceByteValue;
-            if(testlicence==null)return;
+            if (testlicence == null) return;
             var vv = new Licensing.validator_t();
             for (var i = 0; i < vv.b.Length; ++i)
             {
@@ -906,7 +906,7 @@ namespace BlasLikeTest
             var licence = new Licensing.Licence();
             Assert.IsTrue(licence.fromRegistry());
             var testlicence = licence.licenceByteValue;
-            if(testlicence==null)return;
+            if (testlicence == null) return;
             Licensing.byteint curveKeys = new Licensing.byteint();
             curveKeys.byte1 = testlicence[16];
             curveKeys.byte2 = testlicence[17];
@@ -932,7 +932,7 @@ namespace BlasLikeTest
             ColourConsole.WriteInfo($"Volid {testhid}  {testhid:x}");
             Assert.IsTrue(licence.fromRegistry());
             var testlicence = licence.licenceByteValue;
-            if(testlicence==null)return;
+            if (testlicence == null) return;
             int hid = 0, start = 0, stop = 0;
             licence.convert(testlicence, ref hid, ref start, ref stop);
             Licensing.byteint curveKeys = new Licensing.byteint();
@@ -941,25 +941,39 @@ namespace BlasLikeTest
             curveKeys.byte3 = testlicence[18];
             curveKeys.byte4 = testlicence[19];
             ColourConsole.WriteLine($"Curve Keys integer {curveKeys.mainint}");
-            hid-=curveKeys.mainint;
-            DateTimeOffset now=new DateTimeOffset( DateTime.Now);
-            var timenow=now.ToUnixTimeSeconds();
-            var pass=true;
-            pass=pass&&(timenow<stop);
-            pass=pass&&(timenow>start);
-            pass=pass&&(hid==testhid||hid==0x13101955);
+            hid -= curveKeys.mainint;
+            DateTimeOffset now = new DateTimeOffset(DateTime.Now);
+            var timenow = now.ToUnixTimeSeconds();
+            var pass = true;
+            pass = pass && (timenow < stop);
+            pass = pass && (timenow > start);
+            pass = pass && (hid == testhid || hid == 0x13101955);
             Assert.IsTrue(pass);
-            start=(int)timenow;
-            hid=(int)testhid;
+            start = (int)timenow;
+            hid = (int)testhid;
             //try binary 111100111 for keys
-            curveKeys.mainint=0x1e7; 
-            testlicence[16]=          curveKeys.byte1;
-            testlicence[17]=          curveKeys.byte2;
-            testlicence[18]=          curveKeys.byte3;
-            testlicence[19]=          curveKeys.byte4;
-            hid+=curveKeys.mainint;
-            licence.convert(testlicence,ref hid, ref start, ref stop);
+            curveKeys.mainint = 0x1e7;
+            testlicence[16] = curveKeys.byte1;
+            testlicence[17] = curveKeys.byte2;
+            testlicence[18] = curveKeys.byte3;
+            testlicence[19] = curveKeys.byte4;
+            hid += curveKeys.mainint;
+            licence.convert(testlicence, ref hid, ref start, ref stop);
             Assert.IsTrue(licence.toRegistry());
+        }
+        [TestMethod]
+        public void Test_VersionString()
+        {
+            var licence = new Licensing.Licence();
+            var testl = licence.VersionString();
+            int newstart = 0;
+            for (var i = 0; i < testl.Length; ++i)
+            {
+                if (testl[i] == '\0') { newstart = i + 1; }
+            }
+            var licenceString = testl.Substring(newstart);
+            ColourConsole.WriteInfo(testl);
+            ColourConsole.WriteInfo(licenceString);
         }
     }
 }

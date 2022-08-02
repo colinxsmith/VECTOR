@@ -391,5 +391,9 @@ namespace Licensing
             ColourConsole.WriteEmbeddedColourLine($"Finally [cyan]{output}[/cyan] [yellow]{output:x}[/yellow]");
             return output;
         }
+        public string VersionString(){
+            const string back= "Optimiser from BITA Plus. \0aaaabbbbccccddddeeeeffffgggghhhhiiiiJJJJ";
+            return back;
+        }
     }
 }
