@@ -34,9 +34,9 @@ namespace Portfolio
                                         double ETLorLOSSmax = 0, string logfile = "", int revise = 0)
         {
             ColourConsole.print = !(WindowsServiceHelpers.IsWindowsService() || SystemdHelpers.IsSystemdService());
-            var rootPath = (WindowsServiceHelpers.IsWindowsService() || SystemdHelpers.IsSystemdService()) ? AppContext.BaseDirectory : ".";
+            var rootPath = (WindowsServiceHelpers.IsWindowsService() || SystemdHelpers.IsSystemdService()) ? AppContext.BaseDirectory : "./";
             if (logfile != "" && logfile != null)
-                using (StreamWriter ww = new StreamWriter(rootPath+"/"+logfile))
+                using (StreamWriter ww = new StreamWriter(rootPath+logfile))
                 {
                     ww.WriteLine("n");
                     ww.WriteLine(n);

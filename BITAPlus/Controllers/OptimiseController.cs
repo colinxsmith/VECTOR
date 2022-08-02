@@ -244,10 +244,10 @@ public class OptimiseController : ControllerBase
             CVarData.stringFields = "names logfile";
             op.datafile = "generalopt";
             if (datafile != null) op.datafile = datafile;
-            var ContentRootPath = ".";
+            var ContentRootPath = "./";
             try
             {
-                CVarData.Read($"{ContentRootPath}/{op.datafile}");
+                CVarData.Read($"{ContentRootPath}{op.datafile}");
             }
             catch
             {

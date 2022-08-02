@@ -1,3 +1,4 @@
+using System;
 namespace BitaServer;
 
 public class Optimise
@@ -47,6 +48,7 @@ public class Optimise
     min_holding=-1;
     min_trade=-1;
     Gstrength=1;
+    basedirectory=AppContext.BaseDirectory;
 }
 public bool doOpt{get;set;}
 public checkv? result{get;set;}
@@ -113,4 +115,5 @@ public checkv? result{get;set;}
     public double? LOSSmax { set; get; }
     public int?round{get;set;}
     public string?datafile{get;set;}
+    public string basedirectory{get;}
 }
