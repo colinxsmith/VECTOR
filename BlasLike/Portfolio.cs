@@ -6,7 +6,6 @@ using System.IO;
 using DataFile;
 using System.Diagnostics;
 using Microsoft.Extensions.Hosting.WindowsServices;
-using Microsoft.Extensions.Hosting.Systemd;
 namespace Portfolio
 {
     public class Portfolio
@@ -33,8 +32,9 @@ namespace Portfolio
                                         double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0,
                                         double ETLorLOSSmax = 0, string logfile = "", int revise = 0)
         {
-            ColourConsole.print = !(WindowsServiceHelpers.IsWindowsService() || SystemdHelpers.IsSystemdService());
-            var rootPath = (WindowsServiceHelpers.IsWindowsService() || SystemdHelpers.IsSystemdService()) ? AppContext.BaseDirectory : "./";
+            ColourConsole.print = !(WindowsServiceHelpers.IsWindowsService() );
+            var rootPath = (WindowsServiceHelpers.IsWindowsService() ) ? AppContext.BaseDirectory : "./";
+            ColourConsole.WriteEmbeddedColourLine($"[green]rootPath:{rootPath}[/green] [magenta]BaseDirectory:{AppContext.BaseDirectory}[/magenta]");
             if (logfile != "" && logfile != null)
                 using (StreamWriter ww = new StreamWriter(rootPath+logfile))
                 {

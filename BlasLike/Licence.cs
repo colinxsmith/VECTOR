@@ -4,7 +4,6 @@ using System.Net.NetworkInformation;
 using Microsoft.Win32;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Hosting.WindowsServices;
-using Microsoft.Extensions.Hosting.Systemd;
 namespace Licensing
 {
     [StructLayout(LayoutKind.Explicit)]

@@ -3,7 +3,6 @@ using Blas;
 using Solver;
 using DataFile;
 using Microsoft.Extensions.Hosting.WindowsServices;
-using Microsoft.Extensions.Hosting.Systemd;
 namespace BitaServer.Controllers;
 
 [ApiController]

@@ -1,10 +1,9 @@
 using Microsoft.Extensions.Hosting.WindowsServices;
 using Microsoft.Extensions.Logging.EventLog;
-using Microsoft.Extensions.Hosting.Systemd;
 var options = new WebApplicationOptions
 {
     Args = args,
-    ContentRootPath = (WindowsServiceHelpers.IsWindowsService() || SystemdHelpers.IsSystemdService()) ? AppContext.BaseDirectory : default
+    ContentRootPath = (WindowsServiceHelpers.IsWindowsService() ) ? AppContext.BaseDirectory : default
 };
 var builder = WebApplication.CreateBuilder(options);
 // Add services to the container.
@@ -28,10 +27,6 @@ if (OperatingSystem.IsWindows())
         conf.SourceName = "Optimiser Server";
         conf.MachineName = null;
     });
-}
-else if (OperatingSystem.IsLinux())
-{
-    builder.Host.UseSystemd();
 }
 //builder.WebHost.UseUrls("http://*:7779"); //Don't do this
 //builder.Services.AddSwaggerGen();
