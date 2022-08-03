@@ -147,7 +147,7 @@ namespace Licensing
                     RegistryKey safekey = Registry.CurrentUser, newkey;
                     if (safekey != null)
                     {
-                        newkey = safekey.CreateSubKey(ourkey);
+                        newkey = safekey.CreateSubKey(ourkey, true );
                         if (newkey == null)
                         {
                             safekey.Dispose(); back = false;
