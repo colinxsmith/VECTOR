@@ -236,6 +236,10 @@ public class OptimiseController : ControllerBase
       string? logfile, bool negdata = false)
     {
         var op = new Optimise();
+        var lic = new Licensing.Licence();
+        var ok=lic.CheckLicence();
+        op.VersionString = lic.VersionString;
+        if(!ok)return op;
         if (doOpt != null) op.doOpt = doOpt.GetValueOrDefault();
         using (var CVarData = new InputSomeData())
         {
@@ -554,6 +558,10 @@ public class OptimiseController : ControllerBase
     public Optimise PostGen(Optimise op)
     {
         var breakdown = new double[op.n.GetValueOrDefault()];
+        var lic = new Licensing.Licence();
+        var ok=lic.CheckLicence();
+        op.VersionString = lic.VersionString;
+        if(!ok)return op;
         op.result = new Optimise.checkv();
         if (op.tlen > 0)
         {

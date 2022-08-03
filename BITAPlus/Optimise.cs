@@ -51,6 +51,7 @@ public class Optimise
         min_trade = -1;
         Gstrength = 1;
     }
+    public string? VersionString { get; set; }
     public bool doOpt { get; set; }
     public checkv? result { get; set; }
     public int? back { set; get; }

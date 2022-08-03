@@ -9,6 +9,7 @@
 </div>
 <div class="maindiv" *ngIf="opt">
     <button (mouseover)="over($event,true)" (mouseleave)="over($event)" (click)="sendStep()">Send New Optimisation Parameters</button>
+    <h5 style="color:brown; text-align:justify">{{opt.versionString}}</h5>
     <table>
         <tr>
             <td *ngIf="opt.back==0" style="color:rgb(47, 255, 89); text-align:justify">{{opt.message}}</td>

@@ -237,6 +237,10 @@ public class OptimiseController : ControllerBase
       string? logfile, bool negdata = false)
     {
         var op = new Optimise();
+        var lic = new Licensing.Licence();
+        var ok=lic.CheckLicence();
+        op.VersionString = lic.VersionString;
+        if(!ok)return op;
         if (doOpt != null) op.doOpt = doOpt.GetValueOrDefault();
         using (var CVarData = new InputSomeData())
         {
@@ -555,6 +559,10 @@ public class OptimiseController : ControllerBase
     public Optimise PostGen(Optimise op)
     {
         var breakdown = new double[op.n.GetValueOrDefault()];
+        var lic = new Licensing.Licence();
+        var ok=lic.CheckLicence();
+        op.VersionString = lic.VersionString;
+        if(!ok)return op;
         op.result = new Optimise.checkv();
         if (op.tlen > 0)
         {
@@ -596,7 +604,7 @@ public class OptimiseController : ControllerBase
             op.mask, op.longbasket.GetValueOrDefault(), op.shortbasket.GetValueOrDefault(), op.tradebuy.GetValueOrDefault(),
             op.tradesell.GetValueOrDefault(), op.valuel, op.Abs_L, breakdown, ref CVARGLprob, op.tlen, op.Gstrength,
             op.DATA, op.tail, op.TargetReturn, op.ETLopt.GetValueOrDefault() || op.LOSSopt.GetValueOrDefault(), op.TargetReturn == null ? op.ETLmin.GetValueOrDefault() : op.LOSSmin.GetValueOrDefault(),
-            op.TargetReturn == null ? op.ETLmax.GetValueOrDefault() : op.LOSSmax.GetValueOrDefault(), op.logfile,0);
+            op.TargetReturn == null ? op.ETLmax.GetValueOrDefault() : op.LOSSmax.GetValueOrDefault(), op.logfile, 0);
 
 
             op.CVARGLprob = CVARGLprob;

@@ -2,58 +2,62 @@ using Microsoft.Extensions.Hosting.WindowsServices;
 namespace BitaServer;
 
 public class Optimise
-{public class checkv{
-    public double? gross {get;set;}
-    public double? longvalue {get;set;}
-    public double? shortvalue {get;set;}
-    public double? shortoverlong {get;set;}
-    public double? minhold {get;set;}
-    public double? mintrade {get;set;}
-    public double? cost {get;set;}
-    public double? turnover {get;set;}
-    public int?basket{get;set;}
-    public int?trades{get;set;}
-    public double[]? cval{set;get;}
-    public double? VAR { get; set; }
-    public int? VARindex { get; set; }
-    public double? ETL { get; set; }
-    public double? LOSS { get; set; }
-    public double[]? breakdown { get; set; }
-    public double?risk{set;get;}
-    public double?expreturn{set;get;}
-    public double[]?mctr{set;get;}
-    public double[]? Fmctr{get;set;}
-    public double[]? SPmctr{get;set;}
-    public double[]? FX{get;set;}
-    public double?facrisk{get;set;}
-    public double?specrisk{get;set;}
-}
-    
-    public Optimise(){
-    doOpt=true;
-    tlen=0;
-    tail=0.05;
-    maxRisk=-1;
-    minRisk=-1;
-    value=-1;
-    valuel=-1;
-    rmax=-1;
-    rmin=-1;
-    basket=-1;
-    trades=-1;
-    longbasket=-1;
-    shortbasket=-1;
-    tradebuy=-1;
-    tradesell=-1;
-    min_holding=-1;
-    min_trade=-1;
-    Gstrength=1;
-    basedirectory=AppContext.BaseDirectory;
-}
-public bool doOpt{get;set;}
-public checkv? result{get;set;}
-    public int? back{set;get;}
-    public string? message{set;get;}
+{
+    public class checkv
+    {
+        public double? gross { get; set; }
+        public double? longvalue { get; set; }
+        public double? shortvalue { get; set; }
+        public double? shortoverlong { get; set; }
+        public double? minhold { get; set; }
+        public double? mintrade { get; set; }
+        public double? cost { get; set; }
+        public double? turnover { get; set; }
+        public int? basket { get; set; }
+        public int? trades { get; set; }
+        public double[]? cval { set; get; }
+        public double? VAR { get; set; }
+        public int? VARindex { get; set; }
+        public double? ETL { get; set; }
+        public double? LOSS { get; set; }
+        public double[]? breakdown { get; set; }
+        public double? risk { set; get; }
+        public double? expreturn { set; get; }
+        public double[]? mctr { set; get; }
+        public double[]? Fmctr { get; set; }
+        public double[]? SPmctr { get; set; }
+        public double[]? FX { get; set; }
+        public double? facrisk { get; set; }
+        public double? specrisk { get; set; }
+    }
+
+    public Optimise()
+    {
+        doOpt = true;
+        tlen = 0;
+        tail = 0.05;
+        maxRisk = -1;
+        minRisk = -1;
+        value = -1;
+        valuel = -1;
+        rmax = -1;
+        rmin = -1;
+        basket = -1;
+        trades = -1;
+        longbasket = -1;
+        shortbasket = -1;
+        tradebuy = -1;
+        tradesell = -1;
+        min_holding = -1;
+        min_trade = -1;
+        Gstrength = 1;
+        basedirectory = AppContext.BaseDirectory;
+    }
+    public string? VersionString{get;set;}
+    public bool doOpt { get; set; }
+    public checkv? result { get; set; }
+    public int? back { set; get; }
+    public string? message { set; get; }
 
     public double? ogamma { set; get; }
     public double minRisk { set; get; }
@@ -80,11 +84,11 @@ public checkv? result{get;set;}
     public double[]? Abs_L { get; set; }
     public double[]? Abs_U { get; set; }
     public double[]? mask { get; set; }
-    public string?logfile{set;get;}
-    public int?longbasket{set;get;}
-    public int?shortbasket{set;get;}
-    public int?tradesell{set;get;}
-    public int?tradebuy{set;get;}
+    public string? logfile { set; get; }
+    public int? longbasket { set; get; }
+    public int? shortbasket { set; get; }
+    public int? tradesell { set; get; }
+    public int? tradebuy { set; get; }
     public double[]? SV { get; set; }
     public double[]? FC { get; set; }
     public double[]? FL { get; set; }
@@ -107,13 +111,13 @@ public checkv? result{get;set;}
     public double[]? min_lot { get; set; }
     public double[]? size_lot { get; set; }
     public int[]? shake { get; set; }
-    public double[]?alpha{set;get;}
-    public bool?CVARGLprob{get;set;}
+    public double[]? alpha { set; get; }
+    public bool? CVARGLprob { get; set; }
     public double[]? TargetReturn { set; get; }
     public bool? LOSSopt { set; get; }
     public double? LOSSmin { get; set; }
     public double? LOSSmax { set; get; }
-    public int?round{get;set;}
-    public string?datafile{get;set;}
-    public string basedirectory{get;}
+    public int? round { get; set; }
+    public string? datafile { get; set; }
+    public string basedirectory { get; }
 }

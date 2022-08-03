@@ -949,7 +949,7 @@ namespace BlasLikeTest
             pass = pass && (timenow > start);
             pass = pass && (hid == testhid || hid == 0x13101955);
             Assert.IsTrue(pass);
-            start = (int)timenow;
+            start = (int)timenow-23;
             hid = (int)testhid;
             //try binary 111100111 for keys
             curveKeys.mainint = 0x1e7;
@@ -962,18 +962,11 @@ namespace BlasLikeTest
             Assert.IsTrue(licence.toRegistry());
         }
         [TestMethod]
-        public void Test_VersionString()
+        public void Test_CheckLicence()
         {
-            var licence = new Licensing.Licence();
-            var testl = licence.VersionString();
-            int newstart = 0;
-            for (var i = 0; i < testl.Length; ++i)
-            {
-                if (testl[i] == '\0') { newstart = i + 1; }
-            }
-            var licenceString = testl.Substring(newstart);
-            ColourConsole.WriteInfo(testl);
-            ColourConsole.WriteInfo(licenceString);
+            var licence=new Licensing.Licence();
+            var vers=licence.CheckLicence(true);
+            Assert.IsTrue(vers);
         }
     }
 }

@@ -121,6 +121,7 @@ namespace Licensing
     public class Licence
     {
         int bitaopt = 23;
+        public string VersionString="";
         public Licence()
         {
             validator_m_byte = new byte[validator_m.Length];
@@ -275,7 +276,7 @@ namespace Licensing
         public DateTime UnixTimeStampToDateTime(double unixTimeStamp)
         {
             // Unix timestamp is seconds past epoch
-            System.DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
+            DateTime dtDateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, System.DateTimeKind.Utc);
             dtDateTime = dtDateTime.AddSeconds(unixTimeStamp).ToLocalTime();
             return dtDateTime;
         }
@@ -390,9 +391,47 @@ namespace Licensing
             ColourConsole.WriteEmbeddedColourLine($"Finally [cyan]{output}[/cyan] [yellow]{output:x}[/yellow]");
             return output;
         }
-        public string VersionString(){
-            const string back= "Optimiser from BITA Plus. \0aaaabbbbccccddddeeeeffffgggghhhhiiiiJJJJ";
-            return back;
+        public bool CheckLicence(bool print = false)
+        {
+            const string version = "1.0";
+            var back = $"BITA Plus ASP.NET Core Portfolio Optimiser Version {version}";
+            var pass = true;
+            var vid = VolId();
+            int start = 0, stop = 0, hid = 0;
+            string printStart = "", printStop = "", printNow = "";
+            if (fromRegistry())
+            {
+                DateTimeOffset now = new DateTimeOffset(DateTime.Now);
+                printNow = $"{now}";
+                var timenow = now.ToUnixTimeSeconds();
+                convert(licenceByteValue, ref hid, ref start, ref stop);
+                printStart = $"{UnixTimeStampToDateTime(start)}";
+                printStop = $"{UnixTimeStampToDateTime(stop)}";
+                Licensing.byteint curveKeys = new Licensing.byteint();
+                curveKeys.byte1 = licenceByteValue[16];
+                curveKeys.byte2 = licenceByteValue[17];
+                curveKeys.byte3 = licenceByteValue[18];
+                curveKeys.byte4 = licenceByteValue[19];
+                var ckeys=Convert.ToString(curveKeys.mainint,2);
+                hid -= curveKeys.mainint;
+                pass = true;
+                pass = pass && (start < timenow);
+                pass = pass && (stop > timenow);
+                pass = pass && (hid == vid || hid == 0x13101955);
+                if (pass) back += $".\nLicence starts: {printStart} until: {printStop}.\nTime now: {printNow}. Valid on: {hid:x}.\nKeys: {ckeys}";
+                else back += $".\nLicence is not valid!!!!!!!!!!!!! From: {printStart} until: {printStop}.\nTime now: {printNow}. Valid on: {hid:x}.\nKeys: {ckeys}";
+                if (pass)
+                {//Reset the start time and change hid to the that for this machine
+                    start = (int)timenow-10;
+                    hid = (int)vid;
+                    hid += curveKeys.mainint;
+                    convert(licenceByteValue, ref hid, ref start, ref stop);
+                    toRegistry();
+                }
+            }
+            if (print) ColourConsole.WriteEmbeddedColourLine(back);
+            VersionString=back;
+            return pass;
         }
     }
 }

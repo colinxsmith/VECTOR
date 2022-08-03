@@ -166,6 +166,7 @@ interface Result {
   specrisk: number
 }
 interface Optimise {
+  versionString:string,
   doOpt: boolean,
   result: Result,
   back: number,
