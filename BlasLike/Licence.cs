@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using System.IO;
 using System.Net.NetworkInformation;
 using Microsoft.Win32;
 using System.Runtime.InteropServices;
@@ -137,16 +138,21 @@ namespace Licensing
         public byte[] licenceByteValue = null;
         public bool deleteKey(string ourkey = "Software\\safeqp")
         {
-            RegistryKey safekey,newkey;
-            try{safekey=Registry.LocalMachine;newkey = safekey.OpenSubKey(ourkey,true);
-            safekey.Dispose();}catch{safekey=Registry.CurrentUser;}
+            RegistryKey safekey, newkey;
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)){
+            try
+            {
+                safekey = Registry.LocalMachine; newkey = safekey.OpenSubKey(ourkey, true);
+                safekey.Dispose();
+            }
+            catch { safekey = Registry.CurrentUser; }
             newkey = safekey.CreateSubKey(ourkey, true);
             try
             {
                 newkey.DeleteValue(ourkey);
                 safekey.Dispose();
             }
-            catch { return false; }
+            catch { return false; }}
             return true;
         }
         ///<summary> Write the licence whose data is in licenceByteValue to registry key ourkey </summary>
@@ -158,9 +164,13 @@ namespace Licensing
             {
                 try
                 {
-            RegistryKey safekey,newkey;
-            try{safekey=Registry.LocalMachine;newkey = safekey.OpenSubKey(ourkey,true);
-            safekey.Dispose();}catch{safekey=Registry.CurrentUser;}
+                    RegistryKey safekey, newkey;
+                    try
+                    {
+                        safekey = Registry.LocalMachine; newkey = safekey.OpenSubKey(ourkey, true);
+                        safekey.Dispose();
+                    }
+                    catch { safekey = Registry.CurrentUser; }
                     if (safekey != null)
                     {
                         newkey = safekey.CreateSubKey(ourkey, true);
@@ -175,8 +185,12 @@ namespace Licensing
                             newkey.DeleteValue(ourkey);
                     }
                     safekey.Dispose();
-            try{safekey=Registry.LocalMachine;newkey = safekey.OpenSubKey(ourkey,true);
-            safekey.Dispose();}catch{safekey=Registry.CurrentUser;}
+                    try
+                    {
+                        safekey = Registry.LocalMachine; newkey = safekey.OpenSubKey(ourkey, true);
+                        safekey.Dispose();
+                    }
+                    catch { safekey = Registry.CurrentUser; }
                     newkey = safekey.OpenSubKey(ourkey);
                     licenceByteValue = (Byte[])newkey.GetValue(ourkey);
                     if (licenceByteValue == null)
@@ -198,6 +212,19 @@ namespace Licensing
                     Console.WriteLine("exception" + prob);
                 }
             }
+            else{
+                 var   basef=AppContext.BaseDirectory+"licence";
+                 ColourConsole.WriteInfo(basef);
+                                try{
+                using (var stream = File.Open(basef, FileMode.OpenOrCreate))
+                {
+                    using (var write = new BinaryWriter(stream,Encoding.UTF8))
+                    {
+                        for(var i=0;i<licenceByteValue.Length;++i)
+                        write.Write(licenceByteValue[i]);
+                    }
+                }}catch{back=false;}
+            }
             return back;
         }
         ///<summary> Read the licence in registry key ourkey to licenceByteValue 
@@ -206,19 +233,22 @@ namespace Licensing
         public int fromRegistry(string ourkey = "Software\\safeqp")
         {
             bool worked = true;
-            bool root=true;
+            bool root = true;
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 worked = false;
                 try
                 {
-            RegistryKey safekey,newkey;
-            try{safekey=Registry.LocalMachine;newkey = safekey.OpenSubKey(ourkey,true);
-            safekey.Dispose();
-            }catch{safekey=Registry.CurrentUser;root=false;}
+                    RegistryKey safekey, newkey;
+                    try
+                    {
+                        safekey = Registry.LocalMachine; newkey = safekey.OpenSubKey(ourkey, true);
+                        safekey.Dispose();
+                    }
+                    catch { safekey = Registry.CurrentUser; root = false; }
                     if (safekey != null)
                     {
-                        newkey = safekey.OpenSubKey(ourkey,true);
+                        newkey = safekey.OpenSubKey(ourkey, true);
                         if (newkey == null)
                         {
                             safekey.Dispose();
@@ -246,8 +276,23 @@ namespace Licensing
                     ColourConsole.WriteError("exception" + prob);
                 }
             }
-            if(!worked)return 0;
-            return worked&&root?1:2;
+            else
+            {
+                worked = false;
+                 var   basef=AppContext.BaseDirectory+"licence";
+                 ColourConsole.WriteInfo(basef);
+                try{
+                using (var stream = File.Open(basef, FileMode.Open))
+                {
+                    using (var read = new BinaryReader(stream, Encoding.UTF8, false))
+                    {
+                        licenceByteValue=read.ReadBytes(20);
+                    }
+                    worked=true;root=false;
+                }}catch{;}
+            }
+            if (!worked) return 0;
+            return worked && root ? 1 : 2;
         }
         public void krypton(byte[] b = null, int bstart = 0)
         {
@@ -369,10 +414,10 @@ namespace Licensing
                 stop = validator.stop;
             }
         }
-        public UInt32 VolId()
+        public Int32 VolId()
         {
             var hex = "facc0ff5";//Start with this in case there are no more
-            var output = Convert.ToUInt32(hex, 16);
+            var output = Convert.ToInt32(hex, 16);
             ColourConsole.WriteEmbeddedColourLine($"[green]{hex} =[/green] [cyan]{output}[/cyan] [yellow]{output:x}[/yellow]");
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
@@ -406,7 +451,7 @@ namespace Licensing
                         var bStr = $"{newByte[0],2:x2}{newByte[1],2:x2}{newByte[2],2:x2}{newByte[3],2:x2}";
                         ColourConsole.WriteInfo(bStr);
                         bStr = bStr.Replace(" ", "");
-                        var bStrInt = Convert.ToUInt32(bStr, 16);
+                        var bStrInt = Convert.ToInt32(bStr, 16);
                         ColourConsole.WriteEmbeddedColourLine($"[green]{bStr} =[/green] [cyan]{bStrInt}[/cyan] [yellow]{bStrInt:x}[/yellow]");
                         output ^= bStrInt;
                     }
@@ -423,7 +468,7 @@ namespace Licensing
             int start = 0, stop = 0, hid = 0;
             string printStart = "", printStop = "", printNow = "";
             int fromReg;
-            if ((fromReg=fromRegistry())>0)
+            if ((fromReg = fromRegistry()) > 0)
             {
                 DateTimeOffset now = new DateTimeOffset(DateTime.Now);
                 printNow = $"{now}";
@@ -442,8 +487,8 @@ namespace Licensing
                 pass = pass && (start < timenow);
                 pass = pass && (stop > timenow);
                 pass = pass && (hid == vid || hid == 0x13101955);
-                string user=fromReg==1?"root":"user";
-                int days=(stop-start)/24/3600;
+                string user = fromReg == 1 ? "root" : "user";
+                int days = (stop - start) / 24 / 3600;
                 if (pass) back += $".\nRunning as {user}. Licence starts: {printStart} until: {printStop}. I.e. {days} days left.\nTime now: {printNow}. Valid on: {hid:x}.\nKeys: {ckeys}";
                 else back += $".\nRunning as {user}. Licence is not valid!!!!!!!!!!!!! From: {printStart} until: {printStop}.\nTime now: {printNow}. Valid on: {hid:x}.\nKeys: {ckeys}";
                 if (pass)

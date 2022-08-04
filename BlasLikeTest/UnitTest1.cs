@@ -880,7 +880,7 @@ namespace BlasLikeTest
         {
             ColourConsole.WriteLine($"1 int has length {(double)sizeof(UInt32) / (double)sizeof(byte)} bytes");
             var licence = new Licensing.Licence();
-            Assert.IsTrue(licence.fromRegistry()>0);
+            Assert.IsTrue(licence.fromRegistry() > 0);
             var testlicence = licence.licenceByteValue;
             if (testlicence == null) return;
             var vv = new Licensing.validator_t();
@@ -904,7 +904,7 @@ namespace BlasLikeTest
         public void Test_convert_licence()
         {
             var licence = new Licensing.Licence();
-            Assert.IsTrue(licence.fromRegistry()>0);
+            Assert.IsTrue(licence.fromRegistry() > 0);
             var testlicence = licence.licenceByteValue;
             if (testlicence == null) return;
             Licensing.byteint curveKeys = new Licensing.byteint();
@@ -930,7 +930,7 @@ namespace BlasLikeTest
             var licence = new Licensing.Licence();
             var testhid = licence.VolId();
             ColourConsole.WriteInfo($"Volid {testhid}  {testhid:x}");
-            Assert.IsTrue(licence.fromRegistry()>0);
+            Assert.IsTrue(licence.fromRegistry() > 0);
             var testlicence = licence.licenceByteValue;
             if (testlicence == null) return;
             int hid = 0, start = 0, stop = 0;
@@ -973,13 +973,13 @@ namespace BlasLikeTest
         {
             var licence = new Licensing.Licence();
             var vers = licence.deleteKey();
-        //    Assert.IsTrue(vers);
+            //    Assert.IsTrue(vers);
             //Now we put a licence back
             DateTimeOffset now = new DateTimeOffset(DateTime.Now);
             var start = (int)now.ToUnixTimeSeconds();
             int stop = start + 10 * 60 * 60 * 24;
             int hid = 0x13101955;
-            int keys = Convert.ToInt32("101010011",2);//0x153;// binary 101010011
+            int keys = Convert.ToInt32("101010011", 2);//0x153;// binary 101010011
             hid += keys;
             Licensing.byteint curveKeys = new Licensing.byteint();
             curveKeys.mainint = keys;
