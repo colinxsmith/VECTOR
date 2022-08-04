@@ -968,5 +968,12 @@ namespace BlasLikeTest
             var vers=licence.CheckLicence(true);
             Assert.IsTrue(vers);
         }
+        [TestMethod]
+        public void Test_DeleteKey()
+        {
+            var licence=new Licensing.Licence();
+            var vers=licence.deleteKey();
+           // Assert.IsTrue(vers);
+        }
     }
 }

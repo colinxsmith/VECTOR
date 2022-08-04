@@ -135,6 +135,12 @@ namespace Licensing
         byte validator_c(int z, int k) => validator_m_byte[(z + k) % 48];
         string licence = "";
         public byte[] licenceByteValue = null;
+        public bool deleteKey(string ourkey = "Software\\safeqp"){
+            RegistryKey safekey = Registry.CurrentUser;
+            try{safekey.DeleteValue(ourkey);
+            safekey.Dispose();}catch{return false;}
+            return true;
+        }
         ///<summary> Write the licence whose data is in licenceByteValue to registry key ourkey </summary>
         ///<param name="ourkey"> string defining registry key </param>
         public bool toRegistry(string ourkey = "Software\\safeqp")
