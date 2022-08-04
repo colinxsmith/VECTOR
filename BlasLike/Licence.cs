@@ -121,7 +121,7 @@ namespace Licensing
     public class Licence
     {
         int bitaopt = 23;
-        public string VersionString="";
+        public string VersionString = "";
         public Licence()
         {
             validator_m_byte = new byte[validator_m.Length];
@@ -135,10 +135,18 @@ namespace Licensing
         byte validator_c(int z, int k) => validator_m_byte[(z + k) % 48];
         string licence = "";
         public byte[] licenceByteValue = null;
-        public bool deleteKey(string ourkey = "Software\\safeqp"){
-            RegistryKey safekey = Registry.CurrentUser;
-            try{safekey.DeleteValue(ourkey);
-            safekey.Dispose();}catch{return false;}
+        public bool deleteKey(string ourkey = "Software\\safeqp")
+        {
+            RegistryKey safekey,newkey;
+            try{safekey=Registry.LocalMachine;newkey = safekey.OpenSubKey(ourkey,true);
+            safekey.Dispose();}catch{safekey=Registry.CurrentUser;}
+            newkey = safekey.CreateSubKey(ourkey, true);
+            try
+            {
+                newkey.DeleteValue(ourkey);
+                safekey.Dispose();
+            }
+            catch { return false; }
             return true;
         }
         ///<summary> Write the licence whose data is in licenceByteValue to registry key ourkey </summary>
@@ -150,10 +158,12 @@ namespace Licensing
             {
                 try
                 {
-                    RegistryKey safekey = Registry.CurrentUser, newkey;
+            RegistryKey safekey,newkey;
+            try{safekey=Registry.LocalMachine;newkey = safekey.OpenSubKey(ourkey,true);
+            safekey.Dispose();}catch{safekey=Registry.CurrentUser;}
                     if (safekey != null)
                     {
-                        newkey = safekey.CreateSubKey(ourkey, true );
+                        newkey = safekey.CreateSubKey(ourkey, true);
                         if (newkey == null)
                         {
                             safekey.Dispose(); back = false;
@@ -165,7 +175,8 @@ namespace Licensing
                             newkey.DeleteValue(ourkey);
                     }
                     safekey.Dispose();
-                    safekey = Registry.CurrentUser;
+            try{safekey=Registry.LocalMachine;newkey = safekey.OpenSubKey(ourkey,true);
+            safekey.Dispose();}catch{safekey=Registry.CurrentUser;}
                     newkey = safekey.OpenSubKey(ourkey);
                     licenceByteValue = (Byte[])newkey.GetValue(ourkey);
                     if (licenceByteValue == null)
@@ -189,20 +200,25 @@ namespace Licensing
             }
             return back;
         }
-        ///<summary> Read the licence in registry key ourkey to licenceByteValue  </summary>
+        ///<summary> Read the licence in registry key ourkey to licenceByteValue 
+        ///Returns; 0 if failed, 1 if run as root, 2 if run as user </summary>
         ///<param name="ourkey"> string defining registry key </param>
-        public bool fromRegistry(string ourkey = "Software\\safeqp")
+        public int fromRegistry(string ourkey = "Software\\safeqp")
         {
             bool worked = true;
+            bool root=true;
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 worked = false;
                 try
                 {
-                    RegistryKey safekey = Registry.CurrentUser, newkey;
+            RegistryKey safekey,newkey;
+            try{safekey=Registry.LocalMachine;newkey = safekey.OpenSubKey(ourkey,true);
+            safekey.Dispose();
+            }catch{safekey=Registry.CurrentUser;root=false;}
                     if (safekey != null)
                     {
-                        newkey = safekey.OpenSubKey(ourkey);
+                        newkey = safekey.OpenSubKey(ourkey,true);
                         if (newkey == null)
                         {
                             safekey.Dispose();
@@ -230,7 +246,8 @@ namespace Licensing
                     ColourConsole.WriteError("exception" + prob);
                 }
             }
-            return worked;
+            if(!worked)return 0;
+            return worked&&root?1:2;
         }
         public void krypton(byte[] b = null, int bstart = 0)
         {
@@ -401,11 +418,12 @@ namespace Licensing
         {
             const string version = "1.0";
             var back = $"BITA Plus ASP.NET Core Portfolio Optimiser Version {version}";
-            var pass = true;
+            var pass = false;
             var vid = VolId();
             int start = 0, stop = 0, hid = 0;
             string printStart = "", printStop = "", printNow = "";
-            if (fromRegistry())
+            int fromReg;
+            if ((fromReg=fromRegistry())>0)
             {
                 DateTimeOffset now = new DateTimeOffset(DateTime.Now);
                 printNow = $"{now}";
@@ -418,17 +436,18 @@ namespace Licensing
                 curveKeys.byte2 = licenceByteValue[17];
                 curveKeys.byte3 = licenceByteValue[18];
                 curveKeys.byte4 = licenceByteValue[19];
-                var ckeys=Convert.ToString(curveKeys.mainint,2);
+                var ckeys = Convert.ToString(curveKeys.mainint, 2);
                 hid -= curveKeys.mainint;
                 pass = true;
                 pass = pass && (start < timenow);
                 pass = pass && (stop > timenow);
                 pass = pass && (hid == vid || hid == 0x13101955);
-                if (pass) back += $".\nLicence starts: {printStart} until: {printStop}.\nTime now: {printNow}. Valid on: {hid:x}.\nKeys: {ckeys}";
-                else back += $".\nLicence is not valid!!!!!!!!!!!!! From: {printStart} until: {printStop}.\nTime now: {printNow}. Valid on: {hid:x}.\nKeys: {ckeys}";
+                string user=fromReg==1?"root":"user";
+                if (pass) back += $".\nRunning as {user}. Licence starts: {printStart} until: {printStop}.\nTime now: {printNow}. Valid on: {hid:x}.\nKeys: {ckeys}";
+                else back += $".\nRunning as {user}. Licence is not valid!!!!!!!!!!!!! From: {printStart} until: {printStop}.\nTime now: {printNow}. Valid on: {hid:x}.\nKeys: {ckeys}";
                 if (pass)
                 {//Reset the start time and change hid to the that for this machine
-                    start = (int)timenow-10;
+                    start = (int)timenow - 10;
                     hid = (int)vid;
                     hid += curveKeys.mainint;
                     convert(licenceByteValue, ref hid, ref start, ref stop);
@@ -436,7 +455,7 @@ namespace Licensing
                 }
             }
             if (print) ColourConsole.WriteEmbeddedColourLine(back);
-            VersionString=back;
+            VersionString = back;
             return pass;
         }
     }
