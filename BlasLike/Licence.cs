@@ -443,7 +443,8 @@ namespace Licensing
                 pass = pass && (stop > timenow);
                 pass = pass && (hid == vid || hid == 0x13101955);
                 string user=fromReg==1?"root":"user";
-                if (pass) back += $".\nRunning as {user}. Licence starts: {printStart} until: {printStop}.\nTime now: {printNow}. Valid on: {hid:x}.\nKeys: {ckeys}";
+                int days=(stop-start)/24/3600;
+                if (pass) back += $".\nRunning as {user}. Licence starts: {printStart} until: {printStop}. I.e. {days} days left.\nTime now: {printNow}. Valid on: {hid:x}.\nKeys: {ckeys}";
                 else back += $".\nRunning as {user}. Licence is not valid!!!!!!!!!!!!! From: {printStart} until: {printStop}.\nTime now: {printNow}. Valid on: {hid:x}.\nKeys: {ckeys}";
                 if (pass)
                 {//Reset the start time and change hid to the that for this machine
