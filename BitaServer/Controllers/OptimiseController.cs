@@ -249,7 +249,10 @@ public class OptimiseController : ControllerBase
             CVarData.stringFields = "names logfile";
             op.datafile = "generalopt";
             if (datafile != null) op.datafile = datafile;
-            var ContentRootPath = WindowsServiceHelpers.IsWindowsService() ? AppContext.BaseDirectory : "./";
+            var ContentRootPath = AppContext.BaseDirectory;
+            #if DEBUG
+            ContentRootPath="./";
+            #endif
             try
             {
                 CVarData.Read($"{ContentRootPath}{op.datafile}");

@@ -33,7 +33,10 @@ namespace Portfolio
                                         double ETLorLOSSmax = 0, string logfile = "", int revise = 0)
         {
             ColourConsole.print = !(WindowsServiceHelpers.IsWindowsService() );
-            var rootPath = (WindowsServiceHelpers.IsWindowsService() ) ? AppContext.BaseDirectory : "./";
+            var rootPath=AppContext.BaseDirectory;
+            #if DEBUG
+            rootPath="./";
+            #endif
             ColourConsole.WriteEmbeddedColourLine($"[green]rootPath:{rootPath}[/green] [magenta]BaseDirectory:{AppContext.BaseDirectory}[/magenta]");
             if (logfile != "" && logfile != null)
                 using (StreamWriter ww = new StreamWriter(rootPath+logfile))
