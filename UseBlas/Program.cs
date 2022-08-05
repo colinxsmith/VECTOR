@@ -15,7 +15,7 @@ namespace UseBlas
             {//How to make a file licence
                 var licence = new Licensing.Licence();
                 var now = new DateTimeOffset(DateTime.Now);
-                var later = new DateTimeOffset(new DateTime(2022, 10, 26, 12, 0, 0));
+                var later = new DateTimeOffset(new DateTime(now.Year, 10, 26, 12, 0, 0));
                 var testlicence = licence.licenceByteValue = new byte[20];
                 var hid = 0x13101955;
                 var timenow = now.ToUnixTimeSeconds();
