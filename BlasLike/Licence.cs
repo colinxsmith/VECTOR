@@ -433,17 +433,17 @@ namespace Licensing
                            Console.WriteLine();*/
                         var address = nic.GetPhysicalAddress().ToString();
                         ColourConsole.WriteInfo($"Adapter: {address}");
-                        var bAddress = new UInt32[6];
+                        var bAddress = new int[6];
                         for (var i = 0; i < 6; i++)
                         {
-                            bAddress[i] = Convert.ToUInt32(address.Substring(i * 2, 2), 16);
+                            bAddress[i] = Convert.ToInt16(address.Substring(i * 2, 2), 16);
                             ColourConsole.Write($"{bAddress[i]} ");
                         }
                         Array.Sort(bAddress);
                         Array.Reverse(bAddress);
                         for (var i = 0; i < 6; i++) ColourConsole.Write($"{bAddress[i],2:x} ", ConsoleColor.DarkMagenta);
                         Console.WriteLine();
-                        var newByte = new UInt32[4];
+                        var newByte = new Int32[4];
                         newByte[0] = bAddress[0];
                         newByte[1] = bAddress[1];
                         newByte[2] = ((bAddress[2] + bAddress[3]) / 2) & 0xff;
@@ -471,6 +471,12 @@ namespace Licensing
             if ((fromReg = fromRegistry()) > 0)
             {
                 DateTimeOffset now = new DateTimeOffset(DateTime.Now);
+                var year=now.Year;
+                var month=now.Month;
+                var day=now.Day;
+                var now1=new DateTime(year, month, day, 1, 2, 3, 4);
+                var now11=new DateTimeOffset(now1);
+                var newstart=now11.ToUnixTimeSeconds();
                 printNow = $"{now}";
                 var timenow = now.ToUnixTimeSeconds();
                 convert(licenceByteValue, ref hid, ref start, ref stop);
@@ -493,7 +499,7 @@ namespace Licensing
                 else back += $".\nRunning as {user}. Licence is not valid!!!!!!!!!!!!! From: {printStart} until: {printStop}.\nTime now: {printNow}. Valid on: {hid:x}.\nKeys: {ckeys}";
                 if (pass)
                 {//Reset the start time and change hid to the that for this machine
-                    start = (int)timenow - 10;
+                    start = (int)newstart;
                     hid = (int)vid;
                     hid += curveKeys.mainint;
                     convert(licenceByteValue, ref hid, ref start, ref stop);
