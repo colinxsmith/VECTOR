@@ -479,6 +479,7 @@ namespace Licensing
                 var newstart=now11.ToUnixTimeSeconds();
                 printNow = $"{now}";
                 var timenow = now.ToUnixTimeSeconds();
+                if(timenow<newstart)newstart-=24+2*60+3;
                 convert(licenceByteValue, ref hid, ref start, ref stop);
                 printStart = $"{UnixTimeStampToDateTime(start)}";
                 printStop = $"{UnixTimeStampToDateTime(stop)}";
@@ -500,11 +501,13 @@ namespace Licensing
                 if (pass)
                 {//Reset the start time and change hid to the that for this machine
                     start = (int)newstart;
+                    stop=start+days*24*3600;
                     hid = (int)vid;
                     hid += curveKeys.mainint;
                     convert(licenceByteValue, ref hid, ref start, ref stop);
                     toRegistry();
                 }
+                else deleteKey();
             }
             if (print) ColourConsole.WriteEmbeddedColourLine(back);
             VersionString = back;
