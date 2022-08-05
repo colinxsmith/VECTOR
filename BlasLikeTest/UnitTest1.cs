@@ -880,7 +880,7 @@ namespace BlasLikeTest
         {
             ColourConsole.WriteLine($"1 int has length {(double)sizeof(UInt32) / (double)sizeof(byte)} bytes");
             var licence = new Licensing.Licence();
-            Assert.IsTrue(licence.fromRegistry() > 0);
+            Assert.IsTrue(licence.fromRegistry(false) > 0);
             var testlicence = licence.licenceByteValue;
             if (testlicence == null) return;
             var vv = new Licensing.validator_t();
@@ -904,7 +904,7 @@ namespace BlasLikeTest
         public void Test_convert_licence()
         {
             var licence = new Licensing.Licence();
-            Assert.IsTrue(licence.fromRegistry() > 0);
+            Assert.IsTrue(licence.fromRegistry(false) > 0);
             var testlicence = licence.licenceByteValue;
             if (testlicence == null) return;
             Licensing.byteint curveKeys = new Licensing.byteint();
@@ -930,7 +930,7 @@ namespace BlasLikeTest
             var licence = new Licensing.Licence();
             var testhid = licence.VolId();
             ColourConsole.WriteInfo($"Volid {testhid}  {testhid:x}");
-            Assert.IsTrue(licence.fromRegistry() > 0);
+            Assert.IsTrue(licence.fromRegistry(false) > 0);
             var testlicence = licence.licenceByteValue;
             if (testlicence == null) return;
             int hid = 0, start = 0, stop = 0;
@@ -959,7 +959,7 @@ namespace BlasLikeTest
             testlicence[19] = curveKeys.byte4;
             hid += curveKeys.mainint;
             licence.convert(testlicence, ref hid, ref start, ref stop);
-            Assert.IsTrue(licence.toRegistry());
+            Assert.IsTrue(licence.toRegistry(false));
         }
         [TestMethod]
         public void Test_CheckLicence()
@@ -989,7 +989,7 @@ namespace BlasLikeTest
             licence.licenceByteValue[18] = curveKeys.byte3;
             licence.licenceByteValue[19] = curveKeys.byte4;
             licence.convert(licence.licenceByteValue, ref hid, ref start, ref stop);
-            Assert.IsTrue(licence.toRegistry());
+            Assert.IsTrue(licence.toRegistry(false));
         }
     }
 }

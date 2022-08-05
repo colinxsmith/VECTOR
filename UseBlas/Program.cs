@@ -12,6 +12,26 @@ namespace UseBlas
     {
         static unsafe void Main(string[] args)
         {
+            {//How to make a file licence
+                var licence = new Licensing.Licence();
+                DateTimeOffset now = new DateTimeOffset(DateTime.Now);
+                var later = new DateTimeOffset(new DateTime(2022, 10, 26, 12, 0, 0));
+                var testlicence = licence.licenceByteValue = new byte[20];
+                var hid = 0x13101955;
+                var timenow = now.ToUnixTimeSeconds();
+                var start = (int)timenow - 23;
+                var stop = (int)later.ToUnixTimeSeconds();
+                Licensing.byteint curveKeys = new Licensing.byteint();
+                curveKeys.mainint = 0x1e7;
+                testlicence[16] = curveKeys.byte1;
+                testlicence[17] = curveKeys.byte2;
+                testlicence[18] = curveKeys.byte3;
+                testlicence[19] = curveKeys.byte4;
+                hid += curveKeys.mainint;
+                licence.convert(testlicence, ref hid, ref start, ref stop);
+                licence.toRegistry(true);
+                licence.CheckLicence(true,true);
+            }
             {
                 var a = 4.0;
                 double[] x = { 1, 2, 3 };
@@ -1763,7 +1783,7 @@ namespace UseBlas
                     opt.gamma = 0.5;
                     opt.kappa = -1;
                     opt.CalcRisk(opt.gamma, sendInput);
-                   // opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
+                    // opt.BoundsSetToSign(n, sendInput.L, sendInput.U, initial, opt.wback);
                     var breakdown = (double[])opt.wback.Clone();
                     var beta = (double[])null;//opt.wback.Clone();
                     opt.RiskBreakdown(opt.wback, opt.bench, breakdown, beta);
@@ -1789,7 +1809,7 @@ namespace UseBlas
                 }
             }
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-            if (isWindows) //Show how to read and write to Windows registry
+            if (false && isWindows) //Show how to read and write to Windows registry
             {
                 string ourkey = "Software\\safeqp";
                 if (args.Length == 1)

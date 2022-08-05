@@ -157,10 +157,10 @@ namespace Licensing
         }
         ///<summary> Write the licence whose data is in licenceByteValue to registry key ourkey </summary>
         ///<param name="ourkey"> string defining registry key </param>
-        public bool toRegistry(string ourkey = "Software\\safeqp")
+        public bool toRegistry(bool usefile=false,string ourkey = "Software\\safeqp")
         {
             var back = true;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (!usefile&&RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 try
                 {
@@ -230,11 +230,11 @@ namespace Licensing
         ///<summary> Read the licence in registry key ourkey to licenceByteValue 
         ///Returns; 0 if failed, 1 if run as root, 2 if run as user </summary>
         ///<param name="ourkey"> string defining registry key </param>
-        public int fromRegistry(string ourkey = "Software\\safeqp")
+        public int fromRegistry(bool usefile=false,string ourkey = "Software\\safeqp")
         {
             bool worked = true;
             bool root = true;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (!usefile&&RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 worked = false;
                 try
@@ -414,12 +414,12 @@ namespace Licensing
                 stop = validator.stop;
             }
         }
-        public Int32 VolId()
+        public Int32 VolId(bool usefile=false)
         {
             var hex = "facc0ff5";//Start with this in case there are no more
             var output = Convert.ToInt32(hex, 16);
             ColourConsole.WriteEmbeddedColourLine($"[green]{hex} =[/green] [cyan]{output}[/cyan] [yellow]{output:x}[/yellow]");
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (!usefile&&RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
                 {
                     if (nic.NetworkInterfaceType.ToString().Contains("Ethernet"))//&& nic.NetworkInterfaceType.ToString().Contains("USB"))
@@ -459,16 +459,16 @@ namespace Licensing
             ColourConsole.WriteEmbeddedColourLine($"Finally [cyan]{output}[/cyan] [yellow]{output:x}[/yellow]");
             return output;
         }
-        public bool CheckLicence(bool print = false)
+        public bool CheckLicence(bool print = false,bool usefile=false)
         {
             const string version = "1.0";
             var back = $"BITA Plus ASP.NET Core Portfolio Optimiser Version {version}";
             var pass = false;
-            var vid = VolId();
+            var vid = VolId(usefile);
             int start = 0, stop = 0, hid = 0;
             string printStart = "", printStop = "", printNow = "";
             int fromReg;
-            if ((fromReg = fromRegistry()) > 0)
+            if ((fromReg = fromRegistry(usefile)) > 0)
             {
                 DateTimeOffset now = new DateTimeOffset(DateTime.Now);
                 var year=now.Year;
@@ -505,7 +505,7 @@ namespace Licensing
                     hid = (int)vid;
                     hid += curveKeys.mainint;
                     convert(licenceByteValue, ref hid, ref start, ref stop);
-                    toRegistry();
+                    toRegistry(usefile);
                 }
                 else deleteKey();
             }

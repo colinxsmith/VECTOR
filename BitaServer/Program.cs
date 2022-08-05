@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Hosting.WindowsServices;
+using Microsoft.Extensions.Hosting.Systemd;
 using Microsoft.Extensions.Logging.EventLog;
 var options = new WebApplicationOptions
 {
@@ -27,6 +28,8 @@ if (OperatingSystem.IsWindows())
         conf.SourceName = "Optimiser Server";
         conf.MachineName = null;
     });
+}else if(OperatingSystem.IsLinux()){
+    builder.Host.UseSystemd();
 }
 //builder.WebHost.UseUrls("http://*:7779"); //Don't do this
 //builder.Services.AddSwaggerGen();
