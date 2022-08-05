@@ -14,14 +14,14 @@ namespace UseBlas
         {
             {//How to make a file licence
                 var licence = new Licensing.Licence();
-                DateTimeOffset now = new DateTimeOffset(DateTime.Now);
+                var now = new DateTimeOffset(DateTime.Now);
                 var later = new DateTimeOffset(new DateTime(2022, 10, 26, 12, 0, 0));
                 var testlicence = licence.licenceByteValue = new byte[20];
                 var hid = 0x13101955;
                 var timenow = now.ToUnixTimeSeconds();
                 var start = (int)timenow - 23;
                 var stop = (int)later.ToUnixTimeSeconds();
-                Licensing.byteint curveKeys = new Licensing.byteint();
+                var curveKeys = new Licensing.byteint();
                 curveKeys.mainint = 0x1e7;
                 testlicence[16] = curveKeys.byte1;
                 testlicence[17] = curveKeys.byte2;
