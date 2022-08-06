@@ -15,8 +15,8 @@ namespace UseBlas
             {//How to make a file licence
                 var licence = new Licensing.Licence();
                 var now = new DateTimeOffset(DateTime.Now);
-var extra=now.Month>=10?1:0;
-                var later = new DateTimeOffset(new DateTime(now.Year+extra, 10, 26, 12, 0, 0));
+                var extra = now.Month >= 10 ? 1 : 0;
+                var later = new DateTimeOffset(new DateTime(now.Year + extra, 10, 27, 12, 0, 0));
                 var testlicence = licence.licenceByteValue = new byte[20];
                 var hid = 0x13101955;
                 var timenow = now.ToUnixTimeSeconds();
@@ -31,7 +31,7 @@ var extra=now.Month>=10?1:0;
                 hid += curveKeys.mainint;
                 licence.convert(testlicence, ref hid, ref start, ref stop);
                 licence.toRegistry(true);
-                licence.CheckLicence(true,true);
+                licence.CheckLicence(true, true);
             }
             {
                 var a = 4.0;
