@@ -58,8 +58,8 @@ export class OptimisegeneralComponent implements OnInit {
     if (back != undefined) this.opt.round = back;
     back = +(d3.select(this.element.nativeElement).select('input.step.delt').node() as HTMLInputElement & Event).value;
     this.opt.delta = back;
-    back = +(d3.select(this.element.nativeElement).select('input.step.gstrength').node() as HTMLInputElement & Event).value;
-    this.opt.gstrength = back;
+    try { back = +(d3.select(this.element.nativeElement).select('input.step.gstrength').node() as HTMLInputElement & Event).value; } catch { back = null; }
+    if (back != undefined) this.opt.gstrength = back;
     back = +(d3.select(this.element.nativeElement).select('input.step.basket').node() as HTMLInputElement & Event).value;
     this.opt.basket = back;
     back = +(d3.select(this.element.nativeElement).select('input.step.trades').node() as HTMLInputElement & Event).value;
@@ -149,7 +149,7 @@ interface Result {
   minhold: number,
   mintrade: number,
   cost: number,
-  cval:Array<number>,
+  cval: Array<number>,
   turnover: number,
   basket: number,
   trades: number,
@@ -168,7 +168,7 @@ interface Result {
   specrisk: number
 }
 interface Optimise {
-  versionString:string,
+  versionString: string,
   doOpt: boolean,
   result: Result,
   back: number,
