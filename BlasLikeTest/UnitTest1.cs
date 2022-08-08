@@ -977,7 +977,7 @@ namespace BlasLikeTest
             //Now we put a licence back
             DateTimeOffset now = new DateTimeOffset(DateTime.Now);
             var start = (int)now.ToUnixTimeSeconds();
-            var bmonth=10;
+            var bmonth = 10;
             var extra = now.Month >= bmonth ? 1 : 0;
             var stopl = new DateTimeOffset(new DateTime(now.Year + extra, bmonth, 26, 12, 0, 0));
             int stop = (int)stopl.ToUnixTimeSeconds();
