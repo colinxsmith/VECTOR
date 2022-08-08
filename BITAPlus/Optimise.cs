@@ -49,7 +49,6 @@ public class Optimise
         tradesell = -1;
         min_holding = -1;
         min_trade = -1;
-        Gstrength = 1;
     }
     public string? VersionString { get; set; }
     public bool doOpt { get; set; }
@@ -97,7 +96,7 @@ public class Optimise
     public double value { set; get; }
     public double valuel { set; get; }
     public double? kappa { set; get; }
-    public double Gstrength { get; set; }
+    public double? Gstrength { get; set; }
     public double tail { get; set; }
     public bool? ETLopt { get; set; }
     public double? ETLmin { get; set; }

@@ -58,6 +58,8 @@ export class OptimisegeneralComponent implements OnInit {
     if (back != undefined) this.opt.round = back;
     back = +(d3.select(this.element.nativeElement).select('input.step.delt').node() as HTMLInputElement & Event).value;
     this.opt.delta = back;
+    back = +(d3.select(this.element.nativeElement).select('input.step.gstrength').node() as HTMLInputElement & Event).value;
+    this.opt.gstrength = back;
     back = +(d3.select(this.element.nativeElement).select('input.step.basket').node() as HTMLInputElement & Event).value;
     this.opt.basket = back;
     back = +(d3.select(this.element.nativeElement).select('input.step.trades').node() as HTMLInputElement & Event).value;

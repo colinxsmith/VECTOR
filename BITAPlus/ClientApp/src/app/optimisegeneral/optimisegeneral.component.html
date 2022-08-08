@@ -81,6 +81,11 @@
                     <li><br>min: <input class="step LL" style="width:5em" [min]="0" [max]="1" [value]="opt.losSmin"></li>
                 </ul>
             </td>
+            <td *ngIf="opt.gstrength!=undefined">
+                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                    <li>Set LOSS or ETL strength: <input class="step gstrength" style="width:5em" [min]="0" [max]="1" [value]="opt.gstrength"></li>
+                </ul>
+            </td>
         </tr>
         <tr>
             <td *ngIf="opt.minRisk!=undefined&&opt.maxRisk!=undefined">

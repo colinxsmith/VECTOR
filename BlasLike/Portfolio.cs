@@ -32,14 +32,14 @@ namespace Portfolio
                                         double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0,
                                         double ETLorLOSSmax = 0, string logfile = "", int revise = 0)
         {
-            ColourConsole.print = !(WindowsServiceHelpers.IsWindowsService() );
-            var rootPath=AppContext.BaseDirectory;
-            #if DEBUG
-            rootPath="./";
-            #endif
+            ColourConsole.print = !(WindowsServiceHelpers.IsWindowsService());
+            var rootPath = AppContext.BaseDirectory;
+#if DEBUG
+            rootPath = "./";
+#endif
             ColourConsole.WriteEmbeddedColourLine($"[green]rootPath:{rootPath}[/green] [magenta]BaseDirectory:{AppContext.BaseDirectory}[/magenta]");
             if (logfile != "" && logfile != null)
-                using (StreamWriter ww = new StreamWriter(rootPath+logfile))
+                using (StreamWriter ww = new StreamWriter(rootPath + logfile))
                 {
                     ww.WriteLine("n");
                     ww.WriteLine(n);
@@ -3660,6 +3660,8 @@ namespace Portfolio
                     return "Risk constraint could not be met";
                 case 66:
                     return "Number Constraint could not be met";
+                case -15:
+                    return "No Licence";
                 default:
                     return $"Optimisation failed {i}";
             }
@@ -4252,11 +4254,15 @@ namespace Portfolio
             this.c = CC;
             if (useIP)
             {
+                var lic = new Licensing.Licence();
+                var lictest = lic.CheckLicence();
                 var LLL = new double[N + M];
-                back = InteriorOpt(1e-11, WW, LLL);
+                back = lictest ? InteriorOpt(1e-11, WW, LLL) : -15;
             }
             else
             {
+                var lic = new Licensing.Licence();
+                var lictest = lic.CheckLicence();
                 var LAMBDAS = new double[N + M];
                 for (var i = 0; i < n; ++i)
                 {
@@ -4281,7 +4287,7 @@ namespace Portfolio
                 }
                 this.w = WW;
                 // WriteInputs("./optinput2");
-                back = ActiveOpt(0, WW, LAMBDAS);
+                back = lictest ? ActiveOpt(0, WW, LAMBDAS) : -15;
                 if (ETLorLOSSconstraint)
                 {
                     var setETLorLOSS = BlasLike.ddot(N, AA, M, WW, 1, cnumETL);

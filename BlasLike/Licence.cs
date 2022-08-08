@@ -143,6 +143,8 @@ namespace Licensing
             try
             {
                 safekey = Registry.LocalMachine; newkey = safekey.OpenSubKey(ourkey, true);
+                if(newkey==null){newkey = safekey.CreateSubKey(ourkey, true);
+                newkey.DeleteSubKey(ourkey);}
                 safekey.Dispose();
             }
             catch { safekey = Registry.CurrentUser; }
@@ -157,7 +159,7 @@ namespace Licensing
         }
         ///<summary> Write the licence whose data is in licenceByteValue to registry key ourkey </summary>
         ///<param name="ourkey"> string defining registry key </param>
-        public bool toRegistry(bool usefile=false,string ourkey = "Software\\safeqp")
+        public bool toRegistry(bool usefile=false,string ourkey = "Software\\safeqp",bool print=false)
         {
             var back = true;
             if (!usefile&&RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -204,7 +206,7 @@ namespace Licensing
                     {
                         licence += string.Format("{0:x2};", licenceByteValue[i]);
                     }
-                    Console.WriteLine($"Newly Written Licence: \t{licence}");
+                 if(print)   Console.WriteLine($"Newly Written Licence: \t{licence}");
                 }
                 catch (Exception prob)
                 {
@@ -214,7 +216,7 @@ namespace Licensing
             }
             else{
                  var   basef=AppContext.BaseDirectory+"licence";
-                 ColourConsole.WriteInfo(basef);
+              if(print)   ColourConsole.WriteInfo(basef);
                                 try{
                 using (var stream = File.Open(basef, FileMode.OpenOrCreate))
                 {
@@ -230,7 +232,7 @@ namespace Licensing
         ///<summary> Read the licence in registry key ourkey to licenceByteValue 
         ///Returns; 0 if failed, 1 if run as root, 2 if run as user </summary>
         ///<param name="ourkey"> string defining registry key </param>
-        public int fromRegistry(bool usefile=false,string ourkey = "Software\\safeqp")
+        public int fromRegistry(bool usefile=false,string ourkey = "Software\\safeqp",bool print=false)
         {
             bool worked = true;
             bool root = true;
@@ -267,8 +269,8 @@ namespace Licensing
                             licence += $"{licenceByteValue[i],2:x2};";
                         }
                     }
-                    ColourConsole.WriteEmbeddedColourLine($"[green]Our Key =[/green] \t\t[yellow]{ourkey}[/yellow]");
-                    ColourConsole.WriteEmbeddedColourLine($"[green]Current Licence:[/green] \t[yellow]{licence}[/yellow]");
+               if(print)     ColourConsole.WriteEmbeddedColourLine($"[green]Our Key =[/green] \t\t[yellow]{ourkey}[/yellow]");
+                if(print)    ColourConsole.WriteEmbeddedColourLine($"[green]Current Licence:[/green] \t[yellow]{licence}[/yellow]");
                     safekey.Dispose();
                 }
                 catch (Exception prob)
@@ -280,7 +282,7 @@ namespace Licensing
             {
                 worked = false;
                  var   basef=AppContext.BaseDirectory+"licence";
-                 ColourConsole.WriteInfo(basef);
+             if(print)    ColourConsole.WriteInfo(basef);
                 try{
                 using (var stream = File.Open(basef, FileMode.Open))
                 {
@@ -414,11 +416,11 @@ namespace Licensing
                 stop = validator.stop;
             }
         }
-        public Int32 VolId(bool usefile=false)
+        public Int32 VolId(bool usefile=false,bool print=false)
         {
             var hex = "facc0ff5";//Start with this in case there are no more
             var output = Convert.ToInt32(hex, 16);
-            ColourConsole.WriteEmbeddedColourLine($"[green]{hex} =[/green] [cyan]{output}[/cyan] [yellow]{output:x}[/yellow]");
+            if(print)ColourConsole.WriteEmbeddedColourLine($"[green]{hex} =[/green] [cyan]{output}[/cyan] [yellow]{output:x}[/yellow]");
             if (!usefile&&RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
                 {
@@ -432,31 +434,32 @@ namespace Licensing
                            Console.WriteLine(nic.GetPhysicalAddress());
                            Console.WriteLine();*/
                         var address = nic.GetPhysicalAddress().ToString();
-                        ColourConsole.WriteInfo($"Adapter: {address}");
+                       if(print) ColourConsole.WriteInfo($"Adapter: {address}");
                         var bAddress = new int[6];
                         for (var i = 0; i < 6; i++)
                         {
                             bAddress[i] = Convert.ToInt16(address.Substring(i * 2, 2), 16);
-                            ColourConsole.Write($"{bAddress[i]} ");
+                        if(print)    ColourConsole.Write($"{bAddress[i]} ");
                         }
                         Array.Sort(bAddress);
                         Array.Reverse(bAddress);
+                        if(print){
                         for (var i = 0; i < 6; i++) ColourConsole.Write($"{bAddress[i],2:x} ", ConsoleColor.DarkMagenta);
-                        Console.WriteLine();
+                        Console.WriteLine();}
                         var newByte = new Int32[4];
                         newByte[0] = bAddress[0];
                         newByte[1] = bAddress[1];
                         newByte[2] = ((bAddress[2] + bAddress[3]) / 2) & 0xff;
                         newByte[3] = ((bAddress[4] + bAddress[5]) / 2) & 0xff;
                         var bStr = $"{newByte[0],2:x2}{newByte[1],2:x2}{newByte[2],2:x2}{newByte[3],2:x2}";
-                        ColourConsole.WriteInfo(bStr);
+                        if(print)ColourConsole.WriteInfo(bStr);
                         bStr = bStr.Replace(" ", "");
                         var bStrInt = Convert.ToInt32(bStr, 16);
-                        ColourConsole.WriteEmbeddedColourLine($"[green]{bStr} =[/green] [cyan]{bStrInt}[/cyan] [yellow]{bStrInt:x}[/yellow]");
+                       if(print) ColourConsole.WriteEmbeddedColourLine($"[green]{bStr} =[/green] [cyan]{bStrInt}[/cyan] [yellow]{bStrInt:x}[/yellow]");
                         output ^= bStrInt;
                     }
                 }
-            ColourConsole.WriteEmbeddedColourLine($"Finally [cyan]{output}[/cyan] [yellow]{output:x}[/yellow]");
+          if(print)  ColourConsole.WriteEmbeddedColourLine($"Finally [cyan]{output}[/cyan] [yellow]{output:x}[/yellow]");
             return output;
         }
         public bool CheckLicence(bool print = false,bool usefile=false)

@@ -977,7 +977,9 @@ namespace BlasLikeTest
             //Now we put a licence back
             DateTimeOffset now = new DateTimeOffset(DateTime.Now);
             var start = (int)now.ToUnixTimeSeconds();
-            int stop = start + 10 * 60 * 60 * 24;
+            var extra = now.Month >= 10 ? 1 : 0;
+            var stopl = new DateTimeOffset(new DateTime(now.Year + extra, 10, 26, 12, 0, 0));
+            int stop = (int)stopl.ToUnixTimeSeconds();
             int hid = 0x13101955;
             int keys = Convert.ToInt32("101010011", 2);//0x153;// binary 101010011
             hid += keys;
