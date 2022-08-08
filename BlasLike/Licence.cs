@@ -501,7 +501,6 @@ namespace Licensing
                 if (pass)
                 {//Reset the start time and change hid to the that for this machine
                     start = (int)newstart;
-                    stop=start+days*24*3600;
                     hid = (int)vid;
                     hid += curveKeys.mainint;
                     convert(licenceByteValue, ref hid, ref start, ref stop);
