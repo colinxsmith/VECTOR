@@ -139,30 +139,35 @@ namespace Licensing
         public bool deleteKey(string ourkey = "Software\\safeqp")
         {
             RegistryKey safekey, newkey;
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)){
-            try
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                safekey = Registry.LocalMachine; newkey = safekey.OpenSubKey(ourkey, true);
-                if(newkey==null){newkey = safekey.CreateSubKey(ourkey, true);
-                newkey.DeleteSubKey(ourkey);}
-                safekey.Dispose();
+                try
+                {
+                    safekey = Registry.LocalMachine; newkey = safekey.OpenSubKey(ourkey, true);
+                    if (newkey == null)
+                    {
+                        newkey = safekey.CreateSubKey(ourkey, true);
+                        newkey.DeleteSubKey(ourkey);
+                    }
+                    safekey.Dispose();
+                }
+                catch { safekey = Registry.CurrentUser; }
+                newkey = safekey.CreateSubKey(ourkey, true);
+                try
+                {
+                    newkey.DeleteValue(ourkey);
+                    safekey.Dispose();
+                }
+                catch { return false; }
             }
-            catch { safekey = Registry.CurrentUser; }
-            newkey = safekey.CreateSubKey(ourkey, true);
-            try
-            {
-                newkey.DeleteValue(ourkey);
-                safekey.Dispose();
-            }
-            catch { return false; }}
             return true;
         }
         ///<summary> Write the licence whose data is in licenceByteValue to registry key ourkey </summary>
         ///<param name="ourkey"> string defining registry key </param>
-        public bool toRegistry(bool usefile=false,string ourkey = "Software\\safeqp",bool print=false)
+        public bool toRegistry(bool usefile = false, string ourkey = "Software\\safeqp", bool print = false)
         {
             var back = true;
-            if (!usefile&&RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (!usefile && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 try
                 {
@@ -206,7 +211,7 @@ namespace Licensing
                     {
                         licence += string.Format("{0:x2};", licenceByteValue[i]);
                     }
-                 if(print)   Console.WriteLine($"Newly Written Licence: \t{licence}");
+                    if (print) Console.WriteLine($"Newly Written Licence: \t{licence}");
                 }
                 catch (Exception prob)
                 {
@@ -214,29 +219,33 @@ namespace Licensing
                     Console.WriteLine("exception" + prob);
                 }
             }
-            else{
-                 var   basef=AppContext.BaseDirectory+"licence";
-              if(print)   ColourConsole.WriteInfo(basef);
-                                try{
-                using (var stream = File.Open(basef, FileMode.OpenOrCreate))
+            else
+            {
+                var basef = AppContext.BaseDirectory + "licence";
+                if (print) ColourConsole.WriteInfo(basef);
+                try
                 {
-                    using (var write = new BinaryWriter(stream,Encoding.UTF8))
+                    using (var stream = File.Open(basef, FileMode.OpenOrCreate))
                     {
-                        for(var i=0;i<licenceByteValue.Length;++i)
-                        write.Write(licenceByteValue[i]);
+                        using (var write = new BinaryWriter(stream, Encoding.UTF8))
+                        {
+                            for (var i = 0; i < licenceByteValue.Length; ++i)
+                                write.Write(licenceByteValue[i]);
+                        }
                     }
-                }}catch{back=false;}
+                }
+                catch { back = false; }
             }
             return back;
         }
         ///<summary> Read the licence in registry key ourkey to licenceByteValue 
         ///Returns; 0 if failed, 1 if run as root, 2 if run as user </summary>
         ///<param name="ourkey"> string defining registry key </param>
-        public int fromRegistry(bool usefile=false,string ourkey = "Software\\safeqp",bool print=false)
+        public int fromRegistry(bool usefile = false, string ourkey = "Software\\safeqp", bool print = false)
         {
             bool worked = true;
             bool root = true;
-            if (!usefile&&RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (!usefile && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 worked = false;
                 try
@@ -269,8 +278,8 @@ namespace Licensing
                             licence += $"{licenceByteValue[i],2:x2};";
                         }
                     }
-               if(print)     ColourConsole.WriteEmbeddedColourLine($"[green]Our Key =[/green] \t\t[yellow]{ourkey}[/yellow]");
-                if(print)    ColourConsole.WriteEmbeddedColourLine($"[green]Current Licence:[/green] \t[yellow]{licence}[/yellow]");
+                    if (print) ColourConsole.WriteEmbeddedColourLine($"[green]Our Key =[/green] \t\t[yellow]{ourkey}[/yellow]");
+                    if (print) ColourConsole.WriteEmbeddedColourLine($"[green]Current Licence:[/green] \t[yellow]{licence}[/yellow]");
                     safekey.Dispose();
                 }
                 catch (Exception prob)
@@ -281,17 +290,20 @@ namespace Licensing
             else
             {
                 worked = false;
-                 var   basef=AppContext.BaseDirectory+"licence";
-             if(print)    ColourConsole.WriteInfo(basef);
-                try{
-                using (var stream = File.Open(basef, FileMode.Open))
+                var basef = AppContext.BaseDirectory + "licence";
+                if (print) ColourConsole.WriteInfo(basef);
+                try
                 {
-                    using (var read = new BinaryReader(stream, Encoding.UTF8, false))
+                    using (var stream = File.Open(basef, FileMode.Open))
                     {
-                        licenceByteValue=read.ReadBytes(20);
+                        using (var read = new BinaryReader(stream, Encoding.UTF8, false))
+                        {
+                            licenceByteValue = read.ReadBytes(20);
+                        }
+                        worked = true; root = false;
                     }
-                    worked=true;root=false;
-                }}catch{;}
+                }
+                catch {; }
             }
             if (!worked) return 0;
             return worked && root ? 1 : 2;
@@ -416,53 +428,55 @@ namespace Licensing
                 stop = validator.stop;
             }
         }
-        public Int32 VolId(bool usefile=false,bool print=false)
+        public Int32 VolId(bool usefile = false, bool print = false)
         {
             var hex = "facc0ff5";//Start with this in case there are no more
             var output = Convert.ToInt32(hex, 16);
-            if(print)ColourConsole.WriteEmbeddedColourLine($"[green]{hex} =[/green] [cyan]{output}[/cyan] [yellow]{output:x}[/yellow]");
-            if (!usefile&&RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                foreach (var nic in NetworkInterface.GetAllNetworkInterfaces())
+            if (print) ColourConsole.WriteEmbeddedColourLine($"[green]{hex} =[/green] [cyan]{output}[/cyan] [yellow]{output:x}[/yellow]");
+            //if (!usefile&&RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            foreach (var nic in NetworkInterface.GetAllNetworkInterfaces()) //This works on linux
+            {
+                if (nic.NetworkInterfaceType.ToString().Contains("Ethernet"))//&& nic.NetworkInterfaceType.ToString().Contains("USB"))
                 {
-                    if (nic.NetworkInterfaceType.ToString().Contains("Ethernet"))//&& nic.NetworkInterfaceType.ToString().Contains("USB"))
+                    if (nic.Description.ToString().Contains("Virtual")) continue;
+                    if (nic.Description.ToString().Contains("USB")) continue;
+                    /*   Console.WriteLine(nic.Name);
+                       Console.WriteLine(nic.GetType());
+                       Console.WriteLine(nic.NetworkInterfaceType);
+                       Console.WriteLine(nic.GetPhysicalAddress());
+                       Console.WriteLine();*/
+                    var address = nic.GetPhysicalAddress().ToString();
+                    if (print) ColourConsole.WriteInfo($"Adapter: {address}");
+                    var bAddress = new int[6];
+                    for (var i = 0; i < 6; i++)
                     {
-                        if (nic.Description.ToString().Contains("Virtual")) continue;
-                        if (nic.Description.ToString().Contains("USB")) continue;
-                        /*   Console.WriteLine(nic.Name);
-                           Console.WriteLine(nic.GetType());
-                           Console.WriteLine(nic.NetworkInterfaceType);
-                           Console.WriteLine(nic.GetPhysicalAddress());
-                           Console.WriteLine();*/
-                        var address = nic.GetPhysicalAddress().ToString();
-                       if(print) ColourConsole.WriteInfo($"Adapter: {address}");
-                        var bAddress = new int[6];
-                        for (var i = 0; i < 6; i++)
-                        {
-                            bAddress[i] = Convert.ToInt16(address.Substring(i * 2, 2), 16);
-                        if(print)    ColourConsole.Write($"{bAddress[i]} ");
-                        }
-                        Array.Sort(bAddress);
-                        Array.Reverse(bAddress);
-                        if(print){
-                        for (var i = 0; i < 6; i++) ColourConsole.Write($"{bAddress[i],2:x} ", ConsoleColor.DarkMagenta);
-                        Console.WriteLine();}
-                        var newByte = new Int32[4];
-                        newByte[0] = bAddress[0];
-                        newByte[1] = bAddress[1];
-                        newByte[2] = ((bAddress[2] + bAddress[3]) / 2) & 0xff;
-                        newByte[3] = ((bAddress[4] + bAddress[5]) / 2) & 0xff;
-                        var bStr = $"{newByte[0],2:x2}{newByte[1],2:x2}{newByte[2],2:x2}{newByte[3],2:x2}";
-                        if(print)ColourConsole.WriteInfo(bStr);
-                        bStr = bStr.Replace(" ", "");
-                        var bStrInt = Convert.ToInt32(bStr, 16);
-                       if(print) ColourConsole.WriteEmbeddedColourLine($"[green]{bStr} =[/green] [cyan]{bStrInt}[/cyan] [yellow]{bStrInt:x}[/yellow]");
-                        output ^= bStrInt;
+                        bAddress[i] = Convert.ToInt16(address.Substring(i * 2, 2), 16);
+                        if (print) ColourConsole.Write($"{bAddress[i]} ");
                     }
+                    Array.Sort(bAddress);
+                    Array.Reverse(bAddress);
+                    if (print)
+                    {
+                        for (var i = 0; i < 6; i++) ColourConsole.Write($"{bAddress[i],2:x} ", ConsoleColor.DarkMagenta);
+                        Console.WriteLine();
+                    }
+                    var newByte = new Int32[4];
+                    newByte[0] = bAddress[0];
+                    newByte[1] = bAddress[1];
+                    newByte[2] = ((bAddress[2] + bAddress[3]) / 2) & 0xff;
+                    newByte[3] = ((bAddress[4] + bAddress[5]) / 2) & 0xff;
+                    var bStr = $"{newByte[0],2:x2}{newByte[1],2:x2}{newByte[2],2:x2}{newByte[3],2:x2}";
+                    if (print) ColourConsole.WriteInfo(bStr);
+                    bStr = bStr.Replace(" ", "");
+                    var bStrInt = Convert.ToInt32(bStr, 16);
+                    if (print) ColourConsole.WriteEmbeddedColourLine($"[green]{bStr} =[/green] [cyan]{bStrInt}[/cyan] [yellow]{bStrInt:x}[/yellow]");
+                    output ^= bStrInt;
                 }
-          if(print)  ColourConsole.WriteEmbeddedColourLine($"Finally [cyan]{output}[/cyan] [yellow]{output:x}[/yellow]");
+            }
+            if (print) ColourConsole.WriteEmbeddedColourLine($"Finally [cyan]{output}[/cyan] [yellow]{output:x}[/yellow]");
             return output;
         }
-        public bool CheckLicence(bool print = false,bool usefile=false)
+        public bool CheckLicence(bool print = false, bool usefile = false)
         {
             const string version = "1.0";
             var back = $"BITA Plus ASP.NET Core Portfolio Optimiser Version {version}";
@@ -474,15 +488,15 @@ namespace Licensing
             if ((fromReg = fromRegistry(usefile)) > 0)
             {
                 DateTimeOffset now = new DateTimeOffset(DateTime.Now);
-                var year=now.Year;
-                var month=now.Month;
-                var day=now.Day;
-                var now1=new DateTime(year, month, day, 1, 2, 3, 4);
-                var now11=new DateTimeOffset(now1);
-                var newstart=now11.ToUnixTimeSeconds();
+                var year = now.Year;
+                var month = now.Month;
+                var day = now.Day;
+                var now1 = new DateTime(year, month, day, 1, 2, 3, 4);
+                var now11 = new DateTimeOffset(now1);
+                var newstart = now11.ToUnixTimeSeconds();
                 printNow = $"{now}";
                 var timenow = now.ToUnixTimeSeconds();
-                if(timenow<newstart)newstart-=24+2*60+3;
+                if (timenow < newstart) newstart -= 24 + 2 * 60 + 3;
                 convert(licenceByteValue, ref hid, ref start, ref stop);
                 printStart = $"{UnixTimeStampToDateTime(start)}";
                 printStop = $"{UnixTimeStampToDateTime(stop)}";
