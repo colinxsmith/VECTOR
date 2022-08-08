@@ -160,6 +160,10 @@ namespace Licensing
                 }
                 catch { return false; }
             }
+            else{
+                var basef = AppContext.BaseDirectory + "licence";
+                File.Delete(basef);
+            }
             return true;
         }
         ///<summary> Write the licence whose data is in licenceByteValue to registry key ourkey </summary>
