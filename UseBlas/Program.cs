@@ -23,15 +23,15 @@ namespace UseBlas
                 var start = (int)timenow - 23;
                 var stop = (int)later.ToUnixTimeSeconds();
                 var curveKeys = new Licensing.byteint();
-                curveKeys.mainint = 0x1e7;
+                curveKeys.mainint = (int) Convert.ToInt32("101101110",2);
                 testlicence[16] = curveKeys.byte1;
                 testlicence[17] = curveKeys.byte2;
                 testlicence[18] = curveKeys.byte3;
                 testlicence[19] = curveKeys.byte4;
                 hid += curveKeys.mainint;
                 licence.convert(testlicence, ref hid, ref start, ref stop);
-                licence.toRegistry(true);
-                licence.CheckLicence(true, true);
+                licence.toRegistry(true);//At this stage hid is 0x13101955, and licence file is ready for deploying on linux
+            //    licence.CheckLicence(true, true);
             }
             {
                 var a = 4.0;
