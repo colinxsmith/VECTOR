@@ -951,8 +951,7 @@ namespace BlasLikeTest
             Assert.IsTrue(pass);
             start = (int)timenow - 23;
             hid = (int)testhid;
-            //try binary 111100111 for keys
-            curveKeys.mainint = 0x1e7;
+            curveKeys.mainint = (int) Convert.ToInt32("111101110",2);
             testlicence[16] = curveKeys.byte1;
             testlicence[17] = curveKeys.byte2;
             testlicence[18] = curveKeys.byte3;
