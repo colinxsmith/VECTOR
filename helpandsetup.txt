@@ -71,7 +71,15 @@ sc stop "BITA+"
 sc delete "BITA+"
 
 For unix service
-set up BitaService.service in  /etc/systemd/system/
+set up BitaService.service 
+and put script file in  /etc/systemd/systemn /usr/sbin
+e.g.
+
+cd /home/colin/publishBitaServer
+./BitaServer 
+
+do it like this to make sure that appsettings.json is picked up properly
+
 sudo systemctl daemon-reload
 sudo systemctl start BitaServer
 sudo systemctl enable BitaServer (to make it start at system up)
