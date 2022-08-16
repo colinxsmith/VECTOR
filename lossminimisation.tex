@@ -72,7 +72,7 @@ calculated directly as standard deviation of portfolio return series.
 
 \begin{tikzpicture}
     \begin{axis}
-        [ybar,height=5cm,width=16cm, symbolic x coords={1,2,3,4,5,6,7,8,9}]
+        [ybar,height=2in,width=6.4in, symbolic x coords={1,2,3,4,5,6,7,8,9}]
         \addplot+ coordinates {(1,0)
         (2,0) 
         (3,0)
@@ -99,7 +99,7 @@ If we just maximised return the portfolio would have all weight in the last
 asset and the return would be $0.0098$.
 
 \section{Minimising Loss in the Enhancements}
-The driving force in the portfolio enhancement process at SWIB is in the imposition
+The driving force in the portfolio enhancement process could be the imposition
 of factor constraints. There are many other restrictions going on, but the main one for 
 achieving extra portfolio return is due to the factor premia constraints. A straightforward 
 implementation of loss optimisation might be to replace the risk optimisation with loss minimisation.
@@ -123,20 +123,20 @@ if we had constrained the return to be $0.0098$ the only possible outcome has $1
 the last asset.
 \section{Minimising Modelled Loss}
 The calculation outlined in the previous might be thought as $`$traditional gain loss'; it
-minimises historic $loss$ subject to all of the portfolio constraints. Since the risk in 
-SWIB calculations is modelled risk it might be better to use modelled $Loss$.
+minimises historic $loss$ subject to all of the portfolio constraints. Usually the risk in 
+portfolio enhancement is modelled risk; it might be better to use modelled $Loss$ here.
 
 The risk model estimation process uses factor premia returns in the regression
 with asset returns. If there are $n_f$ factor premia, the modelled asset return $\hat{r}_{k}$ for asset $k$ may be written
 \begin{eqnarray}
     \hat{r}_{k}(t) = \sum_{i=1}^{i=n_f}\beta_{ki} p_{i}(t)
 \end{eqnarray}
-at time $t$, where $p_i$ is the i'th factor premia return and $\beta$ is the usual factor loading, regreggion coefficient.
-Due to cycle conditions a 3 month period of factor premia data may be enough
+at time $t$, where $p_i$ is the i'th factor return and $\beta$ is the usual factor loading, regression coefficient.
+Due to cycle conditions a 3 month forecast window\footnote{One month would be too short an estimation period.} of factor premia data may be enough
 to get a good prediction of future return, so instead of incorporating the full history of
 asset returns $r_k(t)$ in the optimisation it may be enough to use the modelled predictions
 $\hat{r}_{k}(t)$ over a much reduced time horizon. The shorter the history for defining the
-loss, the faster the optimisation, so there is a practical reason for this as well As
+loss, the faster the optimisation, so there is a practical reason for this as well as
 a theoretical one.
 \end{document}
 
