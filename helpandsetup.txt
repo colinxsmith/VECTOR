@@ -60,7 +60,7 @@ dotnet publish -c Release -r win-x64 --sc
 OR
 dotnet publish -c Release -r linux-x64 --sc
 
-To make service for BitaServer
+To make service for BitaServer on Windows
 cd BitaServer
 dotnet publish -c Release -r win-x64 --sc -o \server
 sc create "BITA+" binPath= c:\server\BitaServer.exe DisplayName="Optimiser Server"
@@ -69,6 +69,14 @@ these will help
 sc start "BITA+"
 sc stop "BITA+"
 sc delete "BITA+"
+
+Note that the url is
+http://localhost:7777/optimise/general
+
+e.g.
+
+test with
+curl -X POST -H "Content-type: application/json" -d @prem.json http://localhost:7777/optimise/general -o answer.json
 
 For unix service
 set up BitaService.service 
