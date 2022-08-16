@@ -23,9 +23,8 @@
 \doublespacing
 \section{Introduction}
 This document attempts to show how to use portfolio loss minimisation in the
-portfolio enhancement process used by SWIB. We start by defining $Loss$ and compare
-the predicted changes that low $Loss$ gives to the enhancement process to that given
-using low $Risk$.
+portfolio enhancement process. We start by defining $Loss$ and compare
+the predicted changes to a portfolio given by minimal $Loss$ and minimal $Risk$.
 \section{Definition of Portfolio Gain and Loss}
 Over the history of a portfolio it is usual to monitor its return each period and the returns of the underlying assets.
 From one period  to the next, the portfolio's return will change and to characterise this change we can define its gain or loss.
@@ -64,17 +63,16 @@ where $T$ is the number of periods.
 In a standard portfolio construction exercise we seek to find a portfolio that will 
 give a certain amount of return for minimum risk. As well as this we could also do a 
 different optimisation and fix the 
-return but find the lowest possible loss. In a small portfolio of 9 assets
-we show just how different a minimum risk and minimum loss portfolio look.
+return but find the lowest possible loss. Consider a small portfolio of 9 assets.
 The following graph shows the outcome weights for two portfolio optimisations. In both the return is 
 constrained to $0.005$ and the target rate per period is $0.0004$; the blue bars show the weights
-for mininum risk ($0.058$) with a loss of $1.34$ and the pink bars show
-the weights for minimum loss ($1.15$) with a risk of $0.085$
-
+for mininum risk ($0.058$) which has a loss of $1.34$ and the pink bars show
+the weights for minimum loss ($1.15$) with a risk of $0.085$. The risk quoted here is historic risk 
+calculated directly as standard deviation of portfolio return series.
 
 \begin{tikzpicture}
     \begin{axis}
-        [ybar, symbolic x coords={1,2,3,4,5,6,7,8,9}]
+        [ybar,height=5cm,width=16cm, symbolic x coords={1,2,3,4,5,6,7,8,9}]
         \addplot+ coordinates {(1,0)
         (2,0) 
         (3,0)
@@ -99,39 +97,44 @@ the weights for minimum loss ($1.15$) with a risk of $0.085$
 
 If we just maximised return the portfolio would have all weight in the last 
 asset and the return would be $0.0098$.
+
 \section{Minimising Loss in the Enhancements}
 The driving force in the portfolio enhancement process at SWIB is in the imposition
-of factor constraints. There are many other restrictions going on but the main one for 
+of factor constraints. There are many other restrictions going on, but the main one for 
 achieving extra portfolio return is due to the factor premia constraints. A straightforward 
 implementation of loss optimisation might be to replace the risk optimisation with loss minimisation.
 Typically this would be done using full asset return history to define $Loss$ and could 
-result in a slow optimisation process since the amount of history is so vast. It would be possible 
-to use a risk constraint as well at the expense of even longer execution time. The advantage of
+result in a slow optimisation process since the amount of history is so vast. (It would be possible 
+to use a risk constraint as well but this would mean even longer execution time.) The advantage of
 minimising $Loss$ over minimising $Risk$ is that the resulting weights are likely
 to be more diversifing. Looking at the simple graph for 9 stocks in the previous section we see that
-$loss$ minisation results in higher weight in the high alpha asset with many 
-smaller changes in the other assets to get the lower loss. ($Risk$ optimisation gives a less diverse
-result and a lower weight in the high alpha asset). The difference in weight outcomes
+$Loss$ minimisation results in higher weight in the high alpha asset with many 
+smaller changes in the other assets to get the loweest loss. ($Risk$ optimisation gives a less diverse
+result and a lower weight in the high alpha asset). We conjecture from this that $Loss$ minimisation 
+would make less impact on the strength of the factor premia terms, than $Risk$ minimisation. 
+
+The difference in weight outcomes also
 highlights that the gains and losses in the optimisation are not symmetrically
-distributed. If they were, minimising $Loss$ would be very similar to minimising $Risk$, (although
+distributed. If they were, minimising $Loss$ would be very similar to minimising historic $Risk$, (although
 we do impose our own asymmetricity by having a non-zero tartget rate.) It is important
 to note that the factor premia must not be constrained too high, otherwise there is no scope 
 for miminising $Loss$ (or $Risk$ either). In the example in the previous section 
-if we constrained the return to be $0.0098$ the only possible outcome has $100\%$ in 
+if we had constrained the return to be $0.0098$ the only possible outcome has $100\%$ in 
 the last asset.
-\section{Minimising Modeled Loss}
-The calculation outlined in the previous might be thought as "tradition gain loss"; it
-minimises historic $loss$ subject to all of the other desired portfolio constraints.
+\section{Minimising Modelled Loss}
+The calculation outlined in the previous might be thought as $`$traditional gain loss'; it
+minimises historic $loss$ subject to all of the portfolio constraints. Since the risk in 
+SWIB calculations is modelled risk it might be better to use modelled $Loss$.
 
 The risk model estimation process uses factor premia returns in the regression
-with asset returns. If there are $n_f$ factor premia, the modeled asset return $\hat{r}_{k}$ for asset $k$ may be written
+with asset returns. If there are $n_f$ factor premia, the modelled asset return $\hat{r}_{k}$ for asset $k$ may be written
 \begin{eqnarray}
-    \hat{r}_{k}(t) = \sum_{i=1}^{i=n_f}\beta_{i} r_{ik}(t)
+    \hat{r}_{k}(t) = \sum_{i=1}^{i=n_f}\beta_{ki} p_{i}(t)
 \end{eqnarray}
-at time $t$.
-It is noted that due to cycle conditions a 3 month period of factor premia data may be enough
-to get a good prediction of return so instead of incorporating the full history of
-asset returns $r_k(t)$ in the optimisation it may be enough to use the modeled predictions
+at time $t$, where $p_i$ is the i'th factor premia return and $\beta$ is the usual factor loading, regreggion coefficient.
+Due to cycle conditions a 3 month period of factor premia data may be enough
+to get a good prediction of future return, so instead of incorporating the full history of
+asset returns $r_k(t)$ in the optimisation it may be enough to use the modelled predictions
 $\hat{r}_{k}(t)$ over a much reduced time horizon. The shorter the history for defining the
 loss, the faster the optimisation, so there is a practical reason for this as well As
 a theoretical one.
