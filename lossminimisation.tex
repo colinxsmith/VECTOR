@@ -9,7 +9,7 @@
 \textwidth=6.3in
 \headheight=0.0in
 \topmargin=0.0in
-\textheight=9in
+\textheight=8.9in
 \title{Minimising Portfolio Loss in Portfolio Construction}
 %\date{16-12-2021}
 \author{Colin M. Smith BITA Risk}
@@ -157,6 +157,11 @@ to note that the factor premia must not be constrained too high, otherwise there
 for minimising $Loss$ (or $Risk$ either). In the example in the previous section 
 if we had constrained the return to be $0.0098$ the only possible outcome has $100\%$ in 
 the last asset.
+
+The simple example explicitly contains an alpha constraint, but alpha as such does not need to 
+be part of the optimisation. Instead of $`$alpha' we could insert $`$momentum' and include the momentum 
+vector in the constraints instead of the alpha vector. We use alpha as a proxy for all 
+possible constraints of interest.
 \section{Minimising Modelled Loss}
 The calculation outlined in the previous section might be thought of as $`$traditional gain loss'; it
 minimises $historic\ loss$ subject to all of the portfolio constraints. Usually the risk in 
