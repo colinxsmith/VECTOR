@@ -21,15 +21,15 @@
 \section{Introduction}
 This document attempts to show how to use portfolio loss minimisation in the
 portfolio enhancement process. We start by defining $Loss$ and compare how
-the predicted changes to a portfolio achieved by adopting minimal $Loss$ against minimal $Risk$ differ. 
-We suggest that 
-$Loss$ minimisation could replace or augment $Risk$ minimisation in portfolio enhancement but also admit
-that this is likely to be more computationally expensive.
+the predicted changes to a portfolio achieved by adopting a minimal $Loss$ against a minimal $Risk$ strategy are different. 
+We indicate how the minimisation of
+$Loss$ could replace or augment $Risk$ minimisation in the construction steps but also admit
+that this is likely to need more execution time.
 Finally a more tractable $`$Gain Loss with a twist' is described. We propose using
-the factor model to find predicted asset return series and use these to define $predicted\ Loss$. 
-By minimising portfolio predicted $Loss$ in the enhancement, we should get a faster calculation since 
+the factor model to find predicted asset return series and use these to define $predicted\ Loss$ and $Gain$. 
+By minimising portfolio predicted $Loss$ in the construction, we should get a faster calculation since 
 the predicted power of the risk model can be delivered by as few as three months of factor premia returns' data.
-This should control dispersion better than modelled risk as it does not penalise predicted gains.
+This should control dispersion in a different way to modelled risk as it does not penalise predicted gains.
 
 \section{Definition of Portfolio Gain and Loss}
 Over the history of a portfolio it is usual to monitor its return each period and the returns of the underlying assets.
@@ -52,6 +52,10 @@ $G$ and $L$ are both non-negative and
 \begin{eqnarray}
  {\rm   total\ portfolio\ return}= G - L + RT
 \end{eqnarray}
+Thus expected return, gain and loss are not independent. An optimisation to maximise the utility $G- \lambda L$
+would be set up as a miminisation of utility $-\frac{\gamma}{1-\gamma}\sum\alpha_i w_i + L$ which is 
+similar in spirit to the mean variance utility $-\frac{\gamma}{1-\gamma}\sum\alpha_i w_i + 0.5 \sum w_i C_{ij}w_j$.
+$\gamma$ is the usual return aversion multiplier we use and can take a value in the interval $[0,1)$.
 
 If there are $n$ assets in the portfolio and each asset $i$
 has a weight $w_i$ and a return series $s_i (t)$ then
@@ -70,18 +74,19 @@ where $T$ is the number of periods.
 
 Following standard portfolio construction methods, the practioner seeks to find a portfolio that 
 will give a certain amount of return for smallest risk. Risk is not the only way to measure 
-dispersion. Instead of minimising risk, we could find the 
-lowest possible loss to attack dispersion. For illustration purposes, consider a small portfolio of 9 assets
+dispersion though. Instead of minimising risk, we could find the 
+lowest possible loss to attack dispersion. For illustration purposes, consider a small portfolio of nine assets
 for which we have a return series for each asset.
-The following barchart shows the outcome weights for two portfolio optimisations. There are $423$ data periods in the
+The following bar chart shows the outcome weights for two portfolio optimisations. There are $423$ data periods in the
 return series. In both optimisations\footnote{The weights are constrained to satisfy the budget $\sum w_i = 1$} the return is 
-constrained to $0.005$ and the target rate per period is $0.0004$; the blue bars show the weights
+constrained to $0.005$; the blue bars show the weights
 for mininum risk ($0.058$) which gives a portfolio with total loss of $1.34$ and the pink bars show
-the weights for minimum total loss ($1.15$) with a risk of $0.085$. The risk quoted is historic risk and is 
+the weights for minimum total loss ($1.15$) with a risk of $0.085$. The loss is defined with respect to a target rate per period of 
+$0.0004$. The risk quoted is historic risk and is 
 calculated directly as the standard deviation of the portfolio return series. We don't annualise risk and return or 
 express them as percentage values here.
 
-
+\pagebreak
 \begin{tikzpicture}
     \begin{axis}
         [title={Min Loss weights compared with Min Risk weights},
@@ -132,9 +137,11 @@ express them as percentage values here.
 \break
 Notice that the $Loss$ minimising portfolio achieves its constrained return by putting most weight in the
 asset with highest alpha, and uses a diverse selection of the other assets to make up the remaining 
-return. It even chooses assets with negative alpha\footnote{This is a consequence of the budget constraint}. The $Risk$ minimising portfolio is less diverse and makes far less use of the asset with highest alpha.
-Note that $minimising\ Loss$ will not always favour the asset with highest as in this example, we just want 
-to show that this can happen and that it leads to better management of dispersion. By definition, the minimum loss 
+return. It even chooses assets with negative alpha\footnote{This is a consequence of the budget constraint}. 
+The $Risk$ minimising portfolio seems less diverse and makes less use of the high alpha asset.
+Note that $minimising\ Loss$ in general will not always favour the asset with highest in this way, we just want 
+to show that it is possible for this to happen and when this occurs we get different management of dispersion. 
+By definition, the minimum loss 
 portfolio must have more risk than the minimum risk portfolio, but we argue that this extra risk is allowable 
 because the loss is minimal.
 
@@ -143,58 +150,68 @@ asset and the return would be $0.0098$.
 
 \section{Minimising Loss in the Enhancements}
 The portfolio enhancement process consists of a host of regulatory constraints and other constraints 
-designed to improve portfolio expected return. It is necessary to control the uncertainty in the return usually 
+designed to improve portfolio expected return. It is necessary to try to control the uncertainty in the return usually 
 by managing the risk.
-A straightforward implementation of loss optimisation might be to replace the risk optimisation with loss minimisation.
+A straightforward way to adopt loss optimisation might be to replace the risk optimisation with loss minimisation.
 Over the entire history the weights could be chosen to minimise total portfolio $Loss$ suject to the constraints.
-This would require full asset return history to define $Loss$ and could 
-result in a slow optimisation process since the amount of history\footnote{It would be possible 
-to use a risk constraint as well but this would mean even longer execution time.} is so vast.  An advantage of
-minimising $Loss$ over minimising $Risk$ is that the resulting weights are likely
-to be more diversifing. Looking at the simple graph for 9 stocks in the previous section we see that
+If we want to incoporate gain maximisation as well we add historic asset means to the $\alpha$ values in the 
+optimisation.
+We require full asset return history to define $Loss$ at each optimisation step,
+and this could 
+result in a slow optimisation process due to the vast amount of history\footnote{It would be possible 
+to use a risk constraint as well but this would mean even longer execution time.}.  An advantage of
+minimising $Loss$ over minimising $Risk$ is that the resulting weights could
+be more diversifying. Looking at the simple graph for 9 stocks in the previous section we see that
 $Loss$ minimisation results in higher weight in the high alpha asset with many 
 smaller changes in the other assets to get the lowest loss. ($Risk$ optimisation gives a less diverse
 result and a lower weight in the high alpha asset). We conjecture from this that $Loss$ minimisation 
 would make less impact on the strength of the factor premia terms, than $Risk$ minimisation although by definition it cannot
 manage risk as well. This may not matter though; the difference in weight outcomes
 highlights that the gains and losses in the optimisation are not symmetrically
-distributed. ($Risk$ minimisation penalises gains and losses from the mean the same.) If they were, minimising $Loss$ would be very similar to minimising historic $Risk$, (although
+distributed. ($Risk$ minimisation penalises gains and losses from the mean in the same way.) If they were the same, minimising $Loss$ would be very similar to minimising historic $Risk$, (although
 we do impose our own asymmetricity by having a non-zero target rate.) 
 
 It is important
-to note that the factor premia must not be constrained too high, otherwise there is no scope 
-for minimising $Loss$ (or $Risk$ either). In the example in the previous section 
+to note that the factor premia must not be constrained too high, otherwise there is little scope 
+for minimising $Loss$ (or $Risk$ either). In the example in the previous section,
 if we had constrained the return to be $0.0098$ the only possible outcome has $100\%$ in 
-the last asset.
+the last asset irrespective of whether the utility contains risk or loss.
 
 The simple example explicitly contains an alpha constraint, but alpha as such does not need to 
-be part of the optimisation. Instead of $`$alpha' we could insert $`$momentum' and include the momentum 
-vector in the constraints instead of the alpha vector. We use alpha as a general proxy for all 
+be entered into the constraints. We include it in the utility function so as to maximise gain if needed. 
+Instead of constraining alpha we could include the momentum 
+vector for example in the constraints instead of the alpha vector. We used the alpha constraint in the example as a general proxy for all 
 constraints of interest used together.
 \section{Minimising Modelled Loss}
-The calculation outlined in the previous section might be thought of as $`$traditional gain loss'; it
-minimises $historic\ loss$ subject to the portfolio constraints. Usually the risk in 
-portfolio enhancement is modelled risk; it might be better to use $modelled\ loss$ here rather than $historic\ Loss$.
+The calculation thus far might be thought of as $`$traditional gain loss'; it
+maximises $historic\ (gain-\lambda\ loss)$ subject to the portfolio constraints. Usually the risk in 
+portfolio enhancement is modelled risk; it might be better to use $modelled\ loss$ and $modelled\ gain$ here rather than historic values 
+and add $modelled\ asset\ means$
+in the utility to optimise gain.
 
 The risk model estimation process uses factor premia returns $p_{i}(t)$ in the regression
 with asset returns. If there are $n_f$ factor premia, the modelled asset return $\hat{r}_{k}(t)$ for asset $k$ may be written
 \begin{eqnarray}
     \hat{r}_{k}(t) = \sum_{i=1}^{i=n_f}\beta_{ki} p_{i}(t)
 \end{eqnarray}
+\begin{eqnarray}
+    \hat{\alpha}_k = \frac{1}{T}\sum_{t=1}^T \hat{r}_{k}(t)
+\end{eqnarray}
 at time $t$, where $p_i$ is the i'th factor return and $\beta_{ki}$ is the usual factor loading matrix of regression coefficients.
+$\hat{\alpha}_k$ is the modelled expected return for the $k$th asset.
 This neglects the specific return which is not explained by the factors. The specific returns aren't of interest here because we want 
 to maximise the effects due to just the factors. It is only necessary to include the factors which we expect 
 to drive high returns.
-Due to observed cycle conditions exhibited by the factors, a 3 month forecast window\footnote{One month is observed to be too short an estimation period.} of factor premia data may be enough
+Due to observed cycle conditions exhibited by the factors, a three month forecast window\footnote{One month is observed to be too short an estimation period.} of factor premia data may be enough
 to get a good prediction of future return. Instead of incorporating the full history of
 asset returns $r_k(t)$ in the optimisation it may be enough to use the modelled predictions
 $\hat{r}_{k}(t)$ over a much reduced time horizon. The shorter the history for defining the
 loss, the faster the optimisation, so there is a practical reason for this as well as
 a theoretical one. The cyclical events captured by the factors may be correlated negatively or positively with 
-the portfolio return. This is shown by the sign of $\beta$ and it is therefore easy to include all factors together 
-which have a significant effect on return.
+the true portfolio return. This is shown by the sign of $\beta$ and it is therefore easy to include all factors together 
+which have a significant impact on return.
 Judging from the weights obtained in the simple 9 stock loss minimisation, we would expect 
 that minimising the loss defined by $\hat{r}_{k}(t)$, subject to factor premia constraints, would favour mainly weights 
-with high exposure to the factor premia together with diversifing weights that enable the lowest modelled loss.
+with high exposure to the factor premia together with diversifying weights that enable the lowest modelled loss.
 \end{document}
 
