@@ -80,7 +80,7 @@ curl -X POST -H "Content-type: application/json" -d @prem.json http://localhost:
 
 For unix service
 set up BitaService.service 
-and put script file in  /etc/systemd/systemn /usr/sbin
+and put script file in  /etc/systemd/system /usr/sbin
 e.g.
 
 cd /home/colin/publishBitaServer
