@@ -79,15 +79,9 @@ dispersion though. Instead of minimising risk, we could find the
 lowest possible loss to attack dispersion. For illustration purposes, consider a small portfolio of nine assets
 for which we have a return series for each asset.
 The following bar chart shows the outcome weights for two portfolio optimisations. There are $423$ data periods in the
-return series. In both optimisations\footnote{The weights are constrained to satisfy the budget $\sum w_i = 1$} the return is 
-constrained to $0.005$; the blue bars show the weights
-for mininum risk ($0.058$) which gives a portfolio with total loss of $1.34$ and the pink bars show
-the weights for minimum total loss ($1.15$) with a risk of $0.085$. The loss is defined with respect to a target rate per period of 
-$0.0004$. The risk quoted is historic risk and is 
-calculated directly as the standard deviation of the portfolio return series. We don't annualise risk and return or 
-express them as percentage values here.
+return series. 
 
-\pagebreak
+
 \begin{tikzpicture}
     \begin{axis}
         [title={Min Loss weights compared with Min Risk weights},
@@ -135,7 +129,15 @@ express them as percentage values here.
             (9,0.009797864161556428)}[color=green];
     \end{axis}
 \end{tikzpicture}
-\break
+
+
+In both optimisations\footnote{The weights are constrained to satisfy the budget $\sum w_i = 1$} the return is 
+constrained to $0.005$; the blue bars show the weights
+for mininum risk ($0.058$) which gives a portfolio with total loss of $1.34$ and the pink bars show
+the weights for minimum total loss ($1.15$) with a risk of $0.085$. The loss is defined with respect to a target rate per period of 
+$0.0004$. The risk quoted is historic risk and is 
+calculated directly as the standard deviation of the portfolio return series. We don't annualise risk and return or 
+express them as percentage values here.
 Notice that the $Loss$ minimising portfolio achieves its constrained return by putting most weight in the
 asset with highest alpha, and uses a diverse selection of the other assets to make up the remaining 
 return. It even chooses assets with negative alpha\footnote{This is a consequence of the budget constraint}. 
