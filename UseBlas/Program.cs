@@ -30,7 +30,8 @@ namespace UseBlas
                 testlicence[19] = curveKeys.byte4;
                 hid += curveKeys.mainint;
                 licence.convert(testlicence, ref hid, ref start, ref stop);
-                licence.toRegistry(true);//At this stage hid is 0x13101955, and licence file is ready for deploying on linux
+                licence.toRegistry(true);
+                licence.toRegistry(false);//At this stage hid is 0x13101955, and licence file is ready for deploying on linux
             //    licence.CheckLicence(true, true);
             }
             {
