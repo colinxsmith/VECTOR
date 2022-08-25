@@ -160,7 +160,8 @@ namespace Licensing
                 }
                 catch { return false; }
             }
-            else{
+            else
+            {
                 var basef = AppContext.BaseDirectory + "licence";
                 File.Delete(basef);
             }
@@ -482,8 +483,10 @@ namespace Licensing
         }
         public bool CheckLicence(bool print = false, bool usefile = false)
         {
+            var rootPath = AppContext.BaseDirectory;
+            DateTime fileTime = File.GetLastWriteTime(rootPath + "BlasLike.dll");
             const string version = "1.0";
-            var back = $"BITA Plus ASP.NET Core Portfolio Optimiser Version {version}";
+            var back = $"BITA Plus ASP.NET Core Portfolio Optimiser Version {version} made {fileTime}";
             var pass = false;
             var vid = VolId(usefile);
             int start = 0, stop = 0, hid = 0;
