@@ -1542,7 +1542,7 @@ namespace InteriorPoint
             double[] bl = null;
             double[] QL = null;
             double zL = 0;
-            ///<summary>stepReduce is the factor by which the step length to the boundary is reduce</summary>
+            ///<summary>stepReduce is the factor by which the step length to the boundary is reduced</summary>
             var stepReduce = 1.0;
             opt.optMode = mode;
             if (mode == "SOCP")
