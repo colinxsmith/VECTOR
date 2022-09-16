@@ -12,6 +12,50 @@ namespace UseBlas
     {
         static unsafe void Main(string[] args)
         {
+
+            {
+                Console.WriteLine("SOCP and LOSS on 3 assets");
+                int n = 12;
+                int tlen=3;
+                var m = 2;
+                int[] cone = { n,tlen,tlen };n+=2*tlen;m+=tlen;
+                var x = new double[n];
+ int nvar = 0;
+                foreach (int ic in cone) nvar += ic;
+                int[] typecone = { (int)InteriorPoint.conetype.SOCP, (int)InteriorPoint.conetype.QP , (int)InteriorPoint.conetype.QP };
+               
+                double[] b = { 1, 1,0,0,0 };
+                double[] c = { 1, 2, 3, 4, 5, 6000, 7, 8, 9, 10, 11, 0,1e3,1e3,1e3,0,0,0 };
+                double[] A ={1,0,0,0,0,
+1,0,1,1,4,
+1,0,2,1,2,
+1,0,3,-1,6,
+1,0,0,0,0,
+1,0,0,0,0,
+1,0,0,0,0,
+1,0,0,0,0,
+1,0,0,0,0,
+1,0,0,0,0,
+1,0,0,0,0,
+0,1,0,0,0,
+0,0,1,0,0,
+0,0,0,1,0,
+0,0,0,0,1,
+0,0,-1,0,0,
+0,0,0,-1,0,
+0,0,0,0,-1
+};
+                var opt1 = new InteriorPoint.Optimise(n, m, x, A, b, c);
+                var back = opt1.Opt("SOCP", cone, typecone, true);
+                Console.WriteLine($"{back}");
+                var implied = new double[m];
+                var truex = (double[])x.Clone();
+                Factorise.dmxmulv(m, n, A, truex, implied);
+                foreach (var cc in implied) Console.WriteLine($"Constraint value {cc}");
+                var cx = BlasLike.ddotvec(c.Length, c, truex);
+                Console.WriteLine($"Linear {cx}");
+                Console.WriteLine($"SOCP x check {Math.Sqrt(BlasLike.ddotvec(x.Length - 1-2*tlen, x, x))} {x[x.Length - 1-2*tlen]}");
+            }
             {//How to make a file licence
                 var licence = new Licensing.Licence();
                 var now = new DateTimeOffset(DateTime.Now);
@@ -23,7 +67,7 @@ namespace UseBlas
                 var start = (int)timenow - 23;
                 var stop = (int)later.ToUnixTimeSeconds();
                 var curveKeys = new Licensing.byteint();
-                curveKeys.mainint = (int) Convert.ToInt32("101101110",2);
+                curveKeys.mainint = (int)Convert.ToInt32("101101110", 2);
                 testlicence[16] = curveKeys.byte1;
                 testlicence[17] = curveKeys.byte2;
                 testlicence[18] = curveKeys.byte3;
@@ -32,7 +76,7 @@ namespace UseBlas
                 licence.convert(testlicence, ref hid, ref start, ref stop);
                 licence.toRegistry(true);
                 licence.toRegistry(false);//At this stage hid is 0x13101955, and licence file is ready for deploying on linux
-            //    licence.CheckLicence(true, true);
+                                          //    licence.CheckLicence(true, true);
             }
             {
                 var a = 4.0;

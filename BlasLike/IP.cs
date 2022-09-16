@@ -1543,12 +1543,12 @@ namespace InteriorPoint
             double[] QL = null;
             double zL = 0;
             ///<summary>stepReduce is the factor by which the step length to the boundary is reduced</summary>
-            var stepReduce = 1.0;
+            var stepReduce = 0.9;
             opt.optMode = mode;
             if (mode == "SOCP")
             {
-                opt.conv = (Math.Floor(1e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
-                opt.compConv = (Math.Floor(1e-11 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.conv = (Math.Floor(5e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.compConv = (Math.Floor(5e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
                 opt.cone = cone;
                 opt.typecone = typecone;
                 opt.numberOfCones = cone.Length;
@@ -1890,7 +1890,7 @@ namespace InteriorPoint
                 opt.tau = opt.keep.tau;
                 opt.kappa = opt.keep.kappa;
             }
-            var infease = !(opt.homogenous && (opt.tau > 1e2 * opt.kappa));
+            var infease = !(opt.homogenous && (opt.tau > 1e1 * opt.kappa));
             if (opt.homogenous)
             {
                 ColourConsole.WriteEmbeddedColourLine($"[green]tau = {opt.tau}[/green] [cyan]kappa={opt.kappa}[/cyan]");
