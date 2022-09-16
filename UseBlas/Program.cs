@@ -16,7 +16,7 @@ namespace UseBlas
             {
                 Console.WriteLine("SOCP and LOSS on 3 assets");
                 int n = 12;
-                int tlen=3;
+                int tlen=4;
                 var m = 2;
                 int[] cone = { n,tlen,tlen };n+=2*tlen;m+=tlen;
                 var x = new double[n];
@@ -24,26 +24,28 @@ namespace UseBlas
                 foreach (int ic in cone) nvar += ic;
                 int[] typecone = { (int)InteriorPoint.conetype.SOCP, (int)InteriorPoint.conetype.QP , (int)InteriorPoint.conetype.QP };
                
-                double[] b = { 1, 1,0,0,0 };
-                double[] c = { 1, 2, 3, 4, 5, 6000, 7, 8, 9, 10, 11, 0,1e3,1e3,1e3,0,0,0 };
-                double[] A ={1,0,0,0,0,
-1,0,1,1,4,
-1,0,2,1,2,
-1,0,3,-1,6,
-1,0,0,0,0,
-1,0,0,0,0,
-1,0,0,0,0,
-1,0,0,0,0,
-1,0,0,0,0,
-1,0,0,0,0,
-1,0,0,0,0,
-0,1,0,0,0,
-0,0,1,0,0,
-0,0,0,1,0,
-0,0,0,0,1,
-0,0,-1,0,0,
-0,0,0,-1,0,
-0,0,0,0,-1
+                double[] b = { 1, 1,0,0,0,0 };
+                double[] c = { 1, 2, 3, 4, 5, 6000, 7, 8, 9, 10, 11, 0,1e3,1e3,1e3,1e3,0,0,0,0 };
+                double[] A ={1,0,0,0,0,0,
+1,0,-1,1,-4,3,
+1,0,-2,-1,2,-2,
+1,0,-3,1,-2,-1,
+1,0,0,0,0,0,
+1,0,0,0,0,0,
+1,0,0,0,0,0,
+1,0,0,0,0,0,
+1,0,0,0,0,0,
+1,0,0,0,0,0,
+1,0,0,0,0,0,
+0,1,0,0,0,0,
+0,0,1,0,0,0,
+0,0,0,1,0,0,
+0,0,0,0,1,0,
+0,0,0,0,0,1,
+0,0,-1,0,0,0,
+0,0,0,-1,0,0,
+0,0,0,0,-1,0,
+0,0,0,0,0,-1
 };
                 var opt1 = new InteriorPoint.Optimise(n, m, x, A, b, c);
                 var back = opt1.Opt("SOCP", cone, typecone, true);
