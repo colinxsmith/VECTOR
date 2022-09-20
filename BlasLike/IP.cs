@@ -299,6 +299,8 @@ namespace InteriorPoint
                             if (dx[i] < 0) ddx = Math.Min(ddx, -aob(x[i], dx[i]));
                             if (dz[i] < 0) ddz = Math.Min(ddz, -aob(z[i], dz[i]));
                         }
+                        alpha=Math.Min(ddx,alpha);
+                        alpha=Math.Min(ddz,alpha);
                     }
                     else if (typecone[icone] == (int)conetype.SOCP)
                     {
@@ -1543,12 +1545,12 @@ namespace InteriorPoint
             double[] QL = null;
             double zL = 0;
             ///<summary>stepReduce is the factor by which the step length to the boundary is reduced</summary>
-            var stepReduce = 0.8;
+            var stepReduce = 0.95;
             opt.optMode = mode;
             if (mode == "SOCP")
             {
-                opt.conv = (Math.Floor(5e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
-                opt.compConv = (Math.Floor(5e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.conv = (Math.Floor(1e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.compConv = (Math.Floor(1e-11 / BlasLike.lm_eps)) * BlasLike.lm_eps;
                 opt.cone = cone;
                 opt.typecone = typecone;
                 opt.numberOfCones = cone.Length;
@@ -1770,14 +1772,14 @@ namespace InteriorPoint
                 if (innerIteration > 2 && opt.optMode == "SOCP")
                 {
                     BlasLike.dsubvec(n, opt.xbar, opt.zbar, diff);
-                    double test = BlasLike.ddotvec(n, diff, diff);
-                    if (test > BlasLike.lm_eps * 256)
+                    double test = Math.Sqrt(BlasLike.ddotvec(n, diff, diff));
+                    if (test > BlasLike.lm_eps * 1024)
                     {
                         ColourConsole.WriteInfo($"xbar test = {test}");
                         ColourConsole.WriteInfo($"rp1 = {rp1}");
                         ColourConsole.WriteInfo($"rd1 = {rd1}");
                         ColourConsole.WriteInfo($"comp1 = {comp1}");
-                        //   break;
+                    //       break;
                     }
                 }
                 opt.SolvePrimaryDual();
@@ -1817,7 +1819,7 @@ namespace InteriorPoint
                 {
                     var scl = 1.0;
                     opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
-                    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.9 * opt.laststep, 1);
+                    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.95 * opt.laststep, 1);
                     BlasLike.dscalvec(opt.y.Length, scl / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, scl / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, scl / opt.tau, opt.z);

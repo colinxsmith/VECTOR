@@ -24,8 +24,8 @@ namespace UseBlas
                 foreach (int ic in cone) nvar += ic;
                 int[] typecone = { (int)InteriorPoint.conetype.SOCP, (int)InteriorPoint.conetype.QP , (int)InteriorPoint.conetype.QP };
                
-                double[] b = { 1, 1,0,0,0,0 };
-                double[] c = { 1, 2, 3, 4, 5, 6000, 7, 8, 9, 10, 11, 0,1e3,1e3,1e3,1e3,0,0,0,0 };
+                double[] b = { 0, 1,0,0,0,0 };
+                double[] c = { 1, 2, 3, 4, 5, 6000, 7, 8, 9, 10, 11, 0,1e6,1e6,1e6,1e6,0,0,0,0 };
                 double[] A ={1,0,0,0,0,0,
 1,0,-1,1,-4,3,
 1,0,-2,-1,2,-2,
