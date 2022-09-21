@@ -16,20 +16,21 @@ namespace UseBlas
             {
                 Console.WriteLine("SOCP and LOSS on 3 assets");
                 int n = 12;
-                int tlen=4;
+                int tlen = 4;
                 var m = 2;
-                int[] cone = { n,tlen,tlen };n+=2*tlen;m+=tlen;
+                int[] cone = { n, tlen, tlen, 1 }; n += 2 * tlen + 1; m += tlen;
                 var x = new double[n];
- int nvar = 0;
+                int nvar = 0;
                 foreach (int ic in cone) nvar += ic;
-                int[] typecone = { (int)InteriorPoint.conetype.SOCP, (int)InteriorPoint.conetype.QP , (int)InteriorPoint.conetype.QP };
-               
-                double[] b = { 0, 1,0,0,0,0 };
-                double[] c = { 1, 2, 3, 4, 5, 6000, 7, 8, 9, 10, 11, 0,1e6,1e6,1e6,1e6,0,0,0,0 };
-                double[] A ={1,0,0,0,0,0,
-1,0,-1,1,-4,3,
-1,0,-2,-1,2,-2,
-1,0,-3,1,-2,-1,
+                int[] typecone = { (int)InteriorPoint.conetype.SOCP, (int)InteriorPoint.conetype.QP, (int)InteriorPoint.conetype.QP, (int)InteriorPoint.conetype.QP };
+
+                double[] b = { 0, 1, -6.0 / 3.0, 1.0 / 3.0, -4.0 / 3.0, 0 };
+                double[] c = { 0, 1.0 / 4.0, 3.0 / 4.0, 5.0 / 4.0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0 };
+                double[] A ={
+1,0,0,0,0,0,
+1,0,-1,1,-4,3,  //returns for 3 assets (history 4) to get gain and loss. target rates are expected means (b[1],b[2],b[3],b[4])
+1,0,-2,-1,2,-2, //stock alphas for these 3 assets are expected means (c[1],c[2],c[3])
+1,0,-3,1,-2,-1, //purposely have tlen=4 ( > 3)
 1,0,0,0,0,0,
 1,0,0,0,0,0,
 1,0,0,0,0,0,
@@ -37,15 +38,16 @@ namespace UseBlas
 1,0,0,0,0,0,
 1,0,0,0,0,0,
 1,0,0,0,0,0,
-0,1,0,0,0,0,
+0,1,0,0,0,0, //end of first cone
 0,0,1,0,0,0,
-0,0,0,1,0,0,
+0,0,0,1,0,0, // loss variables
 0,0,0,0,1,0,
-0,0,0,0,0,1,
+0,0,0,0,0,1, //end of second cone
 0,0,-1,0,0,0,
-0,0,0,-1,0,0,
+0,0,0,-1,0,0, // slacks for loss constraints
 0,0,0,0,-1,0,
-0,0,0,0,0,-1
+0,0,0,0,0,-1, //end of third cone
+0,1,0,0,0,0   //cone four slack for sum(x.x) < X*X = 1
 };
                 var opt1 = new InteriorPoint.Optimise(n, m, x, A, b, c);
                 var back = opt1.Opt("SOCP", cone, typecone, true);
@@ -56,7 +58,7 @@ namespace UseBlas
                 foreach (var cc in implied) Console.WriteLine($"Constraint value {cc}");
                 var cx = BlasLike.ddotvec(c.Length, c, truex);
                 Console.WriteLine($"Linear {cx}");
-                Console.WriteLine($"SOCP x check {Math.Sqrt(BlasLike.ddotvec(x.Length - 1-2*tlen, x, x))} {x[x.Length - 1-2*tlen]}");
+                Console.WriteLine($"SOCP x check {Math.Sqrt(BlasLike.ddotvec(x.Length - 1 - 2 * tlen - 1, x, x))} {x[x.Length - 1 - 2 * tlen - 1]}");
             }
             {//How to make a file licence
                 var licence = new Licensing.Licence();

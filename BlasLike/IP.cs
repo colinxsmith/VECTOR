@@ -1550,7 +1550,7 @@ namespace InteriorPoint
             if (mode == "SOCP")
             {
                 opt.conv = (Math.Floor(1e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
-                opt.compConv = (Math.Floor(1e-11 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.compConv = (Math.Floor(1e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
                 opt.cone = cone;
                 opt.typecone = typecone;
                 opt.numberOfCones = cone.Length;
@@ -1818,8 +1818,8 @@ namespace InteriorPoint
                 if ((homogenous && (t1 = Math.Max(alpha1, alpha2)) < opt.alphamin))
                 {
                     var scl = 1.0;
-                    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
-                    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.95 * opt.laststep, 1);
+                //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
+                //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.95 * opt.laststep, 1);
                     BlasLike.dscalvec(opt.y.Length, scl / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, scl / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, scl / opt.tau, opt.z);
@@ -1884,7 +1884,7 @@ namespace InteriorPoint
                 }
                 innerIteration++;
             }
-            if (opt.copyKept)
+            if (ir>1&&opt.copyKept)
             {
                 BlasLike.dcopyvec(opt.x.Length, opt.keep.x, opt.x);
                 BlasLike.dcopyvec(opt.y.Length, opt.keep.y, opt.y);
