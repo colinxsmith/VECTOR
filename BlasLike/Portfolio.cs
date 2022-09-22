@@ -32,7 +32,7 @@ namespace Portfolio
                                         double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0,
                                         double ETLorLOSSmax = 0, string logfile = "", int revise = 0)
         {
-            if(DATAlambda==0){DATA=null;tlen=0;ETLorLOSSconstraint=false;} //This allow us to leave out LOSS or ETL from the optimisation but still calculate it in results
+            if (DATAlambda == 0) { DATA = null; tlen = 0; ETLorLOSSconstraint = false; } //This allow us to leave out LOSS or ETL from the optimisation but still calculate it in results
             ColourConsole.print = !(WindowsServiceHelpers.IsWindowsService());
             var rootPath = AppContext.BaseDirectory;
 #if DEBUG
@@ -3684,6 +3684,79 @@ namespace Portfolio
                 back += Math.Abs(w[i - wstart] - initial[i - istart]);
             }
             return back * 0.5;
+        }
+        public static int SOCP_LOSS_RISK(int n, int tlen, double[] DATA)
+        {
+            var ones = (double[])new double[tlen];
+            var x=new double[n];
+            var alpha = new double[n];
+            BlasLike.dsetvec(tlen, 1.0 / tlen, ones);
+            BlasLike.dsetvec(n, 1.0 / n, x);
+            Factorise.dmxmulv(n, tlen, DATA, ones, alpha, 0, 0, 0, true);
+
+            var Q = new double[n * (n + 1) / 2];
+            var ij = 0;
+            for (var i = 0; i < n; ++i)
+            {
+                for (var j = 0; j <= i; ++j)
+                {
+                    Q[ij++] = Solver.Factorise.covariance(tlen, DATA, DATA, i * tlen, j * tlen);
+                }
+            }
+            var Qcopy=(double[])Q.Clone();
+            var RootQ=new double[n*n];
+            for(var i=0;i<n;++i){
+                RootQ[i*n+i]=1;
+            }
+            var piv = new int[n];
+            Factorise.Factor('U',n,Qcopy,piv);
+            Factorise.Solve('U',n,n,Qcopy,piv,RootQ,n,0,0,0,1);
+            var y=new double[n];
+            Factorise.dsmxmulv(n,Q,x,y);
+            var varr=BlasLike.ddotvec(n,x,y);
+            Factorise.dmxmulv(n,n,RootQ,x,y);
+            var vartest=BlasLike.ddotvec(n,y,y);
+            Debug.Assert(Math.Abs(varr-vartest)<BlasLike.lm_eps);
+            //Min variance
+            int N=n+1+n;
+            int M=n+1;
+            var b=new double[M];
+            b[0]=1;
+            var c=new double[N];
+            c[n]=1;
+            var A=new double[N*M];
+            for(var i=0;i<n;++i){
+            BlasLike.dcopy(n,RootQ,n,A,M,i,i+1+(n+1)*M);
+            }
+            for(var i=0;i<n;++i){
+                BlasLike.dset(1,1,A,M,(n+1+i)*M);//budget
+                BlasLike.dset(1,-1,A,M,1+i+i*M);//link
+            }
+            int []cone={n+1,n};
+            int []typecone={(int)InteriorPoint.conetype.SOCP,(int)InteriorPoint.conetype.QP};
+            x=new double[N];
+            y=new double[M];
+            var opt1 = new InteriorPoint.Optimise(N, M, x, A, b, c);
+            var back = opt1.Opt("SOCP", cone, typecone, true);
+            var ccc=new double[M];
+            var xx=new double[n];
+            Factorise.dsmxmulv(n,Q,x,xx,n+1);
+            var t1=BlasLike.ddotvec(n,x,xx,n+1);
+            Factorise.dmxmulv(n,n,RootQ,x,xx,0,n+1);
+            var t2=BlasLike.ddotvec(n,xx,xx);
+
+            ColourConsole.WriteEmbeddedColourLine($"[yellow]Minimum variance[/yellow] [green]{x[n]*x[n]}[/green] Check [cyan]{t1}[/cyan] [magenta]{t2}[/magenta]");
+                Factorise.dmxmulv(M, N, A, x, ccc);
+    /*        {
+                0,-1,0,0,
+                0,0,-1,0,
+                0,0,0,-1,
+                0,0,0,0,
+                1,1,2,3,//Portfolio quantities here downwards in this QP cone
+                1,1,2,3,
+                1,1,2,3
+            }*/
+            return back;
         }
         ///<summary>Portfolio Optimisation with BUY/SELL utility and LONG/SHORT constraints
         ///If a variable's upper and lower bounds are equal, this variable is re-ordered out of the optimisaion

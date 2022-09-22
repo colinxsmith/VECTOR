@@ -85,7 +85,7 @@ public class OptimiseController : ControllerBase
         double[] Q;
         if (op.Q == null)
         {
-            Q = new double[op.n.GetValueOrDefault() * (op.n.GetHashCode() + 1) / 2]; op.Q = Q;
+            Q = new double[op.n.GetValueOrDefault() * (op.n.GetValueOrDefault() + 1) / 2]; op.Q = Q;
             var ij = 0;
             for (var i = 0; i < op.n.GetValueOrDefault(); ++i)
             {
@@ -165,7 +165,7 @@ public class OptimiseController : ControllerBase
         double[] Q;
         if (op.Q == null)
         {
-            Q = new double[op.n.GetValueOrDefault() * (op.n.GetHashCode() + 1) / 2]; op.Q = Q;
+            Q = new double[op.n.GetValueOrDefault() * (op.n.GetValueOrDefault() + 1) / 2]; op.Q = Q;
             var ij = 0;
             for (var i = 0; i < op.n.GetValueOrDefault(); ++i)
             {
@@ -356,7 +356,7 @@ public class OptimiseController : ControllerBase
                 }
                 if (op.Q == null && op.nfac.GetValueOrDefault() < 0)
                 {
-                    var Q = new double[op.n.GetValueOrDefault() * (op.n.GetHashCode() + 1) / 2]; op.Q = Q;
+                    var Q = new double[op.n.GetValueOrDefault() * (op.n.GetValueOrDefault() + 1) / 2]; op.Q = Q;
                     var ij = 0;
                     for (var i = 0; i < op.n.GetValueOrDefault(); ++i)
                     {
@@ -575,7 +575,7 @@ public class OptimiseController : ControllerBase
             }
             if (op.Q == null && op.nfac.GetValueOrDefault() < 0)
             {
-                var Q = new double[op.n.GetValueOrDefault() * (op.n.GetHashCode() + 1) / 2]; op.Q = Q;
+                var Q = new double[op.n.GetValueOrDefault() * (op.n.GetValueOrDefault() + 1) / 2]; op.Q = Q;
                 var ij = 0;
                 for (var i = 0; i < op.n.GetValueOrDefault(); ++i)
                 {
