@@ -13,19 +13,25 @@ namespace UseBlas
         static unsafe void Main(string[] args)
         {
             {
-            var ContentRootPath = AppContext.BaseDirectory;
-            #if DEBUG
-            ContentRootPath="../";
-            #endif
+                var ContentRootPath = AppContext.BaseDirectory;
+#if DEBUG
+                ContentRootPath = "../";
+#endif
                 using (var TestData = new InputSomeData())
                 {
-                    TestData.doubleFields="DATA";
-                    TestData.intFields="tlen n";
-                    TestData.Read(ContentRootPath+"GLdist");
-                    var n=TestData.mapInt["n"][0];
-                    var tlen=TestData.mapInt["tlen"][0];
-                    var DATA =TestData.mapDouble["DATA"];
-                    var back=Portfolio.Portfolio.SOCP_LOSS_RISK(n,tlen,DATA);
+                    TestData.doubleFields = "DATA";
+                    TestData.intFields = "tlen n";
+                    TestData.Read(ContentRootPath + "GLdist");
+                    var n = TestData.mapInt["n"][0];
+                    var tlen = TestData.mapInt["tlen"][0];
+                    var DATA = TestData.mapDouble["DATA"];
+                    /*double[]DATA={1,2,3,4,5,
+                    1.1,2.1,3.1,4.1,5.1,
+                    1.2,2.2,3.2,4.2,5.2};
+                        n=3;
+                        tlen=5;*/
+                    Array.Resize(ref DATA, n * tlen);
+                    var back = Portfolio.Portfolio.SOCP_LOSS_RISK(n, tlen, DATA);
                 }
             }
 
