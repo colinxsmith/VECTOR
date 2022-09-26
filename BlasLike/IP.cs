@@ -299,8 +299,8 @@ namespace InteriorPoint
                             if (dx[i] < 0) ddx = Math.Min(ddx, -aob(x[i], dx[i]));
                             if (dz[i] < 0) ddz = Math.Min(ddz, -aob(z[i], dz[i]));
                         }
-                        alpha=Math.Min(ddx,alpha);
-                        alpha=Math.Min(ddz,alpha);
+                        alpha = Math.Min(ddx, alpha);
+                        alpha = Math.Min(ddz, alpha);
                     }
                     else if (typecone[icone] == (int)conetype.SOCP)
                     {
@@ -1744,7 +1744,7 @@ namespace InteriorPoint
                 gap1 = gap / denomTest(gap0);
                 comp1 = opt.Complementarity();
                 opt.keep.update(opt.x, opt.y, opt.z, opt.tau, opt.kappa, rp1, rd1, comp1);
-                if (rp1 <= opt.conv && rd1 <= opt.conv && comp1 <= opt.compConv)
+                if (rp1 <= opt.conv && rd1 <= opt.conv && comp1 <= opt.compConv * tau)
                     break;
                 if (condition > BlasLike.lm_reps)
                 {
@@ -1779,7 +1779,7 @@ namespace InteriorPoint
                         ColourConsole.WriteInfo($"rp1 = {rp1}");
                         ColourConsole.WriteInfo($"rd1 = {rd1}");
                         ColourConsole.WriteInfo($"comp1 = {comp1}");
-                    //       break;
+                        //       break;
                     }
                 }
                 opt.SolvePrimaryDual();
@@ -1815,11 +1815,27 @@ namespace InteriorPoint
                     BlasLike.dcopyvec(n - nh, opt.c, opt.cmod, nh, nh);
                 }
                 var t1 = 0.0;
+#if DEBUG
+                for (int icc = 0, conestart = 0; icc < opt.numberOfCones; ++icc)
+                {
+                    if (opt.typecone[icc] == (int)InteriorPoint.conetype.SOCP)
+                    {
+                        var din = BlasLike.ddotvec(opt.cone[icc] - 1, opt.x, opt.x, conestart, conestart);
+                        var dtop = square(opt.x[conestart + opt.cone[icc] - 1]);
+                        Debug.Assert(dtop >= din);
+                        din = BlasLike.ddotvec(opt.cone[icc] - 1, opt.z, opt.z, conestart, conestart);
+                        dtop = square(opt.z[conestart + opt.cone[icc] - 1]);
+                        Debug.Assert(dtop >= din);
+                    }
+                    conestart += opt.cone[icc];
+                }
+#endif
                 if ((homogenous && (t1 = Math.Max(alpha1, alpha2)) < opt.alphamin))
                 {
+                    opt.alphamin /= 10.0;
                     var scl = 1.0;
-                //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
-                //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.95 * opt.laststep, 1);
+                    //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
+                    //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.95 * opt.laststep, 1);
                     BlasLike.dscalvec(opt.y.Length, scl / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, scl / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, scl / opt.tau, opt.z);
@@ -1884,7 +1900,7 @@ namespace InteriorPoint
                 }
                 innerIteration++;
             }
-            if (ir>1&&opt.copyKept)
+            if (ir > 1 && opt.copyKept)
             {
                 BlasLike.dcopyvec(opt.x.Length, opt.keep.x, opt.x);
                 BlasLike.dcopyvec(opt.y.Length, opt.keep.y, opt.y);

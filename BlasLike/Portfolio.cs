@@ -3620,11 +3620,12 @@ namespace Portfolio
         ///<param name="DATA">Array of historic returns data</param>
         ///<param name="target">Array of target returns</param>
         ///<param name="breakdown">Returns a double array such that LOSS=w.breakdown</param>
-        public static double LOSS(int n, double[] w, double[] DATA, double[] target, double[] breakdown = null)
+        ///<param name="wstart">index to start for w</param>
+        public static double LOSS(int n, double[] w, double[] DATA, double[] target, double[] breakdown = null,int wstart=0)
         {
             int tlen = DATA.Length / n;
             var s = new double[tlen];
-            Factorise.dmxmulv(tlen, n, DATA, w, s);
+            Factorise.dmxmulv(tlen, n, DATA, w, s,0,wstart);
             if (breakdown == null)
                 return LOSS(s, target, null);
             else
@@ -3732,10 +3733,12 @@ namespace Portfolio
             var c = new double[N];
             c[n] = 1;
             var A = new double[N * M];
+     //       Factorise.dmx_transpose(n,n,RootQ,RootQ);
             for (var i = 0; i < n; ++i)
             {
                 BlasLike.dcopy(n, RootQ, n, A, M, i, i + 1 + (n + 1) * M);
             }
+    //        Factorise.dmx_transpose(n,n,RootQ,RootQ);
             for (var i = 0; i < n; ++i)
             {
                 BlasLike.dset(1, 1, A, M, (n + 1 + i) * M);//budget
@@ -3769,7 +3772,7 @@ namespace Portfolio
             /*        {
                 0,-1,0,0,0,0,0,0,0,
                 0,0,-1,0,0,0,0,0,0,
-                0,0,0,-1,0,0,0,0,0,  Slack
+                0,0,0,-1,0,0,0,0,0,  Link
                 0,0,0,0,0,0,0,0,0,
                 1,1,2,3,t1,t2,t3,t4,t5,//Portfolio quantities here downwards in this QP cone
                 1,1,2,3,t1,t2,t3,t4,t5,
@@ -3785,33 +3788,42 @@ namespace Portfolio
                 0,0,0,0, 0,0,0,-1,0,
                 0,0,0,0, 0,0,0,0,-1,
             }*/
-            N = n + 1 + n + tlen + tlen;
-            M = n + 1 + tlen;
+            var m=2;
+            var portfolioConstraints=new double[n*m];
+            for (var i=0;i<n;++i){
+                BlasLike.dset(1,1,portfolioConstraints,m,i*m);
+                BlasLike.dset(1,i+1,portfolioConstraints,m,1+i*m);
+            }
+            N = n + 1 + n + tlen + tlen;    
+            M = n + m + tlen;
             b = new double[M];
-            b[0] = 1;
-            BlasLike.dcopyvec(tlen, targetR, b, 0, n + 1);
+            b[0] = 1;//Budget value
+            b[1]=2;//Alpha value
+            BlasLike.dcopyvec(tlen, targetR, b, 0, n + m);
             c = new double[N];
-            c[n] = 1e-3;
+            c[n] = 1;//Strength of risk in utility
             BlasLike.dsccopyvec(n, -1, alpha, c, 0, n + 1);
             BlasLike.dsetvec(tlen, 1, c, n + 1 + n);
             A = new double[N * M];
+        //    Factorise.dmx_transpose(n,n,RootQ,RootQ);
             for (var i = 0; i < n; ++i)
             {
-                BlasLike.dcopy(n, RootQ, n, A, M, i, i + 1 + (n + 1) * M);
+                BlasLike.dcopy(n, RootQ, n, A, M, i, i + m + (n + 1) * M);
+                BlasLike.dset(1, -1, A, M, m + i + i * M);//link
             }
+        //    Factorise.dmx_transpose(n,n,RootQ,RootQ);
             for (var i = 0; i < tlen; ++i)
             {
-                BlasLike.dcopy(n, DATA, tlen, A, M, i, i + 1 + n + (n + 1) * M);
+                BlasLike.dcopy(n, DATA, tlen, A, M, i, i + m + n + (n + 1) * M);
                 BlasLike.dset(1, 1, A, M, 1 + n + i + (n + 1 + n + i) * M);//LOSS
                 BlasLike.dset(1, -1, A, M, 1 + n + i + (n + 1 + n + tlen + i) * M);//slack
             }
-            for (var i = 0; i < n; ++i)
-            {
-                BlasLike.dset(1, 1, A, M, (n + 1 + i) * M);//budget
-                BlasLike.dset(1, -1, A, M, 1 + i + i * M);//link
+            for(var i=0;i<m;++i){
+                BlasLike.dcopy(n,portfolioConstraints,m,A,M,i,i+(n+1)*M);
             }
             Array.Resize(ref cone, 3);
             Array.Resize(ref typecone, 3);
+            cone[0]=n+1;
             cone[1] = n + tlen;
             cone[2] = tlen;
             typecone[2] = (int)InteriorPoint.conetype.QP;
@@ -3832,8 +3844,12 @@ namespace Portfolio
             var LOSS1 = 0.0;
             var w = new double[n];
             BlasLike.dcopyvec(n, x, w, n + 1);
-            LOSS1 = LOSS(n, w, DATA, targetR);
-            ColourConsole.WriteEmbeddedColourLine($"[red]LOSS check[/red] [green]{LOSSestimate}[/green] [cyan]{LOSS1}[/cyan]");
+            LOSS1 = LOSS(n, x, DATA, targetR,null,n+1);
+            ColourConsole.WriteEmbeddedColourLine($"[red]LOSS check[/red] [green]{LOSSestimate}[/green] [cyan]{LOSS1}[/cyan]"); 
+            ccc=new double[M];
+            Factorise.dmxmulv(M, N, A, x, ccc);
+            var cccc=new double[m];
+            Factorise.dmxmulv(m, n, portfolioConstraints, x, cccc,0,n+1);
             return back;
         }
         ///<summary>Portfolio Optimisation with BUY/SELL utility and LONG/SHORT constraints

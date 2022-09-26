@@ -21,7 +21,15 @@ namespace UseBlas
                 {
                     TestData.doubleFields = "DATA";
                     TestData.intFields = "tlen n";
-                    TestData.Read(ContentRootPath + "GLdist");
+                    try
+                    {
+                        TestData.Read(ContentRootPath + "GLdist");
+                    }
+                    catch
+                    {
+                        ContentRootPath = "./";
+                        TestData.Read(ContentRootPath + "GLdist");
+                    }
                     var n = TestData.mapInt["n"][0];
                     var tlen = TestData.mapInt["tlen"][0];
                     var DATA = TestData.mapDouble["DATA"];
