@@ -40,6 +40,7 @@ namespace UseBlas
                         tlen=5;*/
                     Array.Resize(ref DATA, n * tlen);
                     var back = Portfolio.Portfolio.SOCP_LOSS_RISK(n, tlen, DATA);
+                    return;
                 }
             }
 

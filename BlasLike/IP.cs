@@ -48,7 +48,7 @@ namespace InteriorPoint
         public hessmull h = null;
         BestResults keep;
         public bool copyKept = true;
-        public double alphamin = 1e-1;
+        public double alphamin = 1e-8;
         public double conv = BlasLike.lm_eps * 16;
         public double compConv = BlasLike.lm_eps * 16;
         int badindex = -1;
@@ -420,7 +420,8 @@ namespace InteriorPoint
                         test1 = 0;
                         for (var i = 0; i < cone.Length; ++i)
                         {
-                            test1 += (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]));
+                            if (typecone[i] == (int)conetype.SOCP)
+                                test1 += (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]));
                         }
 
                         test1 = Math.Sqrt(test1);
@@ -1545,7 +1546,7 @@ namespace InteriorPoint
             double[] QL = null;
             double zL = 0;
             ///<summary>stepReduce is the factor by which the step length to the boundary is reduced</summary>
-            var stepReduce = 0.95;
+            var stepReduce = 0.99;
             opt.optMode = mode;
             if (mode == "SOCP")
             {
@@ -1753,7 +1754,7 @@ namespace InteriorPoint
                     {
                         iup++;
                     }
-                    if (iup > 5) break;
+                    if (iup > 10) break;
                 }
                 if (comp1 < opt.compConv && opt.tau < 1e-5 * opt.kappa) break;
                 if (ir > opt.maxouter) break;
@@ -1876,7 +1877,7 @@ namespace InteriorPoint
                     for (int ii = 0, id = 0; ii < m; ++ii, id += ii)
                     {
                         //if (opt.M[id + ii] < opt.regularise)
-                        opt.M[id + ii] += opt.regularise;
+                        opt.M[id + ii] += BlasLike.lm_eps;
                     }
                 }
                 gap = opt.Primal() - opt.Dual();
@@ -1900,7 +1901,7 @@ namespace InteriorPoint
                 }
                 innerIteration++;
             }
-            if (ir > 1 && opt.copyKept)
+            if (/*ir > 1 &&*/ opt.copyKept)
             {
                 BlasLike.dcopyvec(opt.x.Length, opt.keep.x, opt.x);
                 BlasLike.dcopyvec(opt.y.Length, opt.keep.y, opt.y);
