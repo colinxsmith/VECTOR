@@ -205,81 +205,55 @@ namespace InteriorPoint
         {
             if (optMode == "SOCP")
             {
-                double XX = BlasLike.ddotvec(n, x, x);
-                double XdX = BlasLike.ddotvec(n, x, dx);
-                double dXdX = BlasLike.ddotvec(n, dx, dx);
-                double SS = BlasLike.ddotvec(n, z, z);
-                double SdS = BlasLike.ddotvec(n, z, dz);
-                double dSdS = BlasLike.ddotvec(n, dz, dz);
-                double XS = BlasLike.ddotvec(n, x, z);
-                double XdS = BlasLike.ddotvec(n, x, dz);
-                double dXS = BlasLike.ddotvec(n, dx, z);
-                double dXdS = BlasLike.ddotvec(n, dx, dz);
                 double alpha = 1.0, desc;
                 double lowest = 1e-2, lowest1 = 1 - lowest;
-
-                if (dXdX <= BlasLike.lm_eps)
+                if(false){
+                for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
                 {
-                    if (XdX < -BlasLike.lm_eps)
-                        alpha = Math.Min(alpha, (-XX / (XdX + XdX)));
-                }
-                else
-                {
-                    if (Math.Abs(XdX) > BlasLike.lm_eps) desc = 1.0 - XX * dXdX / XdX / XdX;
-                    else desc = -XX * dXdX;
-                    if (desc > BlasLike.lm_eps * 8)
-                    {
-                        if (Math.Abs(XdX) > BlasLike.lm_eps) desc = Math.Sqrt(desc) * Math.Abs(XdX);
-                        else desc = Math.Sqrt(desc);
-                        if (XdX + desc < 0)
-                            alpha = Math.Min(alpha, ((-XdX - desc) / dXdX));
+                    var n = cone[icone];
+                    double XX = BlasLike.ddotvec(n, x, x, cstart, cstart);
+                    double XdX = BlasLike.ddotvec(n, x, dx, cstart, cstart);
+                    double dXdX = BlasLike.ddotvec(n, dx, dx, cstart, cstart);
+                    double SS = BlasLike.ddotvec(n, z, z, cstart, cstart);
+                    double SdS = BlasLike.ddotvec(n, z, dz, cstart, cstart);
+                    double dSdS = BlasLike.ddotvec(n, dz, dz, cstart, cstart);
+                    double XS = BlasLike.ddotvec(n, x, z, cstart, cstart);
+                    double XdS = BlasLike.ddotvec(n, x, dz, cstart, cstart);
+                    double SdX = BlasLike.ddotvec(n, z, dx, cstart, cstart);
+                    double dXdS = BlasLike.ddotvec(n, dx, dz, cstart, cstart);
+                    var step = 0.0;
+                    /*      if (Math.Abs(XdX) < BlasLike.lm_eps)
+                          {
+                              step = Math.Sqrt(-XX / dXdX);
+                          }
+                          else
+                          {
+                              desc = Math.Sqrt(XdX * XdX - XX * dXdX);
+                              step = (-XdX + desc) / dXdX;
+                          }
+                          alpha = Math.Max(alpha, step);
+                          if (Math.Abs(SdS) < BlasLike.lm_eps)
+                          {
+                              step = Math.Sqrt(-SS / dSdS);
+                          }
+                          else
+                          {
+                              desc = Math.Sqrt(SdS * SdS - SS * dSdS);
+                              step = (-SdS + desc) / dSdS;
+                          }*/
+                  //  if (Math.Abs(XdS + SdX) < BlasLike.lm_eps)
+                    //    step = -XS / (XdS + SdX);
+                    //    if(step<0)
+                  step=1;
+                    
+                  //  else
+                    if((desc=square(XdS + SdX) - 4.0 * XS * dXdS)>0){
+                        desc = Math.Sqrt(desc);
+                        step = Math.Max((-XdS - SdX + desc) / 2.0 / dXdS, (-XdS - SdX - desc) / 2.0 / dXdS);
                     }
-                    else if ((desc >= -BlasLike.lm_eps) && (XdX < 0))
-                        alpha = Math.Min(alpha, ((-XdX) / dXdX));
+                    alpha = Math.Min(alpha, step);
                 }
-
-                if (dSdS <= BlasLike.lm_eps)
-                {
-                    if (SdS < -BlasLike.lm_eps)
-                        alpha = Math.Min(alpha, (-SS / (SdS + SdS)));
                 }
-                else
-                {
-                    if (Math.Abs(SdS) > BlasLike.lm_eps) desc = 1.0 - SS * dSdS / SdS / SdS;
-                    else desc = -SS * dSdS;
-                    if (desc > BlasLike.lm_eps * 8)
-                    {
-                        if (Math.Abs(SdS) > BlasLike.lm_eps) desc = Math.Sqrt(desc) * Math.Abs(SdS);
-                        else desc = Math.Sqrt(desc);
-                        if (SdS + desc < 0)
-                            alpha = Math.Min(alpha, ((-SdS - desc) / dSdS));
-                    }
-                    else if ((desc >= -BlasLike.lm_eps * 8) && (SdS < 0))
-                        alpha = Math.Min(alpha, ((-SdS) / dSdS));
-                }
-
-                if (Math.Abs(dXdS) <= BlasLike.lm_eps)
-                {
-                    if (dXS + XdS < -BlasLike.lm_eps)
-                        alpha = Math.Min(alpha, (-XS / (XdS + dXS)));
-                }
-                else
-                {
-                    if (Math.Abs(XdS + dXS) > BlasLike.lm_eps) desc = 1.0 - 4.0 * XS * dXdS / (XdS + dXS) / (XdS + dXS);
-                    else desc = -4 * XS * dXdS;
-                    if (desc > BlasLike.lm_eps * 8)
-                    {
-                        if (Math.Abs(XdS + dXS) > BlasLike.lm_eps) desc = Math.Sqrt(desc) * Math.Abs(XdS + dXS);
-                        else desc = Math.Sqrt(desc);
-                        if ((XdS + dXS + desc) > 0 && dXdS < 0)
-                            alpha = Math.Min(alpha, ((-XdS - dXS - desc) / 2.0 / dXdS));
-                        else if ((XdS + dXS + desc) / dXdS < 0)
-                            alpha = Math.Min(alpha, ((-XdS - dXS - desc) / 2.0 / dXdS));
-                    }
-                    else if ((desc >= -BlasLike.lm_eps * 8) && ((XdS + dXS) / dXdS < 0))
-                        alpha = Math.Min(alpha, ((-XdS - dXS) / 2.0 / dXdS));
-                }
-
                 ddx = alpha;
                 ddz = alpha;
                 dd = alpha;
