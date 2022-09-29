@@ -3816,8 +3816,8 @@ namespace Portfolio
             for (var i = 0; i < tlen; ++i)
             {
                 BlasLike.dcopy(n, DATA, tlen, A, M, i, i + m + n + (n + 1) * M);
-                BlasLike.dset(1, 1, A, M, 1 + n + i + (n + 1 + n + i) * M);//LOSS
-                BlasLike.dset(1, -1, A, M, 1 + n + i + (n + 1 + n + tlen + i) * M);//slack
+                BlasLike.dset(1, 1, A, M, m + n + i + (n + 1 + n + i) * M);//LOSS
+                BlasLike.dset(1, -1, A, M, m + n + i + (n + 1 + n + tlen + i) * M);//slack
             }
             for (var i = 0; i < m; ++i)
             {
