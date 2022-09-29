@@ -48,7 +48,7 @@ namespace InteriorPoint
         public hessmull h = null;
         BestResults keep;
         public bool copyKept = true;
-        public double alphamin = 1e-8;
+        public double alphamin = 1e-1;
         public double conv = BlasLike.lm_eps * 16;
         public double compConv = BlasLike.lm_eps * 16;
         int badindex = -1;
@@ -206,54 +206,28 @@ namespace InteriorPoint
             if (optMode == "SOCP")
             {
                 double alpha = 1.0, desc;
-                double lowest = 1e-2, lowest1 = 1 - lowest;
-                if(false){
-                for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                double lowest = 1e-1, lowest1 = 1 - lowest;
+                double XS = BlasLike.ddotvec(n, x, z);
+                double XdS = BlasLike.ddotvec(n, x, dz);
+                double SdX = BlasLike.ddotvec(n, z, dx);
+                double dXdS = BlasLike.ddotvec(n, dx, dz);
+                var step = 1.0;
+                var newXS = XS + (XdS + SdX) * step + dXdS * square(step);
+                if (Math.Abs(XdS + SdX) < BlasLike.lm_eps)
                 {
-                    var n = cone[icone];
-                    double XX = BlasLike.ddotvec(n, x, x, cstart, cstart);
-                    double XdX = BlasLike.ddotvec(n, x, dx, cstart, cstart);
-                    double dXdX = BlasLike.ddotvec(n, dx, dx, cstart, cstart);
-                    double SS = BlasLike.ddotvec(n, z, z, cstart, cstart);
-                    double SdS = BlasLike.ddotvec(n, z, dz, cstart, cstart);
-                    double dSdS = BlasLike.ddotvec(n, dz, dz, cstart, cstart);
-                    double XS = BlasLike.ddotvec(n, x, z, cstart, cstart);
-                    double XdS = BlasLike.ddotvec(n, x, dz, cstart, cstart);
-                    double SdX = BlasLike.ddotvec(n, z, dx, cstart, cstart);
-                    double dXdS = BlasLike.ddotvec(n, dx, dz, cstart, cstart);
-                    var step = 0.0;
-                    /*      if (Math.Abs(XdX) < BlasLike.lm_eps)
-                          {
-                              step = Math.Sqrt(-XX / dXdX);
-                          }
-                          else
-                          {
-                              desc = Math.Sqrt(XdX * XdX - XX * dXdX);
-                              step = (-XdX + desc) / dXdX;
-                          }
-                          alpha = Math.Max(alpha, step);
-                          if (Math.Abs(SdS) < BlasLike.lm_eps)
-                          {
-                              step = Math.Sqrt(-SS / dSdS);
-                          }
-                          else
-                          {
-                              desc = Math.Sqrt(SdS * SdS - SS * dSdS);
-                              step = (-SdS + desc) / dSdS;
-                          }*/
-                  //  if (Math.Abs(XdS + SdX) < BlasLike.lm_eps)
-                    //    step = -XS / (XdS + SdX);
-                    //    if(step<0)
-                  step=1;
-                    
-                  //  else
-                    if((desc=square(XdS + SdX) - 4.0 * XS * dXdS)>0){
-                        desc = Math.Sqrt(desc);
-                        step = Math.Max((-XdS - SdX + desc) / 2.0 / dXdS, (-XdS - SdX - desc) / 2.0 / dXdS);
-                    }
-                    alpha = Math.Min(alpha, step);
+                    step = -XS / dXdS;
+                    if (step > 0)
+                        step = Math.Sqrt(step);
                 }
+                else if ((desc = square(XdS + SdX) - 4.0 * XS * dXdS) > 0)
+                {
+                    desc = Math.Sqrt(desc);
+                    step = Math.Max((-XdS - SdX + desc) / 2.0 / dXdS, (-XdS - SdX - desc) / 2.0 / dXdS);
                 }
+                newXS = XS + (XdS + SdX) * step + dXdS * square(step);
+                alpha = Math.Min(alpha, step);
+
+
                 ddx = alpha;
                 ddz = alpha;
                 dd = alpha;
@@ -273,8 +247,8 @@ namespace InteriorPoint
                             if (dx[i] < 0) ddx = Math.Min(ddx, -aob(x[i], dx[i]));
                             if (dz[i] < 0) ddz = Math.Min(ddz, -aob(z[i], dz[i]));
                         }
-                        alpha = Math.Min(ddx, alpha);
-                        alpha = Math.Min(ddz, alpha);
+                        alpha = Math.Min(ddx, lowest1 * alpha);
+                        alpha = Math.Min(ddz, lowest1 * alpha);
                     }
                     else if (typecone[icone] == (int)conetype.SOCP)
                     {
@@ -411,7 +385,7 @@ namespace InteriorPoint
                     if (dkappa < 0) alpha = Math.Min(alpha, -aob(kappa, dkappa));
 
                 }
-                ddx = ddz = dd = (alpha * lowest1);
+                ddx = ddz = dd = alpha;
             }
 
             else if (optMode == "QP")
@@ -1719,7 +1693,7 @@ namespace InteriorPoint
                 gap1 = gap / denomTest(gap0);
                 comp1 = opt.Complementarity();
                 opt.keep.update(opt.x, opt.y, opt.z, opt.tau, opt.kappa, rp1, rd1, comp1);
-                if (rp1 <= opt.conv && rd1 <= opt.conv && comp1 <= opt.compConv * tau)
+                if (rp1 <= opt.conv && rd1 <= opt.conv && comp1 <= opt.compConv)
                     break;
                 if (condition > BlasLike.lm_reps)
                 {
@@ -1728,7 +1702,7 @@ namespace InteriorPoint
                     {
                         iup++;
                     }
-                    if (iup > 10) break;
+                       if (iup > 0) break;
                 }
                 if (comp1 < opt.compConv && opt.tau < 1e-5 * opt.kappa) break;
                 if (ir > opt.maxouter) break;
@@ -1797,10 +1771,12 @@ namespace InteriorPoint
                     {
                         var din = BlasLike.ddotvec(opt.cone[icc] - 1, opt.x, opt.x, conestart, conestart);
                         var dtop = square(opt.x[conestart + opt.cone[icc] - 1]);
-                        Debug.Assert(dtop >= din);
+                        if (dtop < din)
+                            opt.x[conestart + opt.cone[icc] - 1] = din + BlasLike.lm_eps;
                         din = BlasLike.ddotvec(opt.cone[icc] - 1, opt.z, opt.z, conestart, conestart);
                         dtop = square(opt.z[conestart + opt.cone[icc] - 1]);
-                        Debug.Assert(dtop >= din);
+                        if (dtop < din)
+                            opt.z[conestart + opt.cone[icc] - 1] = din + BlasLike.lm_eps;
                     }
                     conestart += opt.cone[icc];
                 }

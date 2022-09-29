@@ -3775,8 +3775,8 @@ namespace Portfolio
                 0,0,0,-1,0,0,0,0,0,  Link
                 0,0,0,0,0,0,0,0,0,
                 1,1,2,3,t1,t2,t3,t4,t5,//Portfolio quantities here downwards in this QP cone
-                1,1,2,3,t1,t2,t3,t4,t5,
-                1,1,2,3,t1,t2,t3,t4,t5,
+                1,0,2,3,t1,t2,t3,t4,t5,
+                1,0,0,3,t1,t2,t3,t4,t5,
                 0,0,0,0, 1,0,0,0,0,
                 0,0,0,0, 0,1,0,0,0,
                 0,0,0,0, 0,0,1,0,0,   Loss
@@ -3802,17 +3802,17 @@ namespace Portfolio
             b[1] = 7;//Alpha value
             BlasLike.dcopyvec(tlen, targetR, b, 0, n + m);
             c = new double[N];
-            c[n] = 1e5;//Strength of risk in utility
-            BlasLike.dsccopyvec(n, -10, alpha, c, 0, n + 1);
+            c[n] = 1;//Strength of risk in utility
+            BlasLike.dsccopyvec(n, -1e1, alpha, c, 0, n + 1);
             BlasLike.dsetvec(tlen, 1e1, c, n + 1 + n);
             A = new double[N * M];
-            //    Factorise.dmx_transpose(n,n,RootQ,RootQ);
+            
             for (var i = 0; i < n; ++i)
             {
                 BlasLike.dcopy(n, RootQ, n, A, M, i, i + m + (n + 1) * M);
                 BlasLike.dset(1, -1, A, M, m + i + i * M);//link
             }
-            //    Factorise.dmx_transpose(n,n,RootQ,RootQ);
+            
             for (var i = 0; i < tlen; ++i)
             {
                 BlasLike.dcopy(n, DATA, tlen, A, M, i, i + m + n + (n + 1) * M);
