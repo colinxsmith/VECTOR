@@ -1156,15 +1156,15 @@ namespace InteriorPoint
                 }
             }
         }
-        void PrimalResidual()
-        {
+        void PrimalResidual(double usetau=0.0)
+        {var tau=usetau==0.0?this.tau:usetau;
             AmultSparse(x, Ax);
             BlasLike.dcopyvec(m, Ax, rp);
             BlasLike.dnegvec(m, rp);
             BlasLike.daxpyvec(m, homogenous ? tau : 1, b, rp);
         }
-        void DualResudual()
-        {
+        void DualResudual(double usetau=0.0)
+        {var tau=usetau==0.0?this.tau:usetau;
             AmultSparseT(y, Ay);
             BlasLike.dcopyvec(n, Ay, rd);
             BlasLike.dnegvec(n, rd);
@@ -1414,9 +1414,10 @@ namespace InteriorPoint
                 regularise = M[0] * BlasLike.lm_eps;
             }
         }
-        double Complementarity()
+        double Complementarity(bool scale=false)
         {
-            return BlasLike.ddotvec(n, x, z) + (homogenous ? tau * kappa : 0);
+           if(scale) return BlasLike.ddotvec(n, x, z) + (homogenous ? tau * kappa : 0);
+           else return BlasLike.ddotvec(n, x, z)*tau*tau + (homogenous ? tau * kappa : 0);
         }
         void Mu()
         {
@@ -1485,7 +1486,25 @@ namespace InteriorPoint
             timebase = t;
             return timeaquired;
         }
+public void ConeReset(double correction=0){
+    if(correction==0)correction=BlasLike.lm_eps;
+                for (int icc = 0, conestart = 0; icc < numberOfCones; ++icc)
+                {
+                    if (typecone[icc] == (int)InteriorPoint.conetype.SOCP)
+                    {
+                        var din = BlasLike.ddotvec(cone[icc] - 1, x, x, conestart, conestart);
+                        var dtop = square(x[conestart + cone[icc] - 1]);
+                        if (dtop < din+correction)
+                            BlasLike.dscalvec(cone[icc]-1,1-correction,x,conestart);
+                        din = BlasLike.ddotvec(cone[icc] - 1, z, z, conestart, conestart);
+                        dtop = square(z[conestart + cone[icc] - 1]);
+                        if (dtop < din+correction)
+                            BlasLike.dscalvec(cone[icc]-1,1-correction,z,conestart);
+                    }
+                    conestart += cone[icc];
+                }
 
+}
         public int Opt(string mode = "QP", int[] cone = null, int[] typecone = null, bool homogenous = true, double[] L = null, int[] sign = null)
         {
             var opt = this;
@@ -1702,7 +1721,7 @@ namespace InteriorPoint
                     {
                         iup++;
                     }
-                       if (iup > 0) break;
+                //       if (iup > 5) break;
                 }
                 if (comp1 < opt.compConv && opt.tau < 1e-5 * opt.kappa) break;
                 if (ir > opt.maxouter) break;
@@ -1765,31 +1784,18 @@ namespace InteriorPoint
                 }
                 var t1 = 0.0;
 #if DEBUG
-                for (int icc = 0, conestart = 0; icc < opt.numberOfCones; ++icc)
-                {
-                    if (opt.typecone[icc] == (int)InteriorPoint.conetype.SOCP)
-                    {
-                        var din = BlasLike.ddotvec(opt.cone[icc] - 1, opt.x, opt.x, conestart, conestart);
-                        var dtop = square(opt.x[conestart + opt.cone[icc] - 1]);
-                        if (dtop < din)
-                            opt.x[conestart + opt.cone[icc] - 1] = din + BlasLike.lm_eps;
-                        din = BlasLike.ddotvec(opt.cone[icc] - 1, opt.z, opt.z, conestart, conestart);
-                        dtop = square(opt.z[conestart + opt.cone[icc] - 1]);
-                        if (dtop < din)
-                            opt.z[conestart + opt.cone[icc] - 1] = din + BlasLike.lm_eps;
-                    }
-                    conestart += opt.cone[icc];
-                }
+opt.ConeReset();
 #endif
                 if ((homogenous && (t1 = Math.Max(alpha1, alpha2)) < opt.alphamin))
                 {
-                    opt.alphamin /= 10.0;
+                //    opt.alphamin /= 10.0;
                     var scl = 1.0;
                     //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
                     //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.95 * opt.laststep, 1);
-                    BlasLike.dscalvec(opt.y.Length, scl / opt.tau, opt.y);
-                    BlasLike.dscalvec(opt.x.Length, scl / opt.tau, opt.x);
-                    BlasLike.dscalvec(opt.z.Length, scl / opt.tau, opt.z);
+                   // BlasLike.dscalvec(opt.y.Length, scl / opt.tau, opt.y);
+                  // BlasLike.dscalvec(opt.x.Length, scl / opt.tau, opt.x);
+                  //  BlasLike.dscalvec(opt.z.Length, scl / opt.tau, opt.z);
+                 if(condition<=BlasLike.lm_reps)   opt.ConeReset(BlasLike.lm_rooteps);
                     gap = opt.Primal() - opt.Dual();
                     if (gap < 0)
                     {
@@ -1886,6 +1892,13 @@ namespace InteriorPoint
             else if (opt.homogenous && infease) return 6;
             else
             {
+                Mu();
+                mu0 = opt.mu;
+                PrimalResidual(1.0);
+                DualResudual(1.0);
+                comp1=Complementarity(true);
+                rp1=lInfinity(rp)/ denomTest(rp0);
+                rd1=lInfinity(rd)/ denomTest(rd0);
                 ColourConsole.WriteInfo($"{ir} outer iterations out of {opt.maxouter}");
                 ColourConsole.WriteInfo($"{innerIteration} iterations out of {opt.maxinner}");
                 ColourConsole.WriteInfo($"Relative Primal Residual\t\t {rp1}");
