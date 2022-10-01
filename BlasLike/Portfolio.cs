@@ -3688,6 +3688,13 @@ namespace Portfolio
         }
         public static int SOCP_LOSS_RISK(int n, int tlen, double[] DATA)
         {
+            var m = 2;
+            var portfolioConstraints = new double[n * m];
+            for (var i = 0; i < n; ++i)
+            {
+                BlasLike.dset(1, 1, portfolioConstraints, m, i * m);
+                BlasLike.dset(1, i + 1, portfolioConstraints, m, 1 + i * m);
+            }
             var targetR = (double[])new double[tlen];
             var x = new double[n];
             var alpha = new double[n];
@@ -3727,22 +3734,28 @@ namespace Portfolio
             Debug.Assert(Math.Abs(varr - vartest) < BlasLike.lm_eps);
             //Min variance
             int N = n + 1 + n;
-            int M = n + 1;
+            int M = n + m;
             var b = new double[M];
             b[0] = 1;
+            b[1]=7;
             var c = new double[N];
             c[n] = 1;
             var A = new double[N * M];
             //    Factorise.dmx_transpose(n,n,RootQ,RootQ);
             for (var i = 0; i < n; ++i)
             {
-                BlasLike.dcopy(n, RootQ, n, A, M, i, i + 1 + (n + 1) * M);
+                BlasLike.dcopy(n, RootQ, n, A, M, i, i + m + (n + 1) * M);
             }
             //    Factorise.dmx_transpose(n,n,RootQ,RootQ);
+
+            for (var i = 0; i < m; ++i)
+            {
+                BlasLike.dcopy(n, portfolioConstraints, m, A, M, i, i + (n + 1) * M);
+            }
             for (var i = 0; i < n; ++i)
             {
-                BlasLike.dset(1, 1, A, M, (n + 1 + i) * M);//budget
-                BlasLike.dset(1, -1, A, M, 1 + i + i * M);//link
+            //    BlasLike.dset(1, 1, A, M, (n + m + i) * M);//budget
+                BlasLike.dset(1, -1, A, M, m + i + i * M);//link
             }
             int[] cone = { n + 1, n };
             int[] typecone = { (int)InteriorPoint.conetype.SOCP, (int)InteriorPoint.conetype.QP };
@@ -3760,6 +3773,8 @@ namespace Portfolio
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Minimum variance[/yellow]\t[green]{x[n] * x[n]}[/green]\tCheck [cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Minimum risk[/yellow]\t\t[green]{x[n]}[/green]\tCheck [cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
             Factorise.dmxmulv(M, N, A, x, ccc);
+            var cccc=new double[m];
+            Factorise.dmxmulv(m, n, portfolioConstraints, x, cccc,0,n+1);
             /*        {
                         0,-1,0,0,
                         0,0,-1,0,
@@ -3789,13 +3804,7 @@ namespace Portfolio
                 0,0,0,0, 0,0,0,-1,0,
                 0,0,0,0, 0,0,0,0,-1,
             }*/
-            var m = 2;
-            var portfolioConstraints = new double[n * m];
-            for (var i = 0; i < n; ++i)
-            {
-                BlasLike.dset(1, 1, portfolioConstraints, m, i * m);
-                BlasLike.dset(1, i + 1, portfolioConstraints, m, 1 + i * m);
-            }
+            return back;
             N = n + 1 + n + tlen + tlen;
             M = n + m + tlen;
             b = new double[M];
@@ -3856,7 +3865,7 @@ var nextFixRisk=0.025;//x[n];//Math.Sqrt(0.0008);//x[n];
             ColourConsole.WriteEmbeddedColourLine($"[red]LOSS check[/red] [green]{LOSSestimate}[/green] [cyan]{LOSS1}[/cyan]");
             ccc = new double[M];
             Factorise.dmxmulv(M, N, A, x, ccc);
-            var cccc = new double[m];
+            cccc = new double[m];
             Factorise.dmxmulv(m, n, portfolioConstraints, x, cccc, 0, n + 1);
 
             // Now fix risk
