@@ -3754,7 +3754,6 @@ namespace Portfolio
             }
             for (var i = 0; i < n; ++i)
             {
-            //    BlasLike.dset(1, 1, A, M, (n + m + i) * M);//budget
                 BlasLike.dset(1, -1, A, M, m + i + i * M);//link
             }
             int[] cone = { n + 1, n };
