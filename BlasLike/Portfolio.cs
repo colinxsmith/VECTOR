@@ -3768,9 +3768,10 @@ namespace Portfolio
             var t1 = BlasLike.ddotvec(n, x, xx, n + 1);
             Factorise.dmxmulv(n, n, RootQ, x, xx, 0, n + 1);
             var t2 = BlasLike.ddotvec(n, xx, xx);
-
+var LOSSstart = LOSS(n, x, DATA, targetR, null, n + 1);
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Minimum variance[/yellow]\t[green]{x[n] * x[n]}[/green]\tCheck [cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Minimum risk[/yellow]\t\t[green]{x[n]}[/green]\tCheck [cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
+            ColourConsole.WriteEmbeddedColourLine($"[blue]Loss for minimum risk[/blue][green] {LOSSstart}[/green]");
             Factorise.dmxmulv(M, N, A, x, ccc);
             var cccc=new double[m];
             Factorise.dmxmulv(m, n, portfolioConstraints, x, cccc,0,n+1);
@@ -3803,7 +3804,7 @@ namespace Portfolio
                 0,0,0,0, 0,0,0,-1,0,
                 0,0,0,0, 0,0,0,0,-1,
             }*/
-            return back;
+     //        return back;
             N = n + 1 + n + tlen + tlen;
             M = n + m + tlen;
             b = new double[M];
@@ -3852,7 +3853,7 @@ namespace Portfolio
             var xcheck = BlasLike.ddotvec(n, xtest, xtest);
             ColourConsole.WriteEmbeddedColourLine($"[magenta]X transform check[/magenta] [red]{xcheck}[/red]");
             t2 = BlasLike.ddotvec(n, xx, xx);
-var nextFixRisk=0.025;//x[n];//Math.Sqrt(0.0008);//x[n];
+var nextFixRisk=0.028;//x[n];//Math.Sqrt(0.0008);//x[n];
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Variance[/yellow]\t[green]{x[n] * x[n]}[/green]\tCheck [cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Risk[/yellow]\t\t[green]{x[n]}[/green]\tCheck [cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
             Factorise.dmxmulv(M, N, A, x, ccc);
@@ -3866,7 +3867,7 @@ var nextFixRisk=0.025;//x[n];//Math.Sqrt(0.0008);//x[n];
             Factorise.dmxmulv(M, N, A, x, ccc);
             cccc = new double[m];
             Factorise.dmxmulv(m, n, portfolioConstraints, x, cccc, 0, n + 1);
-
+//return back;
             // Now fix risk
 
             N = n + 1 + n + tlen + tlen+1;
@@ -3877,7 +3878,7 @@ var nextFixRisk=0.025;//x[n];//Math.Sqrt(0.0008);//x[n];
             BlasLike.dcopyvec(tlen, targetR, b, 0, n + m);
             b[n+m+tlen]=nextFixRisk;
             c = new double[N];
-            var utilityFac=1.0;
+            var utilityFac=1e0;
             BlasLike.dsccopyvec(n, -utilityFac, alpha, c, 0, n + 1);
             BlasLike.dsetvec(tlen, utilityFac, c, n + 1 + n);
             A = new double[N * M];
@@ -3892,15 +3893,15 @@ var nextFixRisk=0.025;//x[n];//Math.Sqrt(0.0008);//x[n];
             {
                 BlasLike.dcopy(n, DATA, tlen, A, M, i, m + n + i + (n + 1) * M);
                 BlasLike.dset(1, 1, A, M, m + n + i + (n + 1 + n + i) * M);//LOSS
-                BlasLike.dset(1, -1, A, M, m + n + i + (n + 1 + n + tlen + i) * M);//slack
+                BlasLike.dset(1, -1, A, M, m + n + i + (n + 1 + n + tlen + i) * M);//slack for loss varaibles >0
             }
-            BlasLike.dset(1,1,A,M,m+n+tlen+(n + 1 + n + tlen + tlen) * M);//slack for risk constraint
+            BlasLike.dset(1,1,A,M,m+n+tlen+(n + 1 + n + tlen + tlen) * M);//slack for risk <= constraint
             for (var i = 0; i < m; ++i)
             {
                 BlasLike.dcopy(n, portfolioConstraints, m, A, M, i, i + (n + 1) * M);
             }
             BlasLike.dset(1,1,A,M,m+n+tlen+n*M);
-            Array.Resize(ref cone, +3);
+            Array.Resize(ref cone, 3);
             Array.Resize(ref typecone, 3);
             cone[0] = n + 1;
             cone[1] = n + tlen;
