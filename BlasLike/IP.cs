@@ -1517,8 +1517,8 @@ public void ConeReset(double correction=0){
             opt.optMode = mode;
             if (mode == "SOCP")
             {
-                opt.conv = (Math.Floor(1e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
-                opt.compConv = (Math.Floor(1e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.conv = (Math.Floor(1e-9 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.compConv = (Math.Floor(1e-9 / BlasLike.lm_eps)) * BlasLike.lm_eps;
                 opt.cone = cone;
                 opt.typecone = typecone;
                 opt.numberOfCones = cone.Length;
@@ -1725,7 +1725,7 @@ public void ConeReset(double correction=0){
                 }
                 if (comp1 < opt.compConv && opt.tau < 1e-5 * opt.kappa) break;
                 if (ir > opt.maxouter) break;
-                if (innerIteration > opt.maxinner)
+                if (innerIteration > opt.maxinner && opt.tau!=1.0)
                 {
                     ir++; innerIteration = 0;
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
@@ -1736,7 +1736,7 @@ public void ConeReset(double correction=0){
                     rp0 = denomTest(lInfinity(opt.rp));
                     rd0 = denomTest(lInfinity(opt.rd));
                     gap0 = denomTest(opt.Gap());
-                };
+                }
                 if (innerIteration > 2 && opt.optMode == "SOCP")
                 {
                     BlasLike.dsubvec(n, opt.xbar, opt.zbar, diff);
@@ -1790,6 +1790,10 @@ opt.ConeReset();
                 {
                 //    opt.alphamin /= 10.0;
                     var scl = 1.0;
+                    BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
+                    BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
+                    BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
+                    opt.kappa /= opt.tau;
                     //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
                     //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.95 * opt.laststep, 1);
                    // BlasLike.dscalvec(opt.y.Length, scl / opt.tau, opt.y);
@@ -1888,8 +1892,8 @@ opt.ConeReset();
                 }
             }
 
-            if (innerIteration >= opt.maxinner || ir >= opt.maxouter) return -100;
-            else if (opt.homogenous && infease) return 6;
+         /*   if (innerIteration >= opt.maxinner || ir >= opt.maxouter) return -100;
+            else*/ if (opt.homogenous && infease) return 6;
             else
             {
                 Mu();
