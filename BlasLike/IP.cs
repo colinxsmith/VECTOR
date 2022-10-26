@@ -1507,6 +1507,7 @@ public void ConeReset(double correction=0){
 }
         public int Opt(string mode = "QP", int[] cone = null, int[] typecone = null, bool homogenous = true, double[] L = null, int[] sign = null)
         {
+            var rd1ONE=false;
             var opt = this;
             this.sign = sign;
             double[] bl = null;
@@ -1691,7 +1692,7 @@ public void ConeReset(double correction=0){
             rp0 = denomTest(rp0);
             rd0 = denomTest(rd0);
             var rp1 = rp0;
-            var rd1 = rd0;
+            var rd1 = -57.9;
             var gap1 = gap0;
             var comp0 = opt.Complementarity();
             opt.keep.set(opt.x, opt.y, opt.z, opt.tau, opt.kappa, rp0, rd0, comp0, Math.Max(Math.Max(rp0, rd0), comp0));
@@ -1705,8 +1706,10 @@ public void ConeReset(double correction=0){
             var iup = 0;
             while (true)
             {
+                rd1ONE=rd1==1;
                 rp1 = lInfinity(opt.rp) / denomTest(rp0);
                 rd1 = lInfinity(opt.rd) / denomTest(rd0);
+                if(rd1ONE&&rd1==1)break;
                 ColourConsole.WriteEmbeddedColourLine($"[darkgreen]{innerIteration,4}[/darkgreen] [magenta]rp1 {rp1:E10}[/magenta]\t[cyan]rd1 {rd1:E10}[/cyan]");
                 gap = opt.Gap();
                 gap1 = gap / denomTest(gap0);
