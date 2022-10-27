@@ -61,7 +61,7 @@ namespace InteriorPoint
         bool homogenous = false;
         double mu;
         public int maxouter = 1000;
-        public int maxinner = 100;
+        public int maxinner = 30;
         int n;
         int m;
         double[] A = null;
@@ -1156,15 +1156,17 @@ namespace InteriorPoint
                 }
             }
         }
-        void PrimalResidual(double usetau=0.0)
-        {var tau=usetau==0.0?this.tau:usetau;
+        void PrimalResidual(double usetau = 0.0)
+        {
+            var tau = usetau == 0.0 ? this.tau : usetau;
             AmultSparse(x, Ax);
             BlasLike.dcopyvec(m, Ax, rp);
             BlasLike.dnegvec(m, rp);
             BlasLike.daxpyvec(m, homogenous ? tau : 1, b, rp);
         }
-        void DualResudual(double usetau=0.0)
-        {var tau=usetau==0.0?this.tau:usetau;
+        void DualResudual(double usetau = 0.0)
+        {
+            var tau = usetau == 0.0 ? this.tau : usetau;
             AmultSparseT(y, Ay);
             BlasLike.dcopyvec(n, Ay, rd);
             BlasLike.dnegvec(n, rd);
@@ -1414,10 +1416,10 @@ namespace InteriorPoint
                 regularise = M[0] * BlasLike.lm_eps;
             }
         }
-        double Complementarity(bool scale=false)
+        double Complementarity(bool scale = false)
         {
-           if(scale) return BlasLike.ddotvec(n, x, z) + (homogenous ? tau * kappa : 0);
-           else return BlasLike.ddotvec(n, x, z)*tau*tau + (homogenous ? tau * kappa : 0);
+            if (scale) return BlasLike.ddotvec(n, x, z) + (homogenous ? tau * kappa : 0);
+            else return BlasLike.ddotvec(n, x, z) * tau * tau + (homogenous ? tau * kappa : 0);
         }
         void Mu()
         {
@@ -1486,28 +1488,29 @@ namespace InteriorPoint
             timebase = t;
             return timeaquired;
         }
-public void ConeReset(double correction=0){
-    if(correction==0)correction=BlasLike.lm_eps;
-                for (int icc = 0, conestart = 0; icc < numberOfCones; ++icc)
+        public void ConeReset(double correction = 0)
+        {
+            if (correction == 0) correction = BlasLike.lm_eps;
+            for (int icc = 0, conestart = 0; icc < numberOfCones; ++icc)
+            {
+                if (typecone[icc] == (int)InteriorPoint.conetype.SOCP)
                 {
-                    if (typecone[icc] == (int)InteriorPoint.conetype.SOCP)
-                    {
-                        var din = BlasLike.ddotvec(cone[icc] - 1, x, x, conestart, conestart);
-                        var dtop = square(x[conestart + cone[icc] - 1]);
-                        if (dtop < din+correction)
-                            BlasLike.dscalvec(cone[icc]-1,1-correction,x,conestart);
-                        din = BlasLike.ddotvec(cone[icc] - 1, z, z, conestart, conestart);
-                        dtop = square(z[conestart + cone[icc] - 1]);
-                        if (dtop < din+correction)
-                            BlasLike.dscalvec(cone[icc]-1,1-correction,z,conestart);
-                    }
-                    conestart += cone[icc];
+                    var din = BlasLike.ddotvec(cone[icc] - 1, x, x, conestart, conestart);
+                    var dtop = square(x[conestart + cone[icc] - 1]);
+                    if (dtop < din + correction)
+                        BlasLike.dscalvec(cone[icc] - 1, 1 - correction, x, conestart);
+                    din = BlasLike.ddotvec(cone[icc] - 1, z, z, conestart, conestart);
+                    dtop = square(z[conestart + cone[icc] - 1]);
+                    if (dtop < din + correction)
+                        BlasLike.dscalvec(cone[icc] - 1, 1 - correction, z, conestart);
                 }
+                conestart += cone[icc];
+            }
 
-}
+        }
         public int Opt(string mode = "QP", int[] cone = null, int[] typecone = null, bool homogenous = true, double[] L = null, int[] sign = null)
         {
-            var rd1ONE=false;
+            var rd1ONE = false;
             var opt = this;
             this.sign = sign;
             double[] bl = null;
@@ -1691,7 +1694,7 @@ public void ConeReset(double correction=0){
             var gap0 = denomTest(opt.Gap());
             rp0 = denomTest(rp0);
             rd0 = denomTest(rd0);
-            var rp1 = rp0;
+            var rp1 = -22.9;
             var rd1 = -57.9;
             var gap1 = gap0;
             var comp0 = opt.Complementarity();
@@ -1706,10 +1709,11 @@ public void ConeReset(double correction=0){
             var iup = 0;
             while (true)
             {
-                rd1ONE=rd1==1;
+                rd1ONE = (rd1 >= 1 || rp1 >= 1 || Double.IsNaN(rd1) || Double.IsNaN(rp1));
                 rp1 = lInfinity(opt.rp) / denomTest(rp0);
                 rd1 = lInfinity(opt.rd) / denomTest(rd0);
-                if(rd1ONE&&rd1==1)break;
+                if (rd1ONE && (rd1 >= 1 || rp1 >= 1 || Double.IsNaN(rd1) || Double.IsNaN(rp1)))
+                    break;
                 ColourConsole.WriteEmbeddedColourLine($"[darkgreen]{innerIteration,4}[/darkgreen] [magenta]rp1 {rp1:E10}[/magenta]\t[cyan]rd1 {rd1:E10}[/cyan]");
                 gap = opt.Gap();
                 gap1 = gap / denomTest(gap0);
@@ -1724,11 +1728,12 @@ public void ConeReset(double correction=0){
                     {
                         iup++;
                     }
-                //       if (iup > 5) break;
+                    if (iup > 100)
+                        break;
                 }
                 if (comp1 < opt.compConv && opt.tau < 1e-5 * opt.kappa) break;
                 if (ir > opt.maxouter) break;
-                if (innerIteration > opt.maxinner && opt.tau!=1.0)
+                if (innerIteration > opt.maxinner && opt.tau != 1.0)
                 {
                     ir++; innerIteration = 0;
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
@@ -1787,11 +1792,13 @@ public void ConeReset(double correction=0){
                 }
                 var t1 = 0.0;
 #if DEBUG
-opt.ConeReset();
+                opt.ConeReset();
 #endif
                 if ((homogenous && (t1 = Math.Max(alpha1, alpha2)) < opt.alphamin))
                 {
-                //    opt.alphamin /= 10.0;
+                    if (alpha1 < BlasLike.lm_rooteps && alpha2 < BlasLike.lm_rooteps)
+                        break;
+                    //    opt.alphamin /= 10.0;
                     var scl = 1.0;
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
@@ -1799,10 +1806,10 @@ opt.ConeReset();
                     opt.kappa /= opt.tau;
                     //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
                     //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.95 * opt.laststep, 1);
-                   // BlasLike.dscalvec(opt.y.Length, scl / opt.tau, opt.y);
-                  // BlasLike.dscalvec(opt.x.Length, scl / opt.tau, opt.x);
-                  //  BlasLike.dscalvec(opt.z.Length, scl / opt.tau, opt.z);
-                 if(condition<=BlasLike.lm_reps)   opt.ConeReset(BlasLike.lm_rooteps);
+                    // BlasLike.dscalvec(opt.y.Length, scl / opt.tau, opt.y);
+                    // BlasLike.dscalvec(opt.x.Length, scl / opt.tau, opt.x);
+                    //  BlasLike.dscalvec(opt.z.Length, scl / opt.tau, opt.z);
+                    if (condition <= BlasLike.lm_reps) opt.ConeReset(BlasLike.lm_rooteps);
                     gap = opt.Primal() - opt.Dual();
                     if (gap < 0)
                     {
@@ -1895,25 +1902,27 @@ opt.ConeReset();
                 }
             }
 
-         /*   if (innerIteration >= opt.maxinner || ir >= opt.maxouter) return -100;
-            else*/ if (opt.homogenous && infease) return 6;
+            /*   if (innerIteration >= opt.maxinner || ir >= opt.maxouter) return -100;
+               else*/
+            if (opt.homogenous && infease) return 6;
             else
             {
                 Mu();
                 mu0 = opt.mu;
                 PrimalResidual(1.0);
                 DualResudual(1.0);
-                comp1=Complementarity(true);
-                rp1=lInfinity(rp)/ denomTest(rp0);
-                rd1=lInfinity(rd)/ denomTest(rd0);
+                comp1 = Complementarity(true);
+                rp1 = lInfinity(rp) / denomTest(rp0);
+                rd1 = lInfinity(rd) / denomTest(rd0);
                 ColourConsole.WriteInfo($"{ir} outer iterations out of {opt.maxouter}");
                 ColourConsole.WriteInfo($"{innerIteration} iterations out of {opt.maxinner}");
-                ColourConsole.WriteInfo($"Relative Primal Residual\t\t {rp1}");
-                ColourConsole.WriteInfo($"Relative Dual Residual\t\t\t {rd1}");
+                ColourConsole.WriteInfo($"Relative Primal\tResidual\t\t {rp1}");
+                ColourConsole.WriteInfo($"Relative Dual\tResidual\t\t {rd1}");
+
                 ColourConsole.WriteInfo($"Relative Complementarity\t\t {comp1}");
-                ColourConsole.WriteInfo($"Primal Utility:\t\t{opt.Primal()}");
+                ColourConsole.WriteEmbeddedColourLine($"[green]Primal Utility:[/green]\t\t\t\t [cyan]{opt.Primal()}[/cyan]");
                 ActiveSet.Optimise.printV("x", opt.x);
-                ColourConsole.WriteInfo($"Dual Utility:\t\t{opt.Dual() + zL}");
+                ColourConsole.WriteEmbeddedColourLine($"[green]Dual Utility:[/green]\t\t\t\t [cyan]{opt.Dual() + zL}[/cyan]");
                 ActiveSet.Optimise.printV("y", opt.y);
                 ActiveSet.Optimise.printV("z", opt.z);
                 ColourConsole.WriteInfo($"Complementarity:\t{BlasLike.ddotvec(opt.n, opt.x, opt.z) - zL}");

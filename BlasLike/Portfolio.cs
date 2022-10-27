@@ -3689,6 +3689,7 @@ namespace Portfolio
         public static int SOCP_LOSS_RISK(int n, int tlen, double[] DATA)
         {
             var m = 2;
+            var cFactor=1e-4;
             var portfolioConstraints = new double[n * m];
             for (var i = 0; i < n; ++i)
             {
@@ -3756,6 +3757,10 @@ namespace Portfolio
             {
                 BlasLike.dset(1, -1, A, M, m + i + i * M);//link
             }
+            var ccmax=0.0;
+            var ccmin=0.0;
+            BlasLike.dxminmax(c.Length,c,1,ref ccmax,ref ccmin);
+            BlasLike.dscalvec(c.Length,cFactor,c);
             int[] cone = { n + 1, n };
             int[] typecone = { (int)InteriorPoint.conetype.SOCP, (int)InteriorPoint.conetype.QP };
             x = new double[N];
@@ -3838,6 +3843,8 @@ var LOSSstart = LOSS(n, x, DATA, targetR, null, n + 1);
             cone[0] = n + 1;
             cone[1] = n + tlen;
             cone[2] = tlen;
+            BlasLike.dxminmax(c.Length,c,1,ref ccmax,ref ccmin);
+            BlasLike.dscalvec(c.Length,cFactor,c);
             typecone[2] = (int)InteriorPoint.conetype.QP;
             x = new double[N];
             y = new double[M];
@@ -3853,7 +3860,7 @@ var LOSSstart = LOSS(n, x, DATA, targetR, null, n + 1);
             var xcheck = BlasLike.ddotvec(n, xtest, xtest);
             ColourConsole.WriteEmbeddedColourLine($"[magenta]X transform check[/magenta] [red]{xcheck}[/red]");
             t2 = BlasLike.ddotvec(n, xx, xx);
-var nextFixRisk=0.027;//x[n];//Math.Sqrt(0.0008);//x[n];
+var nextFixRisk=0.010102;//x[n];//Math.Sqrt(0.0008);//x[n];
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Variance[/yellow]\t[green]{x[n] * x[n]}[/green]\tCheck [cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Risk[/yellow]\t\t[green]{x[n]}[/green]\tCheck [cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
             Factorise.dmxmulv(M, N, A, x, ccc);
@@ -3910,6 +3917,8 @@ var nextFixRisk=0.027;//x[n];//Math.Sqrt(0.0008);//x[n];
             typecone[2] = (int)InteriorPoint.conetype.QP;
             x = new double[N];
             y = new double[M];
+            BlasLike.dxminmax(c.Length,c,1,ref ccmax,ref ccmin);
+            BlasLike.dscalvec(c.Length,cFactor,c);
             opt1 = new InteriorPoint.Optimise(N, M, x, A, b, c);
             back = opt1.Opt("SOCP", cone, typecone, true);
             ccc = new double[M];
