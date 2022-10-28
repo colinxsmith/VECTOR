@@ -3689,7 +3689,7 @@ namespace Portfolio
         public static int SOCP_LOSS_RISK(int n, int tlen, double[] DATA)
         {
             var m = 2;
-            var cFactor=1e-4;
+            var cFactor=1e-5;
             var portfolioConstraints = new double[n * m];
             for (var i = 0; i < n; ++i)
             {
@@ -3760,6 +3760,7 @@ namespace Portfolio
             var ccmax=0.0;
             var ccmin=0.0;
             BlasLike.dxminmax(c.Length,c,1,ref ccmax,ref ccmin);
+       //    cFactor= SOCPcheck(A,c,b);
             BlasLike.dscalvec(c.Length,cFactor,c);
             int[] cone = { n + 1, n };
             int[] typecone = { (int)InteriorPoint.conetype.SOCP, (int)InteriorPoint.conetype.QP };
@@ -3844,6 +3845,7 @@ var LOSSstart = LOSS(n, x, DATA, targetR, null, n + 1);
             cone[1] = n + tlen;
             cone[2] = tlen;
             BlasLike.dxminmax(c.Length,c,1,ref ccmax,ref ccmin);
+        //  cFactor= SOCPcheck(A,c,b);
             BlasLike.dscalvec(c.Length,cFactor,c);
             typecone[2] = (int)InteriorPoint.conetype.QP;
             x = new double[N];
@@ -3860,7 +3862,7 @@ var LOSSstart = LOSS(n, x, DATA, targetR, null, n + 1);
             var xcheck = BlasLike.ddotvec(n, xtest, xtest);
             ColourConsole.WriteEmbeddedColourLine($"[magenta]X transform check[/magenta] [red]{xcheck}[/red]");
             t2 = BlasLike.ddotvec(n, xx, xx);
-var nextFixRisk=0.010102;//x[n];//Math.Sqrt(0.0008);//x[n];
+var nextFixRisk=0.0049;//0.010102;//x[n];//Math.Sqrt(0.0008);//x[n];
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Variance[/yellow]\t[green]{x[n] * x[n]}[/green]\tCheck [cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Risk[/yellow]\t\t[green]{x[n]}[/green]\tCheck [cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
             Factorise.dmxmulv(M, N, A, x, ccc);
@@ -3918,6 +3920,7 @@ var nextFixRisk=0.010102;//x[n];//Math.Sqrt(0.0008);//x[n];
             x = new double[N];
             y = new double[M];
             BlasLike.dxminmax(c.Length,c,1,ref ccmax,ref ccmin);
+     //   cFactor=    SOCPcheck(A,c,b);
             BlasLike.dscalvec(c.Length,cFactor,c);
             opt1 = new InteriorPoint.Optimise(N, M, x, A, b, c);
             back = opt1.Opt("SOCP", cone, typecone, true);
@@ -3949,6 +3952,33 @@ var nextFixRisk=0.010102;//x[n];//Math.Sqrt(0.0008);//x[n];
             cccc = new double[m];
             Factorise.dmxmulv(m, n, portfolioConstraints, x, cccc, 0, n + 1);
             return back;
+        }
+        public static double SOCPcheck(double[] A,double[] c,double[] b ){
+            var cFactor=1.0;
+            var M=b.Length;
+            var N=c.Length;
+            var x=new double[N];
+            var z=new double[N];
+            var y=new double[M];
+            var Ax=new double[M];
+            var yA=new double[N];
+            BlasLike.dsetvec(N,1,x);
+            BlasLike.dsetvec(N,1,z);
+            BlasLike.dsetvec(M,1,y);
+Factorise.dmxmulv(M,N,A,x,Ax);
+BlasLike.dsubvec(M,Ax,b,Ax);
+var AxM=0.0;
+var Axm=0.0;
+            BlasLike.dxminmax(M,Ax,1,ref AxM,ref Axm);
+Factorise.dmxmulv(N, M, A, y,yA,0,0,0,true);
+BlasLike.dscalvec(N,cFactor,yA);
+BlasLike.daxpyvec(N,-cFactor,c,yA);
+BlasLike.daxpyvec(N,-cFactor,z,yA);
+var AyM=0.0;
+var Aym=0.0;
+            BlasLike.dxminmax(N,yA,1,ref AyM,ref Aym);
+            var pOverd=(AxM-Axm)/(AyM-Aym);
+            return pOverd;
         }
         ///<summary>Portfolio Optimisation with BUY/SELL utility and LONG/SHORT constraints
         ///If a variable's upper and lower bounds are equal, this variable is re-ordered out of the optimisaion
