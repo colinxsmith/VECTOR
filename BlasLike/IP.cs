@@ -61,7 +61,7 @@ namespace InteriorPoint
         bool homogenous = false;
         double mu;
         public int maxouter = 1000;
-        public int maxinner = 30;
+        public int maxinner = 40;
         int n;
         int m;
         double[] A = null;
@@ -1712,8 +1712,8 @@ namespace InteriorPoint
                 rd1ONE = (rd1 >= 1 || rp1 >= 1 || Double.IsNaN(rd1) || Double.IsNaN(rp1));
                 rp1 = lInfinity(opt.rp) / denomTest(rp0);
                 rd1 = lInfinity(opt.rd) / denomTest(rd0);
-                if (rd1ONE && (rd1 >= 1 || rp1 >= 1 || Double.IsNaN(rd1) || Double.IsNaN(rp1)))
-                    break;
+          //      if (rd1ONE && (rd1 >= 1 || rp1 >= 1 || Double.IsNaN(rd1) || Double.IsNaN(rp1)))
+          //          break;
                 ColourConsole.WriteEmbeddedColourLine($"[darkgreen]{innerIteration,4}[/darkgreen] [magenta]rp1 {rp1:E10}[/magenta]\t[cyan]rd1 {rd1:E10}[/cyan]");
                 gap = opt.Gap();
                 gap1 = gap / denomTest(gap0);
@@ -1728,11 +1728,12 @@ namespace InteriorPoint
                     {
                         iup++;
                     }
-                    if (iup > 100)
-                        break;
+    //                if (iup > 100)
+    //                    break;
                 }
-                if (comp1 < opt.compConv && opt.tau < 1e-5 * opt.kappa) break;
-                if (ir > opt.maxouter) break;
+             //   if (comp1 < opt.compConv && opt.tau < 1e-5 * opt.kappa) break;
+                if (ir > opt.maxouter) 
+                break;
                 if (innerIteration > opt.maxinner && opt.tau != 1.0)
                 {
                     ir++; innerIteration = 0;
@@ -1804,12 +1805,13 @@ namespace InteriorPoint
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
                     opt.kappa /= opt.tau;
-                    //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
-                    //    opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.95 * opt.laststep, 1);
-                    // BlasLike.dscalvec(opt.y.Length, scl / opt.tau, opt.y);
-                    // BlasLike.dscalvec(opt.x.Length, scl / opt.tau, opt.x);
-                    //  BlasLike.dscalvec(opt.z.Length, scl / opt.tau, opt.z);
-                    if (condition <= BlasLike.lm_reps) opt.ConeReset(BlasLike.lm_rooteps);
+                    if(false){
+                        opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
+                        opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.95 * opt.laststep, 1);
+                     BlasLike.dscalvec(opt.y.Length, scl / opt.tau, opt.y);
+                     BlasLike.dscalvec(opt.x.Length, scl / opt.tau, opt.x);
+                      BlasLike.dscalvec(opt.z.Length, scl / opt.tau, opt.z);}
+                    if (condition <= BlasLike.lm_reps) opt.ConeReset(1e-2);
                     gap = opt.Primal() - opt.Dual();
                     if (gap < 0)
                     {
@@ -1844,10 +1846,11 @@ namespace InteriorPoint
                 {
                     var mult = rp1 / rd1;
                     if (mult < 1) mult = 1.0 / mult;
+                    if(mult>2)
                     for (int ii = 0, id = 0; ii < m; ++ii, id += ii)
                     {
                         //if (opt.M[id + ii] < opt.regularise)
-                        opt.M[id + ii] += BlasLike.lm_eps;
+                        opt.M[id + ii] += BlasLike.lm_rooteps;
                     }
                 }
                 gap = opt.Primal() - opt.Dual();
