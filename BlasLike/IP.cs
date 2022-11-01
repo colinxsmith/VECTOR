@@ -1517,7 +1517,7 @@ namespace InteriorPoint
             double[] QL = null;
             double zL = 0;
             ///<summary>stepReduce is the factor by which the step length to the boundary is reduced</summary>
-            var stepReduce = 0.99;
+            var stepReduce = 1-BlasLike.lm_eps16;
             opt.optMode = mode;
             if (mode == "SOCP")
             {
@@ -1712,8 +1712,8 @@ namespace InteriorPoint
                 rd1ONE = (rd1 >= 1 || rp1 >= 1 || Double.IsNaN(rd1) || Double.IsNaN(rp1));
                 rp1 = lInfinity(opt.rp) / denomTest(rp0);
                 rd1 = lInfinity(opt.rd) / denomTest(rd0);
-          //      if (rd1ONE && (rd1 >= 1 || rp1 >= 1 || Double.IsNaN(rd1) || Double.IsNaN(rp1)))
-          //          break;
+                //      if (rd1ONE && (rd1 >= 1 || rp1 >= 1 || Double.IsNaN(rd1) || Double.IsNaN(rp1)))
+                //          break;
                 ColourConsole.WriteEmbeddedColourLine($"[darkgreen]{innerIteration,4}[/darkgreen] [magenta]rp1 {rp1:E10}[/magenta]\t[cyan]rd1 {rd1:E10}[/cyan]");
                 gap = opt.Gap();
                 gap1 = gap / denomTest(gap0);
@@ -1728,12 +1728,12 @@ namespace InteriorPoint
                     {
                         iup++;
                     }
-    //                if (iup > 100)
-    //                    break;
+                    //                if (iup > 100)
+                    //                    break;
                 }
-             //   if (comp1 < opt.compConv && opt.tau < 1e-5 * opt.kappa) break;
-                if (ir > opt.maxouter) 
-                break;
+                //   if (comp1 < opt.compConv && opt.tau < 1e-5 * opt.kappa) break;
+                if (ir > opt.maxouter)
+                    break;
                 if (innerIteration > opt.maxinner && opt.tau != 1.0)
                 {
                     ir++; innerIteration = 0;
@@ -1792,26 +1792,22 @@ namespace InteriorPoint
                     BlasLike.dcopyvec(n - nh, opt.c, opt.cmod, nh, nh);
                 }
                 var t1 = 0.0;
-#if DEBUG
+//#if DEBUG
                 opt.ConeReset();
-#endif
+//#endif
                 if ((homogenous && (t1 = Math.Max(alpha1, alpha2)) < opt.alphamin))
                 {
-                    if (alpha1 < BlasLike.lm_rooteps && alpha2 < BlasLike.lm_rooteps)
-                        break;
-                    //    opt.alphamin /= 10.0;
+                    if (alpha1 < BlasLike.lm_eps && alpha2 < BlasLike.lm_eps){
+                        ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]BREAK[/red] [cyan]due to zero step length[/cyan]");
+                        break;}
                     var scl = 1.0;
+                    if (condition <= BlasLike.lm_reps) {
+                        ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]Modify cone[/red] [cyan]Due to small step size[/cyan]");
+                    opt.ConeReset(1e-4);}
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
                     opt.kappa /= opt.tau;
-                    if(false){
-                        opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, -opt.laststep, 1);
-                        opt.update(opt.lastdx, opt.lastdy, opt.lastdz, opt.lastdtau, opt.lastdkappa, 0.95 * opt.laststep, 1);
-                     BlasLike.dscalvec(opt.y.Length, scl / opt.tau, opt.y);
-                     BlasLike.dscalvec(opt.x.Length, scl / opt.tau, opt.x);
-                      BlasLike.dscalvec(opt.z.Length, scl / opt.tau, opt.z);}
-                    if (condition <= BlasLike.lm_reps) opt.ConeReset(1e-2);
                     gap = opt.Primal() - opt.Dual();
                     if (gap < 0)
                     {
@@ -1822,14 +1818,13 @@ namespace InteriorPoint
                         if (dgap != 0) BlasLike.dsetvec(opt.y.Length, (1.0 + BlasLike.lm_rooteps) * step, opt.y);
                     }
 
+                    opt.kappa = opt.mu;
+                    opt.tau = scl;
                     opt.Mu();
-                    mu0 = opt.mu;
                     opt.PrimalResidual();
                     opt.DualResudual();
                     opt.MuResidual();
                     opt.ConditionEstimate();
-                    opt.kappa = opt.mu; //*=  scl / opt.tau;
-                    opt.tau = scl;
                     innerIteration = 0; ir++;
                     //    opt.conv *= 1.01;
                     rp0 = denomTest(lInfinity(opt.rp));
@@ -1846,12 +1841,11 @@ namespace InteriorPoint
                 {
                     var mult = rp1 / rd1;
                     if (mult < 1) mult = 1.0 / mult;
-                    if(mult>2)
-                    for (int ii = 0, id = 0; ii < m; ++ii, id += ii)
-                    {
-                        //if (opt.M[id + ii] < opt.regularise)
-                        opt.M[id + ii] += BlasLike.lm_rooteps;
-                    }
+                    if (mult > 2)
+                        for (int ii = 0, id = 0; ii < m; ++ii, id += ii)
+                        {
+                            opt.M[id + ii] += BlasLike.lm_eps16;
+                        }
                 }
                 gap = opt.Primal() - opt.Dual();
                 if (homogenous && opt.tau < 1e-8 && opt.kappa < 1e-8)
@@ -1924,8 +1918,8 @@ namespace InteriorPoint
 
                 ColourConsole.WriteInfo($"Relative Complementarity\t\t {comp1}");
                 ColourConsole.WriteEmbeddedColourLine($"[green]Primal Utility:[/green]\t\t\t\t [cyan]{opt.Primal()}[/cyan]");
-                ActiveSet.Optimise.printV("x", opt.x);
                 ColourConsole.WriteEmbeddedColourLine($"[green]Dual Utility:[/green]\t\t\t\t [cyan]{opt.Dual() + zL}[/cyan]");
+                ActiveSet.Optimise.printV("x", opt.x);
                 ActiveSet.Optimise.printV("y", opt.y);
                 ActiveSet.Optimise.printV("z", opt.z);
                 ColourConsole.WriteInfo($"Complementarity:\t{BlasLike.ddotvec(opt.n, opt.x, opt.z) - zL}");
