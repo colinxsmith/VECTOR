@@ -1203,7 +1203,7 @@ namespace InteriorPoint
                         {
                             xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
                             xcopy = false;
-                            if (xQx <= BlasLike.lm_eps)
+                            if (xQx < BlasLike.lm_eps)
                             {
                                 xcopy = true;
                                 if (x[n - 1 + cstart] > BlasLike.lm_rooteps)
@@ -1220,7 +1220,7 @@ namespace InteriorPoint
                             }
                             zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
                             zcopy = false;
-                            if (zQz <= BlasLike.lm_eps)
+                            if (zQz < BlasLike.lm_eps)
                             {
                                 zcopy = true;
                                 if (z[n - 1 + cstart] > BlasLike.lm_eps * 0)
@@ -1517,12 +1517,12 @@ namespace InteriorPoint
             double[] QL = null;
             double zL = 0;
             ///<summary>stepReduce is the factor by which the step length to the boundary is reduced</summary>
-            var stepReduce = 1-BlasLike.lm_eps16;
+            var stepReduce = 1 - BlasLike.lm_eps16;
             opt.optMode = mode;
             if (mode == "SOCP")
             {
-                opt.conv = (Math.Floor(1e-9 / BlasLike.lm_eps)) * BlasLike.lm_eps;
-                opt.compConv = (Math.Floor(1e-9 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.conv = (Math.Floor(5e-7 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.compConv = (Math.Floor(5e-7 / BlasLike.lm_eps)) * BlasLike.lm_eps;
                 opt.cone = cone;
                 opt.typecone = typecone;
                 opt.numberOfCones = cone.Length;
@@ -1792,18 +1792,22 @@ namespace InteriorPoint
                     BlasLike.dcopyvec(n - nh, opt.c, opt.cmod, nh, nh);
                 }
                 var t1 = 0.0;
-//#if DEBUG
+                //#if DEBUG
                 opt.ConeReset();
-//#endif
+                //#endif
                 if ((homogenous && (t1 = Math.Max(alpha1, alpha2)) < opt.alphamin))
                 {
-                    if (alpha1 < BlasLike.lm_eps && alpha2 < BlasLike.lm_eps){
+                    if (alpha1 < BlasLike.lm_eps && alpha2 < BlasLike.lm_eps)
+                    {
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]BREAK[/red] [cyan]due to zero step length[/cyan]");
-                        break;}
+                        break;
+                    }
                     var scl = 1.0;
-                    if (condition <= BlasLike.lm_reps) {
+                    if (condition <= BlasLike.lm_reps)
+                    {
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]Modify cone[/red] [cyan]Due to small step size[/cyan]");
-                    opt.ConeReset(1e-4);}
+                        opt.ConeReset(1e-4);
+                    }
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
