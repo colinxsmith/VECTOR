@@ -1693,8 +1693,8 @@ namespace InteriorPoint
             rd0 = denomTest(rd0);
             var rp1 = BlasLike.lm_max;
             var rd1 = BlasLike.lm_max;
-            var rp1prev=BlasLike.lm_max;
-            var rd1prev=BlasLike.lm_max;
+            var rp1prev = BlasLike.lm_max;
+            var rd1prev = BlasLike.lm_max;
             var gap1 = gap0;
             var comp0 = opt.Complementarity();
             opt.keep.set(opt.x, opt.y, opt.z, opt.tau, opt.kappa, rp0, rd0, comp0, Math.Max(Math.Max(rp0, rd0), comp0));
@@ -1709,8 +1709,8 @@ namespace InteriorPoint
             while (true)
             {
                 rd1ONE = (rd1 >= 1 || rp1 >= 1 || Double.IsNaN(rd1) || Double.IsNaN(rp1));
-                rp1prev=rp1;
-                rd1prev=rd1;
+                rp1prev = rp1;
+                rd1prev = rd1;
                 rp1 = lInfinity(opt.rp) / denomTest(rp0);
                 rd1 = lInfinity(opt.rd) / denomTest(rd0);
                 //      if (rd1ONE && (rd1 >= 1 || rp1 >= 1 || Double.IsNaN(rd1) || Double.IsNaN(rp1)))
@@ -1735,14 +1735,48 @@ namespace InteriorPoint
                 //   if (comp1 < opt.compConv && opt.tau < 1e-5 * opt.kappa) break;
                 if (ir > opt.maxouter)
                     break;
-                if (innerIteration > opt.maxinner)//||rp1>rp1prev||rd1>rd1prev )
+                if ((rp1>rp1prev||rd1>rd1prev )&&innerIteration>1)
+                {
+                    ir++; innerIteration = 0;
+         /*       BlasLike.dcopyvec(opt.x.Length, opt.keep.x, opt.x);
+                BlasLike.dcopyvec(opt.y.Length, opt.keep.y, opt.y);
+                BlasLike.dcopyvec(opt.z.Length, opt.keep.z, opt.z);
+                opt.tau = opt.keep.tau;
+                opt.kappa = opt.keep.kappa;*/
+                    
+               if (alpha1 > alpha2) opt.update(dxold, dyold, dzold, dtauold, dkappaold, -alpha1,1);
+                else opt.update(opt.dx, opt.dy, opt.dz, opt.dtau, opt.dkappa, -alpha2,1);
+               
+                    BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
+                    BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
+                    BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
+                    opt.kappa /=opt.tau*0.25;
+                    opt.tau = 1;
+                    opt.Mu();
+                    mu0 = opt.mu;
+                    opt.PrimalResidual();
+                    opt.DualResudual();
+                    opt.MuResidual();
+                    opt.ConditionEstimate();
+                    rp0 = denomTest(lInfinity(opt.rp));
+                    rd0 = denomTest(lInfinity(opt.rd));
+                    gap0 = denomTest(opt.Gap());
+                }
+                
+                else if (innerIteration > opt.maxinner )
                 {
                     ir++; innerIteration = 0;
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
-                    opt.kappa =mu;///=opt.tau;
+                    opt.kappa /=opt.tau;
                     opt.tau = 1;
+                    opt.Mu();
+                    mu0 = opt.mu;
+                    opt.PrimalResidual();
+                    opt.DualResudual();
+                    opt.MuResidual();
+                    opt.ConditionEstimate();
                     rp0 = denomTest(lInfinity(opt.rp));
                     rd0 = denomTest(lInfinity(opt.rd));
                     gap0 = denomTest(opt.Gap());
@@ -1804,16 +1838,17 @@ namespace InteriorPoint
                         break;
                     }
                     var scl = 1.0;
-                    if (condition <= BlasLike.lm_reps)
-                    {
-                        ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]Modify cone[/red] [cyan]Due to small step size[/cyan][magenta] only[/magenta]");
-                        opt.ConeReset(1e-3);
-                    }
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
                     opt.kappa /= opt.tau;
                     gap = opt.Primal() - opt.Dual();
+                    opt.tau = scl;
+                    if (condition <= BlasLike.lm_reps)
+                    {
+                        ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]Modify cone[/red] [cyan]Due to small step size[/cyan][magenta] only[/magenta]");
+                        opt.ConeReset(1e-3);
+                    }
                     if (gap < 0)
                     {
                         var dgap = BlasLike.ddotvec(opt.y.Length, opt.y, opt.b);
@@ -1824,17 +1859,16 @@ namespace InteriorPoint
                     }
 
                     opt.kappa = opt.mu;
-                    opt.tau = scl;
-             /*       opt.Mu();
-                    opt.PrimalResidual();
-                    opt.DualResudual();
-                    opt.MuResidual();
-                    opt.ConditionEstimate();
-                    innerIteration = 0; ir++;
-                    //    opt.conv *= 1.01;
-                    rp0 = denomTest(lInfinity(opt.rp));
-                    rd0 = denomTest(lInfinity(opt.rd));
-                    gap0 = denomTest(opt.Gap());*/
+                    /*       opt.Mu();
+                           opt.PrimalResidual();
+                           opt.DualResudual();
+                           opt.MuResidual();
+                           opt.ConditionEstimate();
+                           innerIteration = 0; ir++;
+                           //    opt.conv *= 1.01;
+                           rp0 = denomTest(lInfinity(opt.rp));
+                           rd0 = denomTest(lInfinity(opt.rd));
+                           gap0 = denomTest(opt.Gap());*/
                 }
                 opt.Mu();
                 mu0 = opt.mu;
