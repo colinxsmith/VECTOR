@@ -61,7 +61,7 @@ namespace InteriorPoint
         bool homogenous = false;
         double mu;
         public int maxouter = 1000;
-        public int maxinner = 40;
+        public int maxinner = 100;
         int n;
         int m;
         double[] A = null;
@@ -206,7 +206,7 @@ namespace InteriorPoint
             if (optMode == "SOCP")
             {
                 double alpha = 1.0, desc;
-                double lowest = 2e-1, lowest1 = 1 - lowest;
+                double lowest = 2e-1, lowest1 = 1 - lowest,lowest2=1-1e-1;
                 double XS = BlasLike.ddotvec(n, x, z);
                 double XdS = BlasLike.ddotvec(n, x, dz);
                 double SdX = BlasLike.ddotvec(n, z, dx);
@@ -219,11 +219,12 @@ namespace InteriorPoint
                     if (step > 0)
                         step = Math.Sqrt(step);
                 }
-                else if ((desc = square(XdS + SdX) - 4.0 * XS * dXdS) > 0)
+                else if ((desc = square(XdS + SdX) - 4.0 * XS * dXdS) > BlasLike.lm_eps)
                 {
                     desc = Math.Sqrt(desc);
                     step = Math.Max((-XdS - SdX + desc) / 2.0 / dXdS, (-XdS - SdX - desc) / 2.0 / dXdS);
-                }
+                if(step<0)step=1;
+            }
                 newXS = XS + (XdS + SdX) * step + dXdS * square(step);
                 alpha = Math.Min(alpha, step);
 
@@ -247,8 +248,8 @@ namespace InteriorPoint
                             if (dx[i] < 0) ddx = Math.Min(ddx, -aob(x[i], dx[i]));
                             if (dz[i] < 0) ddz = Math.Min(ddz, -aob(z[i], dz[i]));
                         }
-                        alpha = Math.Min(ddx, lowest1 * alpha);
-                        alpha = Math.Min(ddz, lowest1 * alpha);
+                        alpha = Math.Min(ddx, lowest2 * alpha);
+                        alpha = Math.Min(ddz, lowest2 * alpha);
                     }
                     else if (typecone[icone] == (int)conetype.SOCP)
                     {
@@ -341,7 +342,7 @@ namespace InteriorPoint
                                         alpha = Math.Min((-vx2[i] - inner) / 2.0 / vx3[i], alpha);
                                     }
                                 }
-                                else if (Math.Abs(vx2[i]) <= BlasLike.lm_eps && (inner = -4 * vx3[i] * vx1[i]) > -BlasLike.lm_eps)
+                                else if (Math.Abs(vx2[i]) <= BlasLike.lm_eps && (inner = -4 * vx3[i] * vx1[i]) > BlasLike.lm_eps)
                                 {
                                     inner = (inner > BlasLike.lm_eps * 8 ? Math.Sqrt(inner) : 0);
                                     r1 = (-vx2[i] - inner) / 2.0 / vx3[i]; r2 = (-vx2[i] + inner) / 2.0 / vx3[i];
@@ -1489,17 +1490,22 @@ namespace InteriorPoint
         {
             if (correction == 0) correction = BlasLike.lm_eps;
             for (int icc = 0, conestart = 0; icc < numberOfCones; ++icc)
-            {
+            {var reduce=false;
                 if (typecone[icc] == (int)InteriorPoint.conetype.SOCP)
                 {
                     var din = BlasLike.ddotvec(cone[icc] - 1, x, x, conestart, conestart);
                     var dtop = square(x[conestart + cone[icc] - 1]);
-                    if (dtop < din + correction)
-                        BlasLike.dscalvec(cone[icc] - 1, 1 - correction, x, conestart);
+                    if (dtop/din < (1 + correction))
+                    reduce=true;
                     din = BlasLike.ddotvec(cone[icc] - 1, z, z, conestart, conestart);
                     dtop = square(z[conestart + cone[icc] - 1]);
-                    if (dtop < din + correction)
-                        BlasLike.dscalvec(cone[icc] - 1, 1 - correction, z, conestart);
+                    if (dtop/din < (1 + correction))
+                    reduce=true;
+                    if(reduce){
+                        var reduction=1.0/(1 + correction);
+                        ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]REDUCTION[/red]\t[green]{reduction}[/green]");
+                        BlasLike.dscalvec(cone[icc] - 1,reduction , z, conestart);
+                        BlasLike.dscalvec(cone[icc] - 1, reduction, x, conestart);}
                 }
                 conestart += cone[icc];
             }
@@ -1518,8 +1524,8 @@ namespace InteriorPoint
             opt.optMode = mode;
             if (mode == "SOCP")
             {
-                opt.conv = (Math.Floor(1e-7 / BlasLike.lm_eps)) * BlasLike.lm_eps;
-                opt.compConv = (Math.Floor(1e-7 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.conv = (Math.Floor(1e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.compConv = (Math.Floor(1e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
                 opt.cone = cone;
                 opt.typecone = typecone;
                 opt.numberOfCones = cone.Length;
@@ -1847,7 +1853,7 @@ namespace InteriorPoint
                     if (condition <= BlasLike.lm_reps)
                     {
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]Modify cone[/red] [cyan]Due to small step size[/cyan][magenta] only[/magenta]");
-                        opt.ConeReset(1e-3);
+                        opt.ConeReset(1e-4);
                     }
                     if (gap < 0)
                     {
