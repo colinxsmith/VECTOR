@@ -30,7 +30,7 @@ namespace InteriorPoint
         }
         public void update(double[] x, double[] y, double[] z, double tau, double kappa, double rp, double rd, double comp)
         {
-            double[] pass = { rp, rd, comp };
+            double[] pass = { rp, rd};//, comp };
             double norm = Optimise.lInfinity(pass);
             if (norm < this.norm)
                 set(x, y, z, tau, kappa, rp, rd, comp, norm);
@@ -206,27 +206,28 @@ namespace InteriorPoint
             if (optMode == "SOCP")
             {
                 double alpha = 1.0, desc;
-                double lowest = 2e-1, lowest1 = 1 - lowest,lowest2=1-1e-1;
+                double lowest = 2e-1, lowest1 = 1 - lowest,lowest2=1-2e-1;
+                var step = 1.0;
+                if(false){
                 double XS = BlasLike.ddotvec(n, x, z);
                 double XdS = BlasLike.ddotvec(n, x, dz);
                 double SdX = BlasLike.ddotvec(n, z, dx);
                 double dXdS = BlasLike.ddotvec(n, dx, dz);
-                var step = 1.0;
                 var newXS = XS + (XdS + SdX) * step + dXdS * square(step);
-                if (Math.Abs(XdS + SdX) < BlasLike.lm_eps)
+                if (Math.Abs(XdS + SdX) < 0)
                 {
                     step = -XS / dXdS;
                     if (step > 0)
                         step = Math.Sqrt(step);
                 }
-                else if ((desc = square(XdS + SdX) - 4.0 * XS * dXdS) > BlasLike.lm_eps)
+                else if ((desc = square(XdS + SdX) - 4.0 * XS * dXdS) > 0)
                 {
                     desc = Math.Sqrt(desc);
                     step = Math.Max((-XdS - SdX + desc) / 2.0 / dXdS, (-XdS - SdX - desc) / 2.0 / dXdS);
-                if(step<0)step=1;
             }
+                if(step<0)step=1;
                 newXS = XS + (XdS + SdX) * step + dXdS * square(step);
-                alpha = Math.Min(alpha, step);
+                alpha = Math.Min(alpha, step);}
 
 
                 ddx = alpha;
@@ -364,7 +365,7 @@ namespace InteriorPoint
                     for (var l = 0; l < 1000; ++l)
                     {
                         rhs = beta * (1 - alpha * gamma1) * mu;
-                        if (homogenous) test2 = (tau + alpha * dtau) * (kappa + alpha * dkappa);
+                        if (homogenous && kappa>BlasLike.lm_eps && dkappa!=0) test2 = (tau + alpha * dtau) * (kappa + alpha * dkappa);
                         test1 = 0;
                         for (var i = 0; i < cone.Length; ++i)
                         {
@@ -1416,7 +1417,7 @@ namespace InteriorPoint
         }
         double Complementarity(bool scale = false)
         {
-            if (scale) return BlasLike.ddotvec(n, x, z) + (homogenous ? tau * kappa : 0);
+            if (scale) return BlasLike.ddotvec(n, x, z);
             else return BlasLike.ddotvec(n, x, z) * tau * tau + (homogenous ? tau * kappa : 0);
         }
         void Mu()
@@ -1701,6 +1702,7 @@ namespace InteriorPoint
             var rd1 = BlasLike.lm_max;
             var rp1prev = BlasLike.lm_max;
             var rd1prev = BlasLike.lm_max;
+            var r_increase=0;
             var gap1 = gap0;
             var comp0 = opt.Complementarity();
             opt.keep.set(opt.x, opt.y, opt.z, opt.tau, opt.kappa, rp0, rd0, comp0, Math.Max(Math.Max(rp0, rd0), comp0));
@@ -1719,6 +1721,7 @@ namespace InteriorPoint
                 rd1prev = rd1;
                 rp1 = lInfinity(opt.rp) / denomTest(rp0);
                 rd1 = lInfinity(opt.rd) / denomTest(rd0);
+                if(rd1>rd1prev||rp1>rp1prev)r_increase++;
                 //      if (rd1ONE && (rd1 >= 1 || rp1 >= 1 || Double.IsNaN(rd1) || Double.IsNaN(rp1)))
                 //          break;
                 ColourConsole.WriteEmbeddedColourLine($"[darkgreen]{innerIteration,4}[/darkgreen] [magenta]rp1 {rp1:E10}[/magenta]\t[cyan]rd1 {rd1:E10}[/cyan]");
@@ -1730,7 +1733,7 @@ namespace InteriorPoint
                     break;
                 if (condition > BlasLike.lm_reps)
                 {
-                    double[] pass = { rp1, rd1, comp1 };
+                    double[] pass = { rp1, rd1};//, comp1 };
                     if (lInfinity(pass) > opt.keep.norm)
                     {
                         iup++;
@@ -1741,9 +1744,9 @@ namespace InteriorPoint
                 //   if (comp1 < opt.compConv && opt.tau < 1e-5 * opt.kappa) break;
                 if (ir > opt.maxouter)
                     break;
-                if ((rp1>rp1prev||rd1>rd1prev )&&innerIteration>1)
+                if ((rp1>rp1prev||rd1>rd1prev )&&innerIteration>1&&r_increase>1)
                 {
-                    ir++; innerIteration = 0;
+                    ir++; innerIteration = 0;r_increase=0;
          /*       BlasLike.dcopyvec(opt.x.Length, opt.keep.x, opt.x);
                 BlasLike.dcopyvec(opt.y.Length, opt.keep.y, opt.y);
                 BlasLike.dcopyvec(opt.z.Length, opt.keep.z, opt.z);
@@ -1756,7 +1759,7 @@ namespace InteriorPoint
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
-                    opt.kappa /=opt.tau*0.25;
+                    opt.kappa =0;///=opt.tau*0.25;
                     opt.tau = 1;
                     opt.Mu();
                     mu0 = opt.mu;
