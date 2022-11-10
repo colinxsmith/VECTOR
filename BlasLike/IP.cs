@@ -30,7 +30,7 @@ namespace InteriorPoint
         }
         public void update(double[] x, double[] y, double[] z, double tau, double kappa, double rp, double rd, double comp)
         {
-            double[] pass = { rp, rd };//, comp };
+            double[] pass = { rp, rd, comp };
             double norm = Optimise.lInfinity(pass);
             if (norm < this.norm)
                 set(x, y, z, tau, kappa, rp, rd, comp, norm);
@@ -61,7 +61,7 @@ namespace InteriorPoint
         bool homogenous = false;
         double mu;
         public int maxouter = 10;
-        public int maxinner = 100;
+        public int maxinner = 30;
         int n;
         int m;
         double[] A = null;
@@ -206,7 +206,7 @@ namespace InteriorPoint
             if (optMode == "SOCP")
             {
                 double alpha = 1.0, desc;
-                double lowest = 2e-1, lowest1 = 1 - lowest, lowest2 = 1 - 2e-1;
+                double lowest = 1e-1, lowest1 = 1 - lowest;
                 var step = 1.0;
                 if (false)
                 {
@@ -251,8 +251,8 @@ namespace InteriorPoint
                             if (dx[i] < 0) ddx = Math.Min(ddx, -aob(x[i], dx[i]));
                             if (dz[i] < 0) ddz = Math.Min(ddz, -aob(z[i], dz[i]));
                         }
-                        alpha = Math.Min(ddx, lowest2 * alpha);
-                        alpha = Math.Min(ddz, lowest2 * alpha);
+                        alpha = Math.Min(ddx, lowest1 * alpha);
+                        alpha = Math.Min(ddz, lowest1 * alpha);
                     }
                     else if (typecone[icone] == (int)conetype.SOCP)
                     {
@@ -278,8 +278,8 @@ namespace InteriorPoint
                         vx3[icone] = BlasLike.ddotvec(n, dx, Qdx, cstart, 0);//dx.Qdx
                         if (Qdx[n - 1] < 0) alpha = Math.Min((-Qx[n - 1]) / Qdx[n - 1], alpha);
                         if (dx[n - 1 + cstart] < 0) alpha = Math.Min((-x[n - 1 + cstart]) / dx[n - 1 + cstart], alpha);
-                        if (homogenous && dtau < 0) alpha = Math.Min(-tau / dtau, alpha);
-                        if (homogenous && dkappa < 0) alpha = Math.Min(-kappa / dkappa, alpha);
+             //           if (homogenous && dtau < 0) alpha = Math.Min(-tau / dtau, alpha);
+             //           if (homogenous && dkappa < 0) alpha = Math.Min(-kappa / dkappa, alpha);
                         double inner, r1, r2;
                         //      for (var i = icone; i < cone.Length; ++i)
                         {
@@ -1530,8 +1530,8 @@ namespace InteriorPoint
             opt.optMode = mode;
             if (mode == "SOCP")
             {
-                opt.conv = (Math.Floor(5e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
-                opt.compConv = (Math.Floor(5e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.conv = (Math.Floor(1e-7 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.compConv = (Math.Floor(1e-7 / BlasLike.lm_eps)) * BlasLike.lm_eps;
                 opt.cone = cone;
                 opt.typecone = typecone;
                 opt.numberOfCones = cone.Length;
@@ -1549,7 +1549,7 @@ namespace InteriorPoint
             opt.clocker(true);
             opt.homogenous = homogenous;
             opt.tau = 1;
-            opt.kappa = 1;
+            opt.kappa = 0;
             opt.usrH = (h == null && nh > 0 && (opt.H != null && BlasLike.dsumvec(opt.H.Length, opt.H) != 0.0)) || opt.h != null;
             if (mode == "QP")
             {
@@ -1727,7 +1727,7 @@ namespace InteriorPoint
                 rp1 = lInfinity(opt.rp) / denomTest(rp0);
                 rd1 = lInfinity(opt.rd) / denomTest(rd0);
                 if (rd1 > rd1prev || rp1 > rp1prev) r_increase++;
-                else r_increase=0;
+                else r_increase = 0;
                 //      if (rd1ONE && (rd1 >= 1 || rp1 >= 1 || Double.IsNaN(rd1) || Double.IsNaN(rp1)))
                 //          break;
                 ColourConsole.WriteEmbeddedColourLine($"[darkgreen]{innerIteration,4}[/darkgreen] [magenta]rp1 {rp1:E10}[/magenta]\t[cyan]rd1 {rd1:E10}[/cyan]");
@@ -1735,11 +1735,11 @@ namespace InteriorPoint
                 gap1 = gap / denomTest(gap0);
                 comp1 = opt.Complementarity();
                 opt.keep.update(opt.x, opt.y, opt.z, opt.tau, opt.kappa, rp1, rd1, comp1);
-                if (rp1 <= opt.conv && rd1 <= opt.conv && comp1 <= opt.compConv)
+                if (rp1/tau <= opt.conv && rd1/tau <= opt.conv && comp1 <= opt.compConv)
                     break;
                 if (condition > BlasLike.lm_reps)
                 {
-                    double[] pass = { rp1, rd1 , comp1 };
+                    double[] pass = { rp1, rd1, comp1 };
                     if (lInfinity(pass) > opt.keep.norm)
                     {
                         iup++;
@@ -1750,7 +1750,7 @@ namespace InteriorPoint
                 //   if (comp1 < opt.compConv && opt.tau < 1e-5 * opt.kappa) break;
                 if (ir > opt.maxouter)
                     break;
-                if ((rp1 > rp1prev || rd1 > rd1prev) && innerIteration > 1 && r_increase > 5)
+                if ((rp1 > rp1prev || rd1 > rd1prev) && innerIteration > 1 && r_increase > 1000)
                 {
                     ir++; innerIteration = 0; r_increase = 0;
                     /*       BlasLike.dcopyvec(opt.x.Length, opt.keep.x, opt.x);
@@ -1759,13 +1759,13 @@ namespace InteriorPoint
                            opt.tau = opt.keep.tau;
                            opt.kappa = opt.keep.kappa;*/
 
-                 //   if (alpha1 > alpha2) opt.update(dxold, dyold, dzold, dtauold, dkappaold, -alpha1, 1);
-                 //   else opt.update(opt.dx, opt.dy, opt.dz, opt.dtau, opt.dkappa, -alpha2, 1);
+                    //   if (alpha1 > alpha2) opt.update(dxold, dyold, dzold, dtauold, dkappaold, -alpha1, 1);
+                    //   else opt.update(opt.dx, opt.dy, opt.dz, opt.dtau, opt.dkappa, -alpha2, 1);
 
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
-                    opt.kappa /=opt.tau*0.5;
+                    opt.kappa =0;///= opt.tau * 0.5;
                     opt.tau = 1;
                     opt.Mu();
                     mu0 = opt.mu;
@@ -1856,7 +1856,7 @@ namespace InteriorPoint
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
-                    opt.kappa /= opt.tau;
+                    opt.kappa=0;// /= opt.tau;
                     gap = opt.Primal() - opt.Dual();
                     opt.tau = scl;
                     if (condition <= BlasLike.lm_reps)
@@ -1873,7 +1873,7 @@ namespace InteriorPoint
                         if (dgap != 0) BlasLike.dsetvec(opt.y.Length, (1.0 + BlasLike.lm_rooteps) * step, opt.y);
                     }
 
-                    opt.kappa = opt.mu;
+                 //   opt.kappa = opt.mu;
                     /*       opt.Mu();
                            opt.PrimalResidual();
                            opt.DualResudual();
