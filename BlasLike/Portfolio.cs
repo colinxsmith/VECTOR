@@ -3777,7 +3777,7 @@ namespace Portfolio
 var LOSSstart = LOSS(n, x, DATA, targetR, null, n + 1);
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Minimum variance[/yellow]\t[green]{x[n] * x[n]}[/green]\tCheck [cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Minimum risk[/yellow]\t\t[green]{x[n]}[/green]\tCheck [cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
-            ColourConsole.WriteEmbeddedColourLine($"[blue]Loss for minimum risk[/blue][green] {LOSSstart}[/green]");
+            ColourConsole.WriteEmbeddedColourLine($"[blue]Loss for minimum risk[/blue][green]\t{LOSSstart}[/green]");
             Factorise.dmxmulv(M, N, A, x, ccc);
             var cccc=new double[m];
             Factorise.dmxmulv(m, n, portfolioConstraints, x, cccc,0,n+1);

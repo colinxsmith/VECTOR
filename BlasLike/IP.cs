@@ -251,8 +251,11 @@ namespace InteriorPoint
                             if (dx[i] < 0) ddx = Math.Min(ddx, -aob(x[i], dx[i]));
                             if (dz[i] < 0) ddz = Math.Min(ddz, -aob(z[i], dz[i]));
                         }
-                        alpha = Math.Min(ddx, lowest1 * alpha);
-                        alpha = Math.Min(ddz, lowest1 * alpha);
+                        ddx*=lowest1;
+                        ddz*=lowest1;
+                        alpha = Math.Min(ddx,  alpha);
+                        alpha = Math.Min(ddz,  alpha);
+                        alpha*=lowest1;
                     }
                     else if (typecone[icone] == (int)conetype.SOCP)
                     {
@@ -362,6 +365,12 @@ namespace InteriorPoint
                                     ColourConsole.WriteInfo("still negative");
                             }
                         }
+                    }}
+                    if (homogenous)
+                    {
+                        if (dtau < 0) alpha = Math.Min(alpha, -aob(tau, dtau));
+                        if (dkappa < 0) alpha = Math.Min(alpha, -aob(kappa, dkappa));
+
                     }
                     double rhs, gamma1 = 1 - gamma, test1, test2 = 1, beta = 1e-8;
                     for (var l = 0; l < 1000; ++l)
@@ -374,19 +383,13 @@ namespace InteriorPoint
                             if (typecone[i] == (int)conetype.SOCP)
                                 test1 += (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]));
                         }
+                        if(test1>=0){
                         test1 = Math.Sqrt(test1);
-                        if (test1 >= rhs && test2 >= rhs) break;
+                        if (test1 >= rhs && test2 >= rhs)                         break;}
                         alpha *= lowest1;
+                    
                     }
-
-                    if (homogenous)
-                    {
-                        if (dtau < 0) alpha = Math.Min(alpha, -aob(tau, dtau));
-                        if (dkappa < 0) alpha = Math.Min(alpha, -aob(kappa, dkappa));
-
-                    }
-                    ddx = ddz = dd = alpha;
-                }
+                    ddx = ddz = dd = alpha;                
             }
 
             else if (optMode == "QP")
@@ -1549,7 +1552,7 @@ namespace InteriorPoint
             opt.clocker(true);
             opt.homogenous = homogenous;
             opt.tau = 1;
-            opt.kappa = 0;
+            opt.kappa = 1;
             opt.usrH = (h == null && nh > 0 && (opt.H != null && BlasLike.dsumvec(opt.H.Length, opt.H) != 0.0)) || opt.h != null;
             if (mode == "QP")
             {
@@ -1784,7 +1787,7 @@ namespace InteriorPoint
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
-                    opt.kappa /= opt.tau;
+                    opt.kappa =0;// /= opt.tau;
                     opt.tau = 1;
                     opt.Mu();
                     mu0 = opt.mu;
@@ -1856,7 +1859,7 @@ namespace InteriorPoint
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
-                    opt.kappa=0;// /= opt.tau;
+                    opt.kappa =0;///= opt.tau;
                     gap = opt.Primal() - opt.Dual();
                     opt.tau = scl;
                     if (condition <= BlasLike.lm_reps)
