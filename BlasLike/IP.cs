@@ -49,6 +49,7 @@ namespace InteriorPoint
         BestResults keep;
         public bool copyKept = true;
         public double alphamin = 1e-1;
+        public bool copyBest=true;
         public double conv = BlasLike.lm_eps * 16;
         public double compConv = BlasLike.lm_eps * 16;
         int badindex = -1;
@@ -272,10 +273,14 @@ namespace InteriorPoint
                                     inner = (inner > 0 ? Math.Sqrt(inner) * Math.Abs(vz2[i]) : 0);
                                     r1 = (-vz2[i] - inner) / 2.0 / vz3[i]; r2 = (-vz2[i] + inner) / 2.0 / vz3[i];
                                     if (vz3[i] > 0)
-                                    { if (r1 < 0) r1 = r2; }
-                                    else
-                                    { if (r2 < 0) r2 = r1; }
+                                    { if (r1 < 0) r1 = r2; 
                                     alpha = Math.Min(Math.Max(r1,0), alpha);
+                                    }
+                                    else
+                                    { 
+                                        if (r2 < 0) r2 = r1; 
+                                    alpha = Math.Min(Math.Max(r2,0), alpha);
+                                        }
                                }
                                 else if (Math.Abs(vz2[i]) <= 0 && (inner = -4.0 * vz3[i] * vz1[i]) >= 0)
                                 {
@@ -283,10 +288,14 @@ namespace InteriorPoint
                                     double r1,r2;
                                     r1 = (-vz2[i] - inner) / 2.0 / vz3[i]; r2 = (-vz2[i] + inner) / 2.0 / vz3[i];
                                     if (vz3[i] > 0)
-                                    { if (r1 < 0) r1 = r2; }
+                                    { if (r1 < 0) r1 = r2; 
+                                    alpha = Math.Min(Math.Max(r1,0), alpha);
+                                    }
                                     else
-                                    { if (r2 < 0) r2 = r1; }
-                                    alpha = Math.Min(Math.Max(r1, 0), alpha);
+                                    { 
+                                        if (r2 < 0) r2 = r1; 
+                                    alpha = Math.Min(Math.Max(r2,0), alpha);
+                                        }
                                 }
                                 else
                                     ColourConsole.WriteInfo("still negative");
@@ -307,19 +316,27 @@ namespace InteriorPoint
                                     inner = (inner > 0 ? Math.Sqrt(inner) * Math.Abs(vx2[i]) : 0);
                                     r1 = (-vx2[i] - inner) / 2.0 / vx3[i]; r2 = (-vx2[i] + inner) / 2.0 / vx3[i];
                                     if (vx3[i] > 0)
-                                    { if (r1 < 0) r1 = r2; }
+                                    { if (r1 < 0) r1 = r2; 
+                                    alpha = Math.Min(Math.Max(r1,0), alpha); 
+                                    }
                                     else
-                                    { if (r2 < 0) r2 = r1; }
-                                    alpha = Math.Min(Math.Max(r1,0), alpha);                               }
+                                    { 
+                                        if (r2 < 0) r2 = r1;
+                                    alpha = Math.Min(Math.Max(r2,0), alpha); 
+                                        }                              }
                                 else if (Math.Abs(vx2[i]) <= 0 && (inner = -4 * vx3[i] * vx1[i]) >= 0)
                                 {double r1,r2;
                                     inner = (inner > 0 ? Math.Sqrt(inner) : 0);
                                                 r1 = (-vx2[i] - inner) / 2.0 / vx3[i]; r2 = (-vx2[i] + inner) / 2.0 / vx3[i];
                                     if (vx3[i] > 0)
-                                    { if (r1 < 0) r1 = r2; }
+                                    { if (r1 < 0) r1 = r2; 
+                                    alpha = Math.Min(Math.Max(r1,0), alpha); 
+                                    }
                                     else
-                                    { if (r2 < 0) r2 = r1; }
-                                    alpha = Math.Min(Math.Max(r1,0), alpha);
+                                    { 
+                                        if (r2 < 0) r2 = r1;
+                                    alpha = Math.Min(Math.Max(r2,0), alpha); 
+                                        }      
                                 }
                                 else
                                     ColourConsole.WriteInfo("still negative");
@@ -1475,8 +1492,8 @@ namespace InteriorPoint
                         reduce = true;
                     if (reduce)
                     {
-                        var reduction = 1.0 / (1 + correction);
-                        ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]REDUCTION[/red]\t[green]{reduction}[/green]");
+                        var reduction = 5e-2*din/dtop;
+                        ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]REDUCTION[/red]\t\t\t\t[green]{reduction}[/green]");
                         BlasLike.dscalvec(cone[icc] - 1, reduction, z, conestart);
                         BlasLike.dscalvec(cone[icc] - 1, reduction, x, conestart);
                     }
@@ -1704,7 +1721,7 @@ namespace InteriorPoint
                 comp1 = opt.Complementarity();
                 opt.keep.update(opt.x, opt.y, opt.z, opt.tau, opt.kappa, rp1, rd1, comp1);
                 if (rp1 / tau <= opt.conv && rd1 / tau <= opt.conv && comp1 <= opt.compConv)
-                    break;
+                    {copyBest=false; break;}
                 if (condition > BlasLike.lm_reps)
                 {
                     double[] pass = { rp1, rd1, comp1 };
@@ -1752,7 +1769,7 @@ namespace InteriorPoint
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
-                    opt.kappa /= opt.tau * 0.5;
+                    opt.kappa /= opt.tau;
                     opt.tau = 1;
                     opt.Mu();
                     mu0 = opt.mu;
@@ -1774,6 +1791,7 @@ namespace InteriorPoint
                         ColourConsole.WriteInfo($"rp1 = {rp1}");
                         ColourConsole.WriteInfo($"rd1 = {rd1}");
                         ColourConsole.WriteInfo($"comp1 = {comp1}");
+                        BlasLike.dcopyvec(xbar.Length,xbar,zbar);
                         //       break;
                     }
                 }
@@ -1811,7 +1829,7 @@ namespace InteriorPoint
                 }
                 var t1 = 0.0;
                 //#if DEBUG
-                opt.ConeReset();
+                //opt.ConeReset();
                 //#endif
                 if ((homogenous && (t1 = Math.Max(alpha1, alpha2)) < opt.alphamin))
                 {
@@ -1830,7 +1848,7 @@ namespace InteriorPoint
                     if (condition <= BlasLike.lm_reps)
                     {
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]Modify cone[/red] [cyan]Due to small step size[/cyan][magenta] only[/magenta]");
-                        opt.ConeReset(1e-3);
+                        opt.ConeReset(1e-5);
                     }
                     if (gap < 0)
                     {
@@ -1890,7 +1908,7 @@ namespace InteriorPoint
                 }
                 innerIteration++;
             }
-            if (/*ir > 1 &&*/ opt.copyKept)
+            if (/*ir > 1 &&*/ opt.copyKept&&copyBest)
             {
                 BlasLike.dcopyvec(opt.x.Length, opt.keep.x, opt.x);
                 BlasLike.dcopyvec(opt.y.Length, opt.keep.y, opt.y);
