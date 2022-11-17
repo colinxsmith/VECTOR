@@ -3862,7 +3862,7 @@ var LOSSstart = LOSS(n, x, DATA, targetR, null, n + 1);
             var xcheck = BlasLike.ddotvec(n, xtest, xtest);
             ColourConsole.WriteEmbeddedColourLine($"[magenta]X transform check[/magenta] [red]{xcheck}[/red]");
             t2 = BlasLike.ddotvec(n, xx, xx);
-var nextFixRisk=0.0299;//0.010102;//x[n];//Math.Sqrt(0.0008);//x[n];
+var nextFixRisk=0.00522;//0.0299;//0.010102;//x[n];//Math.Sqrt(0.0008);//x[n];
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Variance[/yellow]\t[green]{x[n] * x[n]}[/green]\tCheck [cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Risk[/yellow]\t\t[green]{x[n]}[/green]\tCheck [cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
             Factorise.dmxmulv(M, N, A, x, ccc);
