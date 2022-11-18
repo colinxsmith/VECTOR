@@ -152,7 +152,7 @@ namespace InteriorPoint
         }
         static double norm(double[] aa) => Math.Sqrt(BlasLike.ddotvec(aa.Length, aa, aa));
         static double square(double a) => a * a;
-        double gfunc(double a) => Math.Min(0.7, square(1 - a)) * (1 - a);//Try 0.7 instead of 0.5
+        double gfunc(double a) => Math.Min(1e-8, square(1 - a)) * (1 - a);//Try 0.7 instead of 0.5
         double aob(double a, double b)
         {
             int fail = 21;
@@ -1821,21 +1821,39 @@ namespace InteriorPoint
                 alpha2 = stepReduce * opt.Lowest();
                 if (alpha2 < alphamin && alpha1 < alphamin)
                 {
-                    bool clarify=alpha2>alpha1;
-                    double alphak = Math.Max(alpha1, alpha2), alphanew, gammaold, alphaold = 0;
-                    gamma = 1e-12;
+                    double gammafirst = alpha2>alpha1?gamma:0;
+                    bool clarify = alpha2 > alpha1;
+                    if (clarify)
+                    {
+                        BlasLike.dcopyvec(n, opt.dx, dxold);
+                        BlasLike.dcopyvec(n, opt.dz, dzold);
+                        BlasLike.dcopyvec(m, opt.dy, dyold);
+                        dtauold = opt.dtau;
+                        dkappaold = opt.dkappa;
+                        alpha1 = alpha2;
+                    }
+                    double alphak = Math.Max(alpha1, alpha2), alphanew, gammaold, alphaold = alpha2,deriv,delt=1e-12;
+                    gamma = gammafirst+delt;
                     opt.SolvePrimaryDual(gamma, true);
                     opt.MaximumStep(gamma);
                     alphanew = stepReduce * opt.Lowest();
-                    while (gamma < 1e-1)
+                    deriv=(alphanew-alphaold)/(gamma-gammafirst);
+                    delt=Math.Abs(gamma/deriv/2);
+                    while (gamma>=0&&gamma<=1)
                     {
                         gammaold = gamma;
                         alphaold = Math.Max(alphanew, alphaold);
-                        gamma *= 10.0;
+                        gamma +=deriv*delt;
+                        while(gamma>1||gamma<0){
+                        gamma -=deriv*delt;
+                        delt*=0.1;
+                        gamma +=deriv*delt;
+                        }
                         opt.SolvePrimaryDual(gamma, true);
                         opt.MaximumStep(gamma);
                         alphanew = stepReduce * opt.Lowest();
-                        if (alphanew <= alphaold)
+                    deriv=(alphanew-alphaold)/(gamma-gammaold);
+                        if (Math.Abs((alphanew -alphaold)/alphaold)<1e-8||alphanew<alphaold)
                         {
                             gamma = gammaold;
                             opt.SolvePrimaryDual(gamma, true);
@@ -1844,11 +1862,14 @@ namespace InteriorPoint
                             break;
                         }
                     }
-                    if (alphanew < alphak) {gamma = 0.95;
-                    opt.SolvePrimaryDual(gamma, true);
-                    opt.MaximumStep(gamma);
-                    alphanew = stepReduce * opt.Lowest();}
-                    while (gamma > 1e-1)
+                    if (alphanew < alphak)
+                    {
+                        gamma = 0.95;
+                        opt.SolvePrimaryDual(gamma, true);
+                        opt.MaximumStep(gamma);
+                        alphanew = stepReduce * opt.Lowest();
+                    }
+                    while (gamma > 0)
                     {
                         gammaold = gamma;
                         alphaold = Math.Max(alphanew, alphaold);
@@ -1868,13 +1889,14 @@ namespace InteriorPoint
                     if (alphanew >= alphak)
                     {
                         alpha2 = alphanew;
-                        ColourConsole.WriteEmbeddedColourLine($"[green]Found better step size[/green] [cyan]{alphanew}[/cyan] [red]{alphak} ({gamma})[/red]");
+                        ColourConsole.WriteEmbeddedColourLine($"[green]Found better step size[/green] [cyan]{alphanew}[/cyan] [red]{alphak} ({gamma}[/red],[magenta]{gammafirst}[/magenta][red])[/red]");
                     }
-                    if(clarify && alphanew<alphak){
-                        ColourConsole.WriteEmbeddedColourLine($"[red]CLARIFY[/red] [yellow]alpha2 maybe lost {alpha2} {alphanew}[/yellow]");
+                    if (clarify && alphanew < alphak)
+                    {
+                        ColourConsole.WriteEmbeddedColourLine($"[red]CLARIFY[/red] [yellow]alpha2 not improved {alpha2} {alphanew}[/yellow]");
                     }
                 }
-                if (alpha1 > alpha2) opt.update(dxold, dyold, dzold, dtauold, dkappaold, alpha1);
+                if (alpha1 >= alpha2) opt.update(dxold, dyold, dzold, dtauold, dkappaold, alpha1);
                 else opt.update(opt.dx, opt.dy, opt.dz, opt.dtau, opt.dkappa, alpha2);
                 if (opt.usrH)
                 {
