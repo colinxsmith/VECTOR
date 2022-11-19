@@ -152,7 +152,7 @@ namespace InteriorPoint
         }
         static double norm(double[] aa) => Math.Sqrt(BlasLike.ddotvec(aa.Length, aa, aa));
         static double square(double a) => a * a;
-        double gfunc(double a) => Math.Min(1e-8, square(1 - a)) * (1 - a);//Try 0.7 instead of 0.5
+        double gfunc(double a) => Math.Min(1e-10, square(1 - a)) * (1 - a);//Try 0.7 instead of 0.5
         double aob(double a, double b)
         {
             int fail = 21;
@@ -1838,17 +1838,14 @@ namespace InteriorPoint
                     opt.MaximumStep(gamma);
                     alphanew = stepReduce * opt.Lowest();
                     deriv=(alphanew-alphaold)/(gamma-gammafirst);
-                    delt=Math.Abs(gamma/deriv/2);
+                    delt=Math.Abs(gamma/deriv/10);
                     while (gamma>=0&&gamma<=1)
                     {
                         gammaold = gamma;
                         alphaold = Math.Max(alphanew, alphaold);
                         gamma +=deriv*delt;
-                        while(gamma>1||gamma<0){
-                        gamma -=deriv*delt;
-                        delt*=0.1;
-                        gamma +=deriv*delt;
-                        }
+                        if(gamma>=1)gamma=0.999999999;
+                        if(gamma<=0)gamma=1e-15;
                         opt.SolvePrimaryDual(gamma, true);
                         opt.MaximumStep(gamma);
                         alphanew = stepReduce * opt.Lowest();
@@ -1864,16 +1861,17 @@ namespace InteriorPoint
                     }
                     if (alphanew < alphak)
                     {
-                        gamma = 0.95;
+                        gamma = 0.99;
                         opt.SolvePrimaryDual(gamma, true);
                         opt.MaximumStep(gamma);
                         alphanew = stepReduce * opt.Lowest();
                     }
-                    while (gamma > 0)
+                    delt=5e-2;
+                    while (gamma > delt)
                     {
                         gammaold = gamma;
                         alphaold = Math.Max(alphanew, alphaold);
-                        gamma -= 0.1;
+                        gamma -= delt;
                         opt.SolvePrimaryDual(gamma, true);
                         opt.MaximumStep(gamma);
                         alphanew = stepReduce * opt.Lowest();
