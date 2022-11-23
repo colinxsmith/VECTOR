@@ -1520,7 +1520,7 @@ namespace InteriorPoint
             double[] QL = null;
             double zL = 0;
             ///<summary>stepReduce is the factor by which the step length to the boundary is reduced</summary>
-            var stepReduce = 1 - BlasLike.lm_eps16;
+            var stepReduce = 1 - 1e-3;
             opt.optMode = mode;
             if (mode == "SOCP")
             {
