@@ -3774,8 +3774,14 @@ namespace Portfolio
             BlasLike.dxminmax(c.Length,c,1,ref ccmax,ref ccmin);
        //    cFactor= SOCPcheck(A,c,b);
             BlasLike.dscalvec(c.Length,cFactor,c);
-            int[] cone = { n + 1, n };
-            int[] typecone = { (int)InteriorPoint.conetype.SOCP, (int)InteriorPoint.conetype.QP };
+            int[] cone = { n + 1};
+            Array.Resize(ref cone,n+1);
+            int[] typecone = { (int)InteriorPoint.conetype.SOCP};
+                        Array.Resize(ref typecone,n+1);
+            for(var i=0;i<n;i++){
+                cone[i+1]=1;
+                typecone[i+1]=(int)InteriorPoint.conetype.QP;
+            }
             x = new double[N];
             y = new double[M];
             var opt1 = new InteriorPoint.Optimise(N, M, x, A, b, c);
@@ -3867,6 +3873,8 @@ var LOSSstart = LOSS(n, x, DATA, targetR, null, n + 1);
             BlasLike.dxminmax(c.Length,c,1,ref ccmax,ref ccmin);
         //  cFactor= SOCPcheck(A,c,b);
             BlasLike.dscalvec(c.Length,cFactor,c);
+            typecone[0] = (int)InteriorPoint.conetype.SOCP;
+            typecone[1] = (int)InteriorPoint.conetype.QP;
             typecone[2] = (int)InteriorPoint.conetype.QP;
             x = new double[N];
             y = new double[M];
@@ -3939,6 +3947,8 @@ var nextFixRisk=0.0053598;//  0.006;//0.0299;//0.010102;//x[n];//Math.Sqrt(0.000
             cone[0] = n + 1;
             cone[1] = n + tlen;
             cone[2] = tlen+1;
+            typecone[0] = (int)InteriorPoint.conetype.SOCP;
+            typecone[1] = (int)InteriorPoint.conetype.QP;
             typecone[2] = (int)InteriorPoint.conetype.QP;
             x = new double[N];
             y = new double[M];

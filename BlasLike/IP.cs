@@ -153,7 +153,7 @@ namespace InteriorPoint
         }
         static double norm(double[] aa) => Math.Sqrt(BlasLike.ddotvec(aa.Length, aa, aa));
         static double square(double a) => a * a;
-        double corrector_gamma=0.7;
+        double corrector_gamma = 0.7;
         double gfunc(double a) => Math.Min(corrector_gamma, square(1 - a)) * (1 - a);//Try 0.7 instead of 0.5
         double aob(double a, double b)
         {
@@ -379,6 +379,218 @@ namespace InteriorPoint
                     }
                     if (!bad) break;
                     alpha *= lowest1;
+                }
+                ddx = ddz = dd = alpha;
+            }
+
+            else if (optMode == "QP")
+            {
+                double lowest = 1e-3, lowest1 = 1 - lowest;
+                ddx = 1.0;
+                ddz = 1.0;
+                dd = 1.0;
+                for (int i = 0; i < n; ++i)
+                {
+                    if (sign == null)
+                    {
+                        if (dx[i] < 0) ddx = Math.Min(ddx, -aob(x[i], dx[i]));
+                        if (dz[i] < 0) ddz = Math.Min(ddz, -aob(z[i], dz[i]));
+                    }
+                    else
+                    {
+                        if (dx[i] * sign[i] < 0)
+                            ddx = Math.Min(ddx, -aob(x[i], dx[i]));
+                        if (dz[i] * sign[i] < 0)
+                            ddz = Math.Min(ddz, -aob(z[i], dz[i]));
+                    }
+                }
+                if (homogenous)
+                {
+                    if (dtau < 0) dd = Math.Min(dd, -aob(tau, dtau));
+                    if (dkappa < 0) dd = Math.Min(dd, -aob(kappa, dkappa));
+                }
+                ddx *= lowest1;
+                ddz *= lowest1;
+                dd *= lowest1;
+            }
+        }
+        void MaximumStepnew(double gamma = 0)
+        {
+            if (optMode == "SOCP")
+            {
+                double alpha = 1.0;
+                double lowest = 5e-2, lowest1 = 1 - lowest;
+                ddx = alpha;
+                ddz = alpha;
+                dd = alpha;
+                var vz1 = new double[cone.Length];
+                var vz2 = new double[cone.Length];
+                var vz3 = new double[cone.Length];
+                var vx1 = new double[cone.Length];
+                var vx2 = new double[cone.Length];
+                var vx3 = new double[cone.Length];
+                for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                {
+                    var n = cone[icone];
+                    if (typecone[icone] == (int)conetype.QP)
+                    {
+                        for (int i = cstart; i < n + cstart; ++i)
+                        {
+                            if (dx[i] < 0) ddx = Math.Min(ddx, -aob(x[i], dx[i]));
+                            if (dz[i] < 0) ddz = Math.Min(ddz, -aob(z[i], dz[i]));
+                        }
+                        ddx *= lowest1;
+                        ddz *= lowest1;
+                        alpha = Math.Min(ddx, alpha);
+                        alpha = Math.Min(ddz, alpha);
+                    }
+                    else if (typecone[icone] == (int)conetype.SOCP)
+                    {
+                        var Qz = new double[n];
+                        var Qdz = new double[n];
+                        var Qx = new double[n];
+                        var Qdx = new double[n];
+                        BlasLike.dcopyvec(n, z, Qz, cstart, 0);//Qz
+                        Qmulvec(n, Qz);
+                        BlasLike.dcopyvec(n, dz, Qdz, cstart, 0);//Qdz
+                        Qmulvec(n, Qdz);
+                        vz1[icone] = BlasLike.ddotvec(n, z, Qz, cstart, 0);//z.Qz
+                        vz2[icone] = 2.0 * BlasLike.ddotvec(n, dz, Qz, cstart, 0);//dz.Qz
+                        vz3[icone] = BlasLike.ddotvec(n, dz, Qdz, cstart, 0);//dz.Qdz
+                        BlasLike.dcopyvec(n, x, Qx, cstart, 0);//Qx
+                        Qmulvec(n, Qx);
+                        BlasLike.dcopyvec(n, dx, Qdx, cstart, 0);//Qdx
+                        Qmulvec(n, Qdx);
+                        vx1[icone] = BlasLike.ddotvec(n, x, Qx, cstart, 0);//x.Qx
+                        vx2[icone] = 2.0 * BlasLike.ddotvec(n, dx, Qx, cstart, 0);//dx.Qx
+                        vx3[icone] = BlasLike.ddotvec(n, dx, Qdx, cstart, 0);//dx.Qdx
+                        if (Qdz[n - 1] < 0) alpha = Math.Min(-aob(Qz[n - 1], Qdz[n - 1]), alpha);
+                        if (dz[n - 1 + cstart] < 0) alpha = Math.Min(-aob(z[n - 1 + cstart], dz[n - 1 + cstart]), alpha);
+                        if (Qdx[n - 1] < 0) alpha = Math.Min(-aob(Qx[n - 1], Qdx[n - 1]), alpha);
+                        if (dx[n - 1 + cstart] < 0) alpha = Math.Min(-aob((x[n - 1 + cstart]), dx[n - 1 + cstart]), alpha);
+                        double inner;
+                        {
+                            var i = icone;
+                            if (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]) < 0)
+                            {
+                                if (Math.Abs(vz3[i]) <= 0)
+                                {
+                                    ColourConsole.WriteEmbeddedColourLine($"[yellow]No[/yellow] [cyan]vz3[/cyan] [magenta]{vz3[i]}[/magenta]");
+                                    if (vz2[i] < 0)
+                                        alpha = Math.Min(-vz1[i] / vz2[i], alpha);
+                                }
+                                else if (Math.Abs(vz2[i]) > 0 && (inner = 1.0 - 4.0 * vz3[i] * vz1[i] / vz2[i] / vz2[i]) > 0)
+                                {
+                                    double r1, r2;
+                                    inner = (inner > 0 ? Math.Sqrt(inner) * Math.Abs(vz2[i]) : 0);
+                                    r1 = (-vz2[i] - inner) / 2.0 / vz3[i]; r2 = (-vz2[i] + inner) / 2.0 / vz3[i];
+                                    if (vz3[i] > 0)
+                                    {
+                                        if (r1 < 0) r1 = r2;
+                                        alpha = Math.Min(Math.Max(r1, 0), alpha);
+                                    }
+                                    else
+                                    {
+                                        if (r2 < 0) r2 = r1;
+                                        alpha = Math.Min(Math.Max(r2, 0), alpha);
+                                    }
+                                }
+                                else if (Math.Abs(vz2[i]) <= 0 && (inner = -4.0 * vz3[i] * vz1[i]) >= 0)
+                                {
+                                    inner = (inner > 0 ? Math.Sqrt(inner) : 0);
+                                    double r1, r2;
+                                    r1 = (-vz2[i] - inner) / 2.0 / vz3[i]; r2 = (-vz2[i] + inner) / 2.0 / vz3[i];
+                                    if (vz3[i] > 0)
+                                    {
+                                        if (r1 < 0) r1 = r2;
+                                        alpha = Math.Min(Math.Max(r1, 0), alpha);
+                                    }
+                                    else
+                                    {
+                                        if (r2 < 0) r2 = r1;
+                                        alpha = Math.Min(Math.Max(r2, 0), alpha);
+                                    }
+                                }
+                                else
+                                    ColourConsole.WriteInfo("still negative");
+                            }
+                        }
+                        {
+                            var i = icone;
+                            if (vx1[i] + alpha * (vx2[i] + alpha * vx3[i]) < 0)
+                            {
+                                if (Math.Abs(vx3[i]) <= 0)
+                                {
+                                    ColourConsole.WriteEmbeddedColourLine($"[yellow]No[/yellow] [cyan]vx3[/cyan] [magenta]{vx3[i]}[/magenta]");
+                                    if (Math.Abs(vx2[i]) > 0)
+                                        alpha = Math.Min(-vx1[i] / vx2[i], alpha);
+                                }
+                                else if (Math.Abs(vx2[i]) > 0 && (inner = 1.0 - 4 * vx3[i] * vx1[i] / vx2[i] / vx2[i]) >= 0)
+                                {
+                                    double r1, r2;
+                                    inner = (inner > 0 ? Math.Sqrt(inner) * Math.Abs(vx2[i]) : 0);
+                                    r1 = (-vx2[i] - inner) / 2.0 / vx3[i]; r2 = (-vx2[i] + inner) / 2.0 / vx3[i];
+                                    if (vx3[i] > 0)
+                                    {
+                                        if (r1 < 0) r1 = r2;
+                                        alpha = Math.Min(Math.Max(r1, 0), alpha);
+                                    }
+                                    else
+                                    {
+                                        if (r2 < 0) r2 = r1;
+                                        alpha = Math.Min(Math.Max(r2, 0), alpha);
+                                    }
+                                }
+                                else if (Math.Abs(vx2[i]) <= 0 && (inner = -4 * vx3[i] * vx1[i]) >= 0)
+                                {
+                                    double r1, r2;
+                                    inner = (inner > 0 ? Math.Sqrt(inner) : 0);
+                                    r1 = (-vx2[i] - inner) / 2.0 / vx3[i]; r2 = (-vx2[i] + inner) / 2.0 / vx3[i];
+                                    if (vx3[i] > 0)
+                                    {
+                                        if (r1 < 0) r1 = r2;
+                                        alpha = Math.Min(Math.Max(r1, 0), alpha);
+                                    }
+                                    else
+                                    {
+                                        if (r2 < 0) r2 = r1;
+                                        alpha = Math.Min(Math.Max(r2, 0), alpha);
+                                    }
+                                }
+                                else
+                                    ColourConsole.WriteInfo("still negative");
+                            }
+                        }
+                    }
+                }
+                if (homogenous)
+                {
+                    if (dtau < 0) alpha = Math.Min(alpha, -aob(tau, dtau));
+                    if (dkappa < 0) alpha = Math.Min(alpha, -aob(kappa, dkappa));
+                }
+                double rhs, gamma1 = 1 - gamma, test1, test2 = 1, beta = 1e-8;
+                bool bad = true;
+                for (var l = 0; l < 1000; ++l)
+                {
+                    rhs = beta * (1.0 - alpha * gamma1) * mu;
+                    if (homogenous && kappa > BlasLike.lm_eps && dkappa != 0) test2 = (tau + alpha * dtau) * (kappa + alpha * dkappa);
+                    for (int i = 0; i < cone.Length; i++)
+                    {
+                        test1 = 0;bad=true;
+                        while(bad==true){
+                        if (typecone[i] == (int)conetype.SOCP)
+                        {
+                            test1 = (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]));
+                            if (test1 >= 0)
+                            {
+                                if (test1 > rhs * rhs && test2 > rhs) { bad = false; continue; }
+                            }
+                            bad = true;
+                        }else break;
+                    if (!bad) break;
+                    alpha *= lowest1;
+                        }
+                    }
                 }
                 ddx = ddz = dd = alpha;
             }
@@ -1307,6 +1519,145 @@ namespace InteriorPoint
             }
             CreateNormalMatrix();
         }
+        void MuResidualnew()
+        {
+            if (optMode == "QP") for (int i = 0; i < x.Length; ++i) rmu[i] = mu - x[i] * z[i];
+            else if (optMode == "SOCP")
+            {
+                bool zcopy = false, xcopy = false;
+                for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
+                {
+                    var n = cone[icone];
+                    if (typecone[icone] == (int)conetype.QP)
+                    {
+                        for (int i = cstart; i < n + cstart; ++i)
+                        {
+                            W2[i] = aob(z[i], x[i]);
+                            W[i] = Math.Sqrt(W2[i]);
+                            THETA[icone] = 1;
+                            xbar[i] = x[i] * W[i];
+                            zbar[i] = z[i] / W[i];
+                            rmu[i] = mu - xbar[i] * zbar[i];
+                        }
+                    }
+                    else if (typecone[icone] == (int)conetype.SOCP)
+                    {
+                        var xQx = 0.0;
+                        var zQz = 0.0;
+                        if (n == 1) THETA[icone] = Math.Sqrt(aob(z[cstart], x[cstart]));
+                        else
+                        {
+                            xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
+                            xcopy = false;
+                            if (xQx < BlasLike.lm_eps)
+                            {
+                                xcopy = true;
+                                if (x[n - 1 + cstart] > BlasLike.lm_rooteps)
+                                {
+                                    BlasLike.dscalvec(n - 1, .99 * x[n - 1 + cstart] / Math.Sqrt(x[n - 1 + cstart] * x[n - 1 + cstart] - xQx), x);
+                                    xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
+                                }
+                                else
+                                {
+                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, x, cstart);
+                                    x[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                    xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
+                                }
+                            }
+                            zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
+                            zcopy = false;
+                            if (zQz < BlasLike.lm_eps)
+                            {
+                                zcopy = true;
+                                if (z[n - 1 + cstart] > BlasLike.lm_eps * 0)
+                                {
+                                    BlasLike.dscalvec(n - 1, .99 * z[n - 1 + cstart] / Math.Sqrt(z[n - 1 + cstart] * z[n - 1 + cstart] - zQz), z);
+                                    zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
+                                }
+                                else
+                                {
+                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, z, cstart);
+                                    z[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                    zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
+                                }
+                            }
+                            THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
+                            if (double.IsNaN(THETA[icone]))
+                            {
+                                if (double.IsNaN(zQz))
+                                {
+                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, z, cstart);
+                                    z[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                    zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
+                                }
+                                if (double.IsNaN(xQx))
+                                {
+                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, x, cstart);
+                                    x[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                    xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
+                                }
+                                THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
+                            }}
+
+
+
+                            if (!double.IsNaN(THETA[icone]) && THETA[icone] >= BlasLike.lm_eps)
+                            {
+                                if (n == 1) W[cstart] = Math.Sqrt(aob(z[cstart], x[cstart]));
+                                else
+                                {
+                                    double zx = BlasLike.ddotvec(n, z, x, cstart, cstart);
+                                    double bot = Math.Sqrt((zx + Math.Sqrt(xQx * zQz)) * 2.0);
+                                    double z1 = THETA[icone] / bot;
+                                    double z2 = THETA[icone] * bot;
+                                    if (THETA[icone] == BlasLike.lm_eps) { z1 = 1.0; z2 = BlasLike.lm_eps; }
+                                    for (var i = cstart; i < n - 1 + cstart; ++i)
+                                    {
+                                        W[i] = -z1 * x[i] + z[i] / z2;
+                                    }
+                                    W[n - 1 + cstart] = z1 * x[n - 1 + cstart] + z[n - 1 + cstart] / z2;
+                                }
+                            }
+                            else
+                            {
+                                Debug.Assert(false);
+                                //DO something to stop main loop
+                            }
+                            double wcheck = BlasLike.ddotvec(n, W, W, cstart, cstart);
+                            if (double.IsNaN(wcheck))
+                            {
+                                ColourConsole.WriteInfo("BAD W"); Debug.Assert(false);
+                            }
+                            Wtrans(n, x, W, xbar, cstart, cstart, cstart); //xbar=thetaW.x
+                            thetaScale(n, xbar, THETA[icone], false, false, cstart);
+                            Wm1trans(n, z, W, zbar, cstart, cstart, cstart);//z=(thetaW)(thetaW)x
+                            thetaScale(n, zbar, THETA[icone], true, false, cstart);//zbar=(Wtheta)m1.z=xbar
+                            Tmulvec(n, xbar, cstart);//Tmulvec does nothing for SOCP, needed for SOCPR
+                            Tmulvec(n, zbar, cstart);
+                            if (zcopy)
+                            {
+                                BlasLike.dcopyvec(n, xbar, zbar);
+                            }
+                            else if (xcopy)
+                            {
+                                BlasLike.dcopyvec(n, zbar, xbar);
+                            }
+                            applyX(n, xbar, zbar, rmu, cstart, cstart, cstart);
+                            Tmulvec(n, rmu, cstart);
+                        }
+
+                        BlasLike.dnegvec(n, rmu, cstart);
+                        rmu[n - 1 + cstart] += mu;
+                    }
+                
+            }
+            if (homogenous)
+            {
+                hrmu = mu - tau * kappa;
+                rkxy = kappa + BlasLike.ddotvec(x.Length, cmod, x) - BlasLike.ddotvec(y.Length, b, y);
+            }
+            CreateNormalMatrix();
+        }
         void AmultSparseT(double[] y, double[] x, int astart = 0, int ystart = 0, int xstart = 0)
         {
             if (A != null)
@@ -1822,10 +2173,11 @@ namespace InteriorPoint
                 opt.MaximumStep(gamma);
                 alpha2 = stepReduce * opt.Lowest();
                 if (alpha2 < alphamin2 && alpha1 < alphamin2)
-                {alphamin2=Math.Max(alphamin2*0.1,BlasLike.lm_rooteps);
+                {
+                    alphamin2 = Math.Max(alphamin2 * 0.1, BlasLike.lm_rooteps);
                     double gammafirst = alpha2 > alpha1 ? gamma : 0;
                     bool clarify = alpha2 > alpha1;
-                    string result="";
+                    string result = "";
                     double alphak = Math.Max(alpha1, alpha2), alphanew, gammaold, alphaold = alphak, deriv, delt = 1e-12;
 
                     gamma = 0;
@@ -1836,7 +2188,7 @@ namespace InteriorPoint
                     opt.SolvePrimaryDual(gamma, true);
                     opt.MaximumStep(gamma);
                     alphanew = stepReduce * opt.Lowest();
-                   deriv = (alphanew - alphaold) / delt;
+                    deriv = (alphanew - alphaold) / delt;
                     if (clarify)
                     {
                         BlasLike.dcopyvec(n, opt.dx, dxold);
@@ -1846,40 +2198,42 @@ namespace InteriorPoint
                         dkappaold = opt.dkappa;
                         alpha1 = alpha2;
                     }
-                    if(false &&deriv>0){                    
-                    while (gamma >= 0 && gamma <= 1)
+                    if (false && deriv > 0)
                     {
-                        gammaold = gamma;
-                        alphaold = Math.Max(alphanew, alphaold);
-                        gamma += deriv;
-                        if (gamma >= 1) gamma = 0.999999999;
-                        if (gamma <= 0) gamma = 1e-15;
-                        opt.SolvePrimaryDual(gamma, true);
-                        opt.MaximumStep(gamma);
-                        alphanew = stepReduce * opt.Lowest();
-                        deriv = (alphanew - alphaold) / (gamma - gammaold);
-                        if (Math.Abs((alphanew - alphaold) / alphaold) < deriv )
+                        while (gamma >= 0 && gamma <= 1)
                         {
-                            gamma = gammaold;
+                            gammaold = gamma;
+                            alphaold = Math.Max(alphanew, alphaold);
+                            gamma += deriv;
+                            if (gamma >= 1) gamma = 0.999999999;
+                            if (gamma <= 0) gamma = 1e-15;
                             opt.SolvePrimaryDual(gamma, true);
                             opt.MaximumStep(gamma);
                             alphanew = stepReduce * opt.Lowest();
-                            break;
+                            deriv = (alphanew - alphaold) / (gamma - gammaold);
+                            if (Math.Abs((alphanew - alphaold) / alphaold) < deriv)
+                            {
+                                gamma = gammaold;
+                                opt.SolvePrimaryDual(gamma, true);
+                                opt.MaximumStep(gamma);
+                                alphanew = stepReduce * opt.Lowest();
+                                break;
+                            }
+                            else if (alphanew < alphaold)
+                            {
+                                gamma = gammaold;
+                                opt.SolvePrimaryDual(gamma, true);
+                                opt.MaximumStep(gamma);
+                                alphanew = stepReduce * opt.Lowest();
+                                break;
+                            }
+                            result += "Part 1 ";
                         }
-                        else if (alphanew < alphaold)
-                        {
-                            gamma = gammaold;
-                            opt.SolvePrimaryDual(gamma, true);
-                            opt.MaximumStep(gamma);
-                            alphanew = stepReduce * opt.Lowest();
-                            break;
-                        }
-                        result += "Part 1 ";
-                    }}
-                    else gamma=0;
-                    
-                    gammaold=gamma;
-                    alphaold=alphanew;
+                    }
+                    else gamma = 0;
+
+                    gammaold = gamma;
+                    alphaold = alphanew;
                     if (alphanew <= alphak)
                     {
                         gamma = 0.999999999;
@@ -1888,7 +2242,7 @@ namespace InteriorPoint
                         alphanew = stepReduce * opt.Lowest();
                     }
                     delt = 1e-1;
-                    while (gamma > delt&&alphanew<0.9)
+                    while (gamma > delt && alphanew < 0.9)
                     {
                         alphaold = Math.Max(alphanew, alphaold);
                         gamma -= delt;
@@ -1897,18 +2251,20 @@ namespace InteriorPoint
                         alphanew = stepReduce * opt.Lowest();
                         if (alphanew >= alphaold)
                         {
-                            gammaold=gamma;
-                        result+="Part 2 ";
-                        if(alphanew==alphaold)break;
+                            gammaold = gamma;
+                            result += "Part 2 ";
+                            if (alphanew == alphaold) break;
                         }
                     }
-                    if(gamma!=gammaold){
-                    gamma=gammaold;
-                            opt.SolvePrimaryDual(gamma, true);
-                            opt.MaximumStep(gamma);
-                            alphanew = stepReduce * opt.Lowest();}
-                    delt=gamma*1e-1;
-                    while (gamma > delt&&alphanew<0.9)
+                    if (gamma != gammaold)
+                    {
+                        gamma = gammaold;
+                        opt.SolvePrimaryDual(gamma, true);
+                        opt.MaximumStep(gamma);
+                        alphanew = stepReduce * opt.Lowest();
+                    }
+                    delt = gamma * 1e-1;
+                    while (gamma > delt && alphanew < 0.9)
                     {
                         alphaold = Math.Max(alphanew, alphaold);
                         gamma -= delt;
@@ -1917,21 +2273,24 @@ namespace InteriorPoint
                         alphanew = stepReduce * opt.Lowest();
                         if (alphanew >= alphaold)
                         {
-                            gammaold=gamma;
-                        result+="Part 3 ";
+                            gammaold = gamma;
+                            result += "Part 3 ";
                         }
                     }
-                    if(gamma!=gammaold){
-                    gamma=gammaold;
-                            opt.SolvePrimaryDual(gamma, true);
-                            opt.MaximumStep(gamma);
-                            alphanew = stepReduce * opt.Lowest();}
+                    if (gamma != gammaold)
+                    {
+                        gamma = gammaold;
+                        opt.SolvePrimaryDual(gamma, true);
+                        opt.MaximumStep(gamma);
+                        alphanew = stepReduce * opt.Lowest();
+                    }
                     if (alphanew >= alphak)
                     {
                         alpha2 = alphanew;
                         ColourConsole.WriteEmbeddedColourLine($"[green]Found better step size[/green] [cyan]{alphanew}[/cyan] [red]{alphak} ({gamma}[/red],[magenta]{gammafirst}[/magenta][red])[/red]");
-                        corrector_gamma=gamma;
-                    }else result="";
+                        corrector_gamma = gamma;
+                    }
+                    else result = "";
                     if (clarify && alphanew < alphak)
                     {
                         ColourConsole.WriteEmbeddedColourLine($"[red]CLARIFY[/red] [yellow]alpha2 not improved {alpha2} {alphanew}[/yellow]");
