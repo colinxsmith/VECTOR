@@ -1416,7 +1416,7 @@ namespace InteriorPoint
 
                         if (n == 1)
                         {
-                            THETA[icone] = Math.Sqrt(aob(z[cstart], x[cstart]));
+                            THETA[icone] = 1;
                             W2[cstart] = aob(z[cstart], x[cstart]);
                             W[cstart] = Math.Sqrt(W2[cstart]);
                         }
@@ -1498,12 +1498,12 @@ namespace InteriorPoint
                         {
                             ColourConsole.WriteInfo("BAD W"); Debug.Assert(false);
                         }
-                        if(n!=1)Wtrans(n, x, W, xbar, cstart, cstart, cstart); //xbar=thetaW.x
-                        else BlasLike.dcopyvec(n,x,xbar,cstart,cstart);
+                        Wtrans(n, x, W, xbar, cstart, cstart, cstart); //xbar=thetaW.x
+                       
                         thetaScale(n, xbar, THETA[icone], false, false, cstart);
 
-                        if(n!=1)Wm1trans(n, z, W, zbar, cstart, cstart, cstart);//z=(thetaW)(thetaW)x
-                        else BlasLike.dcopyvec(n,z,zbar,cstart,cstart);
+                        Wm1trans(n, z, W, zbar, cstart, cstart, cstart);//z=(thetaW)(thetaW)x
+                    
                         thetaScale(n, zbar, THETA[icone], true, false, cstart);//zbar=(Wtheta)m1.z=xbar
 
                         Tmulvec(n, xbar, cstart);//Tmulvec does nothing for SOCP, needed for SOCPR
