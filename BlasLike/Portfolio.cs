@@ -3698,7 +3698,7 @@ namespace Portfolio
             }
             var targetR = (double[])new double[tlen];
             var benchmark=(double[])new double[2*n];
-            BlasLike.dsetvec(n,1.0/n,benchmark);
+            BlasLike.dsetvec(n,0,benchmark);
             var x = new double[n];
             var alpha = new double[n];
             BlasLike.dsetvec(tlen, 1.0 / tlen, targetR);
@@ -3775,12 +3775,12 @@ namespace Portfolio
        //    cFactor= SOCPcheck(A,c,b);
             BlasLike.dscalvec(c.Length,cFactor,c);
             int[] cone = { n + 1};
-            Array.Resize(ref cone,n+1);
-            int[] typecone = { (int)InteriorPoint.conetype.SOCP};
+            int[] typecone = { (int)InteriorPoint.conetype.SOCP,(int)InteriorPoint.conetype.QP};
+           Array.Resize(ref cone,n+1);
                         Array.Resize(ref typecone,n+1);
             for(var i=0;i<n;i++){
                 cone[i+1]=1;
-                typecone[i+1]=(int)InteriorPoint.conetype.QP;
+                typecone[i+1]=(int)InteriorPoint.conetype.SOCP;
             }
             x = new double[N];
             y = new double[M];
