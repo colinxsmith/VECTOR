@@ -3865,17 +3865,21 @@ var LOSSstart = LOSS(n, x, DATA, targetR, null, n + 1);
             {
                 BlasLike.dcopy(n, portfolioConstraints, m, A, M, i, i + (n + 1) * M);
             }
-            Array.Resize(ref cone, 3);
-            Array.Resize(ref typecone, 3);
+            Array.Resize(ref cone, 1+n+2*tlen);
+            Array.Resize(ref typecone, 1+2*tlen+n);
             cone[0] = n + 1;
-            cone[1] = n + tlen;
-            cone[2] = tlen;
+            typecone[0] = (int)InteriorPoint.conetype.SOCP;
+           /* cone[1] = n + tlen;
+            cone[2] = tlen;*/
+            for(var i=0;i<cone.Length-1;++i){
+                cone[i+1]=1;
+                typecone[i+1]=(int)InteriorPoint.conetype.SOCP;
+            }
             BlasLike.dxminmax(c.Length,c,1,ref ccmax,ref ccmin);
         //  cFactor= SOCPcheck(A,c,b);
             BlasLike.dscalvec(c.Length,cFactor,c);
-            typecone[0] = (int)InteriorPoint.conetype.SOCP;
-            typecone[1] = (int)InteriorPoint.conetype.QP;
-            typecone[2] = (int)InteriorPoint.conetype.QP;
+        /*    typecone[1] = (int)InteriorPoint.conetype.QP;
+            typecone[2] = (int)InteriorPoint.conetype.QP;*/
             x = new double[N];
             y = new double[M];
             opt1 = new InteriorPoint.Optimise(N, M, x, A, b, c);
@@ -3942,14 +3946,18 @@ var nextFixRisk=0.0053598;//  0.006;//0.0299;//0.010102;//x[n];//Math.Sqrt(0.000
                 BlasLike.dcopy(n, portfolioConstraints, m, A, M, i, i + (n + 1) * M);
             }
             BlasLike.dset(1,1,A,M,m+n+tlen+n*M);
-            Array.Resize(ref cone, 3);
-            Array.Resize(ref typecone, 3);
+            Array.Resize(ref cone, n+1+tlen*2+1);
+            Array.Resize(ref typecone, n+1+tlen*2+1);
             cone[0] = n + 1;
-            cone[1] = n + tlen;
-            cone[2] = tlen+1;
             typecone[0] = (int)InteriorPoint.conetype.SOCP;
+          /*  cone[1] = n + tlen;
+            cone[2] = tlen+1;
             typecone[1] = (int)InteriorPoint.conetype.QP;
-            typecone[2] = (int)InteriorPoint.conetype.QP;
+            typecone[2] = (int)InteriorPoint.conetype.QP;*/
+            for(var i=0;i<cone.Length-1;++i){
+                cone[i+1]=1;
+                typecone[i+1]=(int)InteriorPoint.conetype.SOCP;
+            }
             x = new double[N];
             y = new double[M];
             BlasLike.dxminmax(c.Length,c,1,ref ccmax,ref ccmin);

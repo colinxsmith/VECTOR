@@ -1414,13 +1414,13 @@ namespace InteriorPoint
                         var xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
                         var zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
 
-                        if (n == 1)
+                   /*     if (n == 1)
                         {
                             THETA[icone] = 1;
                             W2[cstart] = aob(z[cstart], x[cstart]);
                             W[cstart] = Math.Sqrt(W2[cstart]);
                         }
-                        else
+                        else*/
                         {
                             xcopy = false;
                             if (xQx < BlasLike.lm_eps)
