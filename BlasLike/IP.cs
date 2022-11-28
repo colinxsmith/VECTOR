@@ -302,7 +302,7 @@ namespace InteriorPoint
                                     }
                                 }
                                 else
-                                    ColourConsole.WriteInfo("still negative");
+                                    ColourConsole.WriteEmbeddedColourLine($"ROUNDING {vz1[i]} {vz2[i]} {vz3[i]}");
                             }
                         }
                         {
@@ -348,7 +348,7 @@ namespace InteriorPoint
                                     }
                                 }
                                 else
-                                    ColourConsole.WriteInfo("still negative");
+                                    ColourConsole.WriteEmbeddedColourLine($"ROUNDING {vx1[i]} {vx2[i]} {vx3[i]}");
                             }
                         }
                     }
@@ -467,97 +467,92 @@ namespace InteriorPoint
                         if (Qdx[n - 1] < 0) alpha = Math.Min(-aob(Qx[n - 1], Qdx[n - 1]), alpha);
                         if (dx[n - 1 + cstart] < 0) alpha = Math.Min(-aob((x[n - 1 + cstart]), dx[n - 1 + cstart]), alpha);
                         double inner;
+                        var i = icone;
+                        if (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]) < BlasLike.lm_eps8)
                         {
-                            var i = icone;
-                            if (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]) < 0)
+                            if (Math.Abs(vz3[i]) <= 0)
                             {
-                                if (Math.Abs(vz3[i]) <= 0)
+                                ColourConsole.WriteEmbeddedColourLine($"[yellow]No[/yellow] [cyan]vz3[/cyan] [magenta]{vz3[i]}[/magenta]");
+                                if (vz2[i] < 0)
+                                    alpha = Math.Min(-vz1[i] / vz2[i], alpha);
+                            }
+                            else if (Math.Abs(vz2[i]) > 0 && (inner = 1.0 - 4.0 * vz3[i] * vz1[i] / vz2[i] / vz2[i]) > 0)
+                            {
+                                double r1, r2;
+                                inner = (inner > 0 ? Math.Sqrt(inner) * Math.Abs(vz2[i]) : 0);
+                                r1 = (-vz2[i] - inner) / 2.0 / vz3[i]; r2 = (-vz2[i] + inner) / 2.0 / vz3[i];
+                                if (vz3[i] > 0)
                                 {
-                                    ColourConsole.WriteEmbeddedColourLine($"[yellow]No[/yellow] [cyan]vz3[/cyan] [magenta]{vz3[i]}[/magenta]");
-                                    if (vz2[i] < 0)
-                                        alpha = Math.Min(-vz1[i] / vz2[i], alpha);
-                                }
-                                else if (Math.Abs(vz2[i]) > 0 && (inner = 1.0 - 4.0 * vz3[i] * vz1[i] / vz2[i] / vz2[i]) > 0)
-                                {
-                                    double r1, r2;
-                                    inner = (inner > 0 ? Math.Sqrt(inner) * Math.Abs(vz2[i]) : 0);
-                                    r1 = (-vz2[i] - inner) / 2.0 / vz3[i]; r2 = (-vz2[i] + inner) / 2.0 / vz3[i];
-                                    if (vz3[i] > 0)
-                                    {
-                                        if (r1 < 0) r1 = r2;
-                                        alpha = Math.Min(Math.Max(r1, 0), alpha);
-                                    }
-                                    else
-                                    {
-                                        if (r2 < 0) r2 = r1;
-                                        alpha = Math.Min(Math.Max(r2, 0), alpha);
-                                    }
-                                }
-                                else if (Math.Abs(vz2[i]) <= 0 && (inner = -4.0 * vz3[i] * vz1[i]) >= 0)
-                                {
-                                    inner = (inner > 0 ? Math.Sqrt(inner) : 0);
-                                    double r1, r2;
-                                    r1 = (-vz2[i] - inner) / 2.0 / vz3[i]; r2 = (-vz2[i] + inner) / 2.0 / vz3[i];
-                                    if (vz3[i] > 0)
-                                    {
-                                        if (r1 < 0) r1 = r2;
-                                        alpha = Math.Min(Math.Max(r1, 0), alpha);
-                                    }
-                                    else
-                                    {
-                                        if (r2 < 0) r2 = r1;
-                                        alpha = Math.Min(Math.Max(r2, 0), alpha);
-                                    }
+                                    if (r1 < 0) r1 = r2;
+                                    alpha = Math.Min(Math.Max(r1, 0), alpha);
                                 }
                                 else
-                                    ColourConsole.WriteInfo("still negative");
+                                {
+                                    if (r2 < 0) r2 = r1;
+                                    alpha = Math.Min(Math.Max(r2, 0), alpha);
+                                }
                             }
+                            else if (Math.Abs(vz2[i]) <= 0 && (inner = -4.0 * vz3[i] * vz1[i]) >= 0)
+                            {
+                                inner = (inner > 0 ? Math.Sqrt(inner) : 0);
+                                double r1, r2;
+                                r1 = (-vz2[i] - inner) / 2.0 / vz3[i]; r2 = (-vz2[i] + inner) / 2.0 / vz3[i];
+                                if (vz3[i] > 0)
+                                {
+                                    if (r1 < 0) r1 = r2;
+                                    alpha = Math.Min(Math.Max(r1, 0), alpha);
+                                }
+                                else
+                                {
+                                    if (r2 < 0) r2 = r1;
+                                    alpha = Math.Min(Math.Max(r2, 0), alpha);
+                                }
+                            }
+                          //  else
+                          //      ColourConsole.WriteEmbeddedColourLine($"[red]ROUNDING cone z{i}[/red] [green]{vz1[i]}[/green] [yellow]{vz2[i]}[/yellow] [cyan]{vz3[i]}[/cyan]");
                         }
+                        if (vx1[i] + alpha * (vx2[i] + alpha * vx3[i]) < BlasLike.lm_eps8)
                         {
-                            var i = icone;
-                            if (vx1[i] + alpha * (vx2[i] + alpha * vx3[i]) < 0)
+                            if (Math.Abs(vx3[i]) <= 0)
                             {
-                                if (Math.Abs(vx3[i]) <= 0)
+                                ColourConsole.WriteEmbeddedColourLine($"[yellow]No[/yellow] [cyan]vx3[/cyan] [magenta]{vx3[i]}[/magenta]");
+                                if (Math.Abs(vx2[i]) > 0)
+                                    alpha = Math.Min(-vx1[i] / vx2[i], alpha);
+                            }
+                            else if (Math.Abs(vx2[i]) > 0 && (inner = 1.0 - 4 * vx3[i] * vx1[i] / vx2[i] / vx2[i]) >= 0)
+                            {
+                                double r1, r2;
+                                inner = (inner > 0 ? Math.Sqrt(inner) * Math.Abs(vx2[i]) : 0);
+                                r1 = (-vx2[i] - inner) / 2.0 / vx3[i]; r2 = (-vx2[i] + inner) / 2.0 / vx3[i];
+                                if (vx3[i] > 0)
                                 {
-                                    ColourConsole.WriteEmbeddedColourLine($"[yellow]No[/yellow] [cyan]vx3[/cyan] [magenta]{vx3[i]}[/magenta]");
-                                    if (Math.Abs(vx2[i]) > 0)
-                                        alpha = Math.Min(-vx1[i] / vx2[i], alpha);
-                                }
-                                else if (Math.Abs(vx2[i]) > 0 && (inner = 1.0 - 4 * vx3[i] * vx1[i] / vx2[i] / vx2[i]) >= 0)
-                                {
-                                    double r1, r2;
-                                    inner = (inner > 0 ? Math.Sqrt(inner) * Math.Abs(vx2[i]) : 0);
-                                    r1 = (-vx2[i] - inner) / 2.0 / vx3[i]; r2 = (-vx2[i] + inner) / 2.0 / vx3[i];
-                                    if (vx3[i] > 0)
-                                    {
-                                        if (r1 < 0) r1 = r2;
-                                        alpha = Math.Min(Math.Max(r1, 0), alpha);
-                                    }
-                                    else
-                                    {
-                                        if (r2 < 0) r2 = r1;
-                                        alpha = Math.Min(Math.Max(r2, 0), alpha);
-                                    }
-                                }
-                                else if (Math.Abs(vx2[i]) <= 0 && (inner = -4 * vx3[i] * vx1[i]) >= 0)
-                                {
-                                    double r1, r2;
-                                    inner = (inner > 0 ? Math.Sqrt(inner) : 0);
-                                    r1 = (-vx2[i] - inner) / 2.0 / vx3[i]; r2 = (-vx2[i] + inner) / 2.0 / vx3[i];
-                                    if (vx3[i] > 0)
-                                    {
-                                        if (r1 < 0) r1 = r2;
-                                        alpha = Math.Min(Math.Max(r1, 0), alpha);
-                                    }
-                                    else
-                                    {
-                                        if (r2 < 0) r2 = r1;
-                                        alpha = Math.Min(Math.Max(r2, 0), alpha);
-                                    }
+                                    if (r1 < 0) r1 = r2;
+                                    alpha = Math.Min(Math.Max(r1, 0), alpha);
                                 }
                                 else
-                                    ColourConsole.WriteInfo("still negative");
+                                {
+                                    if (r2 < 0) r2 = r1;
+                                    alpha = Math.Min(Math.Max(r2, 0), alpha);
+                                }
                             }
+                            else if (Math.Abs(vx2[i]) <= 0 && (inner = -4 * vx3[i] * vx1[i]) >= 0)
+                            {
+                                double r1, r2;
+                                inner = (inner > 0 ? Math.Sqrt(inner) : 0);
+                                r1 = (-vx2[i] - inner) / 2.0 / vx3[i]; r2 = (-vx2[i] + inner) / 2.0 / vx3[i];
+                                if (vx3[i] > 0)
+                                {
+                                    if (r1 < 0) r1 = r2;
+                                    alpha = Math.Min(Math.Max(r1, 0), alpha);
+                                }
+                                else
+                                {
+                                    if (r2 < 0) r2 = r1;
+                                    alpha = Math.Min(Math.Max(r2, 0), alpha);
+                                }
+                            }
+                         //   else
+                         //       ColourConsole.WriteEmbeddedColourLine($"[red]ROUNDING cone x{i}[/red] [green]{vx1[i]}[/green] [yellow]{vx2[i]}[/yellow] [cyan]{vx3[i]}[/cyan]");
                         }
                     }
                 }
@@ -579,7 +574,7 @@ namespace InteriorPoint
                         if (homogenous && kappa > BlasLike.lm_eps && dkappa != 0) test2 = (tau + alpha * dtau) * (kappa + alpha * dkappa);
                         if (typecone[i] == (int)conetype.SOCP)
                         {
-                            if ((test1 = (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]))) >= 0)
+                            if ((test1 = (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]))) >= BlasLike.lm_eps16)
                             {
                                 if (test1 > rhs * rhs && test2 > rhs) { bad = false; continue; }
                             }
@@ -1414,84 +1409,88 @@ namespace InteriorPoint
                         var xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
                         var zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
 
-                   /*     if (n == 1)
+                        xcopy = false;
+                        if (xQx < BlasLike.lm_rooteps)
                         {
-                            THETA[icone] = 1;
-                            W2[cstart] = aob(z[cstart], x[cstart]);
-                            W[cstart] = Math.Sqrt(W2[cstart]);
-                        }
-                        else*/
-                        {
-                            xcopy = false;
-                            if (xQx < BlasLike.lm_eps)
+                            //        xcopy = true;
+                            var oldval = xQx;
+                            if (x[n - 1 + cstart] > BlasLike.lm_rooteps)
                             {
-                                xcopy = true;
-                                if (x[n - 1 + cstart] > BlasLike.lm_rooteps)
-                                {
-                                    BlasLike.dscalvec(n - 1, .99 * x[n - 1 + cstart] / Math.Sqrt(x[n - 1 + cstart] * x[n - 1 + cstart] - xQx), x);
-                                    xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
-                                }
-                                else
-                                {
-                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, x, cstart);
-                                    x[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
-                                    xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
-                                }
-                            }
-                            zcopy = false;
-                            if (zQz < BlasLike.lm_eps)
-                            {
-                                zcopy = true;
-                                if (z[n - 1 + cstart] > BlasLike.lm_eps * 0)
-                                {
-                                    BlasLike.dscalvec(n - 1, .99 * z[n - 1 + cstart] / Math.Sqrt(z[n - 1 + cstart] * z[n - 1 + cstart] - zQz), z);
-                                    zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
-                                }
-                                else
-                                {
-                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, z, cstart);
-                                    z[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
-                                    zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
-                                }
-                            }
-                            THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
-                            if (double.IsNaN(THETA[icone]))
-                            {
-                                if (double.IsNaN(zQz))
-                                {
-                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, z, cstart);
-                                    z[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
-                                    zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
-                                }
-                                if (double.IsNaN(xQx))
-                                {
-                                    BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, x, cstart);
-                                    x[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
-                                    xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
-                                }
-                                THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
-                            }
-
-
-
-                            if (!double.IsNaN(THETA[icone]) && THETA[icone] >= BlasLike.lm_eps)
-                            {
-                                double zx = BlasLike.ddotvec(n, z, x, cstart, cstart);
-                                double bot = Math.Sqrt((zx + Math.Sqrt(xQx * zQz)) * 2.0);
-                                double z1 = THETA[icone] / bot;
-                                double z2 = THETA[icone] * bot;
-                                if (THETA[icone] == BlasLike.lm_eps) { z1 = 1.0; z2 = BlasLike.lm_eps; }
-                                for (var i = cstart; i < n - 1 + cstart; ++i)
-                                {
-                                    W[i] = -z1 * x[i] + z[i] / z2;
-                                }
-                                W[n - 1 + cstart] = z1 * x[n - 1 + cstart] + z[n - 1 + cstart] / z2;
-                            }
+                                var inner = BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
+                                var fact = (2*BlasLike.lm_rooteps - oldval) / inner;
+                                if(fact>1){
+                                fact = 1 - fact;
+                                fact = Math.Sqrt(fact);
+                                BlasLike.dscalvec(n - 1, fact, x, cstart);
+                                xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
+                            }}
                             else
                             {
-                                Debug.Assert(false);
-                                //DO something to stop main loop
+                                BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, x, cstart);
+                                x[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
                             }
+                        }
+                        zcopy = false;
+                        if (zQz < BlasLike.lm_rooteps)
+                        {
+                            //        zcopy = true;
+                            var oldval = zQz;
+                            if (z[n - 1 + cstart] > BlasLike.lm_rooteps)
+                            {
+                                var inner = BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
+                                var fact = (2*BlasLike.lm_rooteps - oldval) / inner;
+                                if(fact>1){
+                                fact = 1 - fact;
+                                fact = Math.Sqrt(fact);
+                                BlasLike.dscalvec(n - 1, fact, z, cstart);
+                                zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
+                            }}
+                            else
+                            {
+                                BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, z, cstart);
+                                z[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
+                            }
+                        }
+                        THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
+                        if (double.IsNaN(THETA[icone]))
+                        {
+                            if (double.IsNaN(zQz))
+                            {
+                                BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, z, cstart);
+                                z[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
+                            }
+                            if (double.IsNaN(xQx))
+                            {
+                                BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, x, cstart);
+                                x[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
+                                xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
+                            }
+                            THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
+                        }
+
+
+
+                        if (!double.IsNaN(THETA[icone]) && THETA[icone] >= BlasLike.lm_eps)
+                        {
+                            double zx = BlasLike.ddotvec(n, z, x, cstart, cstart);
+                            double bot = Math.Sqrt((zx + Math.Sqrt(xQx * zQz)) * 2.0);
+                            double z1 = THETA[icone] / bot;
+                            double z2 = THETA[icone] * bot;
+                            if (THETA[icone] == BlasLike.lm_eps) { z1 = 1.0; z2 = BlasLike.lm_eps; }
+                            for (var i = cstart; i < n - 1 + cstart; ++i)
+                            {
+                                W[i] = -z1 * x[i] + z[i] / z2;
+                            }
+                            W[n - 1 + cstart] = z1 * x[n - 1 + cstart] + z[n - 1 + cstart] / z2;
+                        }
+                        else
+                        {
+                            Debug.Assert(false);
+                            //DO something to stop main loop
+
                         }
                         double wcheck = BlasLike.ddotvec(n, W, W, cstart, cstart);
                         if (double.IsNaN(wcheck))
@@ -1499,13 +1498,9 @@ namespace InteriorPoint
                             ColourConsole.WriteInfo("BAD W"); Debug.Assert(false);
                         }
                         Wtrans(n, x, W, xbar, cstart, cstart, cstart); //xbar=thetaW.x
-                       
                         thetaScale(n, xbar, THETA[icone], false, false, cstart);
-
                         Wm1trans(n, z, W, zbar, cstart, cstart, cstart);//z=(thetaW)(thetaW)x
-                    
                         thetaScale(n, zbar, THETA[icone], true, false, cstart);//zbar=(Wtheta)m1.z=xbar
-
                         Tmulvec(n, xbar, cstart);//Tmulvec does nothing for SOCP, needed for SOCPR
                         Tmulvec(n, zbar, cstart);
                         if (zcopy)
@@ -1518,8 +1513,6 @@ namespace InteriorPoint
                         }
                         applyX(n, xbar, zbar, rmu, cstart, cstart, cstart);
                         Tmulvec(n, rmu, cstart);
-
-
                         BlasLike.dnegvec(n, rmu, cstart);
                         rmu[n - 1 + cstart] += mu;
                     }
@@ -2167,7 +2160,7 @@ namespace InteriorPoint
                         ColourConsole.WriteInfo($"rp1 = {rp1}");
                         ColourConsole.WriteInfo($"rd1 = {rd1}");
                         ColourConsole.WriteInfo($"comp1 = {comp1}");
-                        BlasLike.dcopyvec(xbar.Length, xbar, zbar);
+                        //                 BlasLike.dcopyvec(xbar.Length, xbar, zbar);
                         //       break;
                     }
                 }
