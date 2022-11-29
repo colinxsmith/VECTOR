@@ -3698,7 +3698,7 @@ namespace Portfolio
             }
             var targetR = (double[])new double[tlen];
             var benchmark=(double[])new double[2*n];
-            BlasLike.dsetvec(n,0,benchmark);
+            BlasLike.dsetvec(n,1.0/n,benchmark);
             var x = new double[n];
             var alpha = new double[n];
             BlasLike.dsetvec(tlen, 1.0 / tlen, targetR);
