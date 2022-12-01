@@ -366,14 +366,14 @@ namespace InteriorPoint
                         {
                             if (n > 1)
                             {
-                                if ((test1 = (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]))) > BlasLike.lm_eps/10)
+                                if ((test1 = (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]))) > square(BlasLike.lm_eps*8192))
                                 {
-                                    if (test1 > rhs * rhs && test2 > rhs) { bad = false; }
+                                    if (test1 > square(rhs) && test2 > rhs) { bad = false; }
                                 }
                             }
                             else
                             {
-                                if ((test1 = (x[cstart] + alpha * dx[cstart]) * (z[cstart] + alpha * dz[cstart])) > BlasLike.lm_eps/10)
+                                if ((test1 = (x[cstart] + alpha * dx[cstart]) * (z[cstart] + alpha * dz[cstart])) > BlasLike.lm_eps*8192)
                                 {
                                     if (test1 > rhs && test2 > rhs) { bad = false; }
                                 }
@@ -1258,7 +1258,7 @@ namespace InteriorPoint
                             }
                         }
                         THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
-                        if (double.IsNaN(THETA[icone]) || THETA[icone] == 0)
+                        if (double.IsNaN(THETA[icone]) || THETA[icone] == 0||xQx==0)
                         {
                             if (double.IsNaN(zQz) || zQz <= 0)
                             {
