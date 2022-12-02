@@ -12,6 +12,7 @@ namespace Blas
         public static double lm_eps2 = lm_eps * 2;
         public static double lm_eps8 = lm_eps * 8;
         public static double lm_eps16 = lm_eps * 16;
+        public static double lm_eps8192 = lm_eps * 8192;
         public static double lambdatest = lm_eps;
         public static double lm_min = 2.2250738585072014e-308;
         public const double lm_max = 1.7976931348623157e+308;

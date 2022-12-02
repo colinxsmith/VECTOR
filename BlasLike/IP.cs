@@ -209,7 +209,7 @@ namespace InteriorPoint
             if (optMode == "SOCP")
             {
                 double alpha = 1.0;
-                double lowest = 5e-2, lowest1 = 1 - lowest;
+                double lowest = 1e-1, lowest1 = 1 - lowest;
                 ddx = alpha;
                 ddz = alpha;
                 dd = alpha;
@@ -351,9 +351,9 @@ namespace InteriorPoint
                     if (dtau < 0) alpha = Math.Min(alpha, -aob(tau, dtau));
                     if (dkappa < 0) alpha = Math.Min(alpha, -aob(kappa, dkappa));
                 }
-                double rhs, gamma1 = 1 - gamma, test1, test2 = 1, beta = 1e-8;
+                double  gamma1 = 1 - gamma, test1, test2 = 1, beta = 1e-11;
                 bool bad = true;
-                rhs = beta * (1.0 - alpha * gamma1) * mu;
+                var rhs = beta * (1.0 - alpha * gamma1) * mu;
 
                 for (int i = 0, cstart = 0; i < cone.Length; cstart += cone[i], i++)
                 {
@@ -361,19 +361,20 @@ namespace InteriorPoint
                     test1 = 0; bad = true;
                     while (bad == true && alpha > BlasLike.lm_eps)
                     {
+                rhs = beta * (1.0 - alpha * gamma1) * mu;
                         if (homogenous && kappa > BlasLike.lm_eps && dkappa != 0) test2 = (tau + alpha * dtau) * (kappa + alpha * dkappa);
                         if (typecone[i] == (int)conetype.SOCP)
-                        {
+                        {var roundlim=BlasLike.lm_eps8192*8;
                             if (n > 1)
                             {
-                                if ((test1 = (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]))) > square(BlasLike.lm_eps*8192))
+                                if ((test1 = (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]))) > square(roundlim))
                                 {
                                     if (test1 > square(rhs) && test2 > rhs) { bad = false; }
                                 }
                             }
                             else
                             {
-                                if ((test1 = (x[cstart] + alpha * dx[cstart]) * (z[cstart] + alpha * dz[cstart])) > BlasLike.lm_eps*8192)
+                                if ((test1 = (x[cstart] + alpha * dx[cstart]) * (z[cstart] + alpha * dz[cstart])) > roundlim)
                                 {
                                     if (test1 > rhs && test2 > rhs) { bad = false; }
                                 }
@@ -1188,7 +1189,6 @@ namespace InteriorPoint
             if (optMode == "QP") for (int i = 0; i < x.Length; ++i) rmu[i] = mu - x[i] * z[i];
             else if (optMode == "SOCP")
             {
-                bool zcopy = false, xcopy = false;
                 for (int icone = 0, cstart = 0; icone < cone.Length; cstart += cone[icone], icone++)
                 {
                     var n = cone[icone];
@@ -1209,55 +1209,7 @@ namespace InteriorPoint
                         var xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
                         var zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
 
-                        xcopy = false;
-                        if (false && n > 1 && (xQx <= BlasLike.lm_eps))
-                        {
-                            //        xcopy = true;
-                            var oldval = xQx;
-                            if (x[n - 1 + cstart] > BlasLike.lm_rooteps)
-                            {
-                                var inner = BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
-                                var fact = (5 * BlasLike.lm_rooteps - oldval) / inner;
-                                if (fact < 1)
-                                {
-                                    fact = 1 - fact;
-                                    fact = Math.Sqrt(fact);
-                                    BlasLike.dscalvec(n - 1, fact, x, cstart);
-                                    xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
-                                }
-                            }
-                            else
-                            {
-                                BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, x, cstart);
-                                x[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
-                                xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
-                            }
-                        }
-                        zcopy = false;
-                        if (false && n > 1 && (zQz <= BlasLike.lm_eps))
-                        {
-                            //        zcopy = true;
-                            var oldval = zQz;
-                            if (z[n - 1 + cstart] > BlasLike.lm_rooteps)
-                            {
-                                var inner = BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
-                                var fact = (5 * BlasLike.lm_rooteps - oldval) / inner;
-                                if (fact <= 1)
-                                {
-                                    fact = 1 - fact;
-                                    fact = Math.Sqrt(fact);
-                                    BlasLike.dscalvec(n - 1, fact, z, cstart);
-                                    zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
-                                }
-                            }
-                            else
-                            {
-                                BlasLike.dsetvec(n - 1, BlasLike.lm_rooteps, z, cstart);
-                                z[n - 1 + cstart] = (1.0 + BlasLike.lm_rooteps) * BlasLike.lm_rooteps * Math.Sqrt((double)n);
-                                zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
-                            }
-                        }
-                        THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
+  THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
                         if (double.IsNaN(THETA[icone]) || THETA[icone] == 0||xQx==0)
                         {
                             if (double.IsNaN(zQz) || zQz <= 0)
@@ -1312,14 +1264,6 @@ namespace InteriorPoint
                         thetaScale(n, zbar, THETA[icone], true, false, cstart);//zbar=(Wtheta)m1.z=xbar
                         Tmulvec(n, xbar, cstart);//Tmulvec does nothing for SOCP, needed for SOCPR
                         Tmulvec(n, zbar, cstart);
-                        if (zcopy)
-                        {
-                            BlasLike.dcopyvec(n, xbar, zbar);
-                        }
-                        else if (xcopy)
-                        {
-                            BlasLike.dcopyvec(n, zbar, xbar);
-                        }
                         applyX(n, xbar, zbar, rmu, cstart, cstart, cstart);
                         Tmulvec(n, rmu, cstart);
                         BlasLike.dnegvec(n, rmu, cstart);
@@ -1549,7 +1493,7 @@ namespace InteriorPoint
             double[] QL = null;
             double zL = 0;
             ///<summary>stepReduce is the factor by which the step length to the boundary is reduced</summary>
-            var stepReduce = 1 - 1e-3;
+            var stepReduce = 1 - 5e-2;
             opt.optMode = mode;
             if (mode == "SOCP")
             {
@@ -1823,7 +1767,7 @@ namespace InteriorPoint
                 {
                     BlasLike.dsubvec(n, opt.xbar, opt.zbar, diff);
                     double test = Math.Sqrt(BlasLike.ddotvec(n, diff, diff));
-                    if (test > BlasLike.lm_eps * 1024)
+                    if (test > BlasLike.lm_eps)
                     {
                         ColourConsole.WriteInfo($"xbar test = {test}");
                         ColourConsole.WriteInfo($"rp1 = {rp1}");

@@ -3938,14 +3938,14 @@ var nextFixRisk=0.0053598;//  0.006;//0.0299;//0.010102;//x[n];//Math.Sqrt(0.000
             {
                 BlasLike.dcopy(n, DATA, tlen, A, M, i, m + n + i + (n + 1) * M);
                 BlasLike.dset(1, 1, A, M, m + n + i + (n + 1 + n + i) * M);//LOSS
-                BlasLike.dset(1, -1, A, M, m + n + i + (n + 1 + n + tlen + i) * M);//slack for loss varaibles >0
+                BlasLike.dset(1, -1, A, M, m + n + i + (n + 1 + n + tlen + i) * M);//slack for loss variables >0
             }
             BlasLike.dset(1,1,A,M,m+n+tlen+(n + 1 + n + tlen + tlen) * M);//slack for risk <= constraint
+            BlasLike.dset(1,1,A,M,m+n+tlen+n*M);//Get risk at top of first cone
             for (var i = 0; i < m; ++i)
             {
                 BlasLike.dcopy(n, portfolioConstraints, m, A, M, i, i + (n + 1) * M);
             }
-            BlasLike.dset(1,1,A,M,m+n+tlen+n*M);
             Array.Resize(ref cone, n+1+tlen*2+1);
             Array.Resize(ref typecone, n+1+tlen*2+1);
             cone[0] = n + 1;
