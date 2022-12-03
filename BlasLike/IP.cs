@@ -351,7 +351,7 @@ namespace InteriorPoint
                     if (dtau < 0) alpha = Math.Min(alpha, -aob(tau, dtau));
                     if (dkappa < 0) alpha = Math.Min(alpha, -aob(kappa, dkappa));
                 }
-                double  gamma1 = 1 - gamma, test1, test2 = 1, beta = 1e-11;
+                double  gamma1 = 1 - gamma, test1, test2 = 1, beta = 1e-7;
                 bool bad = true;
                 var rhs = beta * (1.0 - alpha * gamma1) * mu;
 
@@ -1493,7 +1493,7 @@ namespace InteriorPoint
             double[] QL = null;
             double zL = 0;
             ///<summary>stepReduce is the factor by which the step length to the boundary is reduced</summary>
-            var stepReduce = 1 - 5e-2;
+            var stepReduce = 1 - 1e-2;
             opt.optMode = mode;
             if (mode == "SOCP")
             {
