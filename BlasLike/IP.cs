@@ -351,7 +351,7 @@ namespace InteriorPoint
                     if (dtau < 0) alpha = Math.Min(alpha, -aob(tau, dtau));
                     if (dkappa < 0) alpha = Math.Min(alpha, -aob(kappa, dkappa));
                 }
-                double  gamma1 = 1 - gamma, test1, test2 = 1, beta = 1e-7;
+                double gamma1 = 1 - gamma, test1, test2 = 1, beta = 1e-7;
                 bool bad = true;
                 var rhs = beta * (1.0 - alpha * gamma1) * mu;
 
@@ -361,10 +361,11 @@ namespace InteriorPoint
                     test1 = 0; bad = true;
                     while (bad == true && alpha > BlasLike.lm_eps)
                     {
-                rhs = beta * (1.0 - alpha * gamma1) * mu;
+                        rhs = beta * (1.0 - alpha * gamma1) * mu;
                         if (homogenous && kappa > BlasLike.lm_eps && dkappa != 0) test2 = (tau + alpha * dtau) * (kappa + alpha * dkappa);
                         if (typecone[i] == (int)conetype.SOCP)
-                        {var roundlim=BlasLike.lm_eps8192*8;
+                        {
+                            var roundlim = 0*BlasLike.lm_eps8192 * 8;
                             if (n > 1)
                             {
                                 if ((test1 = (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]))) > square(roundlim))
@@ -1209,24 +1210,28 @@ namespace InteriorPoint
                         var xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
                         var zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
 
-  THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
-                        if (double.IsNaN(THETA[icone]) || THETA[icone] == 0||xQx==0)
+                        THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
+                        if (double.IsNaN(THETA[icone]) || THETA[icone] == 0 || xQx == 0)
                         {
                             if (double.IsNaN(zQz) || zQz <= 0)
                             {
                                 double z1 = z[n - 1 + cstart] * z[n - 1 + cstart];
                                 double inner = z1 - zQz;
-                                double fac = zQz == 0 ? 1 - BlasLike.lm_eps : Math.Sqrt((z1 - BlasLike.lm_eps) / inner);
+                                double fac = zQz <= 0 ? 1 - BlasLike.lm_eps16 : Math.Sqrt((z1 - BlasLike.lm_eps) / inner);
+                                BlasLike.dscalvec(n - 1, fac, x, cstart);
                                 BlasLike.dscalvec(n - 1, fac, z, cstart);
+                                xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
                                 zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
                             }
                             if (double.IsNaN(xQx) || xQx <= 0)
                             {
                                 double x1 = x[n - 1 + cstart] * x[n - 1 + cstart];
                                 double inner = x1 - xQx;
-                                double fac = xQx == 0 ? 1 - BlasLike.lm_eps : Math.Sqrt((x1 - BlasLike.lm_eps) / inner);
+                                double fac = xQx <= 0 ? 1 - BlasLike.lm_eps16 : Math.Sqrt((x1 - BlasLike.lm_eps) / inner);
                                 BlasLike.dscalvec(n - 1, fac, x, cstart);
+                                BlasLike.dscalvec(n - 1, fac, z, cstart);
                                 xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
+                                zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
                             }
                             THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
                         }
@@ -1472,6 +1477,7 @@ namespace InteriorPoint
                     dtop = square(z[conestart + cone[icc] - 1]);
                     if (dtop / din < (1 + correction))
                         reduce = true;
+
                     if (reduce)
                     {
                         var reduction = 5e-2 * din / dtop;
@@ -1482,7 +1488,6 @@ namespace InteriorPoint
                 }
                 conestart += cone[icc];
             }
-
         }
         public int Opt(string mode = "QP", int[] cone = null, int[] typecone = null, bool homogenous = true, double[] L = null, int[] sign = null)
         {
@@ -1497,8 +1502,8 @@ namespace InteriorPoint
             opt.optMode = mode;
             if (mode == "SOCP")
             {
-                opt.conv = (Math.Floor(1e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
-                opt.compConv = (Math.Floor(1e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.conv = (Math.Floor(1e-9 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.compConv = (Math.Floor(1e-9 / BlasLike.lm_eps)) * BlasLike.lm_eps;
                 opt.cone = cone;
                 opt.typecone = typecone;
                 opt.numberOfCones = cone.Length;
@@ -1952,11 +1957,11 @@ namespace InteriorPoint
                     opt.kappa /= opt.tau;
                     gap = opt.Primal() - opt.Dual();
                     opt.tau = scl;
-                    if ((condition <= BlasLike.lm_reps))
-                    {
-                        ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]Modify cone[/red] [cyan]Due to small step size[/cyan][magenta] only[/magenta]");
-                        opt.ConeReset(1e-1);
-                    }
+                    /*   if ((condition <= BlasLike.lm_reps))
+                       {
+                           ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]Modify cone[/red] [cyan]Due to small step size[/cyan][magenta] only[/magenta]");
+                           opt.ConeReset(1e-1);
+                       }*/
                     if (gap < 0)
                     {
                         var dgap = BlasLike.ddotvec(opt.y.Length, opt.y, opt.b);
@@ -1979,7 +1984,7 @@ namespace InteriorPoint
                     if (mult > 2)
                         for (int ii = 0, id = 0; ii < m; ++ii, id += ii)
                         {
-                            opt.M[id + ii] += BlasLike.lm_eps16;
+                            opt.M[id + ii] *= 100;
                         }
                 }
                 //         gap = opt.Primal() - opt.Dual();

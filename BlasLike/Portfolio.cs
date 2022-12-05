@@ -3688,17 +3688,17 @@ namespace Portfolio
         }
         public static int SOCP_LOSS_RISK(int n, int tlen, double[] DATA)
         {
-            var m = 2;
+            var m = 1;
             var cFactor=1e0;
             var portfolioConstraints = new double[n * m];
             for (var i = 0; i < n; ++i)
             {
                 BlasLike.dset(1, 1, portfolioConstraints, m, i * m);
-               BlasLike.dset(1, i + 1, portfolioConstraints, m, 1 + i * m);
+         if(m!=1)      BlasLike.dset(1, i + 1, portfolioConstraints, m, 1 + i * m);
             }
             var targetR = (double[])new double[tlen];
             var benchmark=(double[])new double[2*n];
-            BlasLike.dsetvec(n,0.0,benchmark);
+            BlasLike.dsetvec(n-1,1.0/(n-1),benchmark);
             var x = new double[n];
             var alpha = new double[n];
             BlasLike.dsetvec(tlen, 1.0 / tlen, targetR);
