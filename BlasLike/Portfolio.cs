@@ -3688,13 +3688,13 @@ namespace Portfolio
         }
         public static int SOCP_LOSS_RISK(int n, int tlen, double[] DATA)
         {
-            var m = 1;
+            var m = 2;
             var cFactor=1e0;
             var portfolioConstraints = new double[n * m];
             for (var i = 0; i < n; ++i)
             {
                 BlasLike.dset(1, 1, portfolioConstraints, m, i * m);
-         if(m!=1)      BlasLike.dset(1, i + 1, portfolioConstraints, m, 1 + i * m);
+         if(m>1)      BlasLike.dset(1, i + 1, portfolioConstraints, m, 1 + i * m);
             }
             var targetR = (double[])new double[tlen];
             var benchmark=(double[])new double[2*n];
@@ -3704,7 +3704,7 @@ namespace Portfolio
             BlasLike.dsetvec(tlen, 1.0 / tlen, targetR);
             BlasLike.dsetvec(n, 1.0 / n, x);
             Factorise.dmxmulv(n, tlen, DATA, targetR, alpha, 0, 0, 0, true);
-            Factorise.dmxmulv(tlen, n, DATA, x, targetR, 0, 0, 0, false);
+            Factorise.dmxmulv(tlen, n, DATA, x, targetR, 0, 0, 0, false);//this means unconstrained, min LOSS porfolio has weights 1/n with LOSS 0
 
             /* Check with this
             for(var i=0;i<tlen;++i)targetR[i]=BlasLike.dsum(n,DATA,tlen,i)/n;
@@ -3804,6 +3804,7 @@ var LOSSstart = LOSS(n, x, DATA, targetR, null, n + 1);
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Sqrt(y*y)[/yellow]\t\t[green]{x[n]}[/green]\tRelative Risk\t\t[cyan]{Math.Sqrt(t3)}[/cyan]\t[magenta]{Math.Sqrt(t4)}[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"[blue]Loss for optimised risk[/blue][green]\t{LOSSstart}[/green]");
             Factorise.dmxmulv(M, N, A, x, ccc);
+            var lowestRisk= Math.Sqrt  (t4);
             var cccc=new double[m];
             Factorise.dmxmulv(m, n, portfolioConstraints, x, cccc,0,n+1);
             /*        {
@@ -3812,8 +3813,8 @@ var LOSSstart = LOSS(n, x, DATA, targetR, null, n + 1);
                         0,0,0,-1,
                         0,0,0,0,
                         1,1,2,3,//Portfolio quantities here downwards in this QP cone
-                        1,1,2,3,
-                        1,1,2,3
+                        1,0,2,3,
+                        1,0,0,3
                     }*/
             //Min variance and LOSS    
             /*        {
@@ -3896,7 +3897,8 @@ var LOSSstart = LOSS(n, x, DATA, targetR, null, n + 1);
             var xcheck = BlasLike.ddotvec(n, xtest, xtest);
             ColourConsole.WriteEmbeddedColourLine($"[magenta]X transform check[/magenta] [red]{xcheck}[/red]");
             t2 = BlasLike.ddotvec(n, xx, xx);
-var nextFixRisk=0.0053598;//  0.006;//0.0299;//0.010102;//x[n];//Math.Sqrt(0.0008);//x[n];
+var nextFixRisk=Math.Floor(lowestRisk*1.000001*1e7)*1e-7;
+if(nextFixRisk<1e-6)nextFixRisk=2e-5;
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Variance[/yellow]\t[green]{x[n] * x[n]}[/green]\tCheck [cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Risk[/yellow]\t\t[green]{x[n]}[/green]\tCheck [cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
             Factorise.dmxmulv(M, N, A, x, ccc);
@@ -3923,7 +3925,7 @@ var nextFixRisk=0.0053598;//  0.006;//0.0299;//0.010102;//x[n];//Math.Sqrt(0.000
             b[n+m+tlen]=nextFixRisk;
             c = new double[N];
             c[n]=0;
-            var utilityFac=1e0;
+            var utilityFac=1e-2;
             BlasLike.dsccopyvec(n, -utilityFac, alpha, c, 0, n + 1);
             BlasLike.dsetvec(tlen, utilityFac, c, n + 1 + n);
             A = new double[N * M];

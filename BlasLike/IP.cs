@@ -365,7 +365,7 @@ namespace InteriorPoint
                         if (homogenous && kappa > BlasLike.lm_eps && dkappa != 0) test2 = (tau + alpha * dtau) * (kappa + alpha * dkappa);
                         if (typecone[i] == (int)conetype.SOCP)
                         {
-                            var roundlim = 0*BlasLike.lm_eps8192 * 8;
+                            var roundlim = BlasLike.lm_eps8192 * 8;
                             if (n > 1)
                             {
                                 if ((test1 = (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]))) > square(roundlim))
@@ -1269,6 +1269,7 @@ namespace InteriorPoint
                         thetaScale(n, zbar, THETA[icone], true, false, cstart);//zbar=(Wtheta)m1.z=xbar
                         Tmulvec(n, xbar, cstart);//Tmulvec does nothing for SOCP, needed for SOCPR
                         Tmulvec(n, zbar, cstart);
+                        BlasLike.dcopyvec(n,xbar,zbar,cstart,cstart);
                         applyX(n, xbar, zbar, rmu, cstart, cstart, cstart);
                         Tmulvec(n, rmu, cstart);
                         BlasLike.dnegvec(n, rmu, cstart);
@@ -1707,7 +1708,7 @@ namespace InteriorPoint
                 gap1 = gap / denomTest(gap0);
                 comp1 = opt.Complementarity();
                 opt.keep.update(opt.x, opt.y, opt.z, opt.tau, opt.kappa, rp1, rd1, comp1);
-                if (rp1 <= opt.conv && rd1 <= opt.conv && comp1 <= opt.compConv)
+                if (rp1 <= opt.conv*tau && rd1 <= opt.conv*tau && comp1 <= opt.compConv*tau)
                 { copyBest = false; break; }
                 if (condition > BlasLike.lm_reps)
                 {
@@ -1799,7 +1800,7 @@ namespace InteriorPoint
                 opt.SolvePrimaryDual(gamma, true);
                 opt.MaximumStep(gamma);
                 alpha2 = stepReduce * opt.Lowest();
-                if (false && alpha2 < alphamin2 && alpha1 < alphamin2)
+                if (alpha2 < alphamin2 && alpha1 < alphamin2)
                 {
                     alphamin2 = Math.Max(alphamin2 * 0.1, BlasLike.lm_rooteps);
                     double gammafirst = alpha2 > alpha1 ? gamma : 0;
