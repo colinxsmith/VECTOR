@@ -3691,10 +3691,11 @@ namespace Portfolio
             var m = 2;
             var cFactor=1e0;
             var portfolioConstraints = new double[n * m];
+            var alphafac=1e-1;
             for (var i = 0; i < n; ++i)
             {
                 BlasLike.dset(1, 1, portfolioConstraints, m, i * m);
-         if(m>1)      BlasLike.dset(1, i + 1, portfolioConstraints, m, 1 + i * m);
+         if(m>1)      BlasLike.dset(1, (i + 1)*alphafac, portfolioConstraints, m, 1 + i * m);
             }
             var targetR = (double[])new double[tlen];
             var benchmark=(double[])new double[2*n];
@@ -3748,7 +3749,7 @@ namespace Portfolio
             int M = n + m;
             var b = new double[M];
             b[0] = 1;
-            b[1]=7;
+            b[1]=7*alphafac;
 
             BlasLike.dcopyvec(n,benchmark,b,n,m);//Do this to optimise relative variance
             var c = new double[N];
@@ -3841,7 +3842,7 @@ var LOSSstart = LOSS(n, x, DATA, targetR, null, n + 1);
             M = n + m + tlen;
             b = new double[M];
             b[0] = 1;//Budget value
-            b[1] = 7;//Alpha value
+            b[1] = 7*alphafac;//Alpha value
             BlasLike.dcopyvec(n,benchmark,b,n,m);//Do this to optimise relative variance
             BlasLike.dcopyvec(tlen, targetR, b, 0, n + m);
             c = new double[N];
@@ -3919,13 +3920,13 @@ if(nextFixRisk<1e-6)nextFixRisk=2e-5;
             M = n + m + tlen + 1;
             b = new double[M];
             b[0] = 1;//Budget value
-            b[1] = 7;//Alpha value
+            b[1] = 7*alphafac;//Alpha value
             BlasLike.dcopyvec(n,benchmark,b,n,m);//Do this to optimise relative variance
             BlasLike.dcopyvec(tlen, targetR, b, 0, n + m);
             b[n+m+tlen]=nextFixRisk;
             c = new double[N];
             c[n]=0;
-            var utilityFac=1e-2;
+            var utilityFac=1e0;
             BlasLike.dsccopyvec(n, -utilityFac, alpha, c, 0, n + 1);
             BlasLike.dsetvec(tlen, utilityFac, c, n + 1 + n);
             A = new double[N * M];
