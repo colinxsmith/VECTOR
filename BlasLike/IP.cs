@@ -258,7 +258,7 @@ namespace InteriorPoint
                         if (dx[n - 1 + cstart] < 0) alpha = Math.Min(-aob((x[n - 1 + cstart]), dx[n - 1 + cstart]), alpha);
                         double inner;
                         var i = icone;
-                        if (n > 1 && (vz1[i] + alpha * (vz2[i] + alpha * vz3[i])) < BlasLike.lm_eps8)
+                        if (n>1&&(vz1[i] + alpha * (vz2[i] + alpha * vz3[i])) < BlasLike.lm_eps8)
                         {
                             if (Math.Abs(vz3[i]) <= 0)
                             {
@@ -298,10 +298,15 @@ namespace InteriorPoint
                                     alpha = Math.Min(Math.Max(r2, 0), alpha);
                                 }
                             }
+                            else if ((inner = Math.Abs(1.0 - 4.0 * vz3[i] * vz1[i] / vz2[i] / vz2[i])) <= BlasLike.lm_eps2)
+                            {
+                                var r2 = (-vz2[i]) / 2.0 / vz3[i];
+                                alpha = Math.Min(Math.Max(r2, 0), alpha);
+                            }
                             else
                                 ColourConsole.WriteEmbeddedColourLine($"[red]ROUNDING cone z{i}[/red] [green]{vz1[i]}[/green] [yellow]{vz2[i]}[/yellow] [cyan]{vz3[i]}[/cyan]");
                         }
-                        if (n > 1 && (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) < BlasLike.lm_eps8)
+                        if (n>1&&(vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) < BlasLike.lm_eps8)
                         {
                             if (Math.Abs(vx3[i]) <= 0)
                             {
@@ -341,6 +346,11 @@ namespace InteriorPoint
                                     alpha = Math.Min(Math.Max(r2, 0), alpha);
                                 }
                             }
+                            else if ((inner = Math.Abs(1.0 - 4.0 * vx3[i] * vx1[i] / vx2[i] / vx2[i])) <= BlasLike.lm_eps2)
+                            {
+                                var r2 = (-vx2[i]) / 2.0 / vx3[i];
+                                alpha = Math.Min(Math.Max(r2, 0), alpha);
+                            }
                             else
                                 ColourConsole.WriteEmbeddedColourLine($"[red]ROUNDING cone x{i}[/red] [green]{vx1[i]}[/green] [yellow]{vx2[i]}[/yellow] [cyan]{vx3[i]}[/cyan]");
                         }
@@ -365,8 +375,8 @@ namespace InteriorPoint
                         if (homogenous && kappa > BlasLike.lm_eps && dkappa != 0) test2 = (tau + alpha * dtau) * (kappa + alpha * dkappa);
                         if (typecone[i] == (int)conetype.SOCP)
                         {
-                            var roundlim = BlasLike.lm_eps8192 * 8;
-                            if (n > 1)
+                            var roundlim = BlasLike.lm_eps8192 * 32;
+                            if (true||n>1)
                             {
                                 if ((test1 = (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]))) > square(roundlim))
                                 {
@@ -1269,7 +1279,7 @@ namespace InteriorPoint
                         thetaScale(n, zbar, THETA[icone], true, false, cstart);//zbar=(Wtheta)m1.z=xbar
                         Tmulvec(n, xbar, cstart);//Tmulvec does nothing for SOCP, needed for SOCPR
                         Tmulvec(n, zbar, cstart);
-                    //    BlasLike.dcopyvec(n,xbar,zbar,cstart,cstart);
+                        //    BlasLike.dcopyvec(n,xbar,zbar,cstart,cstart);
                         applyX(n, xbar, zbar, rmu, cstart, cstart, cstart);
                         Tmulvec(n, rmu, cstart);
                         BlasLike.dnegvec(n, rmu, cstart);
@@ -1708,7 +1718,7 @@ namespace InteriorPoint
                 gap1 = gap / denomTest(gap0);
                 comp1 = opt.Complementarity();
                 opt.keep.update(opt.x, opt.y, opt.z, opt.tau, opt.kappa, rp1, rd1, comp1);
-                if (rp1 <= opt.conv*tau && rd1 <= opt.conv*tau && comp1 <= opt.compConv*tau)
+                if (rp1 <= opt.conv * tau && rd1 <= opt.conv * tau && comp1 <= opt.compConv * tau)
                 { copyBest = false; break; }
                 if (condition > BlasLike.lm_reps)
                 {
@@ -1800,13 +1810,13 @@ namespace InteriorPoint
                 opt.SolvePrimaryDual(gamma, true);
                 opt.MaximumStep(gamma);
                 alpha2 = stepReduce * opt.Lowest();
-                if (alpha2 < alphamin2 && alpha1 < alphamin2)
+                if ( alpha2 < alphamin2 && alpha1 < alphamin2)
                 {
                     double gammafirst = alpha2 > alpha1 ? gamma : 0;
                     bool clarify = alpha2 > alpha1;
-                    if(!clarify)alphamin2 = Math.Max(alphamin2 * 0.1, BlasLike.lm_rooteps);
+                    if (!clarify) alphamin2 = Math.Max(alphamin2 * 0.1, BlasLike.lm_rooteps);
                     double alphak = Math.Max(alpha1, alpha2), alphanew, gammaold, alphaold = alphak, delt = 1e-12;
-double gammabest=gammafirst;
+                    double gammabest = gammafirst;
                     if (clarify)
                     {
                         BlasLike.dcopyvec(n, opt.dx, dxold);
@@ -1816,24 +1826,26 @@ double gammabest=gammafirst;
                         dkappaold = opt.dkappa;
                         alpha1 = alpha2;
                     }
-                     gamma = 0;
-                        opt.SolvePrimaryDual(gamma, true);
-                        opt.MaximumStep(gamma);
-                        alphanew = stepReduce * opt.Lowest();
-                        if(alphanew>alphak&&alphanew>=alphaold){
-                            gammabest=gamma;
-                        }
+                    gamma = 0;
+                    opt.SolvePrimaryDual(gamma, true);
+                    opt.MaximumStep(gamma);
+                    alphanew = stepReduce * opt.Lowest();
+                    if (alphanew > alphak && alphanew >= alphaold)
+                    {
+                        gammabest = gamma;
+                    }
 
                     gammaold = gamma;
                     alphaold = alphanew;
-                        gamma = 0.999999999;
-                        opt.SolvePrimaryDual(gamma, true);
-                        opt.MaximumStep(gamma);
-                        alphanew = stepReduce * opt.Lowest();
-                        if(alphanew>alphak&&alphanew>=alphaold){
-                            gammabest=gamma;
-                        }
-                                        delt = 1e-1;
+                    gamma = 0.999999999;
+                    opt.SolvePrimaryDual(gamma, true);
+                    opt.MaximumStep(gamma);
+                    alphanew = stepReduce * opt.Lowest();
+                    if (alphanew > alphak && alphanew >= alphaold)
+                    {
+                        gammabest = gamma;
+                    }
+                    delt = 1e-1;
                     while (gamma > delt && alphanew < 0.9)
                     {
                         alphaold = Math.Max(alphanew, alphaold);
@@ -1841,8 +1853,9 @@ double gammabest=gammafirst;
                         opt.SolvePrimaryDual(gamma, true);
                         opt.MaximumStep(gamma);
                         alphanew = stepReduce * opt.Lowest();
-                        if(alphanew>alphak&&alphanew>=alphaold){
-                            gammabest=gamma;
+                        if (alphanew > alphak && alphanew >= alphaold)
+                        {
+                            gammabest = gamma;
                         }
                         if (alphanew >= alphaold)
                         {
@@ -1856,8 +1869,9 @@ double gammabest=gammafirst;
                         opt.SolvePrimaryDual(gamma, true);
                         opt.MaximumStep(gamma);
                         alphanew = stepReduce * opt.Lowest();
-                        if(alphanew>alphak&&alphanew>=alphaold){
-                            gammabest=gamma;
+                        if (alphanew > alphak && alphanew >= alphaold)
+                        {
+                            gammabest = gamma;
                         }
                     }
                     delt = gamma * 1e-1;
@@ -1868,8 +1882,9 @@ double gammabest=gammafirst;
                         opt.SolvePrimaryDual(gamma, true);
                         opt.MaximumStep(gamma);
                         alphanew = stepReduce * opt.Lowest();
-                        if(alphanew>alphak&&alphanew>=alphaold){
-                            gammabest=gamma;
+                        if (alphanew > alphak && alphanew >= alphaold)
+                        {
+                            gammabest = gamma;
                         }
                         if (alphanew >= alphaold)
                         {
@@ -1882,26 +1897,29 @@ double gammabest=gammafirst;
                         opt.SolvePrimaryDual(gamma, true);
                         opt.MaximumStep(gamma);
                         alphanew = stepReduce * opt.Lowest();
-                        if(alphanew>alphak&&alphanew>=alphaold){
-                            gammabest=gamma;
+                        if (alphanew > alphak && alphanew >= alphaold)
+                        {
+                            gammabest = gamma;
                         }
                     }
-                    if (( alphanew=Math.Max(  alphaold,alphanew))>=alphak)
+                    if ((alphanew = Math.Max(alphaold, alphanew)) >= alphak)
                     {
-                        if(gamma!=gammabest){
-                        opt.SolvePrimaryDual(gammabest, true);
-                        opt.MaximumStep(gammabest);
-                        alphanew = stepReduce * opt.Lowest();}
+                        if (gamma != gammabest)
+                        {
+                            opt.SolvePrimaryDual(gammabest, true);
+                            opt.MaximumStep(gammabest);
+                            alphanew = stepReduce * opt.Lowest();
+                        }
                         alpha2 = alphanew;
-                       if(alphanew>alphak) ColourConsole.WriteEmbeddedColourLine($"[green]Found better step size[/green] [cyan]{alphanew}[/cyan] [red]{alphak} ({gamma}[/red],[magenta]{gammafirst}[/magenta][red])[/red]");
-                        corrector_gamma = gammabest;
+                        if (alphanew > alphak) ColourConsole.WriteEmbeddedColourLine($"[green]Found better step size[/green] [cyan]{alphanew}[/cyan] [red]{alphak} ({gamma}[/red],[magenta]{gammafirst}[/magenta][red])[/red]");
+                        //      corrector_gamma = gammabest;
                     }
-                    
+
                     if (clarify && alphanew < alphak)
                     {
                         ColourConsole.WriteEmbeddedColourLine($"[red]CLARIFY[/red] [yellow]alpha2 not improved {alpha2} {alphanew}[/yellow]");
                     }
-                    
+
                 }
                 if (alpha1 >= alpha2) opt.update(dxold, dyold, dzold, dtauold, dkappaold, alpha1);
                 else opt.update(opt.dx, opt.dy, opt.dz, opt.dtau, opt.dkappa, alpha2);
