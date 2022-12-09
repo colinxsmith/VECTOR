@@ -62,8 +62,8 @@ namespace InteriorPoint
         bool specialDebug = false;
         bool homogenous = false;
         double mu;
-        public int maxouter = 10;
-        public int maxinner = 30;
+        public int maxouter = 5;
+        public int maxinner = 50;
         int n;
         int m;
         double[] A = null;
@@ -364,6 +364,7 @@ namespace InteriorPoint
                 double gamma1 = 1 - gamma, test1, test2 = 1, beta = 1e-7;
                 bool bad = true;
                 var rhs = beta * (1.0 - alpha * gamma1) * mu;
+                double ratio,ratiolim=BlasLike.lm_eps;
 
                 for (int i = 0, cstart = 0; i < cone.Length; cstart += cone[i], i++)
                 {
@@ -376,16 +377,18 @@ namespace InteriorPoint
                         if (typecone[i] == (int)conetype.SOCP)
                         {
                             var roundlim = BlasLike.lm_eps8192 * 32;
-                            if (true||n>1)
-                            {
-                                if ((test1 = (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]))) > square(roundlim))
+                            if (n>1)
+                            {ratio=(vz1[i] + alpha * (vz2[i] + alpha * vz3[i]))/(vx1[i] + alpha * (vx2[i] + alpha * vx3[i]));
+                                if ((test1 = (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]))) > square(roundlim)
+                                &&(Math.Min(ratio,1.0/ratio)>=square(ratiolim)))
                                 {
                                     if (test1 > square(rhs) && test2 > rhs) { bad = false; }
                                 }
                             }
                             else
-                            {
-                                if ((test1 = (x[cstart] + alpha * dx[cstart]) * (z[cstart] + alpha * dz[cstart])) > roundlim)
+                            {ratio=(z[cstart] + alpha * dz[cstart])/(x[cstart] + alpha * dx[cstart]);
+                                if ((test1 = (x[cstart] + alpha * dx[cstart]) * (z[cstart] + alpha * dz[cstart])) > roundlim
+                                &&(Math.Min(ratio,1.0/ratio)>=ratiolim))
                                 {
                                     if (test1 > rhs && test2 > rhs) { bad = false; }
                                 }
@@ -1220,7 +1223,8 @@ namespace InteriorPoint
                         var xQx = x[n - 1 + cstart] * x[n - 1 + cstart] - BlasLike.ddotvec(n - 1, x, x, cstart, cstart);
                         var zQz = z[n - 1 + cstart] * z[n - 1 + cstart] - BlasLike.ddotvec(n - 1, z, z, cstart, cstart);
 
-                        THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
+                        if(n>1)THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
+                        else THETA[icone] = Math.Sqrt(z[n-1+cstart]/x[n-1+cstart]);
                         if (double.IsNaN(THETA[icone]) || THETA[icone] == 0 || xQx == 0)
                         {
                             if (double.IsNaN(zQz) || zQz <= 0)
@@ -1810,7 +1814,7 @@ namespace InteriorPoint
                 opt.SolvePrimaryDual(gamma, true);
                 opt.MaximumStep(gamma);
                 alpha2 = stepReduce * opt.Lowest();
-                if ( alpha2 < alphamin2 && alpha1 < alphamin2)
+                if (alpha2 < alphamin2 && alpha1 < alphamin2)
                 {
                     double gammafirst = alpha2 > alpha1 ? gamma : 0;
                     bool clarify = alpha2 > alpha1;

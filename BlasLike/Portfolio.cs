@@ -3748,7 +3748,7 @@ namespace Portfolio
             int N = n + 1 + n;
             int M = n + m;
             var b = new double[M];
-            b[0] = 1;
+            b[0] = 2;
             b[1]=7*alphafac;
 
             BlasLike.dcopyvec(n,benchmark,b,n,m);//Do this to optimise relative variance
