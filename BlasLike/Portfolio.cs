@@ -3688,7 +3688,7 @@ namespace Portfolio
         }
         public static int SOCP_LOSS_RISK(int n, int tlen, double[] DATA)
         {
-            var m = 1;
+            var m = 2;
             var cFactor=1e0;
             var portfolioConstraints = new double[n * m];
             var alphafac=1e0;
@@ -3748,7 +3748,7 @@ namespace Portfolio
             int N = n + 1 + n;
             int M = n + m;
             var b = new double[M];
-            b[0] = 2;
+            b[0] = 1;
             b[1]=7*alphafac;
 
             BlasLike.dcopyvec(n,benchmark,b,n,m);//Do this to optimise relative variance
