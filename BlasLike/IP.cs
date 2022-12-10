@@ -258,7 +258,7 @@ namespace InteriorPoint
                         if (dx[n - 1 + cstart] < 0) alpha = Math.Min(-aob((x[n - 1 + cstart]), dx[n - 1 + cstart]), alpha);
                         double inner;
                         var i = icone;
-                        if (n>1&&(vz1[i] + alpha * (vz2[i] + alpha * vz3[i])) < BlasLike.lm_eps8)
+                        if ((vz1[i] + alpha * (vz2[i] + alpha * vz3[i])) < BlasLike.lm_eps8)
                         {
                             if (Math.Abs(vz3[i]) <= 0)
                             {
@@ -306,7 +306,7 @@ namespace InteriorPoint
                             else
                                 ColourConsole.WriteEmbeddedColourLine($"[red]ROUNDING cone z{i}[/red] [green]{vz1[i]}[/green] [yellow]{vz2[i]}[/yellow] [cyan]{vz3[i]}[/cyan]");
                         }
-                        if (n>1&&(vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) < BlasLike.lm_eps8)
+                        if ((vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) < BlasLike.lm_eps8)
                         {
                             if (Math.Abs(vx3[i]) <= 0)
                             {
@@ -364,7 +364,7 @@ namespace InteriorPoint
                 double gamma1 = 1 - gamma, test1, test2 = 1, beta = 1e-7;
                 bool bad = true;
                 var rhs = beta * (1.0 - alpha * gamma1) * mu;
-                double ratio,ratiolim=BlasLike.lm_eps;
+                double ratio,ratiolim=BlasLike.lm_min;
 
                 for (int i = 0, cstart = 0; i < cone.Length; cstart += cone[i], i++)
                 {
@@ -1760,8 +1760,8 @@ namespace InteriorPoint
                     opt.DualResudual();
                     opt.MuResidual();
                     opt.ConditionEstimate();
-                    rp0 = denomTest(lInfinity(opt.rp));
-                    rd0 = denomTest(lInfinity(opt.rd));
+                    rp0 = lInfinity(opt.rp);
+                    rd0 = lInfinity(opt.rd);
                     gap0 = denomTest(opt.Gap());
                 }
 
@@ -1779,8 +1779,8 @@ namespace InteriorPoint
                     opt.DualResudual();
                     opt.MuResidual();
                     opt.ConditionEstimate();
-                    rp0 = denomTest(lInfinity(opt.rp));
-                    rd0 = denomTest(lInfinity(opt.rd));
+                    rp0 = lInfinity(opt.rp);
+                    rd0 = lInfinity(opt.rd);
                     gap0 = denomTest(opt.Gap());
                 }
                 if (innerIteration > 2 && opt.optMode == "SOCP")
@@ -1916,7 +1916,7 @@ namespace InteriorPoint
                         }
                         alpha2 = alphanew;
                         if (alphanew > alphak) ColourConsole.WriteEmbeddedColourLine($"[green]Found better step size[/green] [cyan]{alphanew}[/cyan] [red]{alphak} ({gamma}[/red],[magenta]{gammafirst}[/magenta][red])[/red]");
-                        //      corrector_gamma = gammabest;
+                  //           corrector_gamma = gammabest;
                     }
 
                     if (clarify && alphanew < alphak)
@@ -2003,8 +2003,8 @@ namespace InteriorPoint
                     opt.DualResudual();
                     opt.MuResidual();
                     opt.ConditionEstimate();
-                    rp0 = denomTest(lInfinity(opt.rp));
-                    rd0 = denomTest(lInfinity(opt.rd));
+                    rp0 = lInfinity(opt.rp);
+                    rd0 = lInfinity(opt.rd);
                     gap0 = denomTest(opt.Gap());
                 }
                 innerIteration++;
