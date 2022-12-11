@@ -364,7 +364,7 @@ namespace InteriorPoint
                 double gamma1 = 1 - gamma, test1, test2 = 1, beta = 1e-7;
                 bool bad = true;
                 var rhs = beta * (1.0 - alpha * gamma1) * mu;
-                double ratio,ratiolim=BlasLike.lm_min;
+                double ratio,ratiolimL=BlasLike.lm_eps,ratiolimU=BlasLike.lm_reps;
 
                 for (int i = 0, cstart = 0; i < cone.Length; cstart += cone[i], i++)
                 {
@@ -380,7 +380,7 @@ namespace InteriorPoint
                             if (n>1)
                             {ratio=(vz1[i] + alpha * (vz2[i] + alpha * vz3[i]))/(vx1[i] + alpha * (vx2[i] + alpha * vx3[i]));
                                 if ((test1 = (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]))) > square(roundlim)
-                                &&(Math.Min(ratio,1.0/ratio)>=square(ratiolim)))
+                                &&(ratio>square(ratiolimL)&&ratio<square(ratiolimU)))
                                 {
                                     if (test1 > square(rhs) && test2 > rhs) { bad = false; }
                                 }
@@ -388,7 +388,7 @@ namespace InteriorPoint
                             else
                             {ratio=(z[cstart] + alpha * dz[cstart])/(x[cstart] + alpha * dx[cstart]);
                                 if ((test1 = (x[cstart] + alpha * dx[cstart]) * (z[cstart] + alpha * dz[cstart])) > roundlim
-                                &&(Math.Min(ratio,1.0/ratio)>=ratiolim))
+                                &&(ratio>ratiolimL&&ratio<ratiolimU))
                                 {
                                     if (test1 > rhs && test2 > rhs) { bad = false; }
                                 }
@@ -1493,13 +1493,13 @@ namespace InteriorPoint
                     if (dtop / din < (1 + correction))
                         reduce = true;
 
-                    if (reduce)
+               /*   if (reduce)
                     {
-                        var reduction = 5e-2 * din / dtop;
+                        var reduction = 0.5* Math.Sqrt(din / dtop);
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]REDUCTION[/red]\t\t\t\t[green]{reduction}[/green]");
                         BlasLike.dscalvec(cone[icc] - 1, reduction, z, conestart);
                         BlasLike.dscalvec(cone[icc] - 1, reduction, x, conestart);
-                    }
+                    }*/
                 }
                 conestart += cone[icc];
             }
@@ -1916,7 +1916,7 @@ namespace InteriorPoint
                         }
                         alpha2 = alphanew;
                         if (alphanew > alphak) ColourConsole.WriteEmbeddedColourLine($"[green]Found better step size[/green] [cyan]{alphanew}[/cyan] [red]{alphak} ({gamma}[/red],[magenta]{gammafirst}[/magenta][red])[/red]");
-                  //           corrector_gamma = gammabest;
+                             corrector_gamma = gammabest;
                     }
 
                     if (clarify && alphanew < alphak)
@@ -1958,11 +1958,11 @@ namespace InteriorPoint
                     opt.kappa /= opt.tau;
                     gap = opt.Primal() - opt.Dual();
                     opt.tau = scl;
-                    /*   if ((condition <= BlasLike.lm_reps))
+                       if ((condition <= BlasLike.lm_reps))
                        {
                            ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]Modify cone[/red] [cyan]Due to small step size[/cyan][magenta] only[/magenta]");
-                           opt.ConeReset(1e-1);
-                       }*/
+                           opt.ConeReset(1e-5);
+                       }
                     if (gap < 0)
                     {
                         var dgap = BlasLike.ddotvec(opt.y.Length, opt.y, opt.b);
