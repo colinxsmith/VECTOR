@@ -1259,7 +1259,7 @@ namespace InteriorPoint
                             double bot = Math.Sqrt((zx + Math.Sqrt(xQx * zQz)) * 2.0);
                             double z1 = THETA[icone] / bot;
                             double z2 = THETA[icone] * bot;
-                            if (THETA[icone] == BlasLike.lm_eps) { z1 = 1.0; z2 = BlasLike.lm_eps; }
+                          //  if (THETA[icone] == BlasLike.lm_eps) { z1 = 1.0; z2 = BlasLike.lm_eps; }
                             for (var i = cstart; i < n - 1 + cstart; ++i)
                             {
                                 W[i] = -z1 * x[i] + z[i] / z2;
