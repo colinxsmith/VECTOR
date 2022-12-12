@@ -258,19 +258,19 @@ namespace InteriorPoint
                         if (dx[n - 1 + cstart] < 0) alpha = Math.Min(-aob((x[n - 1 + cstart]), dx[n - 1 + cstart]), alpha);
                         double inner;
                         var i = icone;
-                        if ((vz1[i] + alpha * (vz2[i] + alpha * vz3[i])) < BlasLike.lm_eps8)
+                        if ((vz1[i] + alpha * (vz2[i] + alpha * vz3[i])) <0)
                         {
                             if (Math.Abs(vz3[i]) <= 0)
                             {
                                 ColourConsole.WriteEmbeddedColourLine($"[yellow]No[/yellow] [cyan]vz3[/cyan] [magenta]{vz3[i]}[/magenta]");
                                 if (vz2[i] < 0)
-                                    alpha = Math.Min(-vz1[i] / vz2[i], alpha);
+                                    alpha = Math.Min(-aob(vz1[i] , vz2[i]), alpha);
                             }
-                            else if (Math.Abs(vz2[i]) > 0 && (inner = 1.0 - 4.0 * vz3[i] * vz1[i] / vz2[i] / vz2[i]) > 0)
+                            else if (Math.Abs(vz2[i]) > 0 && (inner = 1.0 - 4.0 * aob(vz3[i],vz2[i])*aob(vz1[i],vz2[i])) > 0)
                             {
                                 double r1, r2;
                                 inner = (inner > 0 ? Math.Sqrt(inner) * Math.Abs(vz2[i]) : 0);
-                                r1 = (-vz2[i] - inner) / 2.0 / vz3[i]; r2 = (-vz2[i] + inner) / 2.0 / vz3[i];
+                                r1 = aob((-vz2[i] - inner) , vz3[i])/2.0; r2 = aob((-vz2[i] + inner) , vz3[i])/2.0;
                                 if (vz3[i] > 0)
                                 {
                                     if (r1 < 0) r1 = r2;
@@ -286,7 +286,7 @@ namespace InteriorPoint
                             {
                                 inner = (inner > 0 ? Math.Sqrt(inner) : 0);
                                 double r1, r2;
-                                r1 = (-vz2[i] - inner) / 2.0 / vz3[i]; r2 = (-vz2[i] + inner) / 2.0 / vz3[i];
+                                r1 =aob ((-vz2[i] - inner) , vz3[i])/2.0; r2 = aob((-vz2[i] + inner) , vz3[i])/2.0;
                                 if (vz3[i] > 0)
                                 {
                                     if (r1 < 0) r1 = r2;
@@ -298,27 +298,27 @@ namespace InteriorPoint
                                     alpha = Math.Min(Math.Max(r2, 0), alpha);
                                 }
                             }
-                            else if ((inner = Math.Abs(1.0 - 4.0 * vz3[i] * vz1[i] / vz2[i] / vz2[i])) <= BlasLike.lm_eps2)
+                            else if ((inner = Math.Abs(1.0 - 4.0 * aob(vz3[i],vz2[i])*aob(vz1[i],vz2[i]))) < BlasLike.lm_eps)
                             {
-                                var r2 = (-vz2[i]) / 2.0 / vz3[i];
+                                var r2 = aob((-vz2[i]) , vz3[i])/2.0;
                                 alpha = Math.Min(Math.Max(r2, 0), alpha);
                             }
                             else
-                                ColourConsole.WriteEmbeddedColourLine($"[red]ROUNDING cone z{i}[/red] [green]{vz1[i]}[/green] [yellow]{vz2[i]}[/yellow] [cyan]{vz3[i]}[/cyan]");
+                                ColourConsole.WriteEmbeddedColourLine($"[red]ROUNDING cone z{i}[/red][magenta] step {alpha}[/magenta] [green]{vz1[i]}[/green] [yellow]{vz2[i]}[/yellow] [cyan]{vz3[i]}[/cyan]");
                         }
-                        if ((vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) < BlasLike.lm_eps8)
+                        if ((vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) < 0)
                         {
                             if (Math.Abs(vx3[i]) <= 0)
                             {
                                 ColourConsole.WriteEmbeddedColourLine($"[yellow]No[/yellow] [cyan]vx3[/cyan] [magenta]{vx3[i]}[/magenta]");
                                 if (Math.Abs(vx2[i]) > 0)
-                                    alpha = Math.Min(-vx1[i] / vx2[i], alpha);
+                                    alpha = Math.Min(-aob(vx1[i] , vx2[i]), alpha);
                             }
-                            else if (Math.Abs(vx2[i]) > 0 && (inner = 1.0 - 4 * vx3[i] * vx1[i] / vx2[i] / vx2[i]) >= 0)
+                            else if (Math.Abs(vx2[i]) > 0 && (inner = 1.0 - 4 * aob(vx3[i],vx2[i])*aob(vx1[i],vx2[i])) >= 0)
                             {
                                 double r1, r2;
                                 inner = (inner > 0 ? Math.Sqrt(inner) * Math.Abs(vx2[i]) : 0);
-                                r1 = (-vx2[i] - inner) / 2.0 / vx3[i]; r2 = (-vx2[i] + inner) / 2.0 / vx3[i];
+                                r1 = aob((-vx2[i] - inner) , vx3[i])/2.0; r2 = aob((-vx2[i] + inner) , vx3[i])/2.0;
                                 if (vx3[i] > 0)
                                 {
                                     if (r1 < 0) r1 = r2;
@@ -334,7 +334,7 @@ namespace InteriorPoint
                             {
                                 double r1, r2;
                                 inner = (inner > 0 ? Math.Sqrt(inner) : 0);
-                                r1 = (-vx2[i] - inner) / 2.0 / vx3[i]; r2 = (-vx2[i] + inner) / 2.0 / vx3[i];
+                                r1 = aob((-vx2[i] - inner) , vx3[i])/2.0; r2 =aob( (-vx2[i] + inner) , vx3[i])/2.0;
                                 if (vx3[i] > 0)
                                 {
                                     if (r1 < 0) r1 = r2;
@@ -346,14 +346,15 @@ namespace InteriorPoint
                                     alpha = Math.Min(Math.Max(r2, 0), alpha);
                                 }
                             }
-                            else if ((inner = Math.Abs(1.0 - 4.0 * vx3[i] * vx1[i] / vx2[i] / vx2[i])) <= BlasLike.lm_eps2)
+                            else if ((inner = Math.Abs(1.0 - 4.0 * aob(vz3[i],vz2[i])*aob(vz1[i],vz2[i]))) < BlasLike.lm_eps)
                             {
-                                var r2 = (-vx2[i]) / 2.0 / vx3[i];
+                                var r2 =aob (-vx2[i] , vx3[i])/2.0;
                                 alpha = Math.Min(Math.Max(r2, 0), alpha);
                             }
                             else
-                                ColourConsole.WriteEmbeddedColourLine($"[red]ROUNDING cone x{i}[/red] [green]{vx1[i]}[/green] [yellow]{vx2[i]}[/yellow] [cyan]{vx3[i]}[/cyan]");
+                                ColourConsole.WriteEmbeddedColourLine($"[red]ROUNDING cone x{i}[/red][magenta] step {alpha}[/magenta] [green]{vx1[i]}[/green] [yellow]{vx2[i]}[/yellow] [cyan]{vx3[i]}[/cyan]");
                         }
+                        if(alpha==0)break;
                     }
                 }
                 if (homogenous)
@@ -364,7 +365,7 @@ namespace InteriorPoint
                 double gamma1 = 1 - gamma, test1, test2 = 1, beta = 1e-7;
                 bool bad = true;
                 var rhs = beta * (1.0 - alpha * gamma1) * mu;
-                double ratio,ratiolimL=BlasLike.lm_eps,ratiolimU=BlasLike.lm_reps;
+                double ratio,ratiolimL=BlasLike.lm_eps,ratiolimU=1.0/ratiolimL;
 
                 for (int i = 0, cstart = 0; i < cone.Length; cstart += cone[i], i++)
                 {
@@ -378,7 +379,7 @@ namespace InteriorPoint
                         {
                             var roundlim = BlasLike.lm_eps8192 * 32;
                             if (n>1)
-                            {ratio=(vz1[i] + alpha * (vz2[i] + alpha * vz3[i]))/(vx1[i] + alpha * (vx2[i] + alpha * vx3[i]));
+                            {ratio=((vz1[i] + alpha * (vz2[i] + alpha * vz3[i]))/(vx1[i] + alpha * (vx2[i] + alpha * vx3[i])));
                                 if ((test1 = (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])) * (vz1[i] + alpha * (vz2[i] + alpha * vz3[i]))) > square(roundlim)
                                 &&(ratio>square(ratiolimL)&&ratio<square(ratiolimU)))
                                 {
@@ -386,7 +387,7 @@ namespace InteriorPoint
                                 }
                             }
                             else
-                            {ratio=(z[cstart] + alpha * dz[cstart])/(x[cstart] + alpha * dx[cstart]);
+                            {ratio=((z[cstart] + alpha * dz[cstart])/(x[cstart] + alpha * dx[cstart]));
                                 if ((test1 = (x[cstart] + alpha * dx[cstart]) * (z[cstart] + alpha * dz[cstart])) > roundlim
                                 &&(ratio>ratiolimL&&ratio<ratiolimU))
                                 {
@@ -1225,7 +1226,7 @@ namespace InteriorPoint
 
                         if(n>1)THETA[icone] = Math.Sqrt(Math.Sqrt(zQz / xQx));
                         else THETA[icone] = Math.Sqrt(z[n-1+cstart]/x[n-1+cstart]);
-                        if (double.IsNaN(THETA[icone]) || THETA[icone] == 0 || xQx == 0)
+                        if (false&&(double.IsNaN(THETA[icone]) || THETA[icone] == 0 || xQx == 0))
                         {
                             if (double.IsNaN(zQz) || zQz <= 0)
                             {
@@ -1252,7 +1253,7 @@ namespace InteriorPoint
 
 
 
-                        if (!double.IsNaN(THETA[icone]) && THETA[icone] > 0)
+                        if (!double.IsNaN(THETA[icone]) && THETA[icone] != 0)
                         {
                             double zx = BlasLike.ddotvec(n, z, x, cstart, cstart);
                             double bot = Math.Sqrt((zx + Math.Sqrt(xQx * zQz)) * 2.0);
@@ -1267,7 +1268,7 @@ namespace InteriorPoint
                         }
                         else
                         {
-                            ColourConsole.WriteEmbeddedColourLine($"[yellow]THETA is [/yellow][red]{THETA[icone]}[/red]");
+                            ColourConsole.WriteEmbeddedColourLine($"[yellow]THETA for cone {icone} is [/yellow][red]{THETA[icone]}[/red] [magenta]({zQz} / {xQx})[/magenta]");
                             Debug.Assert(false);
                             //DO something to stop main loop
 
@@ -1283,7 +1284,7 @@ namespace InteriorPoint
                         thetaScale(n, zbar, THETA[icone], true, false, cstart);//zbar=(Wtheta)m1.z=xbar
                         Tmulvec(n, xbar, cstart);//Tmulvec does nothing for SOCP, needed for SOCPR
                         Tmulvec(n, zbar, cstart);
-                        //    BlasLike.dcopyvec(n,xbar,zbar,cstart,cstart);
+                            BlasLike.dcopyvec(n,xbar,zbar,cstart,cstart);
                         applyX(n, xbar, zbar, rmu, cstart, cstart, cstart);
                         Tmulvec(n, rmu, cstart);
                         BlasLike.dnegvec(n, rmu, cstart);
@@ -1493,13 +1494,13 @@ namespace InteriorPoint
                     if (dtop / din < (1 + correction))
                         reduce = true;
 
-               /*   if (reduce)
+                  if (reduce)
                     {
                         var reduction = 0.5* Math.Sqrt(din / dtop);
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]REDUCTION[/red]\t\t\t\t[green]{reduction}[/green]");
                         BlasLike.dscalvec(cone[icc] - 1, reduction, z, conestart);
                         BlasLike.dscalvec(cone[icc] - 1, reduction, x, conestart);
-                    }*/
+                    }
                 }
                 conestart += cone[icc];
             }
@@ -1961,7 +1962,7 @@ namespace InteriorPoint
                        if ((condition <= BlasLike.lm_reps))
                        {
                            ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]Modify cone[/red] [cyan]Due to small step size[/cyan][magenta] only[/magenta]");
-                           opt.ConeReset(1e-5);
+                           opt.ConeReset(1e-1);
                        }
                     if (gap < 0)
                     {

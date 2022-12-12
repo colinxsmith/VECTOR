@@ -3688,7 +3688,7 @@ namespace Portfolio
         }
         public static int SOCP_LOSS_RISK(int n, int tlen, double[] DATA)
         {
-            var m = 2;
+            var m = 1;
             var cFactor=1e0;
             var portfolioConstraints = new double[n * m];
             var alphafac=1e0;
@@ -3898,7 +3898,7 @@ var LOSSstart = LOSS(n, x, DATA, targetR, null, n + 1);
             var xcheck = BlasLike.ddotvec(n, xtest, xtest);
             ColourConsole.WriteEmbeddedColourLine($"[magenta]X transform check[/magenta] [red]{xcheck}[/red]");
             t2 = BlasLike.ddotvec(n, xx, xx);
-var nextFixRisk=Math.Floor(lowestRisk*1.000001*1e7)*1e-7;
+var nextFixRisk=Math.Floor(lowestRisk*1.0001*1e5)*1e-5;
 if(nextFixRisk<1e-6)nextFixRisk=2e-5;
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Variance[/yellow]\t[green]{x[n] * x[n]}[/green]\tCheck [cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Risk[/yellow]\t\t[green]{x[n]}[/green]\tCheck [cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
@@ -3915,8 +3915,8 @@ if(nextFixRisk<1e-6)nextFixRisk=2e-5;
             Factorise.dmxmulv(m, n, portfolioConstraints, x, cccc, 0, n + 1);
 //return back;
             // Now fix risk
-
-            N = n + 1 + n + tlen + tlen+1;
+var lessthan=true;
+            N = n + 1 + n + tlen + tlen+(lessthan?1:0);
             M = n + m + tlen + 1;
             b = new double[M];
             b[0] = 1;//Budget value
@@ -3943,14 +3943,14 @@ if(nextFixRisk<1e-6)nextFixRisk=2e-5;
                 BlasLike.dset(1, 1, A, M, m + n + i + (n + 1 + n + i) * M);//LOSS
                 BlasLike.dset(1, -1, A, M, m + n + i + (n + 1 + n + tlen + i) * M);//slack for loss variables >0
             }
-            BlasLike.dset(1,1,A,M,m+n+tlen+(n + 1 + n + tlen + tlen) * M);//slack for risk <= constraint
+        if(lessthan)    BlasLike.dset(1,1,A,M,m+n+tlen+(n + 1 + n + tlen + tlen) * M);//slack for risk <= constraint
             BlasLike.dset(1,1,A,M,m+n+tlen+n*M);//Get risk at top of first cone
             for (var i = 0; i < m; ++i)
             {
                 BlasLike.dcopy(n, portfolioConstraints, m, A, M, i, i + (n + 1) * M);
             }
-            Array.Resize(ref cone, n+1+tlen*2+1);
-            Array.Resize(ref typecone, n+1+tlen*2+1);
+            Array.Resize(ref cone, n+1+tlen*2+(lessthan?1:0));
+            Array.Resize(ref typecone, n+1+tlen*2+(lessthan?1:0));
             cone[0] = n + 1;
             typecone[0] = (int)InteriorPoint.conetype.SOCP;
           /*  cone[1] = n + tlen;
