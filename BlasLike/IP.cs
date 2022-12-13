@@ -1505,6 +1505,33 @@ namespace InteriorPoint
                 conestart += cone[icc];
             }
         }
+        public bool coneQcheck(double step=0,double[]dx=null,double[]dz=null){
+            double testxQx,testzQz;
+            var back=false;
+            int nn,cstart,ic;
+            double limL=BlasLike.lm_eps,limU=1.0/limL,tt;
+            limL=square(limL);
+            limU=square(limU);
+            for(ic=0,cstart=0;ic<numberOfCones;cstart+=nn,++ic)
+                    {
+                        nn=cone[ic];
+                        if(nn>1){
+                        testxQx=x[nn-1+cstart]*x[nn-1+cstart]-BlasLike.ddotvec(nn-1,x,x,cstart,cstart);
+                        testzQz=z[nn-1+cstart]*z[nn-1+cstart]-BlasLike.ddotvec(nn-1,z,z,cstart,cstart);
+                        if(step>0){
+                        var dxQx=2.0*(x[nn-1+cstart]*dx[nn-1+cstart]-BlasLike.ddotvec(nn-1,dx,x,cstart,cstart));
+                        var dzQz=2.0*(z[nn-1+cstart]*dz[nn-1+cstart]-BlasLike.ddotvec(nn-1,dz,z,cstart,cstart));
+                        var dxQdx=(dx[nn-1+cstart]*dx[nn-1+cstart]-BlasLike.ddotvec(nn-1,dx,dx,cstart,cstart));
+                        var dzQdz=(dz[nn-1+cstart]*dz[nn-1+cstart]-BlasLike.ddotvec(nn-1,dz,dz,cstart,cstart));
+testxQx+=step*(dxQx+step*dxQdx);
+testzQz+=step*(dzQz+step*dzQdz);
+                         } ColourConsole.WriteEmbeddedColourLine($"[cyan]xQx[/cyan] [green]{testxQx}[/green]");
+                        ColourConsole.WriteEmbeddedColourLine($"[cyan]zQz[/cyan] [green]{testzQz}[/green]");
+                        tt=testzQz/testxQx;
+                        if(tt<limL||tt>limU||testxQx==0||testzQz==0){
+                            back=true;
+                        }
+                    }}return back;}
         public int Opt(string mode = "QP", int[] cone = null, int[] typecone = null, bool homogenous = true, double[] L = null, int[] sign = null)
         {
             var rd1ONE = false;
@@ -1926,8 +1953,24 @@ namespace InteriorPoint
                     }
 
                 }
-                if (alpha1 >= alpha2) opt.update(dxold, dyold, dzold, dtauold, dkappaold, alpha1);
-                else opt.update(opt.dx, opt.dy, opt.dz, opt.dtau, opt.dkappa, alpha2);
+    /*            if (alpha1 >= alpha2)coneQcheck(alpha1,dxold,dzold);
+                else coneQcheck(alpha2,dx,dz);*/  //Only need this for testing
+                if (alpha1 >= alpha2) {opt.update(dxold, dyold, dzold, dtauold, dkappaold, alpha1);
+
+while(coneQcheck()){
+opt.update(dxold, dyold, dzold, dtauold, dkappaold, -alpha1);
+alpha1*=0.5;
+opt.update(dxold, dyold, dzold, dtauold, dkappaold, alpha1);
+}
+                }
+                else {opt.update(opt.dx, opt.dy, opt.dz, opt.dtau, opt.dkappa, alpha2);
+
+while(coneQcheck()){
+opt.update(opt.dx, opt.dy, opt.dz, opt.dtau, opt.dkappa, -alpha2);
+alpha2*=0.5;
+opt.update(opt.dx, opt.dy, opt.dz, opt.dtau, opt.dkappa, alpha2);
+}
+                }
                 if (opt.usrH)
                 {
                     if (opt.homogenous)
@@ -1942,11 +1985,9 @@ namespace InteriorPoint
                     BlasLike.dcopyvec(n - nh, opt.c, opt.cmod, nh, nh);
                 }
                 var t1 = 0.0;
-                //#if DEBUG
-                //opt.ConeReset();
-                //#endif
                 if ((homogenous && (t1 = Math.Max(alpha1, alpha2)) < opt.alphamin))
                 {
+                    ColourConsole.WriteEmbeddedColourLine($"[red]Small step[/red] [green]{t1}[/green] [magenta] Condition {condition}[/magenta]");
                     if (alpha1 < BlasLike.lm_eps && alpha2 < BlasLike.lm_eps)
                     {
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]BREAK[/red] [cyan]due to zero step length[/cyan]");
@@ -1955,14 +1996,20 @@ namespace InteriorPoint
                     var scl = 1.0;
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
-                    BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
+                    BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);                    
+                    if(coneQcheck()){
+                        
+                    BlasLike.dscalvec(opt.y.Length, opt.tau, opt.y);
+                    BlasLike.dscalvec(opt.x.Length, opt.tau, opt.x);
+                    BlasLike.dscalvec(opt.z.Length, opt.tau, opt.z);  
+                    }else{
                     opt.kappa /= opt.tau;
                     gap = opt.Primal() - opt.Dual();
-                    opt.tau = scl;
+                    opt.tau = scl;}
                        if ((condition <= BlasLike.lm_reps))
                        {
                            ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]Modify cone[/red] [cyan]Due to small step size[/cyan][magenta] only[/magenta]");
-                           opt.ConeReset(1e-1);
+                           opt.ConeReset(1e-5);
                        }
                     if (gap < 0)
                     {
