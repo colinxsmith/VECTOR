@@ -3688,7 +3688,7 @@ namespace Portfolio
         }
         public static int SOCP_LOSS_RISK(int n, int tlen, double[] DATA)
         {
-            var m = 1;
+            var m = 2;
             var cFactor=1e0;
             var portfolioConstraints = new double[n * m];
             var alphafac=1e0;
