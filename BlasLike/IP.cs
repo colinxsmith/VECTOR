@@ -49,7 +49,7 @@ namespace InteriorPoint
         BestResults keep;
         public bool copyKept = true;
         public double alphamin = 1e-1;
-        public double alphamin2 = 1e-1;
+        public double alphamin2 = 1e-5;
         public bool copyBest = true;
         public double conv = BlasLike.lm_eps * 16;
         public double compConv = BlasLike.lm_eps * 16;
@@ -138,6 +138,22 @@ namespace InteriorPoint
         public int[] slackToConstraintU = null;
         public int[] slackToConstraintU_inverse = null;
         static double denomTest(double x) => x * x <= 1 ? 1 : x;
+        public double[] conetop(double[] resid){
+        /*    var back =new double[cone.Length];
+            int cstart,i;
+            double inner;
+            for (i=0,cstart=0;i<cone.Length;cstart+=cone[i],i++){
+                if(cone[i]==1)
+                back[i]=resid[cone[i]+cstart-1];
+                else{
+                //    if((inner=resid[cone[i]+cstart-1]*resid[cone[i]+cstart-1]-BlasLike.ddotvec(cone[i]-1,resid,resid,cstart,cstart))>0)
+                //    back[i]=Math.Sqrt(inner);
+                //    else 
+                    back[i]=resid[cone[i]+cstart-1];
+                }
+            }*/
+            return resid;
+        }
         public static double lInfinity(double[] x)
         {
             var back = 0.0;
@@ -749,7 +765,7 @@ namespace InteriorPoint
         {
             //Try to use approximate residuals when step length is small
             var rpr = lInfinity(rp);
-            var rdr = lInfinity(rd);
+            var rdr = lInfinity(conetop(rd));
             var rmr = lInfinity(rm);
             if (rpr == 0) rpr = 1;
             if (rdr == 0) rdr = 1;
@@ -1500,7 +1516,7 @@ namespace InteriorPoint
 
                     if (reduce)
                     {
-                        var reduction = 0.5 * Math.Sqrt(scale);
+                        var reduction = 0.5;//Mess with the cone drastically
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]REDUCTION[/red]\t\t\t\t[green]{reduction}[/green]");
                         BlasLike.dscalvec(cone[icc] - 1, reduction, z, conestart);
                         BlasLike.dscalvec(cone[icc] - 1, reduction, x, conestart);
@@ -1728,7 +1744,7 @@ namespace InteriorPoint
             opt.DualResudual();
             opt.MuResidual();
             var rp0 = lInfinity(opt.rp);
-            var rd0 = lInfinity(opt.rd);
+            var rd0 = lInfinity(conetop(rd));
             var gap0 = denomTest(opt.Gap());
             rp0 = denomTest(rp0);
             rd0 = denomTest(rd0);
@@ -1754,7 +1770,7 @@ namespace InteriorPoint
                 rp1prev = rp1;
                 rd1prev = rd1;
                 rp1 = lInfinity(opt.rp) / denomTest(rp0);
-                rd1 = lInfinity(opt.rd) / denomTest(rd0);
+                rd1 = lInfinity(conetop(rd)) / denomTest(rd0);
                 if (rd1 > rd1prev || rp1 > rp1prev) r_increase++;
                 else r_increase = 0;
                 //      if (rd1ONE && (rd1 >= 1 || rp1 >= 1 || Double.IsNaN(rd1) || Double.IsNaN(rp1)))
@@ -1803,7 +1819,7 @@ namespace InteriorPoint
                     opt.MuResidual();
                     opt.ConditionEstimate();
                     rp0 = lInfinity(opt.rp);
-                    rd0 = lInfinity(opt.rd);
+                    rd0 = lInfinity(conetop(rd));
                     gap0 = denomTest(opt.Gap());
                 }
 
@@ -1822,7 +1838,7 @@ namespace InteriorPoint
                     opt.MuResidual();
                     opt.ConditionEstimate();
                     rp0 = lInfinity(opt.rp);
-                    rd0 = lInfinity(opt.rd);
+                    rd0 = lInfinity(conetop(rd));
                     gap0 = denomTest(opt.Gap());
                 }
                 if (innerIteration > 2 && opt.optMode == "SOCP")
@@ -2052,7 +2068,7 @@ namespace InteriorPoint
                     if (mult > 2)
                         for (int ii = 0, id = 0; ii < m; ++ii, id += ii)
                         {
-                            opt.M[id + ii] *= 100;
+                            opt.M[id + ii] *= 1;
                         }
                 }
                 //         gap = opt.Primal() - opt.Dual();
@@ -2071,7 +2087,7 @@ namespace InteriorPoint
                     opt.MuResidual();
                     opt.ConditionEstimate();
                     rp0 = lInfinity(opt.rp);
-                    rd0 = lInfinity(opt.rd);
+                    rd0 = lInfinity(conetop(rd));
                     gap0 = denomTest(opt.Gap());
                 }
                 innerIteration++;
@@ -2118,7 +2134,7 @@ namespace InteriorPoint
                 DualResudual(1.0);
                 comp1 = Complementarity(true);
                 rp1 = lInfinity(rp) / denomTest(rp0);
-                rd1 = lInfinity(rd) / denomTest(rd0);
+                rd1 = lInfinity(conetop(rd)) / denomTest(rd0);
                 ColourConsole.WriteInfo($"{ir} outer iterations out of {opt.maxouter}");
                 ColourConsole.WriteInfo($"{innerIteration} iterations out of {opt.maxinner}");
                 ColourConsole.WriteInfo($"Relative Primal\tResidual\t\t {rp1}");
