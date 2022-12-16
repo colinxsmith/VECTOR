@@ -225,7 +225,7 @@ namespace InteriorPoint
             if (optMode == "SOCP")
             {
                 double alpha = 1.0;
-                double lowest = 1e-1, lowest1 = 1 - lowest;
+                double lowest = 1e-2, lowest1 = 1 - lowest;
                 ddx = alpha;
                 ddz = alpha;
                 dd = alpha;
@@ -381,7 +381,7 @@ namespace InteriorPoint
                 double gamma1 = 1 - gamma, test1, test2 = 1, beta = 1e-7;
                 bool bad = true;
                 var rhs = beta * (1.0 - alpha * gamma1) * mu;
-                double ratio, ratiolimL = BlasLike.lm_eps, ratiolimU = 1.0 / ratiolimL;
+                double ratio, ratiolimL = BlasLike.lm_eps/2, ratiolimU = 1.0 / ratiolimL;
 
                 for (int i = 0, cstart = 0; i < cone.Length; cstart += cone[i], i++)
                 {
@@ -1516,7 +1516,7 @@ namespace InteriorPoint
 
                     if (reduce)
                     {
-                        var reduction = 0.5;//Mess with the cone drastically
+                        var reduction = 0.75;//Mess with the cone drastically
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]REDUCTION[/red]\t\t\t\t[green]{reduction}[/green]");
                         BlasLike.dscalvec(cone[icc] - 1, reduction, z, conestart);
                         BlasLike.dscalvec(cone[icc] - 1, reduction, x, conestart);
@@ -1551,7 +1551,7 @@ namespace InteriorPoint
                         testzQz += step * (dzQz + step * dzQdz);
                     }
                     tt = testzQz / testxQx;
-                    if (tt < limL || tt > limU || testxQx == 0 || testzQz<=eps)
+                    if (tt < limL || tt > limU || testxQx <=eps || testzQz<=eps)
                     {
                         back = true;
                     }
@@ -1872,7 +1872,7 @@ namespace InteriorPoint
                 opt.SolvePrimaryDual(gamma, true);
                 opt.MaximumStep(gamma);
                 alpha2 = stepReduce * opt.Lowest();
-                if (alpha2 < alphamin2 && alpha1 < alphamin2)
+                if (false&&alpha2 < alphamin2 && alpha1 < alphamin2)
                 {
                     double gammafirst = alpha2 > alpha1 ? gamma : 0;
                     bool clarify = alpha2 > alpha1;
@@ -2026,7 +2026,7 @@ namespace InteriorPoint
                 if ((homogenous && (t1 = Math.Max(alpha1, alpha2)) < opt.alphamin))
                 {
                     ColourConsole.WriteEmbeddedColourLine($"[red]Small step[/red] [green]{t1}[/green] [magenta] Condition {condition}[/magenta]");
-                    if (alpha1 < BlasLike.lm_rooteps && alpha2 < BlasLike.lm_rooteps)
+                    if (alpha1 < 1e-6 && alpha2 < 1e-6)
                     {
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]BREAK[/red] [cyan]due to zero step length[/cyan]");
                         break;
@@ -2043,7 +2043,7 @@ namespace InteriorPoint
                     
                     if ((condition <= BlasLike.lm_reps))
                     {
-                        ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]Modify cone[/red] [cyan]Due to small step size[/cyan][magenta] only[/magenta]");
+                        ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]Modify cone[/red]");
                         opt.ConeReset(1e-4);
                     }
                     if (gap < 0)
@@ -2061,14 +2061,14 @@ namespace InteriorPoint
                 opt.DualResudual();
                 opt.MuResidual();
                 opt.ConditionEstimate();
-                if (true && opt.condition > BlasLike.lm_reps)
+                if (false && opt.condition > BlasLike.lm_reps)
                 {
                     var mult = rp1 / rd1;
                     if (mult < 1) mult = 1.0 / mult;
                     if (mult > 2)
                         for (int ii = 0, id = 0; ii < m; ++ii, id += ii)
                         {
-                            opt.M[id + ii] *= 1;
+                            opt.M[id + ii] *= 1e5;
                         }
                 }
                 //         gap = opt.Primal() - opt.Dual();
