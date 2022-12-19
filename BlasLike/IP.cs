@@ -139,20 +139,20 @@ namespace InteriorPoint
         public int[] slackToConstraintU_inverse = null;
         static double denomTest(double x) => x * x <= 1 ? 1 : x;
         public double[] conetop(double[] resid){
-        /*    var back =new double[cone.Length];
+            if(resid.Length!=cone.Length)return resid;
+            else{var back =new double[cone.Length];
             int cstart,i;
-            double inner;
             for (i=0,cstart=0;i<cone.Length;cstart+=cone[i],i++){
                 if(cone[i]==1)
                 back[i]=resid[cone[i]+cstart-1];
                 else{
-                //    if((inner=resid[cone[i]+cstart-1]*resid[cone[i]+cstart-1]-BlasLike.ddotvec(cone[i]-1,resid,resid,cstart,cstart))>0)
-                //    back[i]=Math.Sqrt(inner);
-                //    else 
                     back[i]=resid[cone[i]+cstart-1];
                 }
-            }*/
-            return resid;
+            }
+            return back;}
+        }
+        public static double LNorm(double[]x){
+            return Math.Sqrt(BlasLike.ddotvec(x.Length,x,x));
         }
         public static double lInfinity(double[] x)
         {
@@ -381,7 +381,7 @@ namespace InteriorPoint
                 double gamma1 = 1 - gamma, test1, test2 = 1, beta = 1e-7;
                 bool bad = true;
                 var rhs = beta * (1.0 - alpha * gamma1) * mu;
-                double ratio, ratiolimL = BlasLike.lm_eps/2, ratiolimU = 1.0 / ratiolimL;
+                double ratio, ratiolimL = BlasLike.lm_eps, ratiolimU = 1.0 / ratiolimL;
 
                 for (int i = 0, cstart = 0; i < cone.Length; cstart += cone[i], i++)
                 {
@@ -393,7 +393,7 @@ namespace InteriorPoint
                         if (homogenous && kappa > BlasLike.lm_eps && dkappa != 0) test2 = (tau + alpha * dtau) * (kappa + alpha * dkappa);
                         if (typecone[i] == (int)conetype.SOCP)
                         {
-                            var roundlim = BlasLike.lm_eps8192 * 32;
+                            var roundlim = BlasLike.lm_eps;
                             if (n > 1)
                             {
                                 ratio = ((vz1[i] + alpha * (vz2[i] + alpha * vz3[i])) / (vx1[i] + alpha * (vx2[i] + alpha * vx3[i])));
@@ -1516,10 +1516,12 @@ namespace InteriorPoint
 
                     if (reduce)
                     {
-                        var reduction = 0.75;//Mess with the cone drastically
+                        var reduction = 0.95;//Mess with the cone drastically
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]REDUCTION[/red]\t\t\t\t[green]{reduction}[/green]");
-                        BlasLike.dscalvec(cone[icc] - 1, reduction, z, conestart);
-                        BlasLike.dscalvec(cone[icc] - 1, reduction, x, conestart);
+                    //    BlasLike.dscalvec(cone[icc] - 1, reduction, z, conestart);
+                    //    BlasLike.dscalvec(cone[icc] - 1, reduction, x, conestart);
+                        x[conestart+cone[icc]-1]/=reduction;
+                        z[conestart+cone[icc]-1]/=reduction;
                     }
                 }
                 conestart += cone[icc];
@@ -2026,13 +2028,13 @@ namespace InteriorPoint
                 if ((homogenous && (t1 = Math.Max(alpha1, alpha2)) < opt.alphamin))
                 {
                     ColourConsole.WriteEmbeddedColourLine($"[red]Small step[/red] [green]{t1}[/green] [magenta] Condition {condition}[/magenta]");
-                    if (alpha1 < 1e-6 && alpha2 < 1e-6)
+                    if (alpha1 < BlasLike.lm_rooteps && alpha2 <BlasLike.lm_rooteps)
                     {
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]BREAK[/red] [cyan]due to zero step length[/cyan]");
                         break;
                     }
                     var scl = 1.0;
-                    if(Math.Abs(tau-1)>BlasLike.lm_rooteps){
+             /*       if(Math.Abs(tau-1)>BlasLike.lm_rooteps){
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
                     BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
@@ -2040,11 +2042,11 @@ namespace InteriorPoint
                         opt.kappa /= opt.tau;
                         gap = opt.Primal() - opt.Dual();
                         opt.tau = scl;}
-                    
+                    */
                     if ((condition <= BlasLike.lm_reps))
                     {
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]Modify cone[/red]");
-                        opt.ConeReset(1e-4);
+                       opt.ConeReset(1e-4);
                     }
                     if (gap < 0)
                     {
