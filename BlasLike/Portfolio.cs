@@ -4001,6 +4001,110 @@ var lessthan=true;
             Factorise.dmxmulv(M, N, A, x, ccc);
             cccc = new double[m];
             Factorise.dmxmulv(m, n, portfolioConstraints, x, cccc, 0, n + 1);
+    //        return back;
+            // Now fix risk twice
+lessthan=true;
+double relRisk=0.007,absRisk=0.0126;
+            N = (n + 1)*2 + n + tlen + tlen+(lessthan?2:0);
+            M = n*2 + m + tlen + 2;
+            b = new double[M];
+            b[0] = 1;//Budget value
+            b[1] = 7*alphafac;//Alpha value
+            BlasLike.dcopyvec(n,benchmark,b,n,m);//Do this to optimise relative variance
+            BlasLike.dcopyvec(tlen, targetR, b, 0, n*2 + m);
+            b[n*2+m+tlen]=relRisk;
+            b[n*2+m+tlen+1]=absRisk;
+            c = new double[N];
+            c[n]=0;
+            c[n+1+n]=0;
+             utilityFac=1e0;
+            BlasLike.dsccopyvec(n, -utilityFac, alpha, c, 0, (n + 1)*2);
+            BlasLike.dsetvec(tlen, utilityFac, c, (n + 1)*2 + n);
+            A = new double[N * M];
+            
+            for (var i = 0; i < n; ++i)
+            {
+                BlasLike.dcopy(n, RootQ, n, A, M, i, m + i + 2*(n + 1) * M);
+                BlasLike.dset(1, -1, A, M, m + i + i * M);//link
+                BlasLike.dcopy(n, RootQ, n, A, M, i, m+n + i + 2*(n + 1) * M);
+                BlasLike.dset(1, -1, A, M, m+n + i + (i+n+1 )* M);//link
+            }
+            
+            for (var i = 0; i < tlen; ++i)
+            {
+                BlasLike.dcopy(n, DATA, tlen, A, M, i, m + 2*n + i + 2*(n + 1) * M);
+                BlasLike.dset(1, 1, A, M, m + 2*n + i + ((n + 1)*2 + n + i) * M);//LOSS
+                BlasLike.dset(1, -1, A, M, m + 2*n + i + ((n + 1)*2 + n + tlen + i) * M);//slack for loss variables >0
+            }
+        if(lessthan)    {BlasLike.dset(1,1,A,M,m+2*n+tlen+((n + 1)*2 + n + tlen + tlen) * M);//slack for risk <= constraint
+                         BlasLike.dset(1,1,A,M,m+2*n+tlen+1+((n + 1)*2 + n + tlen + tlen+1) * M);}
+                         BlasLike.dset(1,1,A,M,m+2*n+tlen+n*M);//Get risk at top of first cone
+                         BlasLike.dset(1,1,A,M,m+2*n+1+tlen+(n+1+n)*M);//Get risk at top of first cone
+            for (var i = 0; i < m; ++i)
+            {
+                BlasLike.dcopy(n, portfolioConstraints, m, A, M, i, i + 2*(n + 1) * M);
+            }
+            Array.Resize(ref cone, n+2+tlen*2+(lessthan?2:0));
+            Array.Resize(ref typecone, n+2+tlen*2+(lessthan?2:0));
+            cone[0] = n + 1;
+            cone[1] = n + 1;
+            typecone[0] = (int)InteriorPoint.conetype.SOCP;
+            typecone[1] = (int)InteriorPoint.conetype.SOCP;
+            for(var i=0;i<cone.Length-2;++i){
+                cone[i+2]=1;
+                typecone[i+1]=(int)InteriorPoint.conetype.SOCP;
+            }
+            x = new double[N];
+            y = new double[M];
+            BlasLike.dxminmax(c.Length,c,1,ref ccmax,ref ccmin);
+     //   cFactor=    SOCPcheck(A,c,b);
+            BlasLike.dscalvec(c.Length,cFactor,c);
+            opt1 = new InteriorPoint.Optimise(N, M, x, A, b, c);
+            back = opt1.Opt("SOCP", cone, typecone, true);
+            ccc = new double[M];
+            xx = new double[2*n];
+            
+            BlasLike.dsubvec(n,x,benchmark,xx,(n+1)*2);
+            Factorise.dsmxmulv(n, Q, xx, xx, 0,n);
+            t1 = BlasLike.ddotvec(n, xx, xx, n);
+            Factorise.dmxmulv(n, n, RootQ, x, xx, 0, (n + 1)*2);
+            BlasLike.dsubvec(n,xx,benchmark,xx,0,n);
+            xtest = new double[n];
+            BlasLike.dsubvec(n, x, xx, xtest);
+            xcheck = BlasLike.ddotvec(n, xtest, xtest);
+            ColourConsole.WriteEmbeddedColourLine($"[magenta]X transform check[/magenta]\t[red]{xcheck}[/red]");
+            t2 = BlasLike.ddotvec(n, xx, xx);
+
+            ColourConsole.WriteEmbeddedColourLine($"[yellow]Relative Variance[/yellow]\t[green]{x[n] * x[n]}[/green]\tCheck [cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
+            ColourConsole.WriteEmbeddedColourLine($"[yellow]Relative Risk[/yellow]\t\t[green]{x[n]}[/green]\tCheck [cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
+
+            BlasLike.dcopyvec(n,x,xx,(n+1)*2);
+            Factorise.dsmxmulv(n, Q, xx, xx, 0,n);
+            t1 = BlasLike.ddotvec(n, xx, xx, n);
+            Factorise.dmxmulv(n, n, RootQ, x, xx, 0, (n + 1)*2);
+            
+            xtest = new double[n];
+            BlasLike.dsubvec(n, x, xx, xtest);
+            xcheck = BlasLike.ddotvec(n, xtest, xtest);
+            ColourConsole.WriteEmbeddedColourLine($"[magenta]X transform check[/magenta]\t[red]{xcheck}[/red]");
+            t2 = BlasLike.ddotvec(n, xx, xx);
+
+            ColourConsole.WriteEmbeddedColourLine($"[yellow]Absolute Variance[/yellow]\t[green]{x[2*n+1] * x[2*n+1]}[/green]\tCheck [cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
+            ColourConsole.WriteEmbeddedColourLine($"[yellow]Absolute Risk[/yellow]\t\t[green]{x[2*n+1]}[/green]\tCheck [cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
+            Factorise.dmxmulv(M, N, A, x, ccc);
+            LOSSestimate = BlasLike.dsumvec(tlen, x, (n + 1)*2 + n);
+            LOSS1 = 0.0;
+            w = new double[n];
+            BlasLike.dcopyvec(n, x, w, (n + 1)*2);
+            LOSS1 = LOSS(n, x, DATA, targetR, null, (n + 1)*2);
+            expReturn=BlasLike.ddotvec(n,x,alpha,(n+1)*2);
+            ColourConsole.WriteEmbeddedColourLine($"[green]expected return[/green]\t\t[darkgreen]{expReturn}[/darkgreen]");
+            ColourConsole.WriteEmbeddedColourLine($"[red]LOSS check[/red]\t\t[green]{LOSSestimate}[/green] [cyan]{LOSS1}[/cyan]");
+            ColourConsole.WriteEmbeddedColourLine($"[cyan]Utility[/cyan]\t\t\t[darkyellow]{utilityFac*(LOSSestimate-expReturn)}[/darkyellow]");
+            ccc = new double[M];
+            Factorise.dmxmulv(M, N, A, x, ccc);
+            cccc = new double[m];
+            Factorise.dmxmulv(m, n, portfolioConstraints, x, cccc, 0, (n + 1)*2);
             return back;
         }
         public static double SOCPcheck(double[] A,double[] c,double[] b ){
