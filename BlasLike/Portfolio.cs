@@ -3755,20 +3755,15 @@ namespace Portfolio
             var c = new double[N];
             c[n] = 1;
             var A = new double[N * M];
-            //    Factorise.dmx_transpose(n,n,RootQ,RootQ);
+            
             for (var i = 0; i < n; ++i)
             {
                 BlasLike.dcopy(n, RootQ, n, A, M, i, i + m + (n + 1) * M);
+                BlasLike.dset(1, -1,        A, M,    m + i + i * M);//link
             }
-            //    Factorise.dmx_transpose(n,n,RootQ,RootQ);
-
             for (var i = 0; i < m; ++i)
             {
                 BlasLike.dcopy(n, portfolioConstraints, m, A, M, i, i + (n + 1) * M);
-            }
-            for (var i = 0; i < n; ++i)
-            {
-                BlasLike.dset(1, -1, A, M, m + i + i * M);//link
             }
             var ccmax=0.0;
             var ccmin=0.0;
@@ -4004,7 +3999,7 @@ var lessthan=true;
     //        return back;
             // Now fix risk twice
 lessthan=true;
-double relRisk=0.007,absRisk=0.0126;
+double relRisk=0.008,absRisk=0.0126;
             N = (n + 1)*2 + n + tlen + tlen+(lessthan?2:0);
             M = n*2 + m + tlen + 2;
             b = new double[M];
@@ -4084,7 +4079,7 @@ double relRisk=0.007,absRisk=0.0126;
             Factorise.dmxmulv(n, n, RootQ, x, xx, 0, (n + 1)*2);
             
             xtest = new double[n];
-            BlasLike.dsubvec(n, x, xx, xtest);
+            BlasLike.dsubvec(n, x, xx, xtest,n+1);
             xcheck = BlasLike.ddotvec(n, xtest, xtest);
             ColourConsole.WriteEmbeddedColourLine($"[magenta]X transform check[/magenta]\t[red]{xcheck}[/red]");
             t2 = BlasLike.ddotvec(n, xx, xx);

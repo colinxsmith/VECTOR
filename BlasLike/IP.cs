@@ -1214,7 +1214,7 @@ namespace InteriorPoint
             AmultSparseT(y, Ay);
             BlasLike.dcopyvec(n, Ay, rd);
             BlasLike.dnegvec(n, rd);
-            BlasLike.daxpyvec(n, homogenous ? tau : 1, cmod, rd);
+            BlasLike.daxpyvec(n, (homogenous ? tau : 1), cmod, rd);
             BlasLike.dsubvec(n, rd, z, rd);
         }
         void MuResidual()
@@ -1302,7 +1302,7 @@ namespace InteriorPoint
                         thetaScale(n, zbar, THETA[icone], true, false, cstart);//zbar=(Wtheta)m1.z=xbar
                         Tmulvec(n, xbar, cstart);//Tmulvec does nothing for SOCP, needed for SOCPR
                         Tmulvec(n, zbar, cstart);
-                        BlasLike.dcopyvec(n, xbar, zbar, cstart, cstart);
+            //            BlasLike.dcopyvec(n, xbar, zbar, cstart, cstart);
                         applyX(n, xbar, zbar, rmu, cstart, cstart, cstart);
                         Tmulvec(n, rmu, cstart);
                         BlasLike.dnegvec(n, rmu, cstart);
@@ -1868,8 +1868,8 @@ namespace InteriorPoint
                 alpha1 = stepReduce * opt.Lowest();
                 BlasLike.dsccopyvec(opt.n, 1.0, opt.dx, opt.dx0);//was alpha1
                 BlasLike.dsccopyvec(opt.n, 1.0, opt.dz, opt.dz0);//was alpha1
-                opt.dtau0 = 1.0 * opt.dtau;//was alpha1
-                opt.dkappa0 = 1.0 * opt.dkappa;//was alpha1
+                opt.dtau0 = opt.dtau;//was *alpha1
+                opt.dkappa0 = opt.dkappa;//was *alpha1
                 gamma = opt.gfunc(alpha1);
                 opt.SolvePrimaryDual(gamma, true);
                 opt.MaximumStep(gamma);
