@@ -2033,7 +2033,7 @@ namespace InteriorPoint
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]BREAK[/red] [cyan]due to zero step length[/cyan]");
                         break;
                     }
-                    var scl = 1.0;
+             //       var scl = 1.0;
              /*       if(Math.Abs(tau-1)>BlasLike.lm_rooteps){
                     BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
                     BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);

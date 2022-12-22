@@ -3686,7 +3686,93 @@ namespace Portfolio
             }
             return back * 0.5;
         }
-        public static int SOCP_LOSS_RISK(int n, int tlen, double[] DATA)
+        public static int SOCP_LOSS_RISK_DUAL(int n, int tlen, double[] DATA)
+        {
+            var back = -1;
+            var m = 1;
+            var portfolioConstraints = new double[n * m];
+            for (var i = 0; i < n; ++i)
+            {
+                BlasLike.dset(1, 1, portfolioConstraints, m, i * m);
+                if (m > 1) BlasLike.dset(1, (i + 1), portfolioConstraints, m, 1 + i * m);
+            }
+            var targetR = (double[])new double[tlen];
+            var benchmark = (double[])new double[2 * n];
+            BlasLike.dsetvec(n - 1, 1.0 / (n - 1), benchmark);
+            var x = new double[n];
+            var alpha = new double[n];
+            BlasLike.dsetvec(tlen, 1.0 / tlen, targetR);
+            BlasLike.dsetvec(n, 1.0 / n, x);
+            Factorise.dmxmulv(n, tlen, DATA, targetR, alpha, 0, 0, 0, true);
+            Factorise.dmxmulv(tlen, n, DATA, x, targetR, 0, 0, 0, false);//this means unconstrained, min LOSS porfolio has weights 1/n with LOSS 0
+
+            var Q = new double[n * (n + 1) / 2];
+            var ij = 0;
+            for (var i = 0; i < n; ++i)
+            {
+                for (var j = 0; j <= i; ++j)
+                {
+                    Q[ij++] = Solver.Factorise.covariance(tlen, DATA, DATA, i * tlen, j * tlen);
+                }
+            }
+            var Qcopy = (double[])Q.Clone();
+            var RootQ = new double[n * n];
+            for (var i = 0; i < n; ++i)
+            {
+                RootQ[i * n + i] = 1;
+            }
+            var piv = new int[n];
+            Factorise.Factor('U', n, Qcopy, piv);
+            Factorise.Solve('U', n, n, Qcopy, piv, RootQ, n, 0, 0, 0, 1);
+            var y = new double[2 * n];
+            Factorise.dsmxmulv(n, Q, x, y);
+            var varr = BlasLike.ddotvec(n, x, y);
+            Factorise.dmxmulv(n, n, RootQ, x, y);
+            var vartest = BlasLike.ddotvec(n, y, y);
+            //    Debug.Assert(Math.Abs(varr - vartest) < BlasLike.lm_eps);
+
+            Factorise.dsmxmulv(n, Q, benchmark, y, 0, n);
+            var benchVar = BlasLike.ddotvec(n, benchmark, y, 0, n);
+            Factorise.dmxmulv(n, n, RootQ, benchmark, benchmark, 0, 0, n);
+            //benchmark[n] holds the start of RootQ.benchmark
+            var benchVartest = BlasLike.ddotvec(n, benchmark, benchmark, n, n);
+            //    Debug.Assert(Math.Abs(benchVar-benchVartest) < BlasLike.lm_eps);
+            //Minimise risk
+            var M = n+1;
+            var N = m*2 + n*(n+1)+n+1;
+            double[] A = new double[M * N];
+            x = new double[N];
+            y = new double[M];
+            for (var i = 0; i < m; ++i)
+            {
+                BlasLike.dcopy(n, portfolioConstraints, m, A, 1, i, i * M);
+            }
+            for (var i = 0; i < n; ++i) {
+            BlasLike.dcopy(n,RootQ,n,A,1,i,(i+m)*M);
+            BlasLike.dset(1,1,A,1,i+(i+n+m)*M);
+             } 
+            BlasLike.dset(1,1,A,1,n+(n+n+m)*M);
+            double[] c = new double[N];
+            double[] b = new double[M];
+            b[n]=-1;//Maximise -risk
+            c[0]=1;
+            if(m>1)c[2]=7;
+            for(var i=0;i<n;++i){
+c[2*m+i*(n+1)]=0*benchmark[n+i];
+c[2*m+i*(n+1)+1]=0;
+c[2*m+n*(n+1)+i]=-1;
+            }
+c[2*m+n*(n+1)+n]=0;
+            int[]cone=new int[m+n+n+1];
+            int[]typecone=new int[m+n+n+1];
+            for(var i=0;i<m;++i){cone[i]=2;typecone[i]=(int)InteriorPoint.conetype.SOCP;}
+            for(var i=0;i<n;++i){cone[i+m]=n+1;typecone[i]=(int)InteriorPoint.conetype.SOCP;}
+            for(var i=0;i<n+1;++i){cone[i+m+n]=1;typecone[i]=(int)InteriorPoint.conetype.SOCP;}
+            var opt1 = new InteriorPoint.Optimise(N, M, x, A, b, c);
+            back = opt1.Opt("SOCP", cone, typecone, true);
+             return back;
+        }
+        public static int SOCP_LOSS_RISK_PRIMAL(int n, int tlen, double[] DATA)
         {
             var m = 2;
             var cFactor=1e0;
