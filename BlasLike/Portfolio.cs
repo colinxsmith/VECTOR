@@ -3689,7 +3689,7 @@ namespace Portfolio
         public static int SOCP_LOSS_RISK_DUAL(int n, int tlen, double[] DATA)
         {
             var back = -1;
-            var m = 1;
+            var m = 2;
             var portfolioConstraints = new double[n * m];
             for (var i = 0; i < n; ++i)
             {
@@ -3738,39 +3738,63 @@ namespace Portfolio
             var benchVartest = BlasLike.ddotvec(n, benchmark, benchmark, n, n);
             //    Debug.Assert(Math.Abs(benchVar-benchVartest) < BlasLike.lm_eps);
             //Minimise risk
-            var M = n+1;
-            var N = m*2 + n*(n+1)+n+1;
+            var M = n + 1;
+            var N = m * 2 + (n + 1) + n;
             double[] A = new double[M * N];
             x = new double[N];
             y = new double[M];
             for (var i = 0; i < m; ++i)
             {
-                BlasLike.dcopy(n, portfolioConstraints, m, A, 1, i, i * M);
+                BlasLike.dcopy(n, portfolioConstraints, m, A, 1, i, (i*2) * M);
             }
-            for (var i = 0; i < n; ++i) {
-            BlasLike.dcopy(n,RootQ,n,A,1,i,(i+m)*M);
-            BlasLike.dset(1,1,A,1,i+(i+n+m)*M);
-             } 
-            BlasLike.dset(1,1,A,1,n+(n+n+m)*M);
+            for (var i = 0; i < n; ++i)
+            {
+                BlasLike.dcopy(n, RootQ, n, A, 1, i, (i + 2 * m) * M);//Risk
+                BlasLike.dset(1, -1, A, 1, i + (i + n + 1 + 2 * m) * M);//variable link so that y[i]>=0
+            }
+            BlasLike.dset(1, -1, A, 1, n + (n + 2 * m) * M);//Risk link 
             double[] c = new double[N];
             double[] b = new double[M];
-            b[n]=-1;//Maximise -risk
-            c[0]=1;
-            if(m>1)c[2]=7;
-            for(var i=0;i<n;++i){
-c[2*m+i*(n+1)]=0*benchmark[n+i];
-c[2*m+i*(n+1)+1]=0;
-c[2*m+n*(n+1)+i]=-1;
+            b[n] = -1;//Maximise -risk
+            c[0] = 1;
+            if (m > 1) c[2] = 7;
+            for (var i = 0; i < n; ++i)
+            {
+                c[2 * m + i] = benchmark[n + i];
             }
-c[2*m+n*(n+1)+n]=0;
-            int[]cone=new int[m+n+n+1];
-            int[]typecone=new int[m+n+n+1];
-            for(var i=0;i<m;++i){cone[i]=2;typecone[i]=(int)InteriorPoint.conetype.SOCP;}
-            for(var i=0;i<n;++i){cone[i+m]=n+1;typecone[i]=(int)InteriorPoint.conetype.SOCP;}
-            for(var i=0;i<n+1;++i){cone[i+m+n]=1;typecone[i]=(int)InteriorPoint.conetype.SOCP;}
-            var opt1 = new InteriorPoint.Optimise(N, M, x, A, b, c);
+            c[2 * m + n] = 0;
+            for (var i = 0; i < n; ++i)
+            {
+                c[2 * m + (n + 1) + i] = 0;
+            }
+            int[] cone = new int[m + 1 + n ];
+            int[] typecone = new int[m + 1 + n ];
+            for (var i = 0; i < m; ++i) { cone[i] = 2; typecone[i] = (int)InteriorPoint.conetype.SOCP; }
+            for (var i = 0; i < 1; ++i) { cone[i + m] = n + 1; typecone[i + m] = (int)InteriorPoint.conetype.SOCP; }
+            for (var i = 0; i < n ; ++i) { cone[i + m + 1] = 1; typecone[i + m + 1] = (int)InteriorPoint.conetype.SOCP; }
+            var opt1 = new InteriorPoint.Optimise(N, M, x,A, b, c);
+            y=opt1.y;
             back = opt1.Opt("SOCP", cone, typecone, true);
-             return back;
+            double []implied=new double[n*2];
+            Factorise.dsmxmulv(n, Q, y, implied);
+            var t1 = BlasLike.ddotvec(n, y, implied);
+            Factorise.dmxmulv(n, n, RootQ, y, implied);
+            var t2 = BlasLike.ddotvec(n, implied, implied);
+            ColourConsole.WriteEmbeddedColourLine($"[yellow]Sum(y*y)[/yellow]\t\t[green]{y[n] * y[n]}[/green]\tVariance\t\t[cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
+            ColourConsole.WriteEmbeddedColourLine($"[yellow]Sqrt(Sum(y*y))[/yellow]\t\t[green]{y[n]}[/green]\tVariance\t\t[cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
+            BlasLike.dsubvec(n,y,benchmark,y);
+            Factorise.dsmxmulv(n, Q, y, implied);
+             t1 = BlasLike.ddotvec(n, y, implied);
+            Factorise.dmxmulv(n, n, RootQ, y, implied);
+             t2 = BlasLike.ddotvec(n, implied, implied);
+            ColourConsole.WriteEmbeddedColourLine($"[yellow]Sum(y*y)[/yellow]\t\t[green]{y[n] * y[n]}[/green]\tRelative Variance\t[cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
+            ColourConsole.WriteEmbeddedColourLine($"[yellow]Sqrt(Sum(y*y))[/yellow]\t\t[green]{y[n]}[/green]\tRelative Risk\t\t[cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
+var LOSSstart = LOSS(n, y, DATA, targetR);;
+            BlasLike.daddvec(n,y,benchmark,y);
+            var expReturn=BlasLike.ddotvec(n,y,alpha);
+            ColourConsole.WriteEmbeddedColourLine($"[green]expected return[/green]\t\t[darkgreen]{expReturn}[/darkgreen]");
+            ColourConsole.WriteEmbeddedColourLine($"[blue]Loss for optimised risk[/blue][green]\t{LOSSstart}[/green]");
+            return back;
         }
         public static int SOCP_LOSS_RISK_PRIMAL(int n, int tlen, double[] DATA)
         {
