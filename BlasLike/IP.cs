@@ -139,7 +139,7 @@ namespace InteriorPoint
         public int[] slackToConstraintU_inverse = null;
         static double denomTest(double x) => x * x <= 1 ? 1 : x;
         public double[] conetop(double[] resid){
-            if(resid.Length!=cone.Length)return resid;
+            if(true||resid.Length!=cone.Length)return resid;
             else{var back =new double[cone.Length];
             int cstart,i;
             for (i=0,cstart=0;i<cone.Length;cstart+=cone[i],i++){
@@ -381,7 +381,7 @@ namespace InteriorPoint
                 double gamma1 = 1 - gamma, test1, test2 = 1, beta = 1e-7;
                 bool bad = true;
                 var rhs = beta * (1.0 - alpha * gamma1) * mu;
-                double ratio, ratiolimL = BlasLike.lm_eps, ratiolimU = 1.0 / ratiolimL;
+                double ratio, ratiolimL = BlasLike.lm_eps16384, ratiolimU = 1.0 / ratiolimL;
 
                 for (int i = 0, cstart = 0; i < cone.Length; cstart += cone[i], i++)
                 {
@@ -1558,8 +1558,8 @@ namespace InteriorPoint
                         back = true;
                     }
                     if(back){
-                    ColourConsole.WriteEmbeddedColourLine($"[cyan]xQx[/cyan] [green]{testxQx}[/green]");
-                    ColourConsole.WriteEmbeddedColourLine($"[cyan]zQz[/cyan] [green]{testzQz}[/green]");
+                    ColourConsole.WriteEmbeddedColourLine($"[cyan]xQx[/cyan][magenta]{ic} [/magenta] [green]{testxQx}[/green]");
+                    ColourConsole.WriteEmbeddedColourLine($"[cyan]zQz[/cyan][magenta]{ic} [/magenta] [green]{testzQz}[/green]");
                 }}
             }
             return back;

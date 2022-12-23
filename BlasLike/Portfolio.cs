@@ -3729,14 +3729,14 @@ namespace Portfolio
             var varr = BlasLike.ddotvec(n, x, y);
             Factorise.dmxmulv(n, n, RootQ, x, y);
             var vartest = BlasLike.ddotvec(n, y, y);
-            //    Debug.Assert(Math.Abs(varr - vartest) < BlasLike.lm_eps);
+                Debug.Assert(Math.Abs(varr - vartest) < BlasLike.lm_eps);
 
             Factorise.dsmxmulv(n, Q, benchmark, y, 0, n);
             var benchVar = BlasLike.ddotvec(n, benchmark, y, 0, n);
             Factorise.dmxmulv(n, n, RootQ, benchmark, benchmark, 0, 0, n);
             //benchmark[n] holds the start of RootQ.benchmark
             var benchVartest = BlasLike.ddotvec(n, benchmark, benchmark, n, n);
-            //    Debug.Assert(Math.Abs(benchVar-benchVartest) < BlasLike.lm_eps);
+                Debug.Assert(Math.Abs(benchVar-benchVartest) < BlasLike.lm_eps);
             //Minimise risk
             var M = n + 1;
             var N = m * 2 + (n + 1) + n;
@@ -3773,8 +3773,8 @@ namespace Portfolio
             for (var i = 0; i < 1; ++i) { cone[i + m] = n + 1; typecone[i + m] = (int)InteriorPoint.conetype.SOCP; }
             for (var i = 0; i < n ; ++i) { cone[i + m + 1] = 1; typecone[i + m + 1] = (int)InteriorPoint.conetype.SOCP; }
             var opt1 = new InteriorPoint.Optimise(N, M, x,A, b, c);
-            y=opt1.y;
             back = opt1.Opt("SOCP", cone, typecone, true);
+            y=(double[])opt1.y.Clone();
             double []implied=new double[n*2];
             Factorise.dsmxmulv(n, Q, y, implied);
             var t1 = BlasLike.ddotvec(n, y, implied);
@@ -3789,8 +3789,8 @@ namespace Portfolio
              t2 = BlasLike.ddotvec(n, implied, implied);
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Sum(y*y)[/yellow]\t\t[green]{y[n] * y[n]}[/green]\tRelative Variance\t[cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Sqrt(Sum(y*y))[/yellow]\t\t[green]{y[n]}[/green]\tRelative Risk\t\t[cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
-var LOSSstart = LOSS(n, y, DATA, targetR);;
             BlasLike.daddvec(n,y,benchmark,y);
+var LOSSstart = LOSS(n, y, DATA, targetR);
             var expReturn=BlasLike.ddotvec(n,y,alpha);
             ColourConsole.WriteEmbeddedColourLine($"[green]expected return[/green]\t\t[darkgreen]{expReturn}[/darkgreen]");
             ColourConsole.WriteEmbeddedColourLine($"[blue]Loss for optimised risk[/blue][green]\t{LOSSstart}[/green]");
