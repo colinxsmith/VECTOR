@@ -2135,8 +2135,8 @@ namespace InteriorPoint
                 PrimalResidual(1.0);
                 DualResudual(1.0);
                 comp1 = Complementarity(true);
-                rp1 = lInfinity(rp) / denomTest(rp0);
-                rd1 = lInfinity(conetop(rd)) / denomTest(rd0);
+                rp1 = lInfinity(rp);
+                rd1 = lInfinity(conetop(rd));
                 ColourConsole.WriteInfo($"{ir} outer iterations out of {opt.maxouter}");
                 ColourConsole.WriteInfo($"{innerIteration} iterations out of {opt.maxinner}");
                 ColourConsole.WriteInfo($"Relative Primal\tResidual\t\t {rp1}");

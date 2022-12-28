@@ -559,6 +559,7 @@ public class OptimiseController : ControllerBase
         return op;
     }
     [HttpPost("general")]
+    [RequestSizeLimit(bytes: 2_000_000_000)]
     public Optimise PostGen(Optimise op)
     {
         var breakdown = new double[op.n.GetValueOrDefault()];
