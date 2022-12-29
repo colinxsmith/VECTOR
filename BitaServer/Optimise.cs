@@ -51,6 +51,7 @@ public class Optimise
         min_holding = -1;
         min_trade = -1;
         basedirectory = AppContext.BaseDirectory;
+        transposeLinearConstraintArray=false;
     }
     public string? VersionString{get;set;}
     public bool doOpt { get; set; }
@@ -119,4 +120,5 @@ public class Optimise
     public int? round { get; set; }
     public string? datafile { get; set; }
     public string basedirectory { get; }
+    public bool transposeLinearConstraintArray{set;get;}
 }

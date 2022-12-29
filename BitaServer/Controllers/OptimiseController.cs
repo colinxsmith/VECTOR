@@ -566,6 +566,8 @@ public class OptimiseController : ControllerBase
         var lic = new Licensing.Licence();
         var ok=lic.CheckLicence();
         op.VersionString = lic.VersionString;
+        if(op.transposeLinearConstraintArray){
+            Factorise.dmx_transpose(op.n.GetValueOrDefault(),op.m.GetValueOrDefault(),op.A,op.A);}
         if(!ok)return op;
         op.result = new Optimise.checkv();
         if (op.tlen > 0)

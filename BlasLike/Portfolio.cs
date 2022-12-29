@@ -32,7 +32,6 @@ namespace Portfolio
                                         double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0,
                                         double ETLorLOSSmax = 0, string logfile = "", int revise = 0)
         {
-         //   Factorise.dmx_transpose(n,m,A,A);
             if (DATAlambda == 0) { DATA = null; tlen = 0; ETLorLOSSconstraint = false; } //This allow us to leave out LOSS or ETL from the optimisation but still calculate it in results
             ColourConsole.print = !(WindowsServiceHelpers.IsWindowsService());
             var rootPath = AppContext.BaseDirectory;
