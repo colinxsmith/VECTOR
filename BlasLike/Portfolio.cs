@@ -3688,6 +3688,13 @@ namespace Portfolio
         }
         public static int SOCP_LOSS_RISK_DUAL(int n, int tlen, double[] DATA)
         {
+            /* Note that the dual the constraints become
+
+            (c - Ay) is in a cone
+            for 1D c-Ay >0   (that's why so many minuses in 1D and slack)
+            otherwise ||c - Ay|| < (c - Ay)[top]
+
+            */
             var back = -1;
             var m = 2;
             var portfolioConstraints = new double[n * m];
@@ -3745,28 +3752,20 @@ namespace Portfolio
             y = new double[M];
             for (var i = 0; i < m; ++i)
             {
-                BlasLike.dcopy(n, portfolioConstraints, m, A, 1, i, (i * 2) * M);
+                BlasLike.dsccopy(n, -1, portfolioConstraints, m, A, 1, i, (i * 2) * M);
             }
             for (var i = 0; i < n; ++i)
             {
-                BlasLike.dcopy(n, RootQ, n, A, 1, i, (i + 2 * m) * M);//Risk
+                BlasLike.dsccopy(n, -1, RootQ, n, A, 1, i, (i + 2 * m) * M);//Risk
                 BlasLike.dset(1, -1, A, 1, i + (i + n + 1 + 2 * m) * M);//variable link so that y[i]>=0
             }
             BlasLike.dset(1, -1, A, 1, n + (n + 2 * m) * M);//Risk link 
             double[] c = new double[N];
             double[] b = new double[M];
             b[n] = -1;//Maximise -risk
-            c[0] = 1;
-            if (m > 1) c[2] = 7;
-            for (var i = 0; i < n; ++i)
-            {
-                c[2 * m + i] = benchmark[n + i];
-            }
-            c[2 * m + n] = 0;
-            for (var i = 0; i < n; ++i)
-            {
-                c[2 * m + (n + 1) + i] = 0;
-            }
+            c[0] = -1;
+            if (m > 1) c[2] = -7;
+            BlasLike.dsccopyvec(n,-1,benchmark,c,n,2*m);
             int[] cone = new int[m + 1 + n];
             int[] typecone = new int[m + 1 + n];
             for (var i = 0; i < m; ++i) { cone[i] = 2; typecone[i] = (int)InteriorPoint.conetype.SOCP; }
@@ -3803,17 +3802,17 @@ namespace Portfolio
             y = new double[M];
             for (var i = 0; i < m; ++i)
             {
-                BlasLike.dcopy(n, portfolioConstraints, m, A, 1, i, (i * 2) * M);
+                BlasLike.dsccopy(n, -1, portfolioConstraints, m, A, 1, i, (i * 2) * M);
             }
             for (var i = 0; i < n; ++i)
             {
-                BlasLike.dcopy(n, RootQ, n, A, 1, i, (i + 2 * m) * M);//Risk
+                BlasLike.dsccopy(n, -1, RootQ, n, A, 1, i, (i + 2 * m) * M);//Risk
                 BlasLike.dset(1, -1, A, 1, i + (i + n + 1 + 2 * m) * M);//ensure y[i]>=0
             }
             BlasLike.dset(1, -1, A, 1, n + (n + 2 * m) * M);//Risk link 
             for (var i = 0; i < tlen; ++i)
             {
-                BlasLike.dsccopy(n, 1,DATA, tlen, A, 1, i, (i + 2 * m + 2 * n + 1) * M);
+                BlasLike.dsccopy(n, -1, DATA, tlen, A, 1, i, (i + 2 * m + 2 * n + 1) * M);
                 BlasLike.dset(1, -1, A, 1, i + 1 + n + (i + 2 * m + 2 * n + 1) * M);
             }
             for (var i = 0; i < tlen; ++i)
@@ -3824,17 +3823,11 @@ namespace Portfolio
             b = new double[M];
             b[n] = -1;//Maximise -risk
             BlasLike.dsccopyvec(n, 1, alpha, b);
-             BlasLike.dsetvec(tlen, -1, b, n + 1);
-            c[0] = 1;
-            if (m > 1) c[2] = 7;
-            for (var i = 0; i < n; ++i)
-            {
-                c[2 * m + i] = benchmark[n + i];
-            }
-            for (var i = 0; i < tlen; ++i)
-            {
-                   c[2 * m + (n + 1) + i + n] = targetR[i];
-            }
+            BlasLike.dsetvec(tlen, -1, b, n + 1);
+            c[0] = -1;
+            if (m > 1) c[2] = -7;
+            BlasLike.dsccopyvec(n,-1,benchmark,c,n,2*m);
+            BlasLike.dsccopyvec(tlen,-1,targetR,c,0,2*m+2*n+1);
             cone = new int[m + 1 + n + 2 * tlen];
             typecone = new int[m + 1 + n + 2 * tlen];
             for (var i = 0; i < m; ++i) { cone[i] = 2; typecone[i] = (int)InteriorPoint.conetype.SOCP; }
@@ -3859,8 +3852,8 @@ namespace Portfolio
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Sqrt(Sum(y*y))[/yellow]\t\t[green]{y[n]}[/green]\tRelative Risk\t\t[cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
             BlasLike.daddvec(n, y, benchmark, y);
             LOSSstart = LOSS(n, y, DATA, targetR);
-            var LOSSy=BlasLike.dsumvec(tlen,y,n+1);
-            expReturn = BlasLike.ddotvec(n, y,   alpha);
+            var LOSSy = BlasLike.dsumvec(tlen, y, n + 1);
+            expReturn = BlasLike.ddotvec(n, y, alpha);
             ColourConsole.WriteEmbeddedColourLine($"[green]expected return[/green]\t\t[darkgreen]{expReturn}[/darkgreen]");
             ColourConsole.WriteEmbeddedColourLine($"[blue]Loss for optimised risk[/blue][green]\t{LOSSstart} {LOSSy}[/green]");
 
