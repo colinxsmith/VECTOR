@@ -3752,20 +3752,20 @@ namespace Portfolio
             y = new double[M];
             for (var i = 0; i < m; ++i)
             {
-                BlasLike.dsccopy(n, -1, portfolioConstraints, m, A, 1, i, (i * 2) * M);
+                BlasLike.dcopy(n, portfolioConstraints, m, A, 1, i, (i * 2) * M);
             }
             for (var i = 0; i < n; ++i)
             {
-                BlasLike.dsccopy(n, -1, RootQ, n, A, 1, i, (i + 2 * m) * M);//Risk
+                BlasLike.dcopy(n, RootQ, n, A, 1, i, (i + 2 * m) * M);//Risk
                 BlasLike.dset(1, -1, A, 1, i + (i + n + 1 + 2 * m) * M);//variable link so that y[i]>=0
             }
             BlasLike.dset(1, -1, A, 1, n + (n + 2 * m) * M);//Risk link 
             double[] c = new double[N];
             double[] b = new double[M];
             b[n] = -1;//Maximise -risk
-            c[0] = -1;
-            if (m > 1) c[2] = -7;
-            BlasLike.dsccopyvec(n,-1,benchmark,c,n,2*m);
+            c[0] = 1;
+            if (m > 1) c[2] = 7;
+            BlasLike.dcopyvec(n,benchmark,c,n,2*m);
             int[] cone = new int[m + 1 + n];
             int[] typecone = new int[m + 1 + n];
             for (var i = 0; i < m; ++i) { cone[i] = 2; typecone[i] = (int)InteriorPoint.conetype.SOCP; }
@@ -3802,11 +3802,11 @@ namespace Portfolio
             y = new double[M];
             for (var i = 0; i < m; ++i)
             {
-                BlasLike.dsccopy(n, -1, portfolioConstraints, m, A, 1, i, (i * 2) * M);
+                BlasLike.dcopy(n, portfolioConstraints, m, A, 1, i, (i * 2) * M);
             }
             for (var i = 0; i < n; ++i)
             {
-                BlasLike.dsccopy(n, -1, RootQ, n, A, 1, i, (i + 2 * m) * M);//Risk
+                BlasLike.dcopy(n, RootQ, n, A, 1, i, (i + 2 * m) * M);//Risk
                 BlasLike.dset(1, -1, A, 1, i + (i + n + 1 + 2 * m) * M);//ensure y[i]>=0
             }
             BlasLike.dset(1, -1, A, 1, n + (n + 2 * m) * M);//Risk link 
@@ -3824,9 +3824,9 @@ namespace Portfolio
             b[n] = -1;//Maximise -risk
             BlasLike.dsccopyvec(n, 1, alpha, b);
             BlasLike.dsetvec(tlen, -1, b, n + 1);
-            c[0] = -1;
-            if (m > 1) c[2] = -7;
-            BlasLike.dsccopyvec(n,-1,benchmark,c,n,2*m);
+            c[0] = 1;
+            if (m > 1) c[2] = 7;
+            BlasLike.dcopyvec(n,benchmark,c,n,2*m);
             BlasLike.dsccopyvec(tlen,-1,targetR,c,0,2*m+2*n+1);
             cone = new int[m + 1 + n + 2 * tlen];
             typecone = new int[m + 1 + n + 2 * tlen];
