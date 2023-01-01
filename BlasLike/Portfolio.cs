@@ -3711,7 +3711,7 @@ namespace Portfolio
             BlasLike.dsetvec(tlen, 1.0 / tlen, targetR);
             BlasLike.dsetvec(n, 1.0 / n, x);
             Factorise.dmxmulv(n, tlen, DATA, targetR, alpha, 0, 0, 0, true);
-            Factorise.dmxmulv(tlen, n, DATA, x, targetR, 0, 0, 0, false);//this means unconstrained, min LOSS porfolio has weights 1/n with LOSS 0
+            Factorise.dmxmulv(tlen, n, DATA, x, targetR, 0, 0, 0, false);//this means unconstrained, min LOSS porfolio has weights x[i] with LOSS 0, shows how to set up relative LOSS
 
             var Q = new double[n * (n + 1) / 2];
             var ij = 0;
@@ -3765,7 +3765,7 @@ namespace Portfolio
             b[n] = -1;//Maximise -risk
             c[0] = 1;
             if (m > 1) c[2] = 7;
-            BlasLike.dcopyvec(n,benchmark,c,n,2*m);
+            BlasLike.dcopyvec(n, benchmark, c, n, 2 * m);
             int[] cone = new int[m + 1 + n];
             int[] typecone = new int[m + 1 + n];
             for (var i = 0; i < m; ++i) { cone[i] = 2; typecone[i] = (int)InteriorPoint.conetype.SOCP; }
@@ -3826,8 +3826,8 @@ namespace Portfolio
             BlasLike.dsetvec(tlen, -1, b, n + 1);
             c[0] = 1;
             if (m > 1) c[2] = 7;
-            BlasLike.dcopyvec(n,benchmark,c,n,2*m);
-            BlasLike.dsccopyvec(tlen,-1,targetR,c,0,2*m+2*n+1);
+            BlasLike.dcopyvec(n, benchmark, c, n, 2 * m);
+            BlasLike.dsccopyvec(tlen, -1, targetR, c, 0, 2 * m + 2 * n + 1);
             cone = new int[m + 1 + n + 2 * tlen];
             typecone = new int[m + 1 + n + 2 * tlen];
             for (var i = 0; i < m; ++i) { cone[i] = 2; typecone[i] = (int)InteriorPoint.conetype.SOCP; }
