@@ -3688,7 +3688,7 @@ namespace Portfolio
         }
         public static int SOCP_LOSS_RISK_DUAL(int n, int tlen, double[] DATA)
         {
-            /* Note that the dual the constraints become
+            /* Note that in the dual the constraints become
 
             (c - Ay) is in a cone
             for 1D c-Ay >0   (that's why so many minuses in 1D and slack)
@@ -3780,12 +3780,15 @@ namespace Portfolio
             Factorise.dmxmulv(n, n, RootQ, y, implied);
             var t2 = BlasLike.ddotvec(n, implied, implied);
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Sum(y*y)[/yellow]\t\t[green]{y[n] * y[n]}[/green]\tVariance\t\t[cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
-            ColourConsole.WriteEmbeddedColourLine($"[yellow]Sqrt(Sum(y*y))[/yellow]\t\t[green]{y[n]}[/green]\tVariance\t\t[cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
+            ColourConsole.WriteEmbeddedColourLine($"[yellow]Sqrt(Sum(y*y))[/yellow]\t\t[green]{y[n]}[/green]\tRisk\t\t\t[cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
             BlasLike.dsubvec(n, y, benchmark, y);
             Factorise.dsmxmulv(n, Q, y, implied);
             t1 = BlasLike.ddotvec(n, y, implied);
             Factorise.dmxmulv(n, n, RootQ, y, implied);
             t2 = BlasLike.ddotvec(n, implied, implied);
+            var lowestRisk=Math.Sqrt(t2);
+            var nextFixRisk = Math.Floor(lowestRisk * 1.01 * 1e5) * 1e-5;
+            if (nextFixRisk < 1e-6) nextFixRisk = 2e-5;
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Sum(y*y)[/yellow]\t\t[green]{y[n] * y[n]}[/green]\tRelative Variance\t[cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Sqrt(Sum(y*y))[/yellow]\t\t[green]{y[n]}[/green]\tRelative Risk\t\t[cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
             BlasLike.daddvec(n, y, benchmark, y);
@@ -3842,7 +3845,7 @@ namespace Portfolio
             Factorise.dmxmulv(n, n, RootQ, y, implied);
             t2 = BlasLike.ddotvec(n, implied, implied);
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Sum(y*y)[/yellow]\t\t[green]{y[n] * y[n]}[/green]\tVariance\t\t[cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
-            ColourConsole.WriteEmbeddedColourLine($"[yellow]Sqrt(Sum(y*y))[/yellow]\t\t[green]{y[n]}[/green]\tVariance\t\t[cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
+            ColourConsole.WriteEmbeddedColourLine($"[yellow]Sqrt(Sum(y*y))[/yellow]\t\t[green]{y[n]}[/green]\tRisk\t\t\t[cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
             BlasLike.dsubvec(n, y, benchmark, y);
             Factorise.dsmxmulv(n, Q, y, implied);
             t1 = BlasLike.ddotvec(n, y, implied);
@@ -3857,7 +3860,137 @@ namespace Portfolio
             ColourConsole.WriteEmbeddedColourLine($"[green]expected return[/green]\t\t[darkgreen]{expReturn}[/darkgreen]");
             ColourConsole.WriteEmbeddedColourLine($"[blue]Loss for optimised risk[/blue][green]\t{LOSSstart} {LOSSy}[/green]");
 
-
+//Risk Constraint
+            M = n + tlen;
+            N = m * 2 + (n + 1) + n + tlen + tlen;
+            A = new double[M * N];
+            x = new double[N];
+            y = new double[M];
+            for (var i = 0; i < m; ++i)
+            {
+                BlasLike.dcopy(n, portfolioConstraints, m, A, 1, i, (i * 2) * M);
+            }
+            for (var i = 0; i < n; ++i)
+            {
+                BlasLike.dcopy(n, RootQ, n, A, 1, i, (i + 2 * m) * M);//Risk
+                BlasLike.dset(1, -1, A, 1, i + (i + n + 1 + 2 * m) * M);//ensure y[i]>=0
+            }
+            
+            for (var i = 0; i < tlen; ++i)
+            {
+                BlasLike.dsccopy(n, -1, DATA, tlen, A, 1, i, (i + 2 * m + 2 * n + 1) * M);
+                BlasLike.dset(1, -1, A, 1, i + n + (i + 2 * m + 2 * n + 1) * M);
+            }
+            for (var i = 0; i < tlen; ++i)
+            {
+                BlasLike.dset(1, -1, A, 1, n + i + (i + 2 * n + 1 + 2 * m + tlen) * M);//ensure loss variables >0
+            }
+            c = new double[N];
+            b = new double[M];
+            BlasLike.dsccopyvec(n, 1, alpha, b);
+            b[n] = 0;//Risk part of utility
+            BlasLike.dsetvec(tlen, -1, b, n);
+            c[0] = 1;
+            if (m > 1) c[2] = 7;
+            BlasLike.dcopyvec(n, benchmark, c, n, 2 * m);
+            c[2*m+n]= (nextFixRisk);
+            BlasLike.dsccopyvec(tlen, -1, targetR, c, 0, 2 * m + 2 * n + 1);
+            cone = new int[m + 1 + n + 2 * tlen];
+            typecone = new int[m + 1 + n + 2 * tlen];
+            for (var i = 0; i < m; ++i) { cone[i] = 2; typecone[i] = (int)InteriorPoint.conetype.SOCP; }
+            for (var i = 0; i < 1; ++i) { cone[i + m] = n + 1; typecone[i + m] = (int)InteriorPoint.conetype.SOCP; }
+            for (var i = 0; i < n + 2 * tlen; ++i) { cone[i + m + 1] = 1; typecone[i + m + 1] = (int)InteriorPoint.conetype.SOCP; }
+            opt1 = new InteriorPoint.Optimise(N, M, x, A, b, c);
+            back = opt1.Opt("SOCP", cone, typecone, true);
+            y = (double[])opt1.y.Clone();
+            implied = new double[n * 2];
+            Factorise.dsmxmulv(n, Q, y, implied);
+            t1 = BlasLike.ddotvec(n, y, implied);
+            Factorise.dmxmulv(n, n, RootQ, y, implied);
+            t2 = BlasLike.ddotvec(n, implied, implied);
+            ColourConsole.WriteEmbeddedColourLine($"Variance\t\t[cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
+            ColourConsole.WriteEmbeddedColourLine($"Risk\t\t\t[cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
+            BlasLike.dsubvec(n, y, benchmark, y);
+            Factorise.dsmxmulv(n, Q, y, implied);
+            t1 = BlasLike.ddotvec(n, y, implied);
+            Factorise.dmxmulv(n, n, RootQ, y, implied);
+            t2 = BlasLike.ddotvec(n, implied, implied);
+            ColourConsole.WriteEmbeddedColourLine($"Relative Variance\t[cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
+            ColourConsole.WriteEmbeddedColourLine($"Relative Risk\t\t[cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
+            BlasLike.daddvec(n, y, benchmark, y);
+            LOSSstart = LOSS(n, y, DATA, targetR);
+            LOSSy = BlasLike.dsumvec(tlen, y, n);
+            expReturn = BlasLike.ddotvec(n, y, alpha);
+            ColourConsole.WriteEmbeddedColourLine($"[green]expected return[/green]\t\t[darkgreen]{expReturn}[/darkgreen]");
+            ColourConsole.WriteEmbeddedColourLine($"[blue]Loss for optimised risk[/blue][green]\t{LOSSstart} {LOSSy}[/green]");
+            ColourConsole.WriteEmbeddedColourLine($"[red]Fix rel risk at[/red]\t\t[cyan]{nextFixRisk}[/cyan]");
+           double relRisk = 0.01, absRisk = 0.0135;
+            M = n + tlen;
+            N = m * 2 + 2*(n + 1) + n + tlen + tlen;
+            A = new double[M * N];
+            x = new double[N];
+            y = new double[M];
+            for (var i = 0; i < m; ++i)
+            {
+                BlasLike.dcopy(n, portfolioConstraints, m, A, 1, i, (i * 2) * M);
+            }
+            for (var i = 0; i < n; ++i)
+            {
+                BlasLike.dcopy(n, RootQ, n, A, 1, i, (i + 2 * m) * M);//Rel Risk
+                BlasLike.dcopy(n, RootQ, n, A, 1, i, (i + 2 * m+n+1) * M);//Abs Risk
+                BlasLike.dset(1, -1, A, 1, i + (i + 2*(n + 1) + 2 * m) * M);//ensure y[i]>=0
+            }
+            
+            for (var i = 0; i < tlen; ++i)
+            {
+                BlasLike.dsccopy(n, -1, DATA, tlen, A, 1, i, (i + 2 * m + n+2 * (n + 1)) * M);
+                BlasLike.dset(1, -1, A, 1, i + n +           (i + 2 * m + n+2 * (n + 1)) * M);
+            }
+            for (var i = 0; i < tlen; ++i)
+            {
+                BlasLike.dset(1, -1, A, 1, n + i + (i + n+2 * (n + 1) + 2 * m + tlen) * M);//ensure loss variables >0
+            }
+            c = new double[N];
+            b = new double[M];
+            BlasLike.dsccopyvec(n, 1, alpha, b);
+            b[n] = 0;//Risk part of utility
+            BlasLike.dsetvec(tlen, -1, b, n);
+            c[0] = 1;
+            if (m > 1) c[2] = 7;
+            BlasLike.dcopyvec(n, benchmark, c, n, 2 * m);
+            c[2*m+n]= relRisk;
+            c[2*m+n+1+n]=absRisk;
+            BlasLike.dsccopyvec(tlen, -1, targetR, c, 0, 2 * m + n+2 * (n + 1));
+            cone = new int[m + 2 + n + 2 * tlen];
+            typecone = new int[m + 2 + n + 2 * tlen];
+            for (var i = 0; i < m; ++i) { cone[i] = 2; typecone[i] = (int)InteriorPoint.conetype.SOCP; }
+            for (var i = 0; i < 2; ++i) { cone[i + m] = n + 1; typecone[i + m] = (int)InteriorPoint.conetype.SOCP; }
+            for (var i = 0; i < n + 2 * tlen; ++i) { cone[i + m + 2] = 1; typecone[i + m + 2] = (int)InteriorPoint.conetype.SOCP; }
+            opt1 = new InteriorPoint.Optimise(N, M, x, A, b, c);
+            back = opt1.Opt("SOCP", cone, typecone, true);
+            y = (double[])opt1.y.Clone();
+            implied = new double[n * 2];
+            Factorise.dsmxmulv(n, Q, y, implied);
+            t1 = BlasLike.ddotvec(n, y, implied);
+            Factorise.dmxmulv(n, n, RootQ, y, implied);
+            t2 = BlasLike.ddotvec(n, implied, implied);
+            ColourConsole.WriteEmbeddedColourLine($"Variance\t\t[cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
+            ColourConsole.WriteEmbeddedColourLine($"Risk\t\t\t[cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
+            BlasLike.dsubvec(n, y, benchmark, y);
+            Factorise.dsmxmulv(n, Q, y, implied);
+            t1 = BlasLike.ddotvec(n, y, implied);
+            Factorise.dmxmulv(n, n, RootQ, y, implied);
+            t2 = BlasLike.ddotvec(n, implied, implied);
+            ColourConsole.WriteEmbeddedColourLine($"Relative Variance\t[cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
+            ColourConsole.WriteEmbeddedColourLine($"Relative Risk\t\t[cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
+            BlasLike.daddvec(n, y, benchmark, y);
+            LOSSstart = LOSS(n, y, DATA, targetR);
+            LOSSy = BlasLike.dsumvec(tlen, y, n);
+            expReturn = BlasLike.ddotvec(n, y, alpha);
+            ColourConsole.WriteEmbeddedColourLine($"[green]expected return[/green]\t\t[darkgreen]{expReturn}[/darkgreen]");
+            ColourConsole.WriteEmbeddedColourLine($"[blue]Loss for optimised risk[/blue][green]\t{LOSSstart} {LOSSy}[/green]");
+            ColourConsole.WriteEmbeddedColourLine($"[red]Fix abs risk at[/red]\t\t[cyan]{absRisk}[/cyan]");
+            ColourConsole.WriteEmbeddedColourLine($"[red]Fix rel risk at[/red]\t\t[cyan]{relRisk}[/cyan]");
             return back;
         }
         public static int SOCP_LOSS_RISK_PRIMAL(int n, int tlen, double[] DATA)
@@ -4071,7 +4204,7 @@ namespace Portfolio
             var xcheck = BlasLike.ddotvec(n, xtest, xtest);
             ColourConsole.WriteEmbeddedColourLine($"[magenta]X transform check[/magenta] [red]{xcheck}[/red]");
             t2 = BlasLike.ddotvec(n, xx, xx);
-            var nextFixRisk = Math.Floor(lowestRisk * 1.001 * 1e5) * 1e-5;
+            var nextFixRisk = Math.Floor(lowestRisk * 1.01 * 1e5) * 1e-5;
             if (nextFixRisk < 1e-6) nextFixRisk = 2e-5;
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Variance[/yellow]\t[green]{x[n] * x[n]}[/green]\tCheck [cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Risk[/yellow]\t\t[green]{x[n]}[/green]\tCheck [cyan]{Math.Sqrt(t1)}[/cyan]\t[magenta]{Math.Sqrt(t2)}[/magenta]");
@@ -4169,6 +4302,7 @@ namespace Portfolio
             ColourConsole.WriteEmbeddedColourLine($"[green]expected return[/green]\t\t[darkgreen]{expReturn}[/darkgreen]");
             ColourConsole.WriteEmbeddedColourLine($"[red]LOSS check[/red]\t\t[green]{LOSSestimate}[/green] [cyan]{LOSS1}[/cyan]");
             ColourConsole.WriteEmbeddedColourLine($"[cyan]Utility[/cyan]\t\t\t[darkyellow]{utilityFac * (LOSSestimate - expReturn)}[/darkyellow]");
+            ColourConsole.WriteEmbeddedColourLine($"[red]Fix risk at[/red]\t\t[cyan]{nextFixRisk}[/cyan]");
             ccc = new double[M];
             Factorise.dmxmulv(M, N, A, x, ccc);
             cccc = new double[m];

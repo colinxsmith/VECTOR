@@ -168,7 +168,7 @@ namespace InteriorPoint
             Solver.Factorise.dsmxmulv(n, hess, wrk, hx);
         }
         static double norm(double[] aa) => Math.Sqrt(BlasLike.ddotvec(aa.Length, aa, aa));
-        static double square(double a) => a * a;
+        static public double square(double a) => a * a;
         double corrector_gamma = 0.7;
         double gfunc(double a) => Math.Min(corrector_gamma, square(1 - a)) * (1 - a);//Try 0.7 instead of 0.5
         double aob(double a, double b)
@@ -1577,8 +1577,8 @@ namespace InteriorPoint
             opt.optMode = mode;
             if (mode == "SOCP")
             {
-                opt.conv = (Math.Floor(1e-9 / BlasLike.lm_eps)) * BlasLike.lm_eps;
-                opt.compConv = (Math.Floor(1e-9 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.conv = (Math.Floor(1e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
+                opt.compConv = (Math.Floor(1e-8 / BlasLike.lm_eps)) * BlasLike.lm_eps;
                 opt.cone = cone;
                 opt.typecone = typecone;
                 opt.numberOfCones = cone.Length;
