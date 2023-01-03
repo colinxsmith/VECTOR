@@ -3817,9 +3817,6 @@ namespace Portfolio
             {
                 BlasLike.dsccopy(n, -1, DATA, tlen, A, 1, i, (i + 2 * m + 2 * n + 1) * M);
                 BlasLike.dset(1, -1, A, 1, i + 1 + n + (i + 2 * m + 2 * n + 1) * M);
-            }
-            for (var i = 0; i < tlen; ++i)
-            {
                 BlasLike.dset(1, -1, A, 1, n + i + 1 + (i + 2 * n + 1 + 2 * m + tlen) * M);//ensure loss variables >0
             }
             c = new double[N];
@@ -3880,9 +3877,6 @@ namespace Portfolio
             {
                 BlasLike.dsccopy(n, -1, DATA, tlen, A, 1, i, (i + 2 * m + 2 * n + 1) * M);
                 BlasLike.dset(1, -1, A, 1, i + n + (i + 2 * m + 2 * n + 1) * M);
-            }
-            for (var i = 0; i < tlen; ++i)
-            {
                 BlasLike.dset(1, -1, A, 1, n + i + (i + 2 * n + 1 + 2 * m + tlen) * M);//ensure loss variables >0
             }
             c = new double[N];
@@ -3945,9 +3939,6 @@ namespace Portfolio
             {
                 BlasLike.dsccopy(n, -1, DATA, tlen, A, 1, i, (i + 2 * m + n+2 * (n + 1)) * M);
                 BlasLike.dset(1, -1, A, 1, i + n +           (i + 2 * m + n+2 * (n + 1)) * M);
-            }
-            for (var i = 0; i < tlen; ++i)
-            {
                 BlasLike.dset(1, -1, A, 1, n + i + (i + n+2 * (n + 1) + 2 * m + tlen) * M);//ensure loss variables >0
             }
             c = new double[N];
@@ -4310,7 +4301,7 @@ namespace Portfolio
             //        return back;
             // Now fix risk twice
             lessthan = true;
-            double relRisk = 0.008, absRisk = 0.0126;
+            double relRisk = 0.01, absRisk = 0.0135;
             N = (n + 1) * 2 + n + tlen + tlen + (lessthan ? 2 : 0);
             M = n * 2 + m + tlen + 2;
             b = new double[M];
