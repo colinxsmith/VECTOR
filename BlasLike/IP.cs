@@ -1394,16 +1394,16 @@ namespace InteriorPoint
             {
                 var diags = new double[m];
                 var order = new int[m];
-                for (var i = 0; i < m; ++i)
-                {
-                    diags[i] = M[i * (i + 3) / 2];
+                for (int i = 0,ij=0; i < m; ++i,ij+=i+1)
+                {//Debug.Assert(i*(i+3)/2 == ij);
+                    diags[i] = M[ij];
                 }
                 try
                 {
                     Ordering.Order.getorder(m, diags, order, null, 0.0, 1);
                     int o1 = Math.Max(order[0], order[m - 1]), o2 = Math.Min(order[0], order[m - 1]);
                     double a1 = Math.Max(diags[o1], diags[o2]), a2 = Math.Min(diags[o2], diags[o1]), a12 = M[o1 * (o1 + 1) / 2 + o2];
-                    condition = a1 * (a1 - a12 * a12 / a2);//cond is a quick estimate of condition number using only 2 pivots.
+                    condition = a1 / (a2 - a12 * a12 / a1);//cond is a quick estimate of condition number using only 2 pivots.
                     regularise = a1 * BlasLike.lm_eps;
                 }
                 catch
@@ -1566,6 +1566,7 @@ namespace InteriorPoint
         }
         public int Opt(string mode = "QP", int[] cone = null, int[] typecone = null, bool homogenous = true, double[] L = null, int[] sign = null)
         {
+            var smallestStep=1e-5;
             var rd1ONE = false;
             var opt = this;
             this.sign = sign;
@@ -1874,7 +1875,7 @@ namespace InteriorPoint
                 opt.SolvePrimaryDual(gamma, true);
                 opt.MaximumStep(gamma);
                 alpha2 = stepReduce * opt.Lowest();
-                if (false&&alpha2 < alphamin2 && alpha1 < alphamin2)
+                if (false && alpha2 < alphamin2 && alpha1 < alphamin2)
                 {
                     double gammafirst = alpha2 > alpha1 ? gamma : 0;
                     bool clarify = alpha2 > alpha1;
@@ -2028,7 +2029,7 @@ namespace InteriorPoint
                 if ((homogenous && (t1 = Math.Max(alpha1, alpha2)) < opt.alphamin))
                 {
                     ColourConsole.WriteEmbeddedColourLine($"[red]Small step[/red] [green]{t1}[/green] [magenta] Condition {condition}[/magenta]");
-                    if (alpha1 < BlasLike.lm_rooteps && alpha2 <BlasLike.lm_rooteps)
+                    if (alpha1 < smallestStep && alpha2 <smallestStep)
                     {
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]BREAK[/red] [cyan]due to zero step length[/cyan]");
                         break;
@@ -2046,7 +2047,7 @@ namespace InteriorPoint
                     if ((condition <= BlasLike.lm_reps))
                     {
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]Modify cone[/red]");
-                       opt.ConeReset(1e-4);
+                       opt.ConeReset(5e-2);
                     }
                     if (gap < 0)
                     {
@@ -2063,15 +2064,15 @@ namespace InteriorPoint
                 opt.DualResudual();
                 opt.MuResidual();
                 opt.ConditionEstimate();
-                if (false && opt.condition > BlasLike.lm_reps)
+                if (opt.condition > BlasLike.lm_reps)
                 {
                     var mult = rp1 / rd1;
                     if (mult < 1) mult = 1.0 / mult;
                     if (mult > 2)
-                        for (int ii = 0, id = 0; ii < m; ++ii, id += ii)
-                        {
-                            opt.M[id + ii] *= 1e5;
-                        }
+                for (int ii = 0, id = 0; ii < m; ++ii, id += ii)
+                {
+                    opt.M[id + ii] *= 1e2;
+                }
                 }
                 //         gap = opt.Primal() - opt.Dual();
                 if (homogenous && opt.tau < 1e-8 && opt.kappa < 1e-8)
