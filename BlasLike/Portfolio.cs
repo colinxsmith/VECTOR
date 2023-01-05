@@ -3688,6 +3688,12 @@ namespace Portfolio
         }
         public static int SOCP_LOSS_RISK_DUAL(int n, int tlen, double[] DATA)
         {
+                var lic = new Licensing.Licence();
+                bool lictest;
+            var back = -1;
+                lictest = lic.CheckLicence();
+            
+            if (!lictest) return -15;
             /* Note that in the dual the constraints become
 
             (c - Ay) is in a cone
@@ -3695,7 +3701,6 @@ namespace Portfolio
             otherwise ||c - Ay|| < (c - Ay)[top]
 
             */
-            var back = -1;
             var m = 2;
             var portfolioConstraints = new double[n * m];
             for (var i = 0; i < n; ++i)
@@ -3986,6 +3991,11 @@ namespace Portfolio
         }
         public static int SOCP_LOSS_RISK_PRIMAL(int n, int tlen, double[] DATA)
         {
+                var lic = new Licensing.Licence();
+                bool lictest;
+                lictest = lic.CheckLicence();
+            
+            if (!lictest) return -15;
             var m = 2;
             var cFactor = 1e0;
             var portfolioConstraints = new double[n * m];
@@ -4402,6 +4412,8 @@ namespace Portfolio
             ColourConsole.WriteEmbeddedColourLine($"[green]expected return[/green]\t\t[darkgreen]{expReturn}[/darkgreen]");
             ColourConsole.WriteEmbeddedColourLine($"[red]LOSS check[/red]\t\t[green]{LOSSestimate}[/green] [cyan]{LOSS1}[/cyan]");
             ColourConsole.WriteEmbeddedColourLine($"[cyan]Utility[/cyan]\t\t\t[darkyellow]{utilityFac * (LOSSestimate - expReturn)}[/darkyellow]");
+            ColourConsole.WriteEmbeddedColourLine($"[red]Fix abs risk at[/red]\t\t[cyan]{absRisk}[/cyan]");
+            ColourConsole.WriteEmbeddedColourLine($"[red]Fix rel risk at[/red]\t\t[cyan]{relRisk}[/cyan]");
             ccc = new double[M];
             Factorise.dmxmulv(M, N, A, x, ccc);
             cccc = new double[m];

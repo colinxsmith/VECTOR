@@ -40,8 +40,12 @@ namespace UseBlas
                         tlen=5;*/
                     Array.Resize(ref DATA, n * tlen);
                     var back = Portfolio.Portfolio.SOCP_LOSS_RISK_DUAL(n, tlen, DATA);
-                    //back = Portfolio.Portfolio.SOCP_LOSS_RISK_PRIMAL(n, tlen, DATA);
-                    return;
+                    var mess=Portfolio.Portfolio.OptMessages(back);
+                    ColourConsole.WriteInfo(mess);
+                 //   back = Portfolio.Portfolio.SOCP_LOSS_RISK_PRIMAL(n, tlen, DATA);
+                 //   mess=Portfolio.Portfolio.OptMessages(back);
+                 //   ColourConsole.WriteInfo(mess);
+                   return;
                 }
             }
 

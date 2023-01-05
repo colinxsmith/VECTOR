@@ -253,7 +253,7 @@ namespace Licensing
             if (!usefile && RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 worked = false;
-                try
+              //  try
                 {
                     RegistryKey safekey, newkey;
                     try
@@ -287,10 +287,10 @@ namespace Licensing
                     if (print) ColourConsole.WriteEmbeddedColourLine($"[green]Current Licence:[/green] \t[yellow]{licence}[/yellow]");
                     safekey.Dispose();
                 }
-                catch (Exception prob)
+         /*       catch (Exception prob)
                 {
                     ColourConsole.WriteError("exception" + prob);
-                }
+                }*/
             }
             else
             {
@@ -492,6 +492,7 @@ namespace Licensing
             int start = 0, stop = 0, hid = 0;
             string printStart = "", printStop = "", printNow = "";
             int fromReg;
+            try{
             if ((fromReg = fromRegistry(usefile)) > 0)
             {
                 DateTimeOffset now = new DateTimeOffset(DateTime.Now);
@@ -531,6 +532,14 @@ namespace Licensing
                     toRegistry(usefile);
                 }
                 else deleteKey();
+            }
+            else{
+                back+=$" No licence found!!!!";
+                pass=false;
+            }}
+            catch{
+                back+=$" No licence found!!!!";
+                pass=false;
             }
             if (print) ColourConsole.WriteEmbeddedColourLine(back);
             VersionString = back;

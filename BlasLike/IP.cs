@@ -138,21 +138,28 @@ namespace InteriorPoint
         public int[] slackToConstraintU = null;
         public int[] slackToConstraintU_inverse = null;
         static double denomTest(double x) => x * x <= 1 ? 1 : x;
-        public double[] conetop(double[] resid){
-            if(true||resid.Length!=cone.Length)return resid;
-            else{var back =new double[cone.Length];
-            int cstart,i;
-            for (i=0,cstart=0;i<cone.Length;cstart+=cone[i],i++){
-                if(cone[i]==1)
-                back[i]=resid[cone[i]+cstart-1];
-                else{
-                    back[i]=resid[cone[i]+cstart-1];
+        public double[] conetop(double[] resid)
+        {
+            if (true || resid.Length != cone.Length) return resid;
+            else
+            {
+                var back = new double[cone.Length];
+                int cstart, i;
+                for (i = 0, cstart = 0; i < cone.Length; cstart += cone[i], i++)
+                {
+                    if (cone[i] == 1)
+                        back[i] = resid[cone[i] + cstart - 1];
+                    else
+                    {
+                        back[i] = resid[cone[i] + cstart - 1];
+                    }
                 }
+                return back;
             }
-            return back;}
         }
-        public static double LNorm(double[]x){
-            return Math.Sqrt(BlasLike.ddotvec(x.Length,x,x));
+        public static double LNorm(double[] x)
+        {
+            return Math.Sqrt(BlasLike.ddotvec(x.Length, x, x));
         }
         public static double lInfinity(double[] x)
         {
@@ -745,14 +752,16 @@ namespace InteriorPoint
                     {
                         for (int i = 0, ij = 0; i < m; ++i, ij += i)
                         {
-                            BlasLike.dcopy(n, A, m, lhs, 1, i + cstart * m, x.Length + cstart);
-                            W2m1trans(n, lhs, W, lhs, x.Length + cstart, cstart, cstart);
-                            thetaScale(n, lhs, THETA[icone], true, true, cstart);
-                            for (var k = cstart; k < n + cstart; ++k)
+                            BlasLike.dcopy(n, A, m, lhs, 1, i + cstart * m, n);
+                                                        if(n==1&&lhs[n]==0)                            continue;
+                            if(n==2&&lhs[n]==0&&lhs[n+1]==0)                            continue;
+                            W2m1trans(n, lhs, W, lhs, n, cstart);
+                            thetaScale(n, lhs, THETA[icone], true, true);
+                            for (var k = 0; k < n ; ++k)
                             {
                                 if (lhs[k] != 0.0)
                                 {
-                                    BlasLike.daxpyvec(i + 1, lhs[k], A, M, k * m, ij);
+                                    BlasLike.daxpyvec(i + 1, lhs[k], A, M, (k+cstart) * m, ij);
                                 }
                             }
                         }
@@ -1302,7 +1311,7 @@ namespace InteriorPoint
                         thetaScale(n, zbar, THETA[icone], true, false, cstart);//zbar=(Wtheta)m1.z=xbar
                         Tmulvec(n, xbar, cstart);//Tmulvec does nothing for SOCP, needed for SOCPR
                         Tmulvec(n, zbar, cstart);
-            //            BlasLike.dcopyvec(n, xbar, zbar, cstart, cstart);
+                        //            BlasLike.dcopyvec(n, xbar, zbar, cstart, cstart);
                         applyX(n, xbar, zbar, rmu, cstart, cstart, cstart);
                         Tmulvec(n, rmu, cstart);
                         BlasLike.dnegvec(n, rmu, cstart);
@@ -1394,7 +1403,7 @@ namespace InteriorPoint
             {
                 var diags = new double[m];
                 var order = new int[m];
-                for (int i = 0,ij=0; i < m; ++i,ij+=i+1)
+                for (int i = 0, ij = 0; i < m; ++i, ij += i + 1)
                 {//Debug.Assert(i*(i+3)/2 == ij);
                     diags[i] = M[ij];
                 }
@@ -1505,11 +1514,11 @@ namespace InteriorPoint
                 {
                     var din = BlasLike.ddotvec(cone[icc] - 1, x, x, conestart, conestart);
                     var dtop = square(x[conestart + cone[icc] - 1]);
-                    var scale=dtop/din;
-                    
+                    var scale = dtop / din;
+
                     din = BlasLike.ddotvec(cone[icc] - 1, z, z, conestart, conestart);
                     dtop = square(z[conestart + cone[icc] - 1]);
-                    scale=Math.Max(scale,dtop/din);
+                    scale = Math.Max(scale, dtop / din);
 
                     if (scale < (1 + correction))
                         reduce = true;
@@ -1518,10 +1527,10 @@ namespace InteriorPoint
                     {
                         var reduction = 0.95;//Mess with the cone drastically
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]REDUCTION[/red]\t\t\t\t[green]{reduction}[/green]");
-                    //    BlasLike.dscalvec(cone[icc] - 1, reduction, z, conestart);
-                    //    BlasLike.dscalvec(cone[icc] - 1, reduction, x, conestart);
-                        x[conestart+cone[icc]-1]/=reduction;
-                        z[conestart+cone[icc]-1]/=reduction;
+                        //    BlasLike.dscalvec(cone[icc] - 1, reduction, z, conestart);
+                        //    BlasLike.dscalvec(cone[icc] - 1, reduction, x, conestart);
+                        x[conestart + cone[icc] - 1] /= reduction;
+                        z[conestart + cone[icc] - 1] /= reduction;
                     }
                 }
                 conestart += cone[icc];
@@ -1531,7 +1540,7 @@ namespace InteriorPoint
         {
             double testxQx, testzQz;
             var back = false;
-            var eps=BlasLike.lm_eps;
+            var eps = BlasLike.lm_eps;
             int nn, cstart, ic;
             double limL = BlasLike.lm_eps, limU = 1.0 / limL, tt;
             limL = square(limL);
@@ -1553,20 +1562,22 @@ namespace InteriorPoint
                         testzQz += step * (dzQz + step * dzQdz);
                     }
                     tt = testzQz / testxQx;
-                    if (tt < limL || tt > limU || testxQx <=eps || testzQz<=eps)
+                    if (tt < limL || tt > limU || testxQx <= eps || testzQz <= eps)
                     {
                         back = true;
                     }
-                    if(back){
-                    ColourConsole.WriteEmbeddedColourLine($"[cyan]xQx[/cyan][magenta]{ic} [/magenta] [green]{testxQx}[/green]");
-                    ColourConsole.WriteEmbeddedColourLine($"[cyan]zQz[/cyan][magenta]{ic} [/magenta] [green]{testzQz}[/green]");
-                }}
+                    if (back)
+                    {
+                        ColourConsole.WriteEmbeddedColourLine($"[cyan]xQx[/cyan][magenta]{ic} [/magenta] [green]{testxQx}[/green]");
+                        ColourConsole.WriteEmbeddedColourLine($"[cyan]zQz[/cyan][magenta]{ic} [/magenta] [green]{testzQz}[/green]");
+                    }
+                }
             }
             return back;
         }
         public int Opt(string mode = "QP", int[] cone = null, int[] typecone = null, bool homogenous = true, double[] L = null, int[] sign = null)
         {
-            var smallestStep=1e-5;
+            var smallestStep = 1e-3;
             var rd1ONE = false;
             var opt = this;
             this.sign = sign;
@@ -1798,7 +1809,7 @@ namespace InteriorPoint
                 //   if (comp1 < opt.compConv && opt.tau < 1e-5 * opt.kappa) break;
                 if (ir > opt.maxouter)
                     break;
-                if (false&&(rp1 > rp1prev || rd1 > rd1prev) && innerIteration > 1 && r_increase > 10)
+                if (false && (rp1 > rp1prev || rd1 > rd1prev) && innerIteration > 1 && r_increase > 10)
                 {
                     ir++; innerIteration = 0; r_increase = 0;
                     /*       BlasLike.dcopyvec(opt.x.Length, opt.keep.x, opt.x);
@@ -1986,26 +1997,26 @@ namespace InteriorPoint
                     }
 
                 }
-                            if (alpha1 >= alpha2)coneQcheck(alpha1,dxold,dzold);
-                            else coneQcheck(alpha2,dx,dz);  //Only need this for testing
+                if (alpha1 >= alpha2) coneQcheck(alpha1, dxold, dzold);
+                else coneQcheck(alpha2, dx, dz);  //Only need this for testing
                 if (alpha1 > alpha2)
                 {
                     opt.update(dxold, dyold, dzold, dtauold, dkappaold, alpha1);
 
-                    while (coneQcheck()&&alpha1>alpha2)
+                    while (coneQcheck() && alpha1 > alpha2)
                     {
                         opt.update(dxold, dyold, dzold, dtauold, dkappaold, -alpha1);
                         alpha1 *= 0.5;
                         opt.update(dxold, dyold, dzold, dtauold, dkappaold, alpha1);
                     }
-                    if(alpha1<=alpha2)
-                    opt.update(dxold, dyold, dzold, dtauold, dkappaold, -alpha1);
+                    if (alpha1 <= alpha2)
+                        opt.update(dxold, dyold, dzold, dtauold, dkappaold, -alpha1);
                 }
                 if (alpha1 < alpha2)
                 {
                     opt.update(opt.dx, opt.dy, opt.dz, opt.dtau, opt.dkappa, alpha2);
 
-                    while (coneQcheck()&&alpha2>alpha1)
+                    while (coneQcheck() && alpha2 > alpha1)
                     {
                         opt.update(opt.dx, opt.dy, opt.dz, opt.dtau, opt.dkappa, -alpha2);
                         alpha2 *= 0.5;
@@ -2029,25 +2040,25 @@ namespace InteriorPoint
                 if ((homogenous && (t1 = Math.Max(alpha1, alpha2)) < opt.alphamin))
                 {
                     ColourConsole.WriteEmbeddedColourLine($"[red]Small step[/red] [green]{t1}[/green] [magenta] Condition {condition}[/magenta]");
-                    if (alpha1 < smallestStep && alpha2 <smallestStep)
+                    if (alpha1 < smallestStep && alpha2 < smallestStep)
                     {
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]BREAK[/red] [cyan]due to zero step length[/cyan]");
                         break;
                     }
-             //       var scl = 1.0;
-             /*       if(Math.Abs(tau-1)>BlasLike.lm_rooteps){
-                    BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
-                    BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
-                    BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
-                    
-                        opt.kappa /= opt.tau;
-                        gap = opt.Primal() - opt.Dual();
-                        opt.tau = scl;}
-                    */
-                    if ((condition <= BlasLike.lm_reps))
+                    //       var scl = 1.0;
+                    /*       if(Math.Abs(tau-1)>BlasLike.lm_rooteps){
+                           BlasLike.dscalvec(opt.y.Length, 1.0 / opt.tau, opt.y);
+                           BlasLike.dscalvec(opt.x.Length, 1.0 / opt.tau, opt.x);
+                           BlasLike.dscalvec(opt.z.Length, 1.0 / opt.tau, opt.z);
+
+                               opt.kappa /= opt.tau;
+                               gap = opt.Primal() - opt.Dual();
+                               opt.tau = scl;}
+                           */
+                    if ((condition <= BlasLike.lm_reps/2))
                     {
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]Modify cone[/red]");
-                       opt.ConeReset(5e-2);
+                        opt.ConeReset(5e-1);
                     }
                     if (gap < 0)
                     {
@@ -2069,10 +2080,10 @@ namespace InteriorPoint
                     var mult = rp1 / rd1;
                     if (mult < 1) mult = 1.0 / mult;
                     if (mult > 2)
-                for (int ii = 0, id = 0; ii < m; ++ii, id += ii)
-                {
-                    opt.M[id + ii] *= 1e2;
-                }
+                        for (int ii = 0, id = 0; ii < m; ++ii, id += ii)
+                        {
+                            opt.M[id + ii] *= 1e2;
+                        }
                 }
                 //         gap = opt.Primal() - opt.Dual();
                 if (homogenous && opt.tau < 1e-8 && opt.kappa < 1e-8)
