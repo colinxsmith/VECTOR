@@ -519,10 +519,12 @@ namespace Licensing
                 pass = pass && (start < timenow);
                 pass = pass && (stop > timenow);
                 pass = pass && (hid == vid || hid == 0x13101955);
+                var badhid=!(hid == vid || hid == 0x13101955);
+                var extramess=badhid?$"hid should be {vid:x}":"";
                 string user = fromReg == 1 ? "root" : "user";
                 int days = (stop - (int)timenow) / 24 / 3600;
                 if (pass) back += $".\nRunning as {user}. Licence starts: {printStart} until: {printStop}. I.e. {days} days left.\nTime now: {printNow}. Valid on: {hid:x}.\nKeys: {ckeys}";
-                else back += $".\nRunning as {user}. Licence is not valid!!!!!!!!!!!!! From: {printStart} until: {printStop}.\nTime now: {printNow}. Valid on: {hid:x}.\nKeys: {ckeys}";
+                else back += $".\nRunning as {user}. Licence is not valid!!!!!!!!!!!!! From: {printStart} until: {printStop}.\nTime now: {printNow}. Valid on: {hid:x}.\nKeys: {ckeys} {extramess}";
                 if (pass)
                 {//Reset the start time and change hid to the that for this machine
                     start = (int)newstart;
