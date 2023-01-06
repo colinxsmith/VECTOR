@@ -753,15 +753,15 @@ namespace InteriorPoint
                         for (int i = 0, ij = 0; i < m; ++i, ij += i)
                         {
                             BlasLike.dcopy(n, A, m, lhs, 1, i + cstart * m, n);
-                                                        if(n==1&&lhs[n]==0)                            continue;
-                            if(n==2&&lhs[n]==0&&lhs[n+1]==0)                            continue;
+                            if (n == 1 && lhs[n] == 0) continue;
+                            if (n == 2 && lhs[n] == 0 && lhs[n + 1] == 0) continue;
                             W2m1trans(n, lhs, W, lhs, n, cstart);
                             thetaScale(n, lhs, THETA[icone], true, true);
-                            for (var k = 0; k < n ; ++k)
+                            for (var k = 0; k < n; ++k)
                             {
                                 if (lhs[k] != 0.0)
                                 {
-                                    BlasLike.daxpyvec(i + 1, lhs[k], A, M, (k+cstart) * m, ij);
+                                    BlasLike.daxpyvec(i + 1, lhs[k], A, M, (k + cstart) * m, ij);
                                 }
                             }
                         }
@@ -1404,7 +1404,8 @@ namespace InteriorPoint
                 var diags = new double[m];
                 var order = new int[m];
                 for (int i = 0, ij = 0; i < m; ++i, ij += i + 1)
-                {//Debug.Assert(i*(i+3)/2 == ij);
+                {
+                    //    Debug.Assert(i * (i + 3) / 2 == ij);
                     diags[i] = M[ij];
                 }
                 try
@@ -2055,7 +2056,7 @@ namespace InteriorPoint
                                gap = opt.Primal() - opt.Dual();
                                opt.tau = scl;}
                            */
-                    if ((condition <= BlasLike.lm_reps/2))
+                    if ((condition <= BlasLike.lm_reps / 2))
                     {
                         ColourConsole.WriteEmbeddedColourLine($"\t\t\t[red]Modify cone[/red]");
                         opt.ConeReset(5e-1);
