@@ -244,8 +244,8 @@ public class OptimiseController : ControllerBase
         if (doOpt != null) op.doOpt = doOpt.GetValueOrDefault();
         using (var CVarData = new InputSomeData())
         {
-            CVarData.doubleFields = "alpha bench gamma initial delta buy sell kappa min_holding min_trade minRisk lambda maxRisk rmin rmax Rmin Rmax min_lot size_lot LSvalue LSvaluel value valuel mask A L U Q A_abs Abs_A Abs_U Abs_L SV FC FL DATA tail R";
-            CVarData.intFields = "n nfac m basket longbasket shortbasket trades tradebuy tradesell tradenum nabs mabs I_A round tlen";
+            CVarData.doubleFields = "alpha bench gamma initial delta buy sell kappa min_holding min_trade minRisk lambda maxRisk rmin rmax Rmin Rmax min_lot size_lot LSvalue LSvaluel value valuel mask A L U Q A_abs Abs_A Abs_U Abs_L SV FC FL DATA tail R CVarMin CVarMax";
+            CVarData.intFields = "n nfac m basket longbasket shortbasket trades tradebuy tradesell tradenum nabs mabs I_A round tlen number_included CVar_constraint";
             CVarData.stringFields = "names logfile";
             op.datafile = "generalopt";
             if (datafile != null) op.datafile = datafile;
@@ -342,7 +342,16 @@ public class OptimiseController : ControllerBase
                 if (op.nfac == null) op.nfac = -1;
                 op.DATA = CVarData.mapDouble["DATA"];
                 if (negdata) BlasLike.dnegvec(op.DATA.Length, op.DATA);
-                try { op.tail = CVarData.mapDouble["tail]"][0]; } catch { op.tail = 0.05; }
+                try { op.tail = CVarData.mapDouble["tail"][0]; }
+                catch
+                {
+                    try
+                    {
+                        var number_included = CVarData.mapInt["number_included"][0];
+                        op.tail = 1 - number_included / op.tlen;
+                    }
+                    catch {op.tail=0.02; }
+                }
                 if (targetR == null) try { targetR = CVarData.mapDouble["R"][0]; } catch { targetR = null; }
                 if (Gstrength != null) op.Gstrength = Gstrength.GetValueOrDefault();
                 if (LOSSmin != null) op.LOSSmin = LOSSmin;
@@ -350,6 +359,11 @@ public class OptimiseController : ControllerBase
                 if (ETLmax != null) op.ETLmax = ETLmax;
                 if (ETLmin != null) op.ETLmin = ETLmin;
                 if (op.ETLmax != null && op.ETLmin != null) op.ETLopt = true;
+                var ETLopt=false;
+            try { op.ETLmax= CVarData.mapDouble["CVarMin"][0]; } catch { ; }
+            try { op.ETLmin= CVarData.mapDouble["CVarMax"][0]; } catch { ; }
+            try { ETLopt= CVarData.mapInt["CVar_constraint"][0]!=0?true:false; } catch { ; }
+            if(ETLopt)op.ETLopt=ETLopt;
                 if (op.LOSSmax != null && op.LOSSmin != null) op.LOSSopt = true;
                 if (op.alpha == null)
                 {
