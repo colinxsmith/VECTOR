@@ -691,6 +691,7 @@ if(op.bench!=null){op.result.BETA=new double[cov.ntrue];
                 fac.FC = op.FC;
                 fac.FL = op.FL;
                 fac.makeQ();
+                op.result.QMATRIX=fac.Q;
             }
             else fac.Q = op.Q;
 if(op.bench!=null){op.result.BETA=new double[fac.ntrue];
