@@ -29,6 +29,9 @@ public class Optimise
         public double[]? FX { get; set; }
         public double? facrisk { get; set; }
         public double? specrisk { get; set; }
+        public double?portBETA{get;set;}
+        public double[]?BETA{set;get;}
+        
     }
 
     public Optimise()

@@ -635,7 +635,7 @@ public class OptimiseController : ControllerBase
 
             cov.RiskBreakdown(op.w, op.bench, op.result.mctr);
             op.result.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.result.mctr);
-            if (op.bench != null) op.result.risk -= op.result.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.bench, op.result.mctr);
+            if (op.bench != null) op.result.risk -= BlasLike.ddotvec(op.n.GetValueOrDefault(), op.bench, op.result.mctr);
         }
         else
         {

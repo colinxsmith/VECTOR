@@ -244,8 +244,8 @@ public class OptimiseController : ControllerBase
         if (doOpt != null) op.doOpt = doOpt.GetValueOrDefault();
         using (var CVarData = new InputSomeData())
         {
-            CVarData.doubleFields = "alpha bench gamma initial delta buy sell kappa min_holding min_trade minRisk lambda maxRisk rmin rmax Rmin Rmax min_lot size_lot LSvalue LSvaluel value valuel mask A L U Q A_abs Abs_A Abs_U Abs_L SV FC FL DATA tail R CVarMin CVarMax";
-            CVarData.intFields = "n nfac m basket longbasket shortbasket trades tradebuy tradesell tradenum nabs mabs I_A round tlen number_included CVar_constraint";
+            CVarData.doubleFields = "alpha bench gamma initial delta buy sell kappa min_holding min_trade minRisk lambda maxRisk rmin rmax Rmin Rmax min_lot size_lot LSvalue LSvaluel value valuel mask A L U Q A_abs Abs_A Abs_U Abs_L SV FC FL DATA tail R CVarMin CVarMax CVar_averse ETLorLOSSmin ETLorLOSSmax";
+            CVarData.intFields = "n nfac m basket longbasket shortbasket trades tradebuy tradesell tradenum nabs mabs I_A round tlen number_included CVar_constraint ETLorLOSSconstraint";
             CVarData.stringFields = "names logfile";
             op.datafile = "generalopt";
             if (datafile != null) op.datafile = datafile;
@@ -263,7 +263,7 @@ public class OptimiseController : ControllerBase
                 {
                     CVarData.Read($"../{op.datafile}");
                 }
-                catch { op.message = $"Input file error \"{op.datafile}\""; return op; }
+                catch(Exception ppp) { op.message = $"{ppp} Input file error \"{op.datafile}\""; return op; }
             }
             op.n = CVarData.mapInt["n"][0];
             try { op.nfac = CVarData.mapInt["nfac"][0]; } catch { op.nfac = -1; }
@@ -342,13 +342,14 @@ public class OptimiseController : ControllerBase
                 if (op.nfac == null) op.nfac = -1;
                 op.DATA = CVarData.mapDouble["DATA"];
                 if (negdata) BlasLike.dnegvec(op.DATA.Length, op.DATA);
+                try{Gstrength=CVarData.mapDouble["CVar_averse"][0];}catch{;}
                 try { op.tail = CVarData.mapDouble["tail"][0]; }
                 catch
                 {
                     try
                     {
                         var number_included = CVarData.mapInt["number_included"][0];
-                        op.tail = 1 - number_included / op.tlen;
+                        op.tail = 1 - (double)((number_included)) / op.tlen;
                     }
                     catch {op.tail=0.02; }
                 }
@@ -360,8 +361,8 @@ public class OptimiseController : ControllerBase
                 if (ETLmin != null) op.ETLmin = ETLmin;
                 if (op.ETLmax != null && op.ETLmin != null) op.ETLopt = true;
                 var ETLopt=false;
-            try { op.ETLmax= CVarData.mapDouble["CVarMin"][0]; } catch { ; }
-            try { op.ETLmin= CVarData.mapDouble["CVarMax"][0]; } catch { ; }
+            try { op.ETLmin= CVarData.mapDouble["CVarMin"][0]; } catch { ; }
+            try { op.ETLmax= CVarData.mapDouble["CVarMax"][0]; } catch { ; }
             try { ETLopt= CVarData.mapInt["CVar_constraint"][0]!=0?true:false; } catch { ; }
             if(ETLopt)op.ETLopt=ETLopt;
                 if (op.LOSSmax != null && op.LOSSmin != null) op.LOSSopt = true;
@@ -388,6 +389,15 @@ public class OptimiseController : ControllerBase
 
                 if (targetR != null)
                 {
+                    int ETLorLOSSconstraint;
+                    try{ETLorLOSSconstraint=CVarData.mapInt["ETLorLOSSconstraint"][0];
+                    op.LOSSopt=ETLorLOSSconstraint==1;}catch{;}
+                    double ETLorLOSSmin;
+                    try{ETLorLOSSmin=CVarData.mapDouble["ETLorLOSSmin"][0];
+                    op.LOSSmin=ETLorLOSSmin;}catch{;}
+                    double ETLorLOSSmax;
+                    try{ETLorLOSSmax=CVarData.mapDouble["ETLorLOSSmax"][0];
+                    op.LOSSmax=ETLorLOSSmax;}catch{;}
                     if (op.LOSSmin == null) op.LOSSmin = -100;
                     if (op.LOSSmax == null) op.LOSSmax = 100;
                     op.TargetReturn = new double[op.tlen];
@@ -397,6 +407,15 @@ public class OptimiseController : ControllerBase
                 {
                     op.TargetReturn = null;  //probably redundant
 
+                    int ETLorLOSSconstraint;
+                    try{ETLorLOSSconstraint=CVarData.mapInt["ETLorLOSSconstraint"][0];
+                    op.ETLopt=ETLorLOSSconstraint==1;}catch{;}
+                    double ETLorLOSSmin;
+                    try{ETLorLOSSmin=CVarData.mapDouble["ETLorLOSSmin"][0];
+                    op.ETLmin=ETLorLOSSmin;}catch{;}
+                    double ETLorLOSSmax;
+                    try{ETLorLOSSmax=CVarData.mapDouble["ETLorLOSSmax"][0];
+                    op.ETLmax=ETLorLOSSmax;}catch{;}
                     if (op.ETLmin == null) op.ETLmin = -100;
                     if (op.ETLmax == null) op.ETLmax = 100;
                 }
@@ -653,7 +672,10 @@ public class OptimiseController : ControllerBase
             var cov = new Portfolio.Portfolio("");
             cov.ntrue = op.n.GetValueOrDefault();
             cov.Q = op.Q;
-
+if(op.bench!=null){op.result.BETA=new double[cov.ntrue];
+            cov.RiskBreakdown(op.w, op.bench, op.result.mctr,op.result.BETA);//breakdown is for residual position. Probably don't want this so call again below
+            op.result.portBETA=BlasLike.ddotvec(cov.n,op.w,op.result.BETA);
+            }
             cov.RiskBreakdown(op.w, op.bench, op.result.mctr);
             op.result.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.result.mctr);
             if (op.bench != null) op.result.risk -= op.result.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.bench, op.result.mctr);
@@ -671,9 +693,13 @@ public class OptimiseController : ControllerBase
                 fac.makeQ();
             }
             else fac.Q = op.Q;
+if(op.bench!=null){op.result.BETA=new double[fac.ntrue];
+            fac.RiskBreakdown(op.w, op.bench, op.result.mctr,op.result.BETA);//breakdown is for residual position. Probably don't want this so call again below
+            op.result.portBETA=BlasLike.ddotvec(fac.ntrue,op.w,op.result.BETA);
+            }
             fac.RiskBreakdown(op.w, op.bench, op.result.mctr);
             op.result.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.result.mctr);
-            if (op.bench != null) op.result.risk -= op.result.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.bench, op.result.mctr);
+            if (op.bench != null) op.result.risk -= BlasLike.ddotvec(op.n.GetValueOrDefault(), op.bench, op.result.mctr);
             if (op.SV != null && op.nfac > -1)
             {
                 op.result.FX = new double[op.nfac.GetValueOrDefault()];

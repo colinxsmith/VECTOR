@@ -32,7 +32,7 @@ namespace Portfolio
                                         double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0,
                                         double ETLorLOSSmax = 0, string logfile = "", int revise = 0)
         {
-            if (DATAlambda == 0) { DATA = null; tlen = 0; ETLorLOSSconstraint = false; } //This allow us to leave out LOSS or ETL from the optimisation but still calculate it in results
+            if (DATAlambda == 0) { DATA = null; tlen = 0; ETLorLOSSconstraint = false; } //This allows us to leave out LOSS or ETL from the optimisation but still calculate it in results
             ColourConsole.print = !(WindowsServiceHelpers.IsWindowsService());
             var rootPath = AppContext.BaseDirectory;
 #if DEBUG
@@ -97,7 +97,7 @@ namespace Portfolio
                     ww.WriteLine("tail");
                     ww.WriteLine(tail);
                     ww.WriteLine("ETLorLOSSconstraint");
-                    ww.WriteLine(ETLorLOSSconstraint);
+                    ww.WriteLine(ETLorLOSSconstraint?1:0);
                     ww.WriteLine("ETLorLOSSmax");
                     ww.WriteLine(ETLorLOSSmax);
                     ww.WriteLine("ETLorLOSSmin");
