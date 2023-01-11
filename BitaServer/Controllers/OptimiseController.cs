@@ -601,7 +601,7 @@ public class OptimiseController : ControllerBase
         var ok=lic.CheckLicence();
         op.VersionString = lic.VersionString;
         op.isLicensed=ok;
-        if(!ok)return Problem();
+        if(!ok)return Problem(title:"Bad licence",detail:lic.VersionString);
         if(op.transposeLinearConstraintArray){
             Factorise.dmx_transpose(op.n.GetValueOrDefault(),op.m.GetValueOrDefault(),op.A,op.A);}
         if(!ok)return op;
