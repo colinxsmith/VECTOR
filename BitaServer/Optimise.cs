@@ -30,9 +30,7 @@ public class Optimise
         public double? facrisk { get; set; }
         public double? specrisk { get; set; }
         public double?portBETA{get;set;}
-        public double[]?BETA{set;get;}
-        public double[]?QMATRIX{set;get;}
-        
+        public double[]?BETA{set;get;}        
     }
 
     public Optimise()

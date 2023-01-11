@@ -601,6 +601,7 @@ public class OptimiseController : ControllerBase
         var ok=lic.CheckLicence();
         op.VersionString = lic.VersionString;
         op.isLicensed=ok;
+        if(!ok)return Problem();
         if(op.transposeLinearConstraintArray){
             Factorise.dmx_transpose(op.n.GetValueOrDefault(),op.m.GetValueOrDefault(),op.A,op.A);}
         if(!ok)return op;
@@ -736,7 +737,6 @@ if(op.bench!=null){op.result.BETA=new double[cov.ntrue];
                 fac.FC = op.FC;
                 fac.FL = op.FL;
                 fac.makeQ();
-                op.result.QMATRIX=fac.Q;
             }
             else fac.Q = op.Q;
 if(op.bench!=null){op.result.BETA=new double[fac.ntrue];
