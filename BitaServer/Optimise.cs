@@ -39,7 +39,6 @@ public class Optimise
     {
         doOpt = true;
         tlen = 0;
-        tail = 0.05;
         maxRisk = -1;
         minRisk = -1;
         value = -1;
@@ -58,7 +57,9 @@ public class Optimise
         transposeLinearConstraintArray=false;
     }
     public string? VersionString{get;set;}
+    public bool?isLicensed{get;set;}
     public bool doOpt { get; set; }
+    public string? getmethod{get;set;}
     public checkv? result { get; set; }
     public int? back { set; get; }
     public string? message { set; get; }
@@ -125,4 +126,17 @@ public class Optimise
     public string? datafile { get; set; }
     public string basedirectory { get; }
     public bool transposeLinearConstraintArray{set;get;}
+}
+public class FactorModelProcess{
+    public string? VersionString{get;set;}
+    public bool?isLicensed{get;set;}
+    public double[]?QMATRIX{get;set;}
+}public class Factor2COV{
+    public string? VersionString{get;set;}
+    public bool?isLicensed{get;set;}
+    public double[]?COV{get;set;}
+}public class Factor2VAR{
+    public string? VersionString{get;set;}
+    public bool?isLicensed{get;set;}
+    public double[]?VAR{get;set;}
 }

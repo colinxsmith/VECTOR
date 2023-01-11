@@ -240,6 +240,7 @@ public class OptimiseController : ControllerBase
         var lic = new Licensing.Licence();
         var ok=lic.CheckLicence();
         op.VersionString = lic.VersionString;
+        op.isLicensed=ok;
         if(!ok)return op;
         if (doOpt != null) op.doOpt = doOpt.GetValueOrDefault();
         using (var CVarData = new InputSomeData())
@@ -593,12 +594,13 @@ public class OptimiseController : ControllerBase
     }
     [HttpPost("general")]
     [RequestSizeLimit(bytes: 2_000_000_000)]
-    public Optimise PostGen(Optimise op)
+    public Object PostGen(Optimise op)
     {
         var breakdown = new double[op.n.GetValueOrDefault()];
         var lic = new Licensing.Licence();
         var ok=lic.CheckLicence();
         op.VersionString = lic.VersionString;
+        op.isLicensed=ok;
         if(op.transposeLinearConstraintArray){
             Factorise.dmx_transpose(op.n.GetValueOrDefault(),op.m.GetValueOrDefault(),op.A,op.A);}
         if(!ok)return op;
@@ -662,6 +664,49 @@ public class OptimiseController : ControllerBase
             op.ogamma = null;
             op.shake = null;
             op.CVARGLprob = null;
+            if(op.nfac>-1&&op.SV!=null&&op.getmethod!=null){
+                if(op.getmethod.ToLower()=="factormodelprocess"){
+            var fac = new Portfolio.FPortfolio("");
+            fac.ntrue = op.n.GetValueOrDefault();
+            fac.nfac = op.nfac.GetValueOrDefault();
+                fac.SV = op.SV;
+                fac.FC = op.FC;
+                fac.FL = op.FL;
+                fac.makeQ();
+                var opnew=new FactorModelProcess();
+                opnew.VersionString=op.VersionString;
+                opnew.isLicensed=op.isLicensed;
+                opnew.QMATRIX=fac.Q;
+                return opnew;}
+           
+                if(op.getmethod.ToLower()=="factor2cov"){
+            var fac = new Portfolio.FPortfolio("");
+            fac.ntrue = op.n.GetValueOrDefault();
+            fac.nfac = op.nfac.GetValueOrDefault();
+                fac.SV = op.SV;
+                fac.FC = op.FC;
+                fac.FL = op.FL;
+                fac.makeQ();
+                var opnew=new Factor2COV();
+                opnew.VersionString=op.VersionString;
+                opnew.isLicensed=op.isLicensed;
+                opnew.COV=  fac.Factor2Cov();
+                return opnew;}
+           
+                if(op.getmethod.ToLower()=="factor2var"){
+            var fac = new Portfolio.FPortfolio("");
+            fac.ntrue = op.n.GetValueOrDefault();
+            fac.nfac = op.nfac.GetValueOrDefault();
+                fac.SV = op.SV;
+                fac.FC = op.FC;
+                fac.FL = op.FL;
+                fac.makeQ();
+                var opnew=new Factor2VAR();
+                opnew.VersionString=op.VersionString;
+                opnew.isLicensed=op.isLicensed;
+                opnew.VAR=fac.Factor2Var();
+                return opnew;}
+            }
             return op;
         }
         op.result.mctr = new double[op.n.GetValueOrDefault()];

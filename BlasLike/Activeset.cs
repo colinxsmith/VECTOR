@@ -4,7 +4,7 @@ using Solver;
 using System.Diagnostics;
 namespace ActiveSet
 {
-    public delegate void hessmull(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx);
+    public delegate void hessmull(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx,int hstart=0);
     public class Optimise
     {
         static void shifter<S>(ref S a, ref S b, ref S c, ref S d)
@@ -4245,7 +4245,7 @@ namespace ActiveSet
         {
             h(n, nrowh, ncolh, j, hess, wrk, hx);
         }
-        public void qphess1(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx)
+        public void qphess1(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx,int hstart=0)
         {
             Solver.Factorise.dsmxmulv(n, hess, wrk, hx);
         }

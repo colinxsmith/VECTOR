@@ -5550,7 +5550,7 @@ namespace Portfolio
         {
             BlasLike.dzerovec(nn, hx);
         }
-        public virtual void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
+        public virtual void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx,int hstart=0)
         {
             Debug.Assert(ntrue != 0);
             if (Q != null)
@@ -5560,7 +5560,7 @@ namespace Portfolio
             }
             else BlasLike.dzerovec(nn, hx);
         }
-        public virtual void hessmull(int nn, double[] QQ, double[] x, double[] hx)
+        public virtual void hessmull(int nn, double[] QQ, double[] x, double[] hx,int hstart=0)
         {
             Debug.Assert(ntrue != 0);
             if (Q != null)
@@ -6030,22 +6030,22 @@ namespace Portfolio
                     if (names != null) Array.Resize(ref names, n);
                 }
         }
-        public override void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx)
+        public override void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx,int hstart=0)
         {
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
                 if (nfixed > 0)
                 {
-                    Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, 0, 0, nfixed);
+                    Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, 0, hstart, nfixed);
                 }
                 else
-                    Factorise.FacMul(ntrue, nfac, Q, x, hx);
-                BlasLike.dzerovec(nn - ntrue + nfixed, hx, ntrue - nfixed);
+                    Factorise.FacMul(ntrue, nfac, Q, x, hx,0,0,hstart);
+                BlasLike.dzerovec(nn - ntrue + nfixed, hx, ntrue - nfixed+hstart);
             }
-            else BlasLike.dzerovec(nn, hx);
+            else BlasLike.dzerovec(nn, hx,hstart);
         }
-        public override void hessmull(int nn, double[] QQ, double[] x, double[] hx)
+        public override void hessmull(int nn, double[] QQ, double[] x, double[] hx,int hstart=0)
         {
             Debug.Assert(ntrue != 0);
             if (Q != null)
@@ -6077,6 +6077,32 @@ namespace Portfolio
                 Debug.Assert(Q.Length == nn);
                 return 0;
             }
+        }
+        public double[]Factor2Cov(){
+            int n=ntrue;
+            if(Q==null)makeQ();
+            double[]unit=new double[n];
+            double []back=new double[n*(n+1)/2];
+            for(int i=0,hstart=0;i<n;++i,hstart+=i){
+unit[i]=1;
+hessmull(ntrue,1,1,1,Q,unit,back,hstart);
+unit[i]=0;
+            }
+            return back;
+        }
+        public double[]Factor2Var(){
+            int n=ntrue;
+            if(Q==null)makeQ();
+            double[]unit=new double[n];
+            double[]y=new double[n];
+            double []back=new double[n];
+            for(int i=0;i<n;++i){
+unit[i]=1;
+hessmull(ntrue,1,1,1,Q,unit,y);
+unit[i]=0;
+back[i]=y[i];
+            }
+            return back;
         }
         public void FactorRiskAttribution(double[] w, double[] bench = null, double[] FX = null, double[] FactorRiskBreakdown = null, double[] SpecificBreakdown = null)
         {
