@@ -230,7 +230,7 @@ public class OptimiseController : ControllerBase
     }
     [HttpGet]
     [Route("general")]
-    public Optimise GetGen(bool? doOpt, int? round, double? min_lot, double? size_lot,
+    public Object GetGen(bool? doOpt, int? round, double? min_lot, double? size_lot,
      double? Gstrength, double? LOSSmax, double? LOSSmin, double? ETLmax, double? ETLmin,
       double? targetR, string? datafile, double? delta, double? gamma, double? maxRisk,
       double? minRisk, double? min_holding, double? min_trade, int? basket, int? trades,
@@ -238,10 +238,11 @@ public class OptimiseController : ControllerBase
     {
         var op = new Optimise();
         var lic = new Licensing.Licence();
-        var ok=lic.CheckLicence();
+        var ok = lic.CheckLicence();
         op.VersionString = lic.VersionString;
-        op.isLicensed=ok;
-        if(!ok)return op;
+        op.isLicensed = ok;
+        if (!ok) return Problem(title: "Bad licence", detail: lic.VersionString);
+        if (!ok) return op;
         if (doOpt != null) op.doOpt = doOpt.GetValueOrDefault();
         using (var CVarData = new InputSomeData())
         {
@@ -251,9 +252,9 @@ public class OptimiseController : ControllerBase
             op.datafile = "generalopt";
             if (datafile != null) op.datafile = datafile;
             var ContentRootPath = AppContext.BaseDirectory;
-            #if DEBUG
-            ContentRootPath="./";
-            #endif
+#if DEBUG
+            ContentRootPath = "./";
+#endif
             try
             {
                 CVarData.Read($"{ContentRootPath}{op.datafile}");
@@ -264,7 +265,7 @@ public class OptimiseController : ControllerBase
                 {
                     CVarData.Read($"../{op.datafile}");
                 }
-                catch(Exception ppp) { op.message = $"{ppp} Input file error \"{op.datafile}\""; return op; }
+                catch (Exception ppp) { op.message = $"{ppp} Input file error \"{op.datafile}\""; return op; }
             }
             op.n = CVarData.mapInt["n"][0];
             try { op.nfac = CVarData.mapInt["nfac"][0]; } catch { op.nfac = -1; }
@@ -343,7 +344,7 @@ public class OptimiseController : ControllerBase
                 if (op.nfac == null) op.nfac = -1;
                 op.DATA = CVarData.mapDouble["DATA"];
                 if (negdata) BlasLike.dnegvec(op.DATA.Length, op.DATA);
-                try{Gstrength=CVarData.mapDouble["CVar_averse"][0];}catch{;}
+                try { Gstrength = CVarData.mapDouble["CVar_averse"][0]; } catch {; }
                 try { op.tail = CVarData.mapDouble["tail"][0]; }
                 catch
                 {
@@ -352,7 +353,7 @@ public class OptimiseController : ControllerBase
                         var number_included = CVarData.mapInt["number_included"][0];
                         op.tail = 1 - (double)((number_included)) / op.tlen;
                     }
-                    catch {op.tail=0.02; }
+                    catch { op.tail = 0.02; }
                 }
                 if (targetR == null) try { targetR = CVarData.mapDouble["R"][0]; } catch { targetR = null; }
                 if (Gstrength != null) op.Gstrength = Gstrength.GetValueOrDefault();
@@ -361,11 +362,11 @@ public class OptimiseController : ControllerBase
                 if (ETLmax != null) op.ETLmax = ETLmax;
                 if (ETLmin != null) op.ETLmin = ETLmin;
                 if (op.ETLmax != null && op.ETLmin != null) op.ETLopt = true;
-                var ETLopt=false;
-            try { op.ETLmin= CVarData.mapDouble["CVarMin"][0]; } catch { ; }
-            try { op.ETLmax= CVarData.mapDouble["CVarMax"][0]; } catch { ; }
-            try { ETLopt= CVarData.mapInt["CVar_constraint"][0]!=0?true:false; } catch { ; }
-            if(ETLopt)op.ETLopt=ETLopt;
+                var ETLopt = false;
+                try { op.ETLmin = CVarData.mapDouble["CVarMin"][0]; } catch {; }
+                try { op.ETLmax = CVarData.mapDouble["CVarMax"][0]; } catch {; }
+                try { ETLopt = CVarData.mapInt["CVar_constraint"][0] != 0 ? true : false; } catch {; }
+                if (ETLopt) op.ETLopt = ETLopt;
                 if (op.LOSSmax != null && op.LOSSmin != null) op.LOSSopt = true;
                 if (op.alpha == null)
                 {
@@ -391,14 +392,26 @@ public class OptimiseController : ControllerBase
                 if (targetR != null)
                 {
                     int ETLorLOSSconstraint;
-                    try{ETLorLOSSconstraint=CVarData.mapInt["ETLorLOSSconstraint"][0];
-                    op.LOSSopt=ETLorLOSSconstraint==1;}catch{;}
+                    try
+                    {
+                        ETLorLOSSconstraint = CVarData.mapInt["ETLorLOSSconstraint"][0];
+                        op.LOSSopt = ETLorLOSSconstraint == 1;
+                    }
+                    catch {; }
                     double ETLorLOSSmin;
-                    try{ETLorLOSSmin=CVarData.mapDouble["ETLorLOSSmin"][0];
-                    op.LOSSmin=ETLorLOSSmin;}catch{;}
+                    try
+                    {
+                        ETLorLOSSmin = CVarData.mapDouble["ETLorLOSSmin"][0];
+                        op.LOSSmin = ETLorLOSSmin;
+                    }
+                    catch {; }
                     double ETLorLOSSmax;
-                    try{ETLorLOSSmax=CVarData.mapDouble["ETLorLOSSmax"][0];
-                    op.LOSSmax=ETLorLOSSmax;}catch{;}
+                    try
+                    {
+                        ETLorLOSSmax = CVarData.mapDouble["ETLorLOSSmax"][0];
+                        op.LOSSmax = ETLorLOSSmax;
+                    }
+                    catch {; }
                     if (op.LOSSmin == null) op.LOSSmin = -100;
                     if (op.LOSSmax == null) op.LOSSmax = 100;
                     op.TargetReturn = new double[op.tlen];
@@ -409,14 +422,26 @@ public class OptimiseController : ControllerBase
                     op.TargetReturn = null;  //probably redundant
 
                     int ETLorLOSSconstraint;
-                    try{ETLorLOSSconstraint=CVarData.mapInt["ETLorLOSSconstraint"][0];
-                    op.ETLopt=ETLorLOSSconstraint==1;}catch{;}
+                    try
+                    {
+                        ETLorLOSSconstraint = CVarData.mapInt["ETLorLOSSconstraint"][0];
+                        op.ETLopt = ETLorLOSSconstraint == 1;
+                    }
+                    catch {; }
                     double ETLorLOSSmin;
-                    try{ETLorLOSSmin=CVarData.mapDouble["ETLorLOSSmin"][0];
-                    op.ETLmin=ETLorLOSSmin;}catch{;}
+                    try
+                    {
+                        ETLorLOSSmin = CVarData.mapDouble["ETLorLOSSmin"][0];
+                        op.ETLmin = ETLorLOSSmin;
+                    }
+                    catch {; }
                     double ETLorLOSSmax;
-                    try{ETLorLOSSmax=CVarData.mapDouble["ETLorLOSSmax"][0];
-                    op.ETLmax=ETLorLOSSmax;}catch{;}
+                    try
+                    {
+                        ETLorLOSSmax = CVarData.mapDouble["ETLorLOSSmax"][0];
+                        op.ETLmax = ETLorLOSSmax;
+                    }
+                    catch {; }
                     if (op.ETLmin == null) op.ETLmin = -100;
                     if (op.ETLmax == null) op.ETLmax = 100;
                 }
@@ -598,13 +623,18 @@ public class OptimiseController : ControllerBase
     {
         var breakdown = new double[op.n.GetValueOrDefault()];
         var lic = new Licensing.Licence();
-        var ok=lic.CheckLicence();
+        var ok = lic.CheckLicence();
         op.VersionString = lic.VersionString;
-        op.isLicensed=ok;
-        if(!ok)return Problem(title:"Bad licence",detail:lic.VersionString);
-        if(op.transposeLinearConstraintArray){
-            Factorise.dmx_transpose(op.n.GetValueOrDefault(),op.m.GetValueOrDefault(),op.A,op.A);}
-        if(!ok)return op;
+        op.isLicensed = ok;
+        if (!ok) return Problem(title: "Bad licence", detail: lic.VersionString);
+        if(op.Aas2D!=null){
+op.A=Portfolio.Portfolio.twoD2oneD(op.m.GetValueOrDefault(), op.n.GetValueOrDefault(),op.Aas2D);
+        }
+        else if (op.transposeLinearConstraintArray)
+        {op.Aas2D=Portfolio.Portfolio.oneD2twoD(op.m.GetValueOrDefault(), op.n.GetValueOrDefault(),op.A,true);
+            Factorise.dmx_transpose(op.n.GetValueOrDefault(), op.m.GetValueOrDefault(), op.A, op.A);
+        }
+        if (!ok) return op;
         op.result = new Optimise.checkv();
         if (op.tlen > 0)
         {
@@ -665,50 +695,64 @@ public class OptimiseController : ControllerBase
             op.ogamma = null;
             op.shake = null;
             op.CVARGLprob = null;
-            if(op.nfac>-1&&op.SV!=null&&op.getmethod!=null){
-                if(op.getmethod.ToLower()=="factormodelprocess"){
-            var fac = new Portfolio.FPortfolio("");
-            fac.ntrue = op.n.GetValueOrDefault();
-            fac.nfac = op.nfac.GetValueOrDefault();
-                fac.SV = op.SV;
-                fac.FC = op.FC;
-                fac.FL = op.FL;
-                fac.makeQ();
-                var opnew=new FactorModelProcess();
-                opnew.VersionString=op.VersionString;
-                opnew.isLicensed=op.isLicensed;
-                opnew.QMATRIX=fac.Q;
-                return opnew;}
-           
-                if(op.getmethod.ToLower()=="factor2cov"){
-            var fac = new Portfolio.FPortfolio("");
-            fac.ntrue = op.n.GetValueOrDefault();
-            fac.nfac = op.nfac.GetValueOrDefault();
-                fac.SV = op.SV;
-                fac.FC = op.FC;
-                fac.FL = op.FL;
-                fac.makeQ();
-                var opnew=new Factor2COV();
-                opnew.VersionString=op.VersionString;
-                opnew.isLicensed=op.isLicensed;
-                opnew.COV=  fac.Factor2Cov();
-                return opnew;}
-           
-                if(op.getmethod.ToLower()=="factor2var"){
-            var fac = new Portfolio.FPortfolio("");
-            fac.ntrue = op.n.GetValueOrDefault();
-            fac.nfac = op.nfac.GetValueOrDefault();
-                fac.SV = op.SV;
-                fac.FC = op.FC;
-                fac.FL = op.FL;
-                fac.makeQ();
-                var opnew=new Factor2VAR();
-                opnew.VersionString=op.VersionString;
-                opnew.isLicensed=op.isLicensed;
-                opnew.VAR=fac.Factor2Var();
-                return opnew;}
+            if (op.nfac > -1 && op.SV != null && op.getmethod != null)
+            {
+                if (op.getmethod.ToLower() == "factormodelprocess")
+                {
+                    var fac = new Portfolio.FPortfolio("");
+                    fac.ntrue = op.n.GetValueOrDefault();
+                    fac.nfac = op.nfac.GetValueOrDefault();
+                    fac.SV = op.SV;
+                    fac.FC = op.FC;
+                    if(op.FLas2D!=null)
+                    fac.FL=Portfolio.Portfolio.twoD2oneD(fac.ntrue,fac.nfac,op.FLas2D);
+                    else
+                    fac.FL = op.FL;
+                    fac.makeQ();
+                    var opnew = new FactorModelProcess();
+                    opnew.FLbacktest=Portfolio.Portfolio.oneD2twoD(fac.ntrue,fac.nfac,op.FL);
+                    opnew.VersionString = op.VersionString;
+                    opnew.isLicensed = op.isLicensed;
+                    opnew.QMATRIX = fac.Q;
+                    return opnew;
+                }
+
+           else     if (op.getmethod.ToLower() == "factor2cov")
+                {
+                    var fac = new Portfolio.FPortfolio("");
+                    fac.ntrue = op.n.GetValueOrDefault();
+                    fac.nfac = op.nfac.GetValueOrDefault();
+                    fac.SV = op.SV;
+                    fac.FC = op.FC;
+                    fac.FL = op.FL;
+                    fac.makeQ();
+                    var opnew = new Factor2COV();
+                    opnew.VersionString = op.VersionString;
+                    opnew.isLicensed = op.isLicensed;
+                    opnew.COV = fac.Factor2Cov();
+                    return opnew;
+                }
+
+        else        if (op.getmethod.ToLower() == "factor2var")
+                {
+                    var fac = new Portfolio.FPortfolio("");
+                    fac.ntrue = op.n.GetValueOrDefault();
+                    fac.nfac = op.nfac.GetValueOrDefault();
+                    fac.SV = op.SV;
+                    fac.FC = op.FC;
+                    fac.FL = op.FL;
+                    fac.makeQ();
+                    var opnew = new Factor2VAR();
+                    opnew.VersionString = op.VersionString;
+                    opnew.isLicensed = op.isLicensed;
+                    opnew.VAR = fac.Factor2Var();
+                    return opnew;
+                }
             }
             return op;
+        }
+        else{
+            if(op.alpha==null)op.alpha=new double[op.n.GetValueOrDefault()];
         }
         op.result.mctr = new double[op.n.GetValueOrDefault()];
 
@@ -718,9 +762,11 @@ public class OptimiseController : ControllerBase
             var cov = new Portfolio.Portfolio("");
             cov.ntrue = op.n.GetValueOrDefault();
             cov.Q = op.Q;
-if(op.bench!=null){op.result.BETA=new double[cov.ntrue];
-            cov.RiskBreakdown(op.w, op.bench, op.result.mctr,op.result.BETA);//breakdown is for residual position. Probably don't want this so call again below
-            op.result.portBETA=BlasLike.ddotvec(cov.n,op.w,op.result.BETA);
+            if (op.bench != null)
+            {
+                op.result.BETA = new double[cov.ntrue];
+                cov.RiskBreakdown(op.w, op.bench, op.result.mctr, op.result.BETA);//breakdown is for residual position. Probably don't want this so call again below
+                op.result.portBETA = BlasLike.ddotvec(cov.n, op.w, op.result.BETA);
             }
             cov.RiskBreakdown(op.w, op.bench, op.result.mctr);
             op.result.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.result.mctr);
@@ -739,9 +785,11 @@ if(op.bench!=null){op.result.BETA=new double[cov.ntrue];
                 fac.makeQ();
             }
             else fac.Q = op.Q;
-if(op.bench!=null){op.result.BETA=new double[fac.ntrue];
-            fac.RiskBreakdown(op.w, op.bench, op.result.mctr,op.result.BETA);//breakdown is for residual position. Probably don't want this so call again below
-            op.result.portBETA=BlasLike.ddotvec(fac.ntrue,op.w,op.result.BETA);
+            if (op.bench != null)
+            {
+                op.result.BETA = new double[fac.ntrue];
+                fac.RiskBreakdown(op.w, op.bench, op.result.mctr, op.result.BETA);//breakdown is for residual position. Probably don't want this so call again below
+                op.result.portBETA = BlasLike.ddotvec(fac.ntrue, op.w, op.result.BETA);
             }
             fac.RiskBreakdown(op.w, op.bench, op.result.mctr);
             op.result.risk = BlasLike.ddotvec(op.n.GetValueOrDefault(), op.w, op.result.mctr);

@@ -3585,6 +3585,41 @@ namespace Portfolio
                 return back;
             }
         }
+
+        public static double[][] oneD2twoD(int n, int nfac, double[] ONED,bool transpose=false)
+        {
+            double[][] TWOD = (double[][])new double[n][];
+            if(transpose){
+            for(var i=0;i<n;++i){
+                TWOD[i]=new double[nfac];
+                for(var j=0;j<nfac;++j){
+                    TWOD[i][j]=ONED[i*nfac+j];
+                }
+            }}else{
+            for(var i=0;i<n;++i){//constraint
+                TWOD[i]=new double[nfac];
+                for(var j=0;j<nfac;++j){//asset
+                    TWOD[i][j]=ONED[i+j*n];
+                }
+            }}
+            return TWOD;
+        }
+        public static double[] twoD2oneD(int n, int nfac, double[][] TWOD,bool transpose=false)
+        {Debug.Assert(n==TWOD.GetLength(0));
+            double[] ONED = new double[nfac * n];
+            if(transpose){
+            for(var i=0;i<n;++i){//constraints
+                for(var j=0;j<nfac;++j){//assets
+                    ONED[j+i*nfac]=TWOD[i][j];
+                }
+            }}else{
+            for(var i=0;i<n;++i){//assets
+                for(var j=0;j<nfac;++j){//factors
+                    ONED[j*n+i]=TWOD[i][j];
+                }
+            }}
+            return ONED;
+        }
         ///<summary>Portfolio loss wrt a target 
         ///LOSS = sum(max(0,target-s))
         ///</summary>

@@ -81,6 +81,7 @@ public class Optimise
     public double[]? L { get; set; }
     public double[]? U { get; set; }
     public double[]? A { get; set; }
+    public double[][]? Aas2D { get; set; }
     public double[]? DATA { get; set; }
     public double[]? buy { get; set; }
     public double[]? Abs_A { get; set; }
@@ -95,6 +96,7 @@ public class Optimise
     public double[]? SV { get; set; }
     public double[]? FC { get; set; }
     public double[]? FL { get; set; }
+    public double[][] ? FLas2D { get; set; }
     public int[]? I_A { get; set; }
     public double[]? sell { get; set; }
     public double? delta { set; get; }
@@ -129,6 +131,7 @@ public class FactorModelProcess{
     public string? VersionString{get;set;}
     public bool?isLicensed{get;set;}
     public double[]?QMATRIX{get;set;}
+    public double[][]?FLbacktest{get;set;}
 }public class Factor2COV{
     public string? VersionString{get;set;}
     public bool?isLicensed{get;set;}
