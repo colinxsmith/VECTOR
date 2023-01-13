@@ -724,6 +724,9 @@ op.A=Portfolio.Portfolio.twoD2oneD(op.m.GetValueOrDefault(), op.n.GetValueOrDefa
                     fac.nfac = op.nfac.GetValueOrDefault();
                     fac.SV = op.SV;
                     fac.FC = op.FC;
+                    if(op.FLas2D!=null)
+                    fac.FL=Portfolio.Portfolio.twoD2oneD(fac.ntrue,fac.nfac,op.FLas2D);
+                    else
                     fac.FL = op.FL;
                     fac.makeQ();
                     var opnew = new Factor2COV();
@@ -740,6 +743,9 @@ op.A=Portfolio.Portfolio.twoD2oneD(op.m.GetValueOrDefault(), op.n.GetValueOrDefa
                     fac.nfac = op.nfac.GetValueOrDefault();
                     fac.SV = op.SV;
                     fac.FC = op.FC;
+                    if(op.FLas2D!=null)
+                    fac.FL=Portfolio.Portfolio.twoD2oneD(fac.ntrue,fac.nfac,op.FLas2D);
+                    else
                     fac.FL = op.FL;
                     fac.makeQ();
                     var opnew = new Factor2VAR();
