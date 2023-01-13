@@ -665,6 +665,11 @@ op.A=Portfolio.Portfolio.twoD2oneD(op.m.GetValueOrDefault(), op.n.GetValueOrDefa
         if (op.names != null && op.names.Length < op.n.GetValueOrDefault()) op.names = null;
         if (op.doOpt)
         {
+            if (op.SV != null && op.nfac > -1)
+            {
+                    if(op.FLas2D!=null)
+                    op.FL=Portfolio.Portfolio.twoD2oneD(op.n.GetValueOrDefault(),op.nfac.GetValueOrDefault(),op.FLas2D,transpose:false);
+            }
             op.w = new double[op.n.GetValueOrDefault()];
             op.shake = new int[op.n.GetValueOrDefault()];
             double ogamma = 0;
@@ -766,18 +771,49 @@ op.A=Portfolio.Portfolio.twoD2oneD(op.m.GetValueOrDefault(), op.n.GetValueOrDefa
         }
         if(op.getmethod=="riskproperties"){
             var props=new RiskProperties();
-            if(op.nfac>-1){
+                props.VersionString = op.VersionString;
+                    props.isLicensed = op.isLicensed;
+            Portfolio.Portfolio riskprop;
+                        if(op.nfac>-1){
                 var fac=new Portfolio.FPortfolio("");
+                riskprop=fac;
+            fac.ntrue = op.n.GetValueOrDefault();
+            fac.nfac = op.nfac.GetValueOrDefault();
             if (op.SV != null && op.nfac > -1)
             {
                 fac.SV = op.SV;
                 fac.FC = op.FC;
-                fac.FL = op.FL;
+                    if(op.FLas2D!=null)
+                    fac.FL=Portfolio.Portfolio.twoD2oneD(fac.ntrue,fac.nfac,op.FLas2D,transpose:false);
+                    else                    fac.FL = op.FL;
                 fac.makeQ();
             }
             else fac.Q = op.Q;
-            }
-        }
+                        }
+            else{
+                var cov=new Portfolio.Portfolio("");
+                riskprop=cov;
+                cov.ntrue=op.n.GetValueOrDefault();
+                cov.Q=op.Q;
+                            }
+            props.marginalContributionToTotalRisk=new double[riskprop.ntrue];
+            riskprop.RiskBreakdown(op.w,null,props.marginalContributionToTotalRisk);
+            props.totalRisk=BlasLike.ddotvec(riskprop.ntrue,op.w,props.marginalContributionToTotalRisk);
+            if(op.bench!=null){props.assetBetas=new double[riskprop.ntrue];
+            props.marginalContributionToActiveRisk=new double[riskprop.ntrue];
+            props.marginalContributionToBenchmarkRisk=new double[riskprop.ntrue];
+            props.marginalContributionToResidualRisk=new double[riskprop.ntrue];
+            riskprop.RiskBreakdown(op.w,op.bench,props.marginalContributionToActiveRisk);
+            riskprop.RiskBreakdown(op.w,op.bench,props.marginalContributionToResidualRisk,props.assetBetas);
+            props.portfolioBeta=BlasLike.ddotvec(riskprop.ntrue,op.w,props.assetBetas);
+            riskprop.RiskBreakdown(op.bench,null,props.marginalContributionToBenchmarkRisk);
+            props.activeRisk=BlasLike.ddotvec(riskprop.ntrue,op.w,props.marginalContributionToActiveRisk)-BlasLike.ddotvec(riskprop.ntrue,op.bench,props.marginalContributionToActiveRisk);
+            props.benchmarkRisk=BlasLike.ddotvec(riskprop.ntrue,op.bench,props.marginalContributionToBenchmarkRisk);
+            BlasLike.daxpyvec(riskprop.ntrue,-props.portfolioBeta.GetValueOrDefault(),op.bench,op.w);
+            props.residualRisk=BlasLike.ddotvec(riskprop.ntrue,op.w,props.marginalContributionToResidualRisk);
+            BlasLike.daxpyvec(riskprop.ntrue,props.portfolioBeta.GetValueOrDefault(),op.bench,op.w);}
+            return props;
+                    }
         op.result.mctr = new double[op.n.GetValueOrDefault()];
 
 

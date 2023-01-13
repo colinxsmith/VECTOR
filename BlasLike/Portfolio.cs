@@ -5664,7 +5664,7 @@ namespace Portfolio
          ///If benchmark weights are given and beta is not null breakdown will contain MCRR (marginal contributions to residual risk).
          ///Note sum(MCTR.w)=Total risk
          ///and sum(MCAR.(w-bench))=Active risk
-         ///and sum(MCAR.(w-beta*bench))=Residual risk
+         ///and sum(MCAR.(w-portfoliobeta*bench))=Residual risk
          ///</Summary>
          ///<param name="w">Array of portfolio weights</param>
          ///<param name="bench">Array of benchmark weights</param>

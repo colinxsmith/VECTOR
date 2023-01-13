@@ -142,12 +142,16 @@ public class FactorModelProcess{
     public double[]?VAR{get;set;}
 }
 public class RiskProperties{
-    public double?activeRisk;
-    public double?totalRisk;
-    public double?residualRisk;
-    public double?benchmarkRisk;
-    public double[]?marginalContributionToActiveRisk;
-    public double[]?marginalContributionToTotalRisk;
-    public double[]?marginalContributionToResidualRisk;
-    public double[]?marginalContributionToBenchmarkRisk;
+    public string? VersionString{get;set;}
+    public bool?isLicensed{get;set;}
+    public double?activeRisk{get;set;}
+    public double?totalRisk{get;set;}
+    public double?residualRisk{get;set;}
+    public double?benchmarkRisk{get;set;}
+    public double?portfolioBeta{get;set;}
+    public double[]?assetBetas{get;set;}
+    public double[]?marginalContributionToActiveRisk{get;set;}
+    public double[]?marginalContributionToTotalRisk{get;set;}
+    public double[]?marginalContributionToResidualRisk{get;set;}
+    public double[]?marginalContributionToBenchmarkRisk{get;set;}
 }
