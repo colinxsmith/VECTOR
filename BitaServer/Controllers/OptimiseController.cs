@@ -710,7 +710,7 @@ op.A=Portfolio.Portfolio.twoD2oneD(op.m.GetValueOrDefault(), op.n.GetValueOrDefa
                     fac.FL = op.FL;
                     fac.makeQ();
                     var opnew = new FactorModelProcess();
-                    opnew.FLbacktest=Portfolio.Portfolio.oneD2twoD(fac.ntrue,fac.nfac,op.FL);
+                    //opnew.FLbacktest=Portfolio.Portfolio.oneD2twoD(fac.ntrue,fac.nfac,op.FL);
                     opnew.VersionString = op.VersionString;
                     opnew.isLicensed = op.isLicensed;
                     opnew.QMATRIX = fac.Q;
