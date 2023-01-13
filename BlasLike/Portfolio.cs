@@ -97,7 +97,7 @@ namespace Portfolio
                     ww.WriteLine("tail");
                     ww.WriteLine(tail);
                     ww.WriteLine("ETLorLOSSconstraint");
-                    ww.WriteLine(ETLorLOSSconstraint?1:0);
+                    ww.WriteLine(ETLorLOSSconstraint ? 1 : 0);
                     ww.WriteLine("ETLorLOSSmax");
                     ww.WriteLine(ETLorLOSSmax);
                     ww.WriteLine("ETLorLOSSmin");
@@ -3586,38 +3586,57 @@ namespace Portfolio
             }
         }
 
-        public static double[][] oneD2twoD(int n, int nfac, double[] ONED,bool transpose=false)
+        public static double[][] oneD2twoD(int n, int nfac, double[] ONED, bool transpose = false)
         {
             double[][] TWOD = (double[][])new double[n][];
-            if(transpose){
-            for(var i=0;i<n;++i){
-                TWOD[i]=new double[nfac];
-                for(var j=0;j<nfac;++j){
-                    TWOD[i][j]=ONED[i*nfac+j];
+            if (transpose)
+            {
+                for (var i = 0; i < n; ++i)
+                {
+                    TWOD[i] = new double[nfac];
+                    for (var j = 0; j < nfac; ++j)
+                    {
+                        TWOD[i][j] = ONED[i * nfac + j];
+                    }
                 }
-            }}else{
-            for(var i=0;i<n;++i){//constraint
-                TWOD[i]=new double[nfac];
-                for(var j=0;j<nfac;++j){//asset
-                    TWOD[i][j]=ONED[i+j*n];
+            }
+            else
+            {
+                for (var i = 0; i < n; ++i)
+                {
+                    TWOD[i] = new double[nfac];
+                    for (var j = 0; j < nfac; ++j)
+                    {
+                        TWOD[i][j] = ONED[i + j * n];
+                    }
                 }
-            }}
+            }
             return TWOD;
         }
-        public static double[] twoD2oneD(int n, int nfac, double[][] TWOD,bool transpose=false)
-        {Debug.Assert(n==TWOD.GetLength(0));
+        public static double[] twoD2oneD(int n, int nfac, double[][] TWOD, bool transpose = false)
+        {
+            Debug.Assert(n == TWOD.GetLength(0));
             double[] ONED = new double[nfac * n];
-            if(transpose){
-            for(var i=0;i<n;++i){//constraints
-                for(var j=0;j<nfac;++j){//assets
-                    ONED[j+i*nfac]=TWOD[i][j];
+            if (transpose)
+            {
+                for (var i = 0; i < n; ++i)
+                {
+                    for (var j = 0; j < nfac; ++j)
+                    {
+                        ONED[j + i * nfac] = TWOD[i][j];
+                    }
                 }
-            }}else{
-            for(var i=0;i<n;++i){//assets
-                for(var j=0;j<nfac;++j){//factors
-                    ONED[j*n+i]=TWOD[i][j];
+            }
+            else
+            {
+                for (var i = 0; i < n; ++i)
+                {
+                    for (var j = 0; j < nfac; ++j)
+                    {
+                        ONED[j * n + i] = TWOD[i][j];
+                    }
                 }
-            }}
+            }
             return ONED;
         }
         ///<summary>Portfolio loss wrt a target 
@@ -3723,11 +3742,11 @@ namespace Portfolio
         }
         public static int SOCP_LOSS_RISK_DUAL(int n, int tlen, double[] DATA)
         {
-                var lic = new Licensing.Licence();
-                bool lictest;
+            var lic = new Licensing.Licence();
+            bool lictest;
             var back = -1;
-                lictest = lic.CheckLicence();
-            
+            lictest = lic.CheckLicence();
+
             if (!lictest) return -15;
             /* Note that in the dual the constraints become
 
@@ -3826,7 +3845,7 @@ namespace Portfolio
             t1 = BlasLike.ddotvec(n, y, implied);
             Factorise.dmxmulv(n, n, RootQ, y, implied);
             t2 = BlasLike.ddotvec(n, implied, implied);
-            var lowestRisk=Math.Sqrt(t2);
+            var lowestRisk = Math.Sqrt(t2);
             var nextFixRisk = Math.Floor(lowestRisk * 1.01 * 1e5) * 1e-5;
             if (nextFixRisk < 1e-6) nextFixRisk = 2e-5;
             ColourConsole.WriteEmbeddedColourLine($"[yellow]Sum(y*y)[/yellow]\t\t[green]{y[n] * y[n]}[/green]\tRelative Variance\t[cyan]{t1}[/cyan]\t[magenta]{t2}[/magenta]");
@@ -3897,7 +3916,7 @@ namespace Portfolio
             ColourConsole.WriteEmbeddedColourLine($"[green]expected return[/green]\t\t[darkgreen]{expReturn}[/darkgreen]");
             ColourConsole.WriteEmbeddedColourLine($"[blue]Loss for optimised risk[/blue][green]\t{LOSSstart} {LOSSy}[/green]");
 
-//Risk Constraint
+            //Risk Constraint
             M = n + tlen;
             N = m * 2 + (n + 1) + n + tlen + tlen;
             A = new double[M * N];
@@ -3912,7 +3931,7 @@ namespace Portfolio
                 BlasLike.dcopy(n, RootQ, n, A, 1, i, (i + 2 * m) * M);//Risk
                 BlasLike.dset(1, -1, A, 1, i + (i + n + 1 + 2 * m) * M);//ensure y[i]>=0
             }
-            
+
             for (var i = 0; i < tlen; ++i)
             {
                 BlasLike.dsccopy(n, -1, DATA, tlen, A, 1, i, (i + 2 * m + 2 * n + 1) * M);
@@ -3927,7 +3946,7 @@ namespace Portfolio
             c[0] = 1;
             if (m > 1) c[2] = 7;
             BlasLike.dcopyvec(n, benchmark, c, n, 2 * m);
-            c[2*m+n]= (nextFixRisk);
+            c[2 * m + n] = (nextFixRisk);
             BlasLike.dsccopyvec(tlen, -1, targetR, c, 0, 2 * m + 2 * n + 1);
             cone = new int[m + 1 + n + 2 * tlen];
             typecone = new int[m + 1 + n + 2 * tlen];
@@ -3958,9 +3977,9 @@ namespace Portfolio
             ColourConsole.WriteEmbeddedColourLine($"[green]expected return[/green]\t\t[darkgreen]{expReturn}[/darkgreen]");
             ColourConsole.WriteEmbeddedColourLine($"[blue]Loss for optimised risk[/blue][green]\t{LOSSstart} {LOSSy}[/green]");
             ColourConsole.WriteEmbeddedColourLine($"[red]Fix rel risk at[/red]\t\t[cyan]{nextFixRisk}[/cyan]");
-           double relRisk = 0.01, absRisk = 0.0135;
+            double relRisk = 0.01, absRisk = 0.0135;
             M = n + tlen;
-            N = m * 2 + 2*(n + 1) + n + tlen + tlen;
+            N = m * 2 + 2 * (n + 1) + n + tlen + tlen;
             A = new double[M * N];
             x = new double[N];
             y = new double[M];
@@ -3971,15 +3990,15 @@ namespace Portfolio
             for (var i = 0; i < n; ++i)
             {
                 BlasLike.dcopy(n, RootQ, n, A, 1, i, (i + 2 * m) * M);//Rel Risk
-                BlasLike.dcopy(n, RootQ, n, A, 1, i, (i + 2 * m+n+1) * M);//Abs Risk
-                BlasLike.dset(1, -1, A, 1, i + (i + 2*(n + 1) + 2 * m) * M);//ensure y[i]>=0
+                BlasLike.dcopy(n, RootQ, n, A, 1, i, (i + 2 * m + n + 1) * M);//Abs Risk
+                BlasLike.dset(1, -1, A, 1, i + (i + 2 * (n + 1) + 2 * m) * M);//ensure y[i]>=0
             }
-            
+
             for (var i = 0; i < tlen; ++i)
             {
-                BlasLike.dsccopy(n, -1, DATA, tlen, A, 1, i, (i + 2 * m + n+2 * (n + 1)) * M);
-                BlasLike.dset(1, -1, A, 1, i + n +           (i + 2 * m + n+2 * (n + 1)) * M);
-                BlasLike.dset(1, -1, A, 1, n + i + (i + n+2 * (n + 1) + 2 * m + tlen) * M);//ensure loss variables >0
+                BlasLike.dsccopy(n, -1, DATA, tlen, A, 1, i, (i + 2 * m + n + 2 * (n + 1)) * M);
+                BlasLike.dset(1, -1, A, 1, i + n + (i + 2 * m + n + 2 * (n + 1)) * M);
+                BlasLike.dset(1, -1, A, 1, n + i + (i + n + 2 * (n + 1) + 2 * m + tlen) * M);//ensure loss variables >0
             }
             c = new double[N];
             b = new double[M];
@@ -3989,9 +4008,9 @@ namespace Portfolio
             c[0] = 1;
             if (m > 1) c[2] = 7;
             BlasLike.dcopyvec(n, benchmark, c, n, 2 * m);
-            c[2*m+n]= relRisk;
-            c[2*m+n+1+n]=absRisk;
-            BlasLike.dsccopyvec(tlen, -1, targetR, c, 0, 2 * m + n+2 * (n + 1));
+            c[2 * m + n] = relRisk;
+            c[2 * m + n + 1 + n] = absRisk;
+            BlasLike.dsccopyvec(tlen, -1, targetR, c, 0, 2 * m + n + 2 * (n + 1));
             cone = new int[m + 2 + n + 2 * tlen];
             typecone = new int[m + 2 + n + 2 * tlen];
             for (var i = 0; i < m; ++i) { cone[i] = 2; typecone[i] = (int)InteriorPoint.conetype.SOCP; }
@@ -4026,10 +4045,10 @@ namespace Portfolio
         }
         public static int SOCP_LOSS_RISK_PRIMAL(int n, int tlen, double[] DATA)
         {
-                var lic = new Licensing.Licence();
-                bool lictest;
-                lictest = lic.CheckLicence();
-            
+            var lic = new Licensing.Licence();
+            bool lictest;
+            lictest = lic.CheckLicence();
+
             if (!lictest) return -15;
             var m = 2;
             var cFactor = 1e0;
@@ -5585,7 +5604,7 @@ namespace Portfolio
         {
             BlasLike.dzerovec(nn, hx);
         }
-        public virtual void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx,int hstart=0)
+        public virtual void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx, int hstart = 0)
         {
             Debug.Assert(ntrue != 0);
             if (Q != null)
@@ -5595,7 +5614,7 @@ namespace Portfolio
             }
             else BlasLike.dzerovec(nn, hx);
         }
-        public virtual void hessmull(int nn, double[] QQ, double[] x, double[] hx,int hstart=0)
+        public virtual void hessmull(int nn, double[] QQ, double[] x, double[] hx, int hstart = 0)
         {
             Debug.Assert(ntrue != 0);
             if (Q != null)
@@ -6065,7 +6084,7 @@ namespace Portfolio
                     if (names != null) Array.Resize(ref names, n);
                 }
         }
-        public override void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx,int hstart=0)
+        public override void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx, int hstart = 0)
         {
             Debug.Assert(ntrue != 0);
             if (Q != null)
@@ -6075,12 +6094,12 @@ namespace Portfolio
                     Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, 0, hstart, nfixed);
                 }
                 else
-                    Factorise.FacMul(ntrue, nfac, Q, x, hx,0,0,hstart);
-                BlasLike.dzerovec(nn - ntrue + nfixed, hx, ntrue - nfixed+hstart);
+                    Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, 0, hstart);
+                BlasLike.dzerovec(nn - ntrue + nfixed, hx, ntrue - nfixed + hstart);
             }
-            else BlasLike.dzerovec(nn, hx,hstart);
+            else BlasLike.dzerovec(nn, hx, hstart);
         }
-        public override void hessmull(int nn, double[] QQ, double[] x, double[] hx,int hstart=0)
+        public override void hessmull(int nn, double[] QQ, double[] x, double[] hx, int hstart = 0)
         {
             Debug.Assert(ntrue != 0);
             if (Q != null)
@@ -6113,29 +6132,33 @@ namespace Portfolio
                 return 0;
             }
         }
-        public double[]Factor2Cov(){
-            int n=ntrue;
-            if(Q==null)makeQ();
-            double[]unit=new double[n];
-            double []back=new double[n*(n+1)/2];
-            for(int i=0,hstart=0;i<n;++i,hstart+=i){
-unit[i]=1;
-hessmull(ntrue,1,1,1,Q,unit,back,hstart);
-unit[i]=0;
+        public double[] Factor2Cov()
+        {
+            int n = ntrue;
+            if (Q == null) makeQ();
+            double[] unit = new double[n];
+            double[] back = new double[n * (n + 1) / 2];
+            for (int i = 0, hstart = 0; i < n; ++i, hstart += i)
+            {
+                unit[i] = 1;
+                hessmull(ntrue, 1, 1, 1, Q, unit, back, hstart);
+                unit[i] = 0;
             }
             return back;
         }
-        public double[]Factor2Var(){
-            int n=ntrue;
-            if(Q==null)makeQ();
-            double[]unit=new double[n];
-            double[]y=new double[n];
-            double []back=new double[n];
-            for(int i=0;i<n;++i){
-unit[i]=1;
-hessmull(ntrue,1,1,1,Q,unit,y);
-unit[i]=0;
-back[i]=y[i];
+        public double[] Factor2Var()
+        {
+            int n = ntrue;
+            if (Q == null) makeQ();
+            double[] unit = new double[n];
+            double[] y = new double[n];
+            double[] back = new double[n];
+            for (int i = 0; i < n; ++i)
+            {
+                unit[i] = 1;
+                hessmull(ntrue, 1, 1, 1, Q, unit, y);
+                unit[i] = 0;
+                back[i] = y[i];
             }
             return back;
         }

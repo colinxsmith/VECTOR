@@ -627,13 +627,15 @@ public class OptimiseController : ControllerBase
         op.VersionString = lic.VersionString;
         op.isLicensed = ok;
         if (!ok) return Problem(title: "Bad licence", detail: lic.VersionString);
+        if(!(op.A==null&&op.Aas2D==null)){
         if(op.Aas2D!=null){
-op.A=Portfolio.Portfolio.twoD2oneD(op.m.GetValueOrDefault(), op.n.GetValueOrDefault(),op.Aas2D);
+op.A=Portfolio.Portfolio.twoD2oneD(op.m.GetValueOrDefault(), op.n.GetValueOrDefault(),op.Aas2D,transpose:false);
         }
         else if (op.transposeLinearConstraintArray)
-        {op.Aas2D=Portfolio.Portfolio.oneD2twoD(op.m.GetValueOrDefault(), op.n.GetValueOrDefault(),op.A,true);
-            Factorise.dmx_transpose(op.n.GetValueOrDefault(), op.m.GetValueOrDefault(), op.A, op.A);
-        }
+        {if(op.A!=null){op.Aas2D=Portfolio.Portfolio.oneD2twoD(op.m.GetValueOrDefault(), op.n.GetValueOrDefault(),op.A,transpose:true);
+            Factorise.dmx_transpose(op.n.GetValueOrDefault(), op.m.GetValueOrDefault(), op.A, op.A);}
+            
+        }}
         if (!ok) return op;
         op.result = new Optimise.checkv();
         if (op.tlen > 0)
@@ -705,9 +707,11 @@ op.A=Portfolio.Portfolio.twoD2oneD(op.m.GetValueOrDefault(), op.n.GetValueOrDefa
                     fac.SV = op.SV;
                     fac.FC = op.FC;
                     if(op.FLas2D!=null)
-                    fac.FL=Portfolio.Portfolio.twoD2oneD(fac.ntrue,fac.nfac,op.FLas2D);
-                    else
+                    fac.FL=Portfolio.Portfolio.twoD2oneD(fac.ntrue,fac.nfac,op.FLas2D,transpose:false);
+                    else{
                     fac.FL = op.FL;
+                    if(op.FL==null)return Problem(title: "Factor Loadings not set", detail: "Both FL and FLas2D may not be null!");
+                    }
                     fac.makeQ();
                     var opnew = new FactorModelProcess();
                     //opnew.FLbacktest=Portfolio.Portfolio.oneD2twoD(fac.ntrue,fac.nfac,op.FL);
@@ -725,7 +729,7 @@ op.A=Portfolio.Portfolio.twoD2oneD(op.m.GetValueOrDefault(), op.n.GetValueOrDefa
                     fac.SV = op.SV;
                     fac.FC = op.FC;
                     if(op.FLas2D!=null)
-                    fac.FL=Portfolio.Portfolio.twoD2oneD(fac.ntrue,fac.nfac,op.FLas2D);
+                    fac.FL=Portfolio.Portfolio.twoD2oneD(fac.ntrue,fac.nfac,op.FLas2D,transpose:false);
                     else
                     fac.FL = op.FL;
                     fac.makeQ();
@@ -744,7 +748,7 @@ op.A=Portfolio.Portfolio.twoD2oneD(op.m.GetValueOrDefault(), op.n.GetValueOrDefa
                     fac.SV = op.SV;
                     fac.FC = op.FC;
                     if(op.FLas2D!=null)
-                    fac.FL=Portfolio.Portfolio.twoD2oneD(fac.ntrue,fac.nfac,op.FLas2D);
+                    fac.FL=Portfolio.Portfolio.twoD2oneD(fac.ntrue,fac.nfac,op.FLas2D,transpose:false);
                     else
                     fac.FL = op.FL;
                     fac.makeQ();
@@ -759,6 +763,20 @@ op.A=Portfolio.Portfolio.twoD2oneD(op.m.GetValueOrDefault(), op.n.GetValueOrDefa
         }
         else{
             if(op.alpha==null)op.alpha=new double[op.n.GetValueOrDefault()];
+        }
+        if(op.getmethod=="riskproperties"){
+            var props=new RiskProperties();
+            if(op.nfac>-1){
+                var fac=new Portfolio.FPortfolio("");
+            if (op.SV != null && op.nfac > -1)
+            {
+                fac.SV = op.SV;
+                fac.FC = op.FC;
+                fac.FL = op.FL;
+                fac.makeQ();
+            }
+            else fac.Q = op.Q;
+            }
         }
         op.result.mctr = new double[op.n.GetValueOrDefault()];
 

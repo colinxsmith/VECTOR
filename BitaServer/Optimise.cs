@@ -131,7 +131,7 @@ public class FactorModelProcess{
     public string? VersionString{get;set;}
     public bool?isLicensed{get;set;}
     public double[]?QMATRIX{get;set;}
-    public double[][]?FLbacktest{get;set;}
+   // public double[][]?FLbacktest{get;set;}
 }public class Factor2COV{
     public string? VersionString{get;set;}
     public bool?isLicensed{get;set;}
@@ -140,4 +140,14 @@ public class FactorModelProcess{
     public string? VersionString{get;set;}
     public bool?isLicensed{get;set;}
     public double[]?VAR{get;set;}
+}
+public class RiskProperties{
+    public double?activeRisk;
+    public double?totalRisk;
+    public double?residualRisk;
+    public double?benchmarkRisk;
+    public double[]?marginalContributionToActiveRisk;
+    public double[]?marginalContributionToTotalRisk;
+    public double[]?marginalContributionToResidualRisk;
+    public double[]?marginalContributionToBenchmarkRisk;
 }
