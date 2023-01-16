@@ -609,7 +609,7 @@ namespace Portfolio
         {
             if (Math.Abs(digit) < BlasLike.lm_eps) return 0.0;
             double delta = Math.Abs(Math.Abs(digit - (int)(digit)) - 1);
-            if (delta <= (0.5))
+            if (delta <= (BlasLike.lm_rooteps))
             {
                 int ndelta = (int)(delta / BlasLike.lm_eps);
                 if (digit > 0)
@@ -623,7 +623,7 @@ namespace Portfolio
                 return digit;
             }
             delta = Math.Abs(Math.Abs(digit - (int)(digit)));
-            if (delta <= (0.5))
+            if (delta <= (BlasLike.lm_rooteps))
             {
                 int ndelta = (int)(delta / BlasLike.lm_eps);
                 if (digit > 0)
