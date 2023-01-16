@@ -29,8 +29,8 @@ public class Optimise
         public double[]? FX { get; set; }
         public double? facrisk { get; set; }
         public double? specrisk { get; set; }
-        public double?portBETA{get;set;}
-        public double[]?BETA{set;get;}        
+        public double? portBETA { get; set; }
+        public double[]? BETA { set; get; }
     }
 
     public Optimise()
@@ -52,12 +52,12 @@ public class Optimise
         min_holding = -1;
         min_trade = -1;
         basedirectory = AppContext.BaseDirectory;
-        transposeLinearConstraintArray=false;
+        transposeLinearConstraintArray = false;
     }
-    public string? VersionString{get;set;}
-    public bool?isLicensed{get;set;}
+    public string? VersionString { get; set; }
+    public bool? isLicensed { get; set; }
     public bool doOpt { get; set; }
-    public string? getmethod{get;set;}
+    public string? getmethod { get; set; }
     public checkv? result { get; set; }
     public int? back { set; get; }
     public string? message { set; get; }
@@ -96,7 +96,7 @@ public class Optimise
     public double[]? SV { get; set; }
     public double[]? FC { get; set; }
     public double[]? FL { get; set; }
-    public double[][] ? FLas2D { get; set; }
+    public double[][]? FLas2D { get; set; }
     public int[]? I_A { get; set; }
     public double[]? sell { get; set; }
     public double? delta { set; get; }
@@ -125,33 +125,50 @@ public class Optimise
     public int? round { get; set; }
     public string? datafile { get; set; }
     public string basedirectory { get; }
-    public bool transposeLinearConstraintArray{set;get;}
+    public bool transposeLinearConstraintArray { set; get; }
 }
-public class FactorModelProcess{
-    public string? VersionString{get;set;}
-    public bool?isLicensed{get;set;}
-    public double[]?QMATRIX{get;set;}
-   // public double[][]?FLbacktest{get;set;}
-}public class Factor2COV{
-    public string? VersionString{get;set;}
-    public bool?isLicensed{get;set;}
-    public double[]?COV{get;set;}
-}public class Factor2VAR{
-    public string? VersionString{get;set;}
-    public bool?isLicensed{get;set;}
-    public double[]?VAR{get;set;}
+public class FactorModelProcess
+{
+    public string? VersionString { get; set; }
+    public bool? isLicensed { get; set; }
+    public double[]? QMATRIX { get; set; }
+    // public double[][]?FLbacktest{get;set;}
 }
-public class RiskProperties{
-    public string? VersionString{get;set;}
-    public bool?isLicensed{get;set;}
-    public double?activeRisk{get;set;}
-    public double?totalRisk{get;set;}
-    public double?residualRisk{get;set;}
-    public double?benchmarkRisk{get;set;}
-    public double?portfolioBeta{get;set;}
-    public double[]?assetBetas{get;set;}
-    public double[]?marginalContributionToActiveRisk{get;set;}
-    public double[]?marginalContributionToTotalRisk{get;set;}
-    public double[]?marginalContributionToResidualRisk{get;set;}
-    public double[]?marginalContributionToBenchmarkRisk{get;set;}
+public class Factor2COV
+{
+    public string? VersionString { get; set; }
+    public bool? isLicensed { get; set; }
+    public double[]? COV { get; set; }
+}
+public class Factor2VAR
+{
+    public string? VersionString { get; set; }
+    public bool? isLicensed { get; set; }
+    public double[]? VAR { get; set; }
+}
+public class RiskProperties
+{
+    public string? VersionString { get; set; }
+    public bool? isLicensed { get; set; }
+    public double? activeRisk { get; set; }
+    public double? totalRisk { get; set; }
+    public double? residualRisk { get; set; }
+    public double? benchmarkRisk { get; set; }
+    public double? portfolioBeta { get; set; }
+    public double[]? assetBetas { get; set; }
+    public double[]? marginalContributionToActiveRisk { get; set; }
+    public double[]? marginalContributionToTotalRisk { get; set; }
+    public double[]? marginalContributionToResidualRisk { get; set; }
+    public double[]? marginalContributionToBenchmarkRisk { get; set; }
+}
+
+public class Risks
+{
+    public string? VersionString { get; set; }
+    public bool? isLicensed { get; set; }
+    public double? activeRisk { get; set; }
+    public double? totalRisk { get; set; }
+    public double? residualRisk { get; set; }
+    public double? benchmarkRisk { get; set; }
+    public double? portfolioBeta { get; set; }
 }

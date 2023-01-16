@@ -627,15 +627,22 @@ public class OptimiseController : ControllerBase
         op.VersionString = lic.VersionString;
         op.isLicensed = ok;
         if (!ok) return Problem(title: "Bad licence", detail: lic.VersionString);
-        if(!(op.A==null&&op.Aas2D==null)){
-        if(op.Aas2D!=null){
-op.A=Portfolio.Portfolio.twoD2oneD(op.m.GetValueOrDefault(), op.n.GetValueOrDefault(),op.Aas2D,transpose:false);
+        if (!(op.A == null && op.Aas2D == null))
+        {
+            if (op.Aas2D != null)
+            {
+                op.A = Portfolio.Portfolio.twoD2oneD(op.m.GetValueOrDefault(), op.n.GetValueOrDefault(), op.Aas2D, transpose: false);
+            }
+            else if (op.transposeLinearConstraintArray)
+            {
+                if (op.A != null)
+                {
+                    op.Aas2D = Portfolio.Portfolio.oneD2twoD(op.m.GetValueOrDefault(), op.n.GetValueOrDefault(), op.A, transpose: true);
+                    Factorise.dmx_transpose(op.n.GetValueOrDefault(), op.m.GetValueOrDefault(), op.A, op.A);
+                }
+
+            }
         }
-        else if (op.transposeLinearConstraintArray)
-        {if(op.A!=null){op.Aas2D=Portfolio.Portfolio.oneD2twoD(op.m.GetValueOrDefault(), op.n.GetValueOrDefault(),op.A,transpose:true);
-            Factorise.dmx_transpose(op.n.GetValueOrDefault(), op.m.GetValueOrDefault(), op.A, op.A);}
-            
-        }}
         if (!ok) return op;
         op.result = new Optimise.checkv();
         if (op.tlen > 0)
@@ -667,8 +674,8 @@ op.A=Portfolio.Portfolio.twoD2oneD(op.m.GetValueOrDefault(), op.n.GetValueOrDefa
         {
             if (op.SV != null && op.nfac > -1)
             {
-                    if(op.FLas2D!=null)
-                    op.FL=Portfolio.Portfolio.twoD2oneD(op.n.GetValueOrDefault(),op.nfac.GetValueOrDefault(),op.FLas2D,transpose:false);
+                if (op.FLas2D != null)
+                    op.FL = Portfolio.Portfolio.twoD2oneD(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.FLas2D, transpose: false);
             }
             op.w = new double[op.n.GetValueOrDefault()];
             op.shake = new int[op.n.GetValueOrDefault()];
@@ -711,11 +718,12 @@ op.A=Portfolio.Portfolio.twoD2oneD(op.m.GetValueOrDefault(), op.n.GetValueOrDefa
                     fac.nfac = op.nfac.GetValueOrDefault();
                     fac.SV = op.SV;
                     fac.FC = op.FC;
-                    if(op.FLas2D!=null)
-                    fac.FL=Portfolio.Portfolio.twoD2oneD(fac.ntrue,fac.nfac,op.FLas2D,transpose:false);
-                    else{
-                    fac.FL = op.FL;
-                    if(op.FL==null)return Problem(title: "Factor Loadings not set", detail: "Both FL and FLas2D may not be null!");
+                    if (op.FLas2D != null)
+                        fac.FL = Portfolio.Portfolio.twoD2oneD(fac.ntrue, fac.nfac, op.FLas2D, transpose: false);
+                    else
+                    {
+                        fac.FL = op.FL;
+                        if (op.FL == null) return Problem(title: "Factor Loadings not set", detail: "Both FL and FLas2D may not be null!");
                     }
                     fac.makeQ();
                     var opnew = new FactorModelProcess();
@@ -726,17 +734,17 @@ op.A=Portfolio.Portfolio.twoD2oneD(op.m.GetValueOrDefault(), op.n.GetValueOrDefa
                     return opnew;
                 }
 
-           else     if (op.getmethod.ToLower() == "factor2cov")
+                else if (op.getmethod.ToLower() == "factor2cov")
                 {
                     var fac = new Portfolio.FPortfolio("");
                     fac.ntrue = op.n.GetValueOrDefault();
                     fac.nfac = op.nfac.GetValueOrDefault();
                     fac.SV = op.SV;
                     fac.FC = op.FC;
-                    if(op.FLas2D!=null)
-                    fac.FL=Portfolio.Portfolio.twoD2oneD(fac.ntrue,fac.nfac,op.FLas2D,transpose:false);
+                    if (op.FLas2D != null)
+                        fac.FL = Portfolio.Portfolio.twoD2oneD(fac.ntrue, fac.nfac, op.FLas2D, transpose: false);
                     else
-                    fac.FL = op.FL;
+                        fac.FL = op.FL;
                     fac.makeQ();
                     var opnew = new Factor2COV();
                     opnew.VersionString = op.VersionString;
@@ -745,17 +753,17 @@ op.A=Portfolio.Portfolio.twoD2oneD(op.m.GetValueOrDefault(), op.n.GetValueOrDefa
                     return opnew;
                 }
 
-        else        if (op.getmethod.ToLower() == "factor2var")
+                else if (op.getmethod.ToLower() == "factor2var")
                 {
                     var fac = new Portfolio.FPortfolio("");
                     fac.ntrue = op.n.GetValueOrDefault();
                     fac.nfac = op.nfac.GetValueOrDefault();
                     fac.SV = op.SV;
                     fac.FC = op.FC;
-                    if(op.FLas2D!=null)
-                    fac.FL=Portfolio.Portfolio.twoD2oneD(fac.ntrue,fac.nfac,op.FLas2D,transpose:false);
+                    if (op.FLas2D != null)
+                        fac.FL = Portfolio.Portfolio.twoD2oneD(fac.ntrue, fac.nfac, op.FLas2D, transpose: false);
                     else
-                    fac.FL = op.FL;
+                        fac.FL = op.FL;
                     fac.makeQ();
                     var opnew = new Factor2VAR();
                     opnew.VersionString = op.VersionString;
@@ -766,54 +774,110 @@ op.A=Portfolio.Portfolio.twoD2oneD(op.m.GetValueOrDefault(), op.n.GetValueOrDefa
             }
             return op;
         }
-        else{
-            if(op.alpha==null)op.alpha=new double[op.n.GetValueOrDefault()];
+        else
+        {
+            if (op.alpha == null) op.alpha = new double[op.n.GetValueOrDefault()];
         }
-        if(op.getmethod=="riskproperties"){
-            var props=new RiskProperties();
-                props.VersionString = op.VersionString;
-                    props.isLicensed = op.isLicensed;
+        if (op.getmethod == "riskproperties")
+        {
+            var props = new RiskProperties();
+            props.VersionString = op.VersionString;
+            props.isLicensed = op.isLicensed;
             Portfolio.Portfolio riskprop;
-                        if(op.nfac>-1){
-                var fac=new Portfolio.FPortfolio("");
-                riskprop=fac;
-            fac.ntrue = op.n.GetValueOrDefault();
-            fac.nfac = op.nfac.GetValueOrDefault();
-            if (op.SV != null && op.nfac > -1)
+            if (op.nfac > -1)
             {
-                fac.SV = op.SV;
-                fac.FC = op.FC;
-                    if(op.FLas2D!=null)
-                    fac.FL=Portfolio.Portfolio.twoD2oneD(fac.ntrue,fac.nfac,op.FLas2D,transpose:false);
-                    else                    fac.FL = op.FL;
-                fac.makeQ();
+                var fac = new Portfolio.FPortfolio("");
+                riskprop = fac;
+                fac.ntrue = op.n.GetValueOrDefault();
+                fac.nfac = op.nfac.GetValueOrDefault();
+                if (op.SV != null && op.nfac > -1)
+                {
+                    fac.SV = op.SV;
+                    fac.FC = op.FC;
+                    if (op.FLas2D != null)
+                        fac.FL = Portfolio.Portfolio.twoD2oneD(fac.ntrue, fac.nfac, op.FLas2D, transpose: false);
+                    else fac.FL = op.FL;
+                    fac.makeQ();
+                }
+                else fac.Q = op.Q;
             }
-            else fac.Q = op.Q;
-                        }
-            else{
-                var cov=new Portfolio.Portfolio("");
-                riskprop=cov;
-                cov.ntrue=op.n.GetValueOrDefault();
-                cov.Q=op.Q;
-                            }
-            props.marginalContributionToTotalRisk=new double[riskprop.ntrue];
-            riskprop.RiskBreakdown(op.w,null,props.marginalContributionToTotalRisk);
-            props.totalRisk=BlasLike.ddotvec(riskprop.ntrue,op.w,props.marginalContributionToTotalRisk);
-            if(op.bench!=null){props.assetBetas=new double[riskprop.ntrue];
-            props.marginalContributionToActiveRisk=new double[riskprop.ntrue];
-            props.marginalContributionToBenchmarkRisk=new double[riskprop.ntrue];
-            props.marginalContributionToResidualRisk=new double[riskprop.ntrue];
-            riskprop.RiskBreakdown(op.w,op.bench,props.marginalContributionToActiveRisk);
-            riskprop.RiskBreakdown(op.w,op.bench,props.marginalContributionToResidualRisk,props.assetBetas);
-            props.portfolioBeta=BlasLike.ddotvec(riskprop.ntrue,op.w,props.assetBetas);
-            riskprop.RiskBreakdown(op.bench,null,props.marginalContributionToBenchmarkRisk);
-            props.activeRisk=BlasLike.ddotvec(riskprop.ntrue,op.w,props.marginalContributionToActiveRisk)-BlasLike.ddotvec(riskprop.ntrue,op.bench,props.marginalContributionToActiveRisk);
-            props.benchmarkRisk=BlasLike.ddotvec(riskprop.ntrue,op.bench,props.marginalContributionToBenchmarkRisk);
-            BlasLike.daxpyvec(riskprop.ntrue,-props.portfolioBeta.GetValueOrDefault(),op.bench,op.w);
-            props.residualRisk=BlasLike.ddotvec(riskprop.ntrue,op.w,props.marginalContributionToResidualRisk);
-            BlasLike.daxpyvec(riskprop.ntrue,props.portfolioBeta.GetValueOrDefault(),op.bench,op.w);}
+            else
+            {
+                var cov = new Portfolio.Portfolio("");
+                riskprop = cov;
+                cov.ntrue = op.n.GetValueOrDefault();
+                cov.Q = op.Q;
+            }
+            props.marginalContributionToTotalRisk = new double[riskprop.ntrue];
+            riskprop.RiskBreakdown(op.w, null, props.marginalContributionToTotalRisk);
+            props.totalRisk = BlasLike.ddotvec(riskprop.ntrue, op.w, props.marginalContributionToTotalRisk);
+            if (op.bench != null)
+            {
+                props.assetBetas = new double[riskprop.ntrue];
+                props.marginalContributionToActiveRisk = new double[riskprop.ntrue];
+                props.marginalContributionToBenchmarkRisk = new double[riskprop.ntrue];
+                props.marginalContributionToResidualRisk = new double[riskprop.ntrue];
+                riskprop.RiskBreakdown(op.w, op.bench, props.marginalContributionToActiveRisk);
+                riskprop.RiskBreakdown(op.w, op.bench, props.marginalContributionToResidualRisk, props.assetBetas);
+                props.portfolioBeta = BlasLike.ddotvec(riskprop.ntrue, op.w, props.assetBetas);
+                riskprop.RiskBreakdown(op.bench, null, props.marginalContributionToBenchmarkRisk);
+                props.activeRisk = BlasLike.ddotvec(riskprop.ntrue, op.w, props.marginalContributionToActiveRisk) - BlasLike.ddotvec(riskprop.ntrue, op.bench, props.marginalContributionToActiveRisk);
+                props.benchmarkRisk = BlasLike.ddotvec(riskprop.ntrue, op.bench, props.marginalContributionToBenchmarkRisk);
+                BlasLike.daxpyvec(riskprop.ntrue, -props.portfolioBeta.GetValueOrDefault(), op.bench, op.w);
+                props.residualRisk = BlasLike.ddotvec(riskprop.ntrue, op.w, props.marginalContributionToResidualRisk);
+                BlasLike.daxpyvec(riskprop.ntrue, props.portfolioBeta.GetValueOrDefault(), op.bench, op.w);
+            }
             return props;
-                    }
+        }
+        
+        else if (op.getmethod == "risks")
+        {
+            var props = new Risks();
+            props.VersionString = op.VersionString;
+            props.isLicensed = op.isLicensed;
+            Portfolio.Portfolio risks;
+            if (op.nfac > -1)
+            {
+                var fac = new Portfolio.FPortfolio("");
+                risks = fac;
+                fac.ntrue = op.n.GetValueOrDefault();
+                fac.nfac = op.nfac.GetValueOrDefault();
+                if (op.SV != null && op.nfac > -1)
+                {
+                    fac.SV = op.SV;
+                    fac.FC = op.FC;
+                    if (op.FLas2D != null)
+                        fac.FL = Portfolio.Portfolio.twoD2oneD(fac.ntrue, fac.nfac, op.FLas2D, transpose: false);
+                    else fac.FL = op.FL;
+                    fac.makeQ();
+                }
+                else fac.Q = op.Q;
+            }
+            else
+            {
+                var cov = new Portfolio.Portfolio("");
+                risks = cov;
+                cov.ntrue = op.n.GetValueOrDefault();
+                cov.Q = op.Q;
+            }
+            var mctr = new double[risks.ntrue];
+            risks.RiskBreakdown(op.w, breakdown: mctr);
+            props.totalRisk = BlasLike.ddotvec(risks.ntrue, op.w, mctr);
+            if (op.bench != null)
+            {
+                var betas = new double[risks.ntrue];
+                risks.RiskBreakdown(op.w, op.bench, mctr);
+                props.activeRisk = BlasLike.ddotvec(risks.ntrue, op.w, mctr) - BlasLike.ddotvec(risks.ntrue, op.bench, mctr);
+                risks.RiskBreakdown(op.w, op.bench, mctr, betas);
+                props.portfolioBeta = BlasLike.ddotvec(risks.ntrue, op.w, betas);
+                BlasLike.daxpyvec(risks.ntrue, -props.portfolioBeta.GetValueOrDefault(), op.bench, op.w);
+                props.residualRisk = BlasLike.ddotvec(risks.ntrue, op.w, mctr);
+                BlasLike.daxpyvec(risks.ntrue, props.portfolioBeta.GetValueOrDefault(), op.bench, op.w);
+                risks.RiskBreakdown(op.bench, breakdown: mctr);
+                props.benchmarkRisk = BlasLike.ddotvec(risks.ntrue, op.bench,mctr);
+            }
+            return props;
+        }
         op.result.mctr = new double[op.n.GetValueOrDefault()];
 
 
