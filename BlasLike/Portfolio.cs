@@ -218,9 +218,9 @@ namespace Portfolio
                     if (basket < 0 && trades < 0)
                     {
                         if (info.target == minRisk)
-                            ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk, gamma, 1 - BlasLike.lm_eps8, 0, info);
+                            ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk,gammabot: gamma,gammatop: 1 - BlasLike.lm_eps8,tol: BlasLike.lm_eps16,info: info);
                         else
-                            ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk, 0, gamma, 0, info);
+                            ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk,gammabot: 0,gammatop: gamma,tol: BlasLike.lm_eps16,info: info);
                     }
                     else { op.DropRisk(basket, trades, info.target, info); ogamma = gamma = op.gamma; }
                     BlasLike.dcopyvec(n, op.wback, w);

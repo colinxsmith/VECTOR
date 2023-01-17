@@ -135,6 +135,7 @@ namespace Licensing
         public byte[] validator_m_byte;
         byte validator_c(int z, int k) => validator_m_byte[(z + k) % 48];
         string licence = "";
+       public string connectedNames="";
         public byte[] licenceByteValue = null;
         public bool deleteKey(string ourkey = "Software\\safeqp")
         {
@@ -450,6 +451,7 @@ namespace Licensing
                        Console.WriteLine(nic.NetworkInterfaceType);
                        Console.WriteLine(nic.GetPhysicalAddress());
                        Console.WriteLine();*/
+                       connectedNames+=nic.Description+";";
                     var address = nic.GetPhysicalAddress().ToString();
                     if (print) ColourConsole.WriteInfo($"Adapter: {address}");
                     var bAddress = new int[6];

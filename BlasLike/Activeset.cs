@@ -21,7 +21,7 @@ namespace ActiveSet
         public static double Solve1D(OneD OneDimensionalFunction, double gammabot = 0,
                                        double gammatop = 1.0, double tol = 0, object info = null)
         {
-            if (tol == 0) { tol = BlasLike.lm_rooteps; gammatop = 1 - tol; }
+            if (tol == 0) { tol = BlasLike.lm_rooteps;  }
             int iter, itmax = 200;
             short signk = 1;
             double c = 0, d = 0, e = 0, min1, min2, fc, p, q, r, s, tol1, xm;
@@ -64,7 +64,7 @@ namespace ActiveSet
                     fb = fc;
                     fc = fa;
                 }
-                tol1 = 2 * BlasLike.lm_rooteps * Math.Abs(b) + 0.5 * tol;
+                tol1 = 2 * BlasLike.lm_eps * Math.Abs(b) + 0.5 * tol;
                 xm = 0.5 * (c - b);
                 if (Math.Abs(xm) <= tol1 || Math.Abs(fb) < 1e-12)
                 {

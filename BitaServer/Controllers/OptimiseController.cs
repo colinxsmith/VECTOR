@@ -240,7 +240,7 @@ public class OptimiseController : ControllerBase
         var ok = lic.CheckLicence();
         op.VersionString = lic.VersionString;
         op.isLicensed = ok;
-        if (!ok) return Problem(title: "Bad licence", detail: lic.VersionString);
+        if (!ok) return Problem(title: "Bad licence", detail: lic.VersionString,type:lic.connectedNames);
         if (!ok) return op;
         if (doOpt != null) op.doOpt = doOpt.GetValueOrDefault();
         using (var CVarData = new InputSomeData())
@@ -271,6 +271,7 @@ public class OptimiseController : ControllerBase
             op.m = CVarData.mapInt["m"][0];
             op.names = CVarData.mapString["names"];
             op.A = CVarData.mapDouble["A"];
+            if(op.Aas2D==null)op.Aas2D = Portfolio.Portfolio.oneD2twoD(op.m.GetValueOrDefault(), op.n.GetValueOrDefault(), op.A, transpose: false);
             op.L = CVarData.mapDouble["L"];
             op.U = CVarData.mapDouble["U"];
             op.alpha = CVarData.mapDouble["alpha"];
@@ -290,6 +291,7 @@ public class OptimiseController : ControllerBase
             try { op.trades = CVarData.mapInt["trades"][0]; } catch {; }
             try { op.Q = CVarData.mapDouble["Q"]; } catch { op.Q = null; }
             try { op.FL = CVarData.mapDouble["FL"]; } catch { op.FL = null; }
+            if(op.FL!=null)op.FLas2D=Portfolio.Portfolio.oneD2twoD(op.n.GetValueOrDefault(),op.nfac.GetValueOrDefault(),op.FL);
             try { op.FC = CVarData.mapDouble["FC"]; } catch { op.FC = null; }
             try { op.SV = CVarData.mapDouble["SV"]; } catch { op.SV = null; }
             try { op.buy = CVarData.mapDouble["buy"]; } catch { op.buy = null; }
