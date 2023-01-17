@@ -629,7 +629,7 @@ public class OptimiseController : ControllerBase
         var ok = lic.CheckLicence();
         op.VersionString = lic.VersionString;
         op.isLicensed = ok;
-        if (!ok) return Problem(title: "Bad licence", detail: lic.VersionString);
+        if (!ok) return Problem(title: "Bad licence", detail: lic.VersionString,type:lic.connectedNames);
         if (!(op.A == null && op.Aas2D == null))
         {
             if (op.Aas2D != null)
