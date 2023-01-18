@@ -442,10 +442,11 @@ namespace Licensing
             //if (!usefile&&RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             foreach (var nic in NetworkInterface.GetAllNetworkInterfaces()) //This works on linux
             {
-                if (nic.NetworkInterfaceType.ToString().Contains("Ethernet"))//&& nic.NetworkInterfaceType.ToString().Contains("USB"))
+                if (nic.NetworkInterfaceType.ToString().Contains("Ethernet")||nic.NetworkInterfaceType.ToString().Contains("Wireless"))//&& nic.NetworkInterfaceType.ToString().Contains("USB"))
                 {
-                    if (nic.Description.ToString().Contains("Virtual")) continue;
-                    if (nic.Description.ToString().Contains("USB")) continue;
+                    if (nic.Description.ToString().ToLower().Contains("virtual")) continue;
+                    if (nic.Description.ToString().ToLower().Contains("usb")) continue;
+                    if (nic.Description.ToString().ToLower().Contains("bluetooth")) continue;
                     /*   Console.WriteLine(nic.Name);
                        Console.WriteLine(nic.GetType());
                        Console.WriteLine(nic.NetworkInterfaceType);
