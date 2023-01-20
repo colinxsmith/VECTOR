@@ -24,7 +24,11 @@ int main()
     unsigned char mac_address[6];
     for (int i = 1; if_indextoname(i, getname); ++i)
     { // index starts at 1
-        strcpy(ifr.ifr_name, getname);
+#if defined( __CYGWIN__ )     
+    ifr=ifc.ifc_req[i-1];
+#else    
+       strcpy(ifr.ifr_name, getname);
+#endif
         if (ioctl(sock, SIOCGIFFLAGS, &ifr) == 0)
         {
             if (!(ifr.ifr_flags & IFF_LOOPBACK))
