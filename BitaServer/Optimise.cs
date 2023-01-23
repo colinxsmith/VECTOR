@@ -145,6 +145,13 @@ public class Factor2VAR
     public string? VersionString { get; set; }
     public bool? isLicensed { get; set; }
     public double[]? VAR { get; set; }
+}public class OptimiseInternal{
+    public string? VersionString { get; set; }
+    public bool? isLicensed { get; set; }
+    public double[]?w{get;set;}
+    public int[]?shake{get;set;}
+    public int? back { set; get; }
+    public string? message { set; get; }
 }
 public class RiskProperties
 {
@@ -161,6 +168,7 @@ public class RiskProperties
     public double[]? marginalContributionToResidualRisk { get; set; }
     public double[]? marginalContributionToBenchmarkRisk { get; set; }
 }
+
 
 public class Risks
 {

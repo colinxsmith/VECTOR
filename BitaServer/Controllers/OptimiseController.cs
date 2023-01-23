@@ -704,6 +704,16 @@ public class OptimiseController : ControllerBase
                 if (op.shake[i] == i) if (op.names == null) { op.message += $"\nAsset {i + 1} was not rounded properly"; }
                     else { op.message += $"\n{op.names[i]} was not rounded properly"; }
             }
+            if(op.getmethod!=null&&op.getmethod.ToLower().StartsWith("optimiseinternal")){
+            var backop=new OptimiseInternal();
+            backop.VersionString=op.VersionString;
+            backop.isLicensed=op.isLicensed;
+            backop.back=op.back;
+            backop.w=op.w;
+            backop.shake=op.shake;
+            backop.message=op.message;
+             _logger.LogInformation($"POST general at {DateTimeOffset.Now}");
+            return backop;}
         }
         else if (op.w == null)
         {
@@ -734,6 +744,7 @@ public class OptimiseController : ControllerBase
                     opnew.VersionString = op.VersionString;
                     opnew.isLicensed = op.isLicensed;
                     opnew.QMATRIX = fac.Q;
+             _logger.LogInformation($"POST general at {DateTimeOffset.Now}");
                     return opnew;
                 }
 
@@ -753,6 +764,7 @@ public class OptimiseController : ControllerBase
                     opnew.VersionString = op.VersionString;
                     opnew.isLicensed = op.isLicensed;
                     opnew.COV = fac.Factor2Cov();
+             _logger.LogInformation($"POST general at {DateTimeOffset.Now}");
                     return opnew;
                 }
 
@@ -772,9 +784,11 @@ public class OptimiseController : ControllerBase
                     opnew.VersionString = op.VersionString;
                     opnew.isLicensed = op.isLicensed;
                     opnew.VAR = fac.Factor2Var();
+             _logger.LogInformation($"POST general at {DateTimeOffset.Now}");
                     return opnew;
                 }
             }
+             _logger.LogInformation($"POST general at {DateTimeOffset.Now}");
             return op;
         }
         else
@@ -836,6 +850,7 @@ public class OptimiseController : ControllerBase
                     props.residualRisk = rounder(props.residualRisk.GetValueOrDefault());
                     BlasLike.daxpyvec(riskprop.ntrue, props.portfolioBeta.GetValueOrDefault(), op.bench, op.w);
                 }
+             _logger.LogInformation($"POST general at {DateTimeOffset.Now}");
                 return props;
             }
 
@@ -889,6 +904,7 @@ public class OptimiseController : ControllerBase
                     props.benchmarkRisk = BlasLike.ddotvec(risks.ntrue, op.bench, mctr);
                     props.benchmarkRisk = rounder(props.benchmarkRisk.GetValueOrDefault());
                 }
+             _logger.LogInformation($"POST general at {DateTimeOffset.Now}");
                 return props;
             }
         }
