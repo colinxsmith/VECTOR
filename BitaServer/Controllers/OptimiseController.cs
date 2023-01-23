@@ -623,7 +623,7 @@ public class OptimiseController : ControllerBase
     [HttpPost("general")]
     [RequestSizeLimit(bytes: 2_000_000_000)]
     public Object PostGen(Optimise op)
-    {
+    {if(op.getmethod!=null&&op.getmethod.ToLower().StartsWith("optimiseinternal"))op.doOpt=true;
         var breakdown = new double[op.n.GetValueOrDefault()];
         var lic = new Licensing.Licence();
         var ok = lic.CheckLicence();
