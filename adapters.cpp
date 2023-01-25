@@ -42,7 +42,8 @@ int __cdecl main()
         return 1;
     }
     // Make an initial call to GetAdaptersInfo to get
-    // the necessary size into the ulOutBufLen variable
+    // the necessary size into the ulOutBufLen variable.
+    // This is equal to the number of adapters.
     if (GetAdaptersInfo(pAdapterInfo, &ulOutBufLen) == ERROR_BUFFER_OVERFLOW)
     {
         FREE(pAdapterInfo);
