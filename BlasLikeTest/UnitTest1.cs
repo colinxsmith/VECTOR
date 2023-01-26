@@ -754,6 +754,7 @@ namespace BlasLikeTest
             var n = 3;
             double[] SV = { 1, 2, 3 };
             var Q = new double[(nfac + 1) * n];
+            var Qinv = new double[(nfac + 1) * n];
             double[] FC = { 2,
                                 1, 3 };
             double[] FL = { 1, 0, 1,
@@ -779,6 +780,34 @@ namespace BlasLikeTest
             BlasLike.dsubvec(n, Qw, result, Qw);
             test = BlasLike.ddotvec(n, Qw, Qw);
             Assert.IsTrue(Math.Abs(test) < BlasLike.lm_eps2, $"test={test}");
+            var FCcopy=(double[])FC.Clone();
+            var piv = new int[nfac];
+            Factorise.Factor(uplo: 'U', nfac, FCcopy, piv);
+            var FCinv = (double[])FC.Clone();
+            for (int i = 0, istart = 0; i < nfac; ++i, istart += i)
+            {
+                BlasLike.dzerovec(nfac, FCinv, istart);
+                FCinv[istart + i] = 1;
+                Factorise.Solve(uplo: 'U', nfac, 1, FCcopy, piv, FCinv, nfac, 0, 0, i);
+                for (var k = 0; k < n; ++k)
+                {
+                    BlasLike.daxpy(i + 1, FL[k + i * n] / SV[k], FL, n, FCinv, 1, k, istart);
+                }
+                Factorise.Factor(uplo: 'U', nfac, FCinv, piv);
+                BlasLike.dcopyvec(n * nfac, FL, Qinv, bstart: n);
+                for (var k = 0; k < n; ++k)
+                {
+                    for (var j = 0; j < nfac; ++j)
+                    {
+                        Qinv[n + k + j * n] = FL[k + j * n] / SV[k];
+                    }
+                }
+            }
+            Factorise.Solve(uplo: 'U', nfac, n, FCinv, piv, Qinv, nfac, 0, 0, n, root: 1);
+            for (var i = 0; i < n; ++i) Qinv[i] = 1.0 / SV[i];
+            var Qwback = new double[n];
+            Factorise.FacMul(n, nfac, Q, w, Qw);
+            Factorise.FacMul(n, nfac, Qinv, Qw, Qwback, inverse: true);
         }
         [TestMethod]
         public void Test_digit()

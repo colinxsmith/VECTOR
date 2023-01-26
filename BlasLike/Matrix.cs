@@ -1301,11 +1301,16 @@ void ddmxmulv(int n, double* d, int incd, double* x, int incx)
             else BlasLike.dcopyvec(n * nfac, FL, Q, 0, n); //Copy to Q after SV
             BlasLike.dcopyvec(n, SV, Q); //Copy to Q
             var back = Factorise.Factor(uplow, nfac, FCc, piv);
-            if (back == 0) back = Factorise.Solve(uplow, nfac, n, FCc, piv, Q, nfac, 0, 0, n, 1);
+            if (back == 0) back = Factorise.Solve(uplow, nfac, n, FCc, piv, Q, nfac, 0, 0, n,root: 1);
             return back;
         }
-        public static void DiagMul(int n, double[] Q, double[] w, double[] Qw, int Qstart = 0, int wstart = 0, int Qwstart = 0)
+        public static void DiagMul(int n, double[] Q, double[] w, double[] Qw, int Qstart = 0, int wstart = 0, int Qwstart = 0,bool inverse=false)
         {
+            if(inverse)
+            for (var i = 0; i < n; ++i)
+            {
+                Qw[i + Qwstart] =  w[i + wstart]/Q[i + Qstart];
+            }else
             for (var i = 0; i < n; ++i)
             {
                 Qw[i + Qwstart] = Q[i + Qstart] * w[i + wstart];
@@ -1316,9 +1321,14 @@ void ddmxmulv(int n, double* d, int incd, double* x, int incx)
             if (uplow == 'U') dsmxmulv(n - nfixed, Q, w, Qw, wstart, Qwstart, Qstart);
             else if (uplow == 'L') dsmxmulvT(n, Q, w, Qw, wstart, Qwstart, Qstart);// Can't do nfixed easily so we allways use uplow='U'
         }
-        public static void FacMul(int n, int nfac, double[] Q, double[] w, double[] Qw, int Qstart = 0, int wstart = 0, int Qwstart = 0, int nfixed = 0)
+        public static void FacMul(int n, int nfac, double[] Q, double[] w, double[] Qw, int Qstart = 0, int wstart = 0, int Qwstart = 0, int nfixed = 0,bool inverse=false)
         {
-            DiagMul(n - nfixed, Q, w, Qw, Qstart, wstart, Qwstart);
+            DiagMul(n - nfixed, Q, w, Qw, Qstart, wstart, Qwstart,inverse:inverse);
+            if(inverse)//Need factorised inverse for risk model
+            for (var k = 0; k < nfac; ++k)
+            {
+                BlasLike.daxpy(n - nfixed, -BlasLike.ddot(n - nfixed, Q, nfac, w, 1, Qstart + n + k, wstart), Q, nfac, Qw, 1, Qstart + n + k, Qwstart);
+            }else
             for (var k = 0; k < nfac; ++k)
             {
                 BlasLike.daxpy(n - nfixed, BlasLike.ddot(n - nfixed, Q, nfac, w, 1, Qstart + n + k, wstart), Q, nfac, Qw, 1, Qstart + n + k, Qwstart);
