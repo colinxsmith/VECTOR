@@ -733,8 +733,8 @@ namespace BlasLikeTest
             var x = new double[n];
             double[] b = { 1 };
             double[] c = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 0 };
-            double[] A = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }; 
-            BlasLike.dscalvec(c.Length,1e-3,c);
+            double[] A = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
+            BlasLike.dscalvec(c.Length, 1e-3, c);
             int[] cone = { n };
             int nvar = 0;
             foreach (int ic in cone) nvar += ic;
@@ -744,7 +744,7 @@ namespace BlasLikeTest
             var opt1 = new InteriorPoint.Optimise(n, m, x, A, b, c);
             var back = opt1.Opt("SOCP", cone, typecone, true);
             var util = BlasLike.ddotvec(n, c, x);
-            Assert.IsTrue(back!=6&&Math.Abs(x[n - 1] - 1) < 1e-8, $"util = {util}; cone check{x[n-1]-1}; back={back}");
+            Assert.IsTrue(back != 6 && Math.Abs(x[n - 1] - 1) < 1e-8, $"util = {util}; cone check{x[n - 1] - 1}; back={back}");
         }
         [TestMethod]
         public void Test_FMP()
@@ -754,12 +754,12 @@ namespace BlasLikeTest
             var n = 3;
             double[] SV = { 1, 2, 3 };
             var Q = new double[(nfac + 1) * n];
-            var Qinv = new double[(nfac + 1) * n];
             double[] FC = { 2,
                                 1, 3 };
             double[] FL = { 1, 0, 1,
                             0, 1, 1 }; //Factors by assets
-            var back = Factorise.FMP(n, nfac, FC, SV, FL, Q, 'L');
+                            var uplow='L';
+            var back = Factorise.FMP(n, nfac, FC, SV, FL, Q, uplow);
             double[] correct = { 2, 1, 3, 1, 3, 4, 3, 4, 7 };
             var result = new double[n * n];
             for (var i = 0; i < n; ++i) //Multiply out the factor part of the compressed model
@@ -780,34 +780,17 @@ namespace BlasLikeTest
             BlasLike.dsubvec(n, Qw, result, Qw);
             test = BlasLike.ddotvec(n, Qw, Qw);
             Assert.IsTrue(Math.Abs(test) < BlasLike.lm_eps2, $"test={test}");
-            var FCcopy=(double[])FC.Clone();
-            var piv = new int[nfac];
-            Factorise.Factor(uplo: 'U', nfac, FCcopy, piv);
-            var FCinv = (double[])FC.Clone();
-            for (int i = 0, istart = 0; i < nfac; ++i, istart += i)
-            {
-                BlasLike.dzerovec(nfac, FCinv, istart);
-                FCinv[istart + i] = 1;
-                Factorise.Solve(uplo: 'U', nfac, 1, FCcopy, piv, FCinv, nfac, 0, 0, i);
-                for (var k = 0; k < n; ++k)
-                {
-                    BlasLike.daxpy(i + 1, FL[k + i * n] / SV[k], FL, n, FCinv, 1, k, istart);
-                }
-                Factorise.Factor(uplo: 'U', nfac, FCinv, piv);
-                BlasLike.dcopyvec(n * nfac, FL, Qinv, bstart: n);
-                for (var k = 0; k < n; ++k)
-                {
-                    for (var j = 0; j < nfac; ++j)
-                    {
-                        Qinv[n + k + j * n] = FL[k + j * n] / SV[k];
-                    }
-                }
-            }
-            Factorise.Solve(uplo: 'U', nfac, n, FCinv, piv, Qinv, nfac, 0, 0, n, root: 1);
-            for (var i = 0; i < n; ++i) Qinv[i] = 1.0 / SV[i];
-            var Qwback = new double[n];
+            var Qinv=(double[])Q.Clone();
+            back=Factorise.FMPinverse(n,nfac,Qinv,uplow);
+              var Qwback = new double[n];
+              w[0]=1;
+              w[1]=2;
+              w[2]=3;
             Factorise.FacMul(n, nfac, Q, w, Qw);
             Factorise.FacMul(n, nfac, Qinv, Qw, Qwback, inverse: true);
+            BlasLike.dsubvec(n,w,Qwback,Qwback);
+            test=BlasLike.ddotvec(n,Qwback,Qwback);
+            Assert.IsTrue(back == 0 && test <= BlasLike.lm_eps,$"Inverse test check {test}");
         }
         [TestMethod]
         public void Test_digit()
@@ -982,7 +965,7 @@ namespace BlasLikeTest
             Assert.IsTrue(pass);
             start = (int)timenow - 23;
             hid = (int)testhid;
-            curveKeys.mainint = (int) Convert.ToInt32("111101110",2);
+            curveKeys.mainint = (int)Convert.ToInt32("111101110", 2);
             testlicence[16] = curveKeys.byte1;
             testlicence[17] = curveKeys.byte2;
             testlicence[18] = curveKeys.byte3;

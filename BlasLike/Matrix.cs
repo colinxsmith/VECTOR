@@ -1290,7 +1290,40 @@ void ddmxmulv(int n, double* d, int incd, double* x, int incx)
                         x[ix] *= d[id];
                     }
             }
-        }
+        }///<summary>Invert the compressed risk model</summary>
+         ///<param name="n"> Number of assets </param>
+         ///<param name="nfac"> Number of factors </param>
+         ///<param name="Q"> The compressed risk model array returned by FMP  </param>
+         ///<param name="uplow"> 'L' for lower triangle representation or 'U' for upper  </param>
+         public static int FMPinverse(int n, int nfac, double[] Q, char uplow = 'U')
+        {
+            var QSV = (double[])Q.Clone();
+            BlasLike.dzerovec(QSV.Length, QSV);
+            var QQ = new double[nfac * (nfac + 1) / 2];
+            var piv = new int[nfac];
+                        for (var i = 0; i < n; ++i)
+            {
+                QSV[i] = 1.0 / Q[i];
+            }
+                for (var j = 0; j < nfac; ++j)
+                {for(var i=0;i<n;++i){
+                    QSV[j + nfac * i + n] = Q[j + nfac * i + n] * QSV[i];
+                    BlasLike.daxpy(j+1,QSV[j + nfac * i + n],Q,1,QQ,1,n+nfac * i,j*(j+1)/2);
+                    }
+                }
+            for(int i=0,ij=0;i<nfac;++i,ij+=i)QQ[ij+i]+=1;
+            var back = Factorise.Factor(uplow, nfac, QQ, piv);
+            if (back == 0) Factorise.Solve(uplow, nfac, n, QQ, piv, QSV, nfac, bstart: n, root: -1);
+            BlasLike.dcopyvec(Q.Length, QSV, Q);
+            return back;
+        }///<summary>Compute the compressed risk model array </summary>
+         ///<param name="n"> Number of assets </param>
+         ///<param name="nfac"> Number of factors </param>
+         ///<param name="FC"> Factor covariances as a triangle array </param>
+         ///<param name="SV"> The Specific Varaince array </param>
+         ///<param name="FL"> The Factor Loadings (BETAS) array as FL[i+j*nfac] for asset i in factor j</param>
+         ///<param name="uplow"> 'L' for lower triangle representation or 'U' for upper in FC </param>
+         ///<param name="transpose"> if true store transposed FL in Q (this is the default)</param>
         public static int FMP(int n, int nfac, double[] FC, double[] SV, double[] FL, double[] Q, char uplow = 'U', bool transpose = true)
         {
             //Factor model process; 
@@ -1301,38 +1334,40 @@ void ddmxmulv(int n, double* d, int incd, double* x, int incx)
             else BlasLike.dcopyvec(n * nfac, FL, Q, 0, n); //Copy to Q after SV
             BlasLike.dcopyvec(n, SV, Q); //Copy to Q
             var back = Factorise.Factor(uplow, nfac, FCc, piv);
-            if (back == 0) back = Factorise.Solve(uplow, nfac, n, FCc, piv, Q, nfac, 0, 0, n,root: 1);
+            if (back == 0) back = Factorise.Solve(uplow, nfac, n, FCc, piv, Q, nfac, bstart: n, root: 1);
             return back;
         }
-        public static void DiagMul(int n, double[] Q, double[] w, double[] Qw, int Qstart = 0, int wstart = 0, int Qwstart = 0,bool inverse=false)
+        public static void DiagMul(int n, double[] Q, double[] w, double[] Qw, int Qstart = 0, int wstart = 0, int Qwstart = 0, bool inverse = false)
         {
-            if(inverse)
-            for (var i = 0; i < n; ++i)
-            {
-                Qw[i + Qwstart] =  w[i + wstart]/Q[i + Qstart];
-            }else
-            for (var i = 0; i < n; ++i)
-            {
-                Qw[i + Qwstart] = Q[i + Qstart] * w[i + wstart];
-            }
+            if (inverse)
+                for (var i = 0; i < n; ++i)
+                {
+                    Qw[i + Qwstart] = w[i + wstart] / Q[i + Qstart];
+                }
+            else
+                for (var i = 0; i < n; ++i)
+                {
+                    Qw[i + Qwstart] = Q[i + Qstart] * w[i + wstart];
+                }
         }
         public static void CovMul(int n, double[] Q, double[] w, double[] Qw, int Qstart = 0, int wstart = 0, int Qwstart = 0, char uplow = 'U', int nfixed = 0)
         {
             if (uplow == 'U') dsmxmulv(n - nfixed, Q, w, Qw, wstart, Qwstart, Qstart);
             else if (uplow == 'L') dsmxmulvT(n, Q, w, Qw, wstart, Qwstart, Qstart);// Can't do nfixed easily so we allways use uplow='U'
         }
-        public static void FacMul(int n, int nfac, double[] Q, double[] w, double[] Qw, int Qstart = 0, int wstart = 0, int Qwstart = 0, int nfixed = 0,bool inverse=false)
+        public static void FacMul(int n, int nfac, double[] Q, double[] w, double[] Qw, int Qstart = 0, int wstart = 0, int Qwstart = 0, int nfixed = 0, bool inverse = false)
         {
-            DiagMul(n - nfixed, Q, w, Qw, Qstart, wstart, Qwstart,inverse:inverse);
-            if(inverse)//Need factorised inverse for risk model
-            for (var k = 0; k < nfac; ++k)
-            {
-                BlasLike.daxpy(n - nfixed, -BlasLike.ddot(n - nfixed, Q, nfac, w, 1, Qstart + n + k, wstart), Q, nfac, Qw, 1, Qstart + n + k, Qwstart);
-            }else
-            for (var k = 0; k < nfac; ++k)
-            {
-                BlasLike.daxpy(n - nfixed, BlasLike.ddot(n - nfixed, Q, nfac, w, 1, Qstart + n + k, wstart), Q, nfac, Qw, 1, Qstart + n + k, Qwstart);
-            }
+            DiagMul(n - nfixed, Q, w, Qw, Qstart, wstart, Qwstart);
+            if (inverse)//Need factorised inverse for risk model
+                for (var k = 0; k < nfac; ++k)
+                {
+                    BlasLike.daxpy(n - nfixed, -BlasLike.ddot(n - nfixed, Q, nfac, w, 1, Qstart + n + k, wstart), Q, nfac, Qw, 1, Qstart + n + k, Qwstart);
+                }
+            else
+                for (var k = 0; k < nfac; ++k)
+                {
+                    BlasLike.daxpy(n - nfixed, BlasLike.ddot(n - nfixed, Q, nfac, w, 1, Qstart + n + k, wstart), Q, nfac, Qw, 1, Qstart + n + k, Qwstart);
+                }
         }
         public static void SolveRefine(int n, double[] Q, double[] Qsol, int[] order, double[] y, int ystart = 0)
         {
@@ -1383,11 +1418,11 @@ void ddmxmulv(int n, double* d, int incd, double* x, int incx)
                     }
                 }
         }
-        public static double covariance(int t, double[] s1, double[] s2,int s1start=0,int s2start=0)
+        public static double covariance(int t, double[] s1, double[] s2, int s1start = 0, int s2start = 0)
         {
-            var m1 = BlasLike.dsumvec(t, s1,s1start) / t;
-            var m2 = BlasLike.dsumvec(t, s2,s2start) / t;
-            var cv = BlasLike.ddotvec(t, s1, s2,s1start,s2start);
+            var m1 = BlasLike.dsumvec(t, s1, s1start) / t;
+            var m2 = BlasLike.dsumvec(t, s2, s2start) / t;
+            var cv = BlasLike.ddotvec(t, s1, s2, s1start, s2start);
             return (cv - m1 * m2 * t) / (t - 1);
         }
     }
