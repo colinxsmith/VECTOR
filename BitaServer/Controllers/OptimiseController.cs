@@ -739,13 +739,27 @@ public class OptimiseController : ControllerBase
                         if (op.FL == null) return Problem(title: "Factor Loadings not set", detail: "Both FL and FLas2D may not be null!");
                     }
                     fac.makeQ();
+                    double[]Qinv=null;
+                    var withinverse=false;
+                    if (op.getmethod.ToLower().Contains("inverse")){withinverse=true;
+                    Qinv=(double[])fac.Q.Clone();
+                    var back=Factorise.FMPinverse(fac.ntrue,fac.nfac,Qinv);
+                    if (back!=0)withinverse=false;}
+                    if(!withinverse){
                     var opnew = new FactorModelProcess();
                     //opnew.FLbacktest=Portfolio.Portfolio.oneD2twoD(fac.ntrue,fac.nfac,op.FL);
                     opnew.VersionString = op.VersionString;
                     opnew.isLicensed = op.isLicensed;
                     opnew.QMATRIX = fac.Q;
              _logger.LogInformation($"POST general at {DateTimeOffset.Now}");
-                    return opnew;
+                    return opnew;}else{
+                    var opnew = new FactorModelProcessInverse();
+                    opnew.VersionString = op.VersionString;
+                    opnew.isLicensed = op.isLicensed;
+                    opnew.QMATRIX = fac.Q;
+                    opnew.QMATRIXinverse=Qinv;
+             _logger.LogInformation($"POST general at {DateTimeOffset.Now}");
+                    return opnew;}
                 }
 
                 else if (op.getmethod.ToLower().StartsWith("factor2cov"))

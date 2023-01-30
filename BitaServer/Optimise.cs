@@ -134,6 +134,15 @@ public class FactorModelProcess
     public double[]? QMATRIX { get; set; }
     // public double[][]?FLbacktest{get;set;}
 }
+
+public class FactorModelProcessInverse
+{
+    public string? VersionString { get; set; }
+    public bool? isLicensed { get; set; }
+    public double[]? QMATRIX { get; set; }
+    public double[]? QMATRIXinverse { get; set; }
+    // public double[][]?FLbacktest{get;set;}
+}
 public class Factor2COV
 {
     public string? VersionString { get; set; }
