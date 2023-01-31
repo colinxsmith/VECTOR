@@ -747,6 +747,50 @@ namespace BlasLikeTest
             Assert.IsTrue(back != 6 && Math.Abs(x[n - 1] - 1) < 1e-8, $"util = {util}; cone check{x[n - 1] - 1}; back={back}");
         }
         [TestMethod]
+        public void Test_TwoDimensionalMatrix(){
+            //This shows how 2 dimension matrices in BITA20 are converted
+            //to 1 dimensional arrays for use in the optimiser
+            var n=3;
+            var nf=2;
+            double[] FL={ 1, 3, 4, 
+                          3, 4, 7 };
+            double[] f1={1,3,4};
+            double[] f2={3,4,7};
+            double[] s1={1,3};
+            double[] s2={3,4};
+            double[] s3={4,7};
+            var FLas2D=Portfolio.Portfolio.oneD2twoD(n,nf,FL);
+            Assert.IsTrue(s1[0]==FLas2D[0][0] && s1[1]==FLas2D[0][1]);
+            Assert.IsTrue(s2[0]==FLas2D[1][0] && s2[1]==FLas2D[1][1]);
+            Assert.IsTrue(s3[0]==FLas2D[2][0] && s3[1]==FLas2D[2][1]);
+            Assert.IsTrue(f1[0]==FLas2D[0][0] && f1[1]==FLas2D[1][0] &&f1[2]==FLas2D[2][0]);
+            Assert.IsTrue(f2[0]==FLas2D[0][1] && f2[1]==FLas2D[1][1] &&f2[2]==FLas2D[2][1]);
+            var FLback=Portfolio.Portfolio.twoD2oneD(n,nf,FLas2D);
+            BlasLike.dsubvec(n*nf,FL,FLback,FLback);
+            var test = BlasLike.ddotvec(n*nf,FLback,FLback);
+            Assert.IsTrue(test<=BlasLike.lm_eps,$"test = {test}");
+            n=5;
+            var m=2;
+            double[] a1={1,1,1,1,1};
+            double[] a2={1,2,3,4,5};
+            double[][] Aas2D={a1,a2};
+            var A=Portfolio.Portfolio.twoD2oneD(m,n,Aas2D);
+            var Aas2Dback=Portfolio.Portfolio.oneD2twoD(m,n,A);
+            BlasLike.dsubvec(n,Aas2D[0],Aas2Dback[0],Aas2Dback[0]);
+            BlasLike.dsubvec(n,Aas2D[1],Aas2Dback[1],Aas2Dback[1]);
+            test=BlasLike.ddotvec(n,Aas2Dback[0],Aas2Dback[0])+BlasLike.ddotvec(n,Aas2Dback[1],Aas2Dback[1]);
+            Assert.IsTrue(test<=2*BlasLike.lm_eps,$"test = {test}");
+            //A bit of overkill to show that the transpose option works;
+            //if we transpose in twoD2oneD then we must transpose back somewhere else
+            A=Portfolio.Portfolio.twoD2oneD(m,n,Aas2D,transpose:true);
+            Factorise.dmx_transpose(n,m,A,A);
+            Aas2Dback=Portfolio.Portfolio.oneD2twoD(m,n,A);
+            BlasLike.dsubvec(n,Aas2D[0],Aas2Dback[0],Aas2Dback[0]);
+            BlasLike.dsubvec(n,Aas2D[1],Aas2Dback[1],Aas2Dback[1]);
+            test=BlasLike.ddotvec(n,Aas2Dback[0],Aas2Dback[0])+BlasLike.ddotvec(n,Aas2Dback[1],Aas2Dback[1]);
+            Assert.IsTrue(test<=2*BlasLike.lm_eps,$"test = {test}");
+        }
+        [TestMethod]
         public void Test_FMP()
         {
             //FMP calculates data for compressed risk model
@@ -781,6 +825,7 @@ namespace BlasLikeTest
             test = BlasLike.ddotvec(n, Qw, Qw);
             Assert.IsTrue(Math.Abs(test) < BlasLike.lm_eps2, $"test={test}");
             var Qinv=(double[])Q.Clone();
+            //Invert the factorised risk model
             back=Factorise.FMPinverse(n,nfac,Qinv,uplow);
               var Qwback = new double[n];
               w[0]=1;

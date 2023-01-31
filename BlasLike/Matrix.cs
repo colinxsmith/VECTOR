@@ -1356,9 +1356,9 @@ void ddmxmulv(int n, double* d, int incd, double* x, int incx)
             else if (uplow == 'L') dsmxmulvT(n, Q, w, Qw, wstart, Qwstart, Qstart);// Can't do nfixed easily so we allways use uplow='U'
         }
         public static void FacMul(int n, int nfac, double[] Q, double[] w, double[] Qw, int Qstart = 0, int wstart = 0, int Qwstart = 0, int nfixed = 0, bool inverse = false)
-        {
+        {//If inverse is true it means the data in Q is for the inverse of the risk model
             DiagMul(n - nfixed, Q, w, Qw, Qstart, wstart, Qwstart);
-            if (inverse)//Need factorised inverse for risk model
+            if (inverse)//Need factorised inverse for risk model, note the minus sign
                 for (var k = 0; k < nfac; ++k)
                 {
                     BlasLike.daxpy(n - nfixed, -BlasLike.ddot(n - nfixed, Q, nfac, w, 1, Qstart + n + k, wstart), Q, nfac, Qw, 1, Qstart + n + k, Qwstart);
