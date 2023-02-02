@@ -935,6 +935,52 @@ namespace BlasLikeTest
             Assert.IsTrue(numberInTail == 1, $"{numberInTail}");
         }
         [TestMethod]
+        public void Test_Composite()
+        {
+            var n=5;
+            var ncomp=2;
+            var ntrue=n-ncomp;
+            var nfac=2;
+            double[] compositeWeights={0.333,0.333,0.333,0.5,0.5,0};
+            double[]SV={1,2,3};
+            double[]FC={0.5,0.1,0.6};
+            double[]FL={2,3,4,     4,-1,2};
+            var port=new Portfolio.FPortfolio("");
+            port.n=n;
+            port.ntrue=ntrue;
+            port.nfac=nfac;
+            port.SV=SV;
+            port.FL=FL;
+            port.FC=FC;
+port.ncomp=ncomp;
+port.compw=compositeWeights;
+port.makeQ();
+port.makeCompQ();
+var testq=(double[])port.compQ.Clone();
+var piv=new int[ncomp];
+var back=Factorise.Factor('U',ncomp,testq,piv);
+Assert.IsFalse(back!=0,$"convQ should be positive definite! {back} is not zero");
+double[] w={0.5,0.5,0,0,-1};//A fully hedged portfolio
+var implied=(double[])w.Clone();
+port.hessmull(n,port.Q,w,implied);
+var variance=BlasLike.ddotvec(n,w,implied);
+Assert.IsTrue(variance<=BlasLike.lm_eps,$"variance should be zero, not {variance}");
+//Now test for full covariance case. Generate covariances from risk model
+var C=new double[ntrue*(ntrue+1)/2];
+Factorise.Fac2Cov(ntrue,nfac,port.Q,C);
+var portC=new Portfolio.Portfolio("");
+portC.n=n;
+portC.ntrue=ntrue;
+portC.Q=C;
+portC.ncomp=ncomp;
+portC.compw=compositeWeights;
+portC.makeQ();
+portC.makeCompQ();
+portC.hessmull(n,port.Q,w,implied);
+variance=BlasLike.ddotvec(n,w,implied);
+Assert.IsTrue(variance<=BlasLike.lm_eps,$"variance should be zero, not {variance}");
+        }
+        [TestMethod]
         public void Test_readLicence()
         {
             ColourConsole.WriteLine($"1 int has length {(double)sizeof(UInt32) / (double)sizeof(byte)} bytes");

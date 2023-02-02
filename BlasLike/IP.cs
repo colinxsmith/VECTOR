@@ -4,7 +4,7 @@ using Solver;
 using System.Diagnostics;
 namespace InteriorPoint
 {
-    public delegate void hessmull(int n, double[] hess, double[] wrk, double[] hx,int hstart=0);
+    public delegate void hessmull(int n, double[] hess, double[] wrk, double[] hx,int hstart=0,int xstart=0);
 
     public enum conetype { QP, SOCP, SOCPR };
     class BestResults
@@ -170,9 +170,9 @@ namespace InteriorPoint
             }
             return back;
         }
-        public void qphess1(int n, double[] hess, double[] wrk, double[] hx,int hstart=0)
+        public void qphess1(int n, double[] hess, double[] wrk, double[] hx,int hstart=0,int xstart=0)
         {
-            Solver.Factorise.dsmxmulv(n, hess, wrk, hx);
+            Solver.Factorise.dsmxmulv(n, hess, wrk, hx,ystart:hstart,xstart:xstart);
         }
         static double norm(double[] aa) => Math.Sqrt(BlasLike.ddotvec(aa.Length, aa, aa));
         static public double square(double a) => a * a;

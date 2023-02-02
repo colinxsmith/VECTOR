@@ -19,7 +19,7 @@ namespace Portfolio
                                         double min_trade,
                                         /*int m_LS, int Fully_Invested, */double Rmin, double Rmax,
                                         int round, double[] min_lot, double[] size_lot, int[] shake,
-                                        /*int ncomp, double[] Composite,*/ double LSValue,
+                                        double LSValue,
                                         /*int npiece, double[] hpiece, double[] pgrad,*/
                                         int nabs, double[] Abs_A, int mabs, int[] I_A, double[] Abs_U,
                                         double[] FC, double[] FL, double[] SV, double minRisk, double maxRisk,
@@ -30,7 +30,7 @@ namespace Portfolio
                                         /*double ShortCostScale,*/ double LSValuel, double[] Abs_L, double[] breakdown, ref bool CVARGLprob,
                                         int tlen = 0, double DATAlambda = 1, double[] DATA = null,
                                         double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0,
-                                        double ETLorLOSSmax = 0, string logfile = "", int revise = 0)
+                                        double ETLorLOSSmax = 0, string logfile = "", int revise = 0,int ncomp=0,double[]compw=null)
         {
             if (DATAlambda == 0) { DATA = null; tlen = 0; ETLorLOSSconstraint = false; } //This allows us to leave out LOSS or ETL from the optimisation but still calculate it in results
             ColourConsole.print = !(WindowsServiceHelpers.IsWindowsService());
@@ -162,7 +162,7 @@ namespace Portfolio
             if (initial == null) initial = new double[n];
             back = op.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, LSValue, LSValuel, Rmin, Rmax,
             alpha, initial, buy, sell, names, false, nabs, Abs_A, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda,
-            DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax);
+            DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax,ncomp:ncomp,compw:compw);
             BlasLike.dcopyvec(n, op.wback, w);
             if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
             var info = new Portfolio.INFO();
@@ -4541,8 +4541,8 @@ namespace Portfolio
         double gamma, double kappa, double delta, double value, double valuel,
         double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell,
         string[] names, bool useIP = true, int nabs = 0, double[] A_abs = null, double[] L_abs = null, double[] U_abs = null,
-        int mabs = 0, int[] I_a = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0, double ETLorLOSSmax = 0)
-        {
+        int mabs = 0, int[] I_a = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0, double ETLorLOSSmax = 0,int ncomp=0,double[]compw=null)
+        {this.ncomp=ncomp;this.compw=compw;
             int back;
             if (kappa < 0) kappa = gamma;
             if (buy == null && sell == null && delta >= 0)
@@ -4554,7 +4554,7 @@ namespace Portfolio
                 w = (double[])wback.Clone();
             }
             nfixed = 0;
-            ntrue = n;
+            ntrue = n-ncomp;
             mtrue = m;
             fixedW = new double[n];
             makeQ();
@@ -5565,6 +5565,11 @@ namespace Portfolio
         public int n;
         ///<summary>Number of assets with lower==upper</summary>
         public int nfixed = 0;
+        public int ncomp=0;
+        public double[]compw=null;
+        public double[]compQ=null;
+        public double[]compImplied=null;
+        public bool makingCompQ=false;
         public int debugLevel = 1;
         public double[] fixedW = null;
         public double fixedVariance = 0;
@@ -5604,25 +5609,52 @@ namespace Portfolio
         {
             BlasLike.dzerovec(nn, hx);
         }
-        public virtual void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx, int hstart = 0)
+        public void makeCompQ(){
+            makingCompQ=true;
+            compQ=new double[ncomp*(ncomp+1)/2];
+            compImplied=new double[ntrue*ncomp];
+            for(int ij=0, i=0;i<ncomp;++i){
+    hessmull(ntrue,1,1,1,Q,compw,compImplied,xstart:i*ntrue,hstart:i*ntrue);
+for(var j=0;j<=i;j++){
+    compQ[ij++]=BlasLike.ddotvec(ntrue,compw,compImplied,astart:j*ntrue,bstart:i*ntrue);
+}
+            }
+            makingCompQ=false;
+        }
+        public void hessmullExtraForComp(double[]x,double[]hx){
+            if(makingCompQ)return;
+                if(ncomp>0){
+                    var hx1=(double[])hx.Clone();
+                    Factorise.CovMul(ncomp,compQ,x,hx,wstart:ntrue,Qwstart:ntrue);
+                    for(var i=0;i<ntrue;++i){
+                        hx[i]+=BlasLike.ddot(ncomp,compImplied,ntrue,x,1,dxstart:i,dystart:ntrue);
+                    }
+                    for(var i=0;i<ncomp;++i){
+                        hx[i+ntrue]+=BlasLike.ddot(ntrue,compImplied,1,x,1,dxstart:i*ntrue);
+                    }
+                    }
+                }
+        public virtual void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx, int hstart = 0,int xstart=0)
         {
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
-                Factorise.CovMul(ntrue, Q, x, hx, 0, 0, 0, 'U', nfixed);
+                Factorise.CovMul(ntrue, Q, x, hx, 0, xstart, hstart, 'U', nfixed);
                 BlasLike.dzerovec(nn - ntrue + nfixed, hx, ntrue - nfixed);
+                hessmullExtraForComp(x,hx);
             }
             else BlasLike.dzerovec(nn, hx);
         }
-        public virtual void hessmull(int nn, double[] QQ, double[] x, double[] hx, int hstart = 0)
+        public virtual void hessmull(int nn, double[] QQ, double[] x, double[] hx, int hstart = 0,int xstart=0)
         {
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
-                Factorise.CovMul(ntrue, Q, x, hx, 0, 0, 0, 'U', nfixed);
-                BlasLike.dzerovec(nn - ntrue + nfixed, hx, ntrue - nfixed);
+                Factorise.CovMul(ntrue, Q, x, hx, 0, xstart, hstart, 'U', nfixed);
+                BlasLike.dzerovec(nn - ntrue + nfixed, hx, ntrue - nfixed+hstart);
+                hessmullExtraForComp(x,hx);
             }
-            else BlasLike.dzerovec(nn, hx);
+            else BlasLike.dzerovec(nn, hx,hstart);
         }
         ///<Summary>Set the upper and lower bounds to allow only the long/short and/or
         ///buy/sell value given by w</Summary>
@@ -6084,33 +6116,35 @@ namespace Portfolio
                     if (names != null) Array.Resize(ref names, n);
                 }
         }
-        public override void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx, int hstart = 0)
+        public override void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx, int hstart = 0,int xstart=0)
         {
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
                 if (nfixed > 0)
                 {
-                    Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, 0, hstart, nfixed);
+                    Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, xstart, hstart, nfixed);
                 }
                 else
-                    Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, 0, hstart);
+                    Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, xstart, hstart);
                 BlasLike.dzerovec(nn - ntrue + nfixed, hx, ntrue - nfixed + hstart);
+                hessmullExtraForComp(x,hx);
             }
             else BlasLike.dzerovec(nn, hx, hstart);
         }
-        public override void hessmull(int nn, double[] QQ, double[] x, double[] hx, int hstart = 0)
+        public override void hessmull(int nn, double[] QQ, double[] x, double[] hx, int hstart = 0,int xstart=0)
         {
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
                 if (nfixed > 0)
                 {
-                    Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, 0, 0, nfixed);
+                    Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, xstart, hstart, nfixed);
                 }
                 else
-                    Factorise.FacMul(ntrue, nfac, Q, x, hx);
-                BlasLike.dzerovec(nn - ntrue + nfixed, hx, ntrue - nfixed);
+                    Factorise.FacMul(ntrue, nfac, Q, x, hx,Qwstart:hstart,wstart:xstart);
+                BlasLike.dzerovec(nn - ntrue + nfixed, hx, ntrue - nfixed+hstart);
+                hessmullExtraForComp(x,hx);
             }
             else BlasLike.dzerovec(nn, hx);
         }
@@ -6141,7 +6175,7 @@ namespace Portfolio
             for (int i = 0, hstart = 0; i < n; ++i, hstart += i)
             {
                 unit[i] = 1;
-                hessmull(ntrue, 1, 1, 1, Q, unit, back, hstart);
+                hessmull(ntrue, 1, 1, 1, Q, unit, back, hstart:hstart);
                 unit[i] = 0;
             }
             return back;

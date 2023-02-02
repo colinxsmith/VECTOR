@@ -739,7 +739,7 @@ public class OptimiseController : ControllerBase
                         if (op.FL == null) return Problem(title: "Factor Loadings not set", detail: "Both FL and FLas2D may not be null!");
                     }
                     fac.makeQ();
-                    double[]Qinv=null;
+                    var Qinv=(double[])null;
                     var withinverse=false;
                     if (op.getmethod.ToLower().Contains("inverse")){withinverse=true;
                     Qinv=(double[])fac.Q.Clone();

@@ -4,7 +4,7 @@ using Solver;
 using System.Diagnostics;
 namespace ActiveSet
 {
-    public delegate void hessmull(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx,int hstart=0);
+    public delegate void hessmull(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx,int hstart=0,int xstart=0);
     public class Optimise
     {
         static void shifter<S>(ref S a, ref S b, ref S c, ref S d)
@@ -4241,13 +4241,13 @@ namespace ActiveSet
                 WRK[i] = 0.0;
             }
         }
-        void qphess(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx)
+        void qphess(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx,int hstart=0,int xstart=0)
         {
-            h(n, nrowh, ncolh, j, hess, wrk, hx);
+            h(n, nrowh, ncolh, j, hess, wrk, hx,hstart:hstart,xstart:xstart);
         }
-        public void qphess1(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx,int hstart=0)
+        public void qphess1(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx,int hstart=0,int xstart=0)
         {
-            Solver.Factorise.dsmxmulv(n, hess, wrk, hx);
+            Solver.Factorise.dsmxmulv(n, hess, wrk, hx,ystart:hstart,xstart:xstart);
         }
         void dqpcore(int orthog, ref int inform, ref int iter, int itmax, int n, int nclin, int nctotl, int nrowh, int ncolh, int nactiv, int nfree, ref double objqp, double[] xnorm)
         {
