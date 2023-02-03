@@ -4529,7 +4529,7 @@ namespace Portfolio
                     {
                         if (mainordertrue[mainorder[i]] >= ntrue )
                         {
-                            Order.swap(ref mainordertrue[I], ref mainordertrue[i]);
+                            Order.swap(ref mainordertrue[mainorder[I]], ref mainordertrue[mainorder[i]]);
                             i++; swapped++;break;
                         }
                     }
