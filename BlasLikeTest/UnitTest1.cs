@@ -941,7 +941,7 @@ namespace BlasLikeTest
             var ncomp=2;
             var ntrue=n-ncomp;
             var nfac=2;
-            double[] compositeWeights={0.333,0.333,0.333,0.5,0.5,0};
+            double[] compositeWeights={0.333,0.333,0.333,0.4,0.6,0};
             double[]SV={1,2,3};
             double[]FC={0.5,0.1,0.6};
             double[]FL={2,3,4,     4,-1,2};
@@ -952,6 +952,7 @@ namespace BlasLikeTest
             port.SV=SV;
             port.FL=FL;
             port.FC=FC;
+            port.nfixed=0;
 port.ncomp=ncomp;
 port.compw=compositeWeights;
 port.makeQ();
@@ -960,7 +961,7 @@ var testq=(double[])port.compQ.Clone();
 var piv=new int[ncomp];
 var back=Factorise.Factor('U',ncomp,testq,piv);
 Assert.IsFalse(back!=0,$"convQ should be positive definite! {back} is not zero");
-double[] w={0.5,0.5,0,0,-1};//A fully hedged portfolio
+double[] w={0.4,0.6,0,0,-1};//A fully hedged portfolio
 var implied=(double[])w.Clone();
 port.hessmull(n,port.Q,w,implied);
 var variance=BlasLike.ddotvec(n,w,implied);
@@ -971,6 +972,7 @@ Factorise.Fac2Cov(ntrue,nfac,port.Q,C);
 var portC=new Portfolio.Portfolio("");
 portC.n=n;
 portC.ntrue=ntrue;
+portC.nfixed=0;
 portC.Q=C;
 portC.ncomp=ncomp;
 portC.compw=compositeWeights;
@@ -979,6 +981,33 @@ portC.makeCompQ();
 portC.hessmull(n,port.Q,w,implied);
 variance=BlasLike.ddotvec(n,w,implied);
 Assert.IsTrue(variance<=BlasLike.lm_eps,$"variance should be zero, not {variance}");
+int[] order={3,1,2,4,0};
+var inverse=(int[])order.Clone();
+for(var i=0;i<n;++i)inverse[order[i]]=i;
+
+portC.mainorder=(int[])order.Clone();
+portC.mainorderInverse=(int[])inverse.Clone();
+portC.createMainOrderTrue(n);
+Ordering.Order.Reorder(n,portC.mainorder,w);
+Ordering.Order.Reorder(n,portC.mainorderInverse,w);
+Ordering.Order.Reorder(n,portC.mainorder,w);
+Ordering.Order.Reorder(n,portC.mainordertrue,w);
+Ordering.Order.Reorder(n,portC.mainordertrueInverse,w);
+Ordering.Order.Reorder(n,portC.mainordertrue,w);
+Ordering.Order.Reorder(n,portC.mainordertrue,order);//combined order
+var testinverse=(int[])order.Clone();
+for(var i=0;i<n;++i)testinverse[order[i]]=i;
+Ordering.Order.Reorder(n,testinverse,w);
+Ordering.Order.Reorder(n,order,w);//combined order
+
+Ordering.Order.Reorder(n,portC.mainordertrueInverse,w);
+Ordering.Order.Reorder(n,portC.mainorderInverse,w);
+
+
+Ordering.Order.Reorder(n,portC.mainordertrueInverse,order);
+for(var i=0;i<n;++i)inverse[i]=i;
+Ordering.Order.Reorder(n,portC.mainordertrueInverse,inverse);
+Ordering.Order.Reorder(n,portC.mainorderInverse,inverse);
         }
         [TestMethod]
         public void Test_readLicence()

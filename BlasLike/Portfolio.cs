@@ -4502,6 +4502,69 @@ namespace Portfolio
             var pOverd = (AxM - Axm) / (AyM - Aym);
             return pOverd;
         }
+        public void createMainOrderTrue(int n)
+        {
+            var swapped = 0;
+            int I, i;
+            mainordertrue = new int[n];
+            mainordertrueInverse = new int[n];
+            for (i = 0; i < n; ++i) mainordertrue[i] = i;
+        /*    var torder=new int[n];
+            for(i=0,I=0;I<n;++I){
+                if(mainorder[I]<ntrue)torder[i++]=mainorder[I];
+            }
+            for(I=0;I<n;++I){
+                if(mainorder[I]>=ntrue)torder[i++]=mainorder[I];
+            }
+            for(I=0;I<n;++I){
+                mainordertrue[mainorder[I]]= torder[I];
+            }*/
+            
+            I = n - 1; i = 0;
+            for (; I >= 0; --I)
+            {
+                if (mainordertrue[mainorder[I]] < ntrue)
+                {
+                    for (; i < I; ++i)
+                    {
+                        if (mainordertrue[mainorder[i]] >= ntrue )
+                        {
+                            Order.swap(ref mainordertrue[I], ref mainordertrue[i]);
+                            i++; swapped++;break;
+                        }
+                    }
+                }
+                else swapped++;
+                if (swapped == n) break;
+            }
+            for (I = 0; I < n; ++I)
+            {
+                mainordertrueInverse[mainordertrue[I]] = I;
+            }
+        }
+        public void createMainOrder(int n,double[]L,double[]U){
+                            int i = 0, I = n - 1, ifixed = 0;
+                for (; I >= 0; --I)
+                {
+                    if (L[mainorder[I]] != U[mainorder[I]])
+                    {
+                        for (; i < I; ++i)
+                        {
+                            if (L[mainorder[i]] == U[mainorder[i]])
+                            {
+                                Order.swap(ref mainorder[i], ref mainorder[I]); ifixed++; i++; break;
+                            }
+                        }
+                    }
+                    else ifixed++;
+                    if (ifixed == nfixed) break;
+                }
+                for (i = 0; i < n; ++i)
+                {
+                    mainorderInverse[mainorder[i]] = i;
+                }
+                if(ncomp>0)createMainOrderTrue(n);
+                }
         ///<summary>Portfolio Optimisation with BUY/SELL utility and LONG/SHORT constraints
         ///If a variable's upper and lower bounds are equal, this variable is re-ordered out of the optimisaion
         ///</summary>
@@ -4558,8 +4621,9 @@ namespace Portfolio
             mtrue = m;
             fixedW = new double[n];
             makeQ();
-            var mainorder = new int[n];
-            var mainorderInverse = new int[n];
+            if(ncomp>0)makeCompQ();
+            mainorder = new int[n];
+            mainorderInverse = new int[n];
             var fixedSecondOrder = new double[n];
             for (var i = 0; i < n; ++i)
             {
@@ -4569,8 +4633,9 @@ namespace Portfolio
             var boundLU = new double[m];
             var fixedGLETL = new double[tlen];
             if (nfixed > 0)
-            {
-                int i = 0, I = n - 1, ifixed = 0;
+            {int i;
+            createMainOrder(n,L,U);
+       /*         int i = 0, I = n - 1, ifixed = 0;
                 for (; I >= 0; --I)
                 {
                     if (L[mainorder[I]] != U[mainorder[I]])
@@ -4589,7 +4654,7 @@ namespace Portfolio
                 for (i = 0; i < n; ++i)
                 {
                     mainorderInverse[mainorder[i]] = i;
-                }
+                }*/
                 Order.Reorder(n, mainorder, L);
                 Order.Reorder(n, mainorder, U);
                 Order.Reorder(n, mainorder, alpha);
@@ -5565,6 +5630,10 @@ namespace Portfolio
         public int n;
         ///<summary>Number of assets with lower==upper</summary>
         public int nfixed = 0;
+        public int[]mainorder=null;
+        public int[]mainordertrue=null;
+        public int[]mainordertrueInverse=null;
+        public int[]mainorderInverse=null;
         public int ncomp=0;
         public double[]compw=null;
         public double[]compQ=null;
@@ -5624,14 +5693,22 @@ for(var j=0;j<=i;j++){
         public void hessmullExtraForComp(double[]x,double[]hx){
             if(makingCompQ)return;
                 if(ncomp>0){
+                if(nfixed>0){
+                    Order.Reorder(n,mainorderInverse,x);
+                    Order.Reorder(n,mainorderInverse,hx);
+                }
                     var hx1=(double[])hx.Clone();
                     Factorise.CovMul(ncomp,compQ,x,hx,wstart:ntrue,Qwstart:ntrue);
                     for(var i=0;i<ntrue;++i){
-                        hx[i]+=BlasLike.ddot(ncomp,compImplied,ntrue,x,1,dxstart:i,dystart:ntrue);
+                        hx[i]+=BlasLike.ddot(ncomp,compImplied,ntrue,x,1,i,ntrue);
                     }
                     for(var i=0;i<ncomp;++i){
-                        hx[i+ntrue]+=BlasLike.ddot(ntrue,compImplied,1,x,1,dxstart:i*ntrue);
+                        hx[i+ntrue]+=BlasLike.ddotvec(ntrue,compImplied,x,i*ntrue);
                     }
+                if(nfixed>0){
+                    Order.Reorder(n,mainorder,x);
+                    Order.Reorder(n,mainorder,hx);
+                }
                     }
                 }
         public virtual void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx, int hstart = 0,int xstart=0)
