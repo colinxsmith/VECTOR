@@ -981,7 +981,7 @@ portC.makeCompQ();
 portC.hessmull(n,port.Q,w,implied);
 variance=BlasLike.ddotvec(n,w,implied);
 Assert.IsTrue(variance<=BlasLike.lm_eps,$"variance should be zero, not {variance}");
-int[] order={3,1,2,4,0};
+int[] order={4,1,0,3,2};//correct dropping order for basket
 var inverse=(int[])order.Clone();
 for(var i=0;i<n;++i)inverse[order[i]]=i;
 
@@ -995,19 +995,12 @@ Ordering.Order.Reorder(n,portC.mainordertrue,w);
 Ordering.Order.Reorder(n,portC.mainordertrueInverse,w);
 Ordering.Order.Reorder(n,portC.mainordertrue,w);
 Ordering.Order.Reorder(n,portC.mainordertrue,order);//combined order
-var testinverse=(int[])order.Clone();
-for(var i=0;i<n;++i)testinverse[order[i]]=i;
-Ordering.Order.Reorder(n,testinverse,w);
-Ordering.Order.Reorder(n,order,w);//combined order
-
-Ordering.Order.Reorder(n,portC.mainordertrueInverse,w);
-Ordering.Order.Reorder(n,portC.mainorderInverse,w);
-
-
-Ordering.Order.Reorder(n,portC.mainordertrueInverse,order);
-for(var i=0;i<n;++i)inverse[i]=i;
-Ordering.Order.Reorder(n,portC.mainordertrueInverse,inverse);
-Ordering.Order.Reorder(n,portC.mainorderInverse,inverse);
+Ordering.Order.ReorderSymm(ntrue,order,portC.Q);
+var orderPortC=new int[ncomp];
+for(var i=0;i<ncomp;++i)orderPortC[i]=order[i+ntrue]-ntrue;
+Ordering.Order.ReorderSymm(ncomp,orderPortC,portC.compQ);
+for(var i=0;i<ncomp;++i)Ordering.Order.Reorder(ntrue,order,portC.compw,i*ntrue);
+for(var i=0;i<ncomp;++i)Ordering.Order.Reorder(ntrue,order,portC.compImplied,i*ntrue);
         }
         [TestMethod]
         public void Test_readLicence()

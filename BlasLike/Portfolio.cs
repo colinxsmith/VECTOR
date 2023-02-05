@@ -4504,43 +4504,19 @@ namespace Portfolio
         }
         public void createMainOrderTrue(int n)
         {
-            var rightplace = 0;
             int I, i;
             mainordertrue = new int[n];
             mainordertrueInverse = new int[n];
-            for (i = 0; i < n; ++i) mainordertrue[i] = n-i-1;//shouldn't matter how we initialise as long as order is valid
-    /*       var torder=new int[n];
-            for(i=0,I=0;I<n;++I){
+           var torder=new int[n];
+                       for(i=0,I=0;I<n;++I){
                 if(mainorder[I]<ntrue)torder[i++]=mainorder[I];
             }
             for(I=0;I<n;++I){
                 if(mainorder[I]>=ntrue)torder[i++]=mainorder[I];
             }
-            for(I=0;I<n;++I){
-                mainordertrue[torder[I]]=I;
-            }
-            Order.Reorder(n,mainorderInverse,mainordertrue);*/
-            I = n - 1; i = 0;
-            for (; I >= 0; --I)
-            {
-                if (mainorder[mainordertrue[I]] < ntrue)
-                {
-                    for (; i < I; ++i)
-                    {
-                        if (mainorder[mainordertrue[i]] >= ntrue )
-                        {
-                            Order.swap(ref mainordertrue[I], ref mainordertrue[i]);
-                            i++; rightplace++;break;
-                        }
-                    }
-                }
-                else rightplace++;
-                if (rightplace == n) break;
-            }
-            for (I = 0; I < n; ++I)
-            {
-                mainordertrueInverse[mainordertrue[I]] = I;
-            }
+            for(I=0;I<n;++I)                mainordertrueInverse[torder[I]]=I;
+                       Order.Reorder(n,mainorder,mainordertrueInverse);
+            for(I=0;I<n;++I)                mainordertrue[mainordertrueInverse[I]]=I;
         }
         public void createMainOrder(int n,double[]L,double[]U){
                             int i = 0, I = n - 1, ifixed = 0;
