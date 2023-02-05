@@ -4508,12 +4508,10 @@ namespace Portfolio
             mainordertrue = new int[n];
             mainordertrueInverse = new int[n];
            var torder=new int[n];
-                       for(i=0,I=0;I<n;++I){
-                if(mainorder[I]<ntrue)torder[i++]=mainorder[I];
-            }
-            for(I=0;I<n;++I){
-                if(mainorder[I]>=ntrue)torder[i++]=mainorder[I];
-            }
+                       for(i=0,I=0;I<n;++I)     if(mainorder[I]<ntrue)torder[i++]=mainorder[I];
+            
+            for(I=0;I<n;++I)   if(mainorder[I]>=ntrue)torder[i++]=mainorder[I];
+            
             for(I=0;I<n;++I)                mainordertrueInverse[torder[I]]=I;
                        Order.Reorder(n,mainorder,mainordertrueInverse);
             for(I=0;I<n;++I)                mainordertrue[mainordertrueInverse[I]]=I;
