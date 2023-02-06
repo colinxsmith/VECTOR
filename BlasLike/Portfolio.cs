@@ -30,7 +30,7 @@ namespace Portfolio
                                         /*double ShortCostScale,*/ double LSValuel, double[] Abs_L, double[] breakdown, ref bool CVARGLprob,
                                         int tlen = 0, double DATAlambda = 1, double[] DATA = null,
                                         double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0,
-                                        double ETLorLOSSmax = 0, string logfile = "", int revise = 0,int ncomp=0,double[]compw=null)
+                                        double ETLorLOSSmax = 0, string logfile = "", int revise = 0, int ncomp = 0, double[] compw = null)
         {
             if (DATAlambda == 0) { DATA = null; tlen = 0; ETLorLOSSconstraint = false; } //This allows us to leave out LOSS or ETL from the optimisation but still calculate it in results
             ColourConsole.print = !(WindowsServiceHelpers.IsWindowsService());
@@ -162,7 +162,7 @@ namespace Portfolio
             if (initial == null) initial = new double[n];
             back = op.BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, LSValue, LSValuel, Rmin, Rmax,
             alpha, initial, buy, sell, names, false, nabs, Abs_A, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda,
-            DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax,ncomp:ncomp,compw:compw);
+            DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax, ncomp: ncomp, compw: compw);
             BlasLike.dcopyvec(n, op.wback, w);
             if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
             var info = new Portfolio.INFO();
@@ -218,9 +218,9 @@ namespace Portfolio
                     if (basket < 0 && trades < 0)
                     {
                         if (info.target == minRisk)
-                            ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk,gammabot: gamma,gammatop: 1 - BlasLike.lm_eps8,tol: BlasLike.lm_eps16,info: info);
+                            ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk, gammabot: gamma, gammatop: 1 - BlasLike.lm_eps8, tol: BlasLike.lm_eps16, info: info);
                         else
-                            ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk,gammabot: 0,gammatop: gamma,tol: BlasLike.lm_eps16,info: info);
+                            ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk, gammabot: 0, gammatop: gamma, tol: BlasLike.lm_eps16, info: info);
                     }
                     else { op.DropRisk(basket, trades, info.target, info); ogamma = gamma = op.gamma; }
                     BlasLike.dcopyvec(n, op.wback, w);
@@ -4503,42 +4503,49 @@ namespace Portfolio
             return pOverd;
         }
         public void createMainOrderTrue(int n)
-        {
+        {/* If we have fixed weighted assets and composite assets, the mainorder permutation may
+            have composite assets mixed with the true assets. We need to find another permution
+            which groups the composites together at the bottom but which has the true assets ordered with
+            fixed weights at the bottom and similarly for the composites
+            */
             int I, i;
-            mainordertrue = new int[n];
+            mainordertrue = new int[n]; //Transforms mainorder to correctly grouped fixed order
             mainordertrueInverse = new int[n];
-           var torder=new int[n];
-                       for(i=0,I=0;I<n;++I)     if(mainorder[I]<ntrue)torder[i++]=mainorder[I];
-            
-            for(I=0;I<n;++I)   if(mainorder[I]>=ntrue)torder[i++]=mainorder[I];
-            
-            for(I=0;I<n;++I)                mainordertrueInverse[torder[I]]=I;
-                       Order.Reorder(n,mainorder,mainordertrueInverse);
-            for(I=0;I<n;++I)                mainordertrue[mainordertrueInverse[I]]=I;
+            var trueorder =mainordertrue;// trueorder = mainorder followed by mainordertrue (borrow space from mainordertrue to save unnecessary memory allocation)
+            for (i = 0, I = 0; I < n; ++I) if (mainorder[I] < ntrue) trueorder[i++] = mainorder[I];
+            for (I = 0; I < n; ++I) if (mainorder[I] >= ntrue) trueorder[i++] = mainorder[I];
+            for (I = 0; I < n; ++I) mainordertrueInverse[trueorder[I]] = I;
+            Order.Reorder(n, mainorder, mainordertrueInverse);
+            for (I = 0; I < n; ++I) mainordertrue[mainordertrueInverse[I]] = I;
         }
-        public void createMainOrder(int n,double[]L,double[]U){
-                            int i = 0, I = n - 1, ifixed = 0;
-                for (; I >= 0; --I)
+        public void createMainOrder(int n, double[] L, double[] U)
+        {/* Here we want to reorder the portfolio universe so that assets with fixed weights (upper=lower)
+            are at the bottom (high index).
+            mainorder is an integer array that defines this permutation. The ordered weights can then
+            be found by using Ordering.Order.Reorder(n,mainorder,w);
+            */
+            int i = 0, I = n - 1, ifixed = 0;
+            for (; I >= 0; --I)
+            {
+                if (L[mainorder[I]] != U[mainorder[I]])
                 {
-                    if (L[mainorder[I]] != U[mainorder[I]])
+                    for (; i < I; ++i)
                     {
-                        for (; i < I; ++i)
+                        if (L[mainorder[i]] == U[mainorder[i]])
                         {
-                            if (L[mainorder[i]] == U[mainorder[i]])
-                            {
-                                Order.swap(ref mainorder[i], ref mainorder[I]); ifixed++; i++; break;
-                            }
+                            Order.swap(ref mainorder[i], ref mainorder[I]); ifixed++; i++; break;
                         }
                     }
-                    else ifixed++;
-                    if (ifixed == nfixed) break;
                 }
-                for (i = 0; i < n; ++i)
-                {
-                    mainorderInverse[mainorder[i]] = i;
-                }
-                if(ncomp>0)createMainOrderTrue(n);
-                }
+                else ifixed++;
+                if (ifixed == nfixed) break;
+            }
+            for (i = 0; i < n; ++i)
+            {
+                mainorderInverse[mainorder[i]] = i;
+            }
+            if (ncomp > 0) createMainOrderTrue(n);
+        }
         ///<summary>Portfolio Optimisation with BUY/SELL utility and LONG/SHORT constraints
         ///If a variable's upper and lower bounds are equal, this variable is re-ordered out of the optimisaion
         ///</summary>
@@ -4578,8 +4585,9 @@ namespace Portfolio
         double gamma, double kappa, double delta, double value, double valuel,
         double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell,
         string[] names, bool useIP = true, int nabs = 0, double[] A_abs = null, double[] L_abs = null, double[] U_abs = null,
-        int mabs = 0, int[] I_a = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0, double ETLorLOSSmax = 0,int ncomp=0,double[]compw=null)
-        {this.ncomp=ncomp;this.compw=compw;
+        int mabs = 0, int[] I_a = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0, double ETLorLOSSmax = 0, int ncomp = 0, double[] compw = null)
+        {
+            this.ncomp = ncomp; this.compw = compw;
             int back;
             if (kappa < 0) kappa = gamma;
             if (buy == null && sell == null && delta >= 0)
@@ -4591,11 +4599,11 @@ namespace Portfolio
                 w = (double[])wback.Clone();
             }
             nfixed = 0;
-            ntrue = n-ncomp;
+            ntrue = n - ncomp;
             mtrue = m;
             fixedW = new double[n];
             makeQ();
-            if(ncomp>0)makeCompQ();
+            if (ncomp > 0) makeCompQ();
             mainorder = new int[n];
             mainorderInverse = new int[n];
             var fixedSecondOrder = new double[n];
@@ -4607,28 +4615,9 @@ namespace Portfolio
             var boundLU = new double[m];
             var fixedGLETL = new double[tlen];
             if (nfixed > 0)
-            {int i;
-            createMainOrder(n,L,U);
-       /*         int i = 0, I = n - 1, ifixed = 0;
-                for (; I >= 0; --I)
-                {
-                    if (L[mainorder[I]] != U[mainorder[I]])
-                    {
-                        for (; i < I; ++i)
-                        {
-                            if (L[mainorder[i]] == U[mainorder[i]])
-                            {
-                                Order.swap(ref mainorder[i], ref mainorder[I]); ifixed++; i++; break;
-                            }
-                        }
-                    }
-                    else ifixed++;
-                    if (ifixed == nfixed) break;
-                }
-                for (i = 0; i < n; ++i)
-                {
-                    mainorderInverse[mainorder[i]] = i;
-                }*/
+            {
+                int i;
+                createMainOrder(n, L, U);
                 Order.Reorder(n, mainorder, L);
                 Order.Reorder(n, mainorder, U);
                 Order.Reorder(n, mainorder, alpha);
@@ -5604,15 +5593,17 @@ namespace Portfolio
         public int n;
         ///<summary>Number of assets with lower==upper</summary>
         public int nfixed = 0;
-        public int[]mainorder=null;
-        public int[]mainordertrue=null;
-        public int[]mainordertrueInverse=null;
-        public int[]mainorderInverse=null;
-        public int ncomp=0;
-        public double[]compw=null;
-        public double[]compQ=null;
-        public double[]compImplied=null;
-        public bool makingCompQ=false;
+        public int nfixedTrue = 0;
+        public int nfixedComp = 0;
+        public int[] mainorder = null;
+        public int[] mainordertrue = null;
+        public int[] mainordertrueInverse = null;
+        public int[] mainorderInverse = null;
+        public int ncomp = 0;
+        public double[] compw = null;
+        public double[] compQ = null;
+        public double[] compImplied = null;
+        public bool makingCompQ = false;
         public int debugLevel = 1;
         public double[] fixedW = null;
         public double fixedVariance = 0;
@@ -5652,60 +5643,58 @@ namespace Portfolio
         {
             BlasLike.dzerovec(nn, hx);
         }
-        public void makeCompQ(){
-            makingCompQ=true;
-            compQ=new double[ncomp*(ncomp+1)/2];
-            compImplied=new double[ntrue*ncomp];
-            for(int ij=0, i=0;i<ncomp;++i){
-    hessmull(ntrue,1,1,1,Q,compw,compImplied,xstart:i*ntrue,hstart:i*ntrue);
-for(var j=0;j<=i;j++){
-    compQ[ij++]=BlasLike.ddotvec(ntrue,compw,compImplied,astart:j*ntrue,bstart:i*ntrue);
-}
+        public void makeCompQ()
+        {
+            makingCompQ = true;
+            compQ = new double[ncomp * (ncomp + 1) / 2];
+            compImplied = new double[ntrue * ncomp];
+            for (int ij = 0, i = 0; i < ncomp; ++i)
+            {
+                hessmull(ntrue, 1, 1, 1, Q, compw, compImplied, xstart: i * ntrue, hstart: i * ntrue);
+                for (var j = 0; j <= i; j++)
+                {
+                    compQ[ij++] = BlasLike.ddotvec(ntrue, compw, compImplied, astart: j * ntrue, bstart: i * ntrue);
+                }
             }
-            makingCompQ=false;
+            makingCompQ = false;
         }
-        public void hessmullExtraForComp(double[]x,double[]hx){
-            if(makingCompQ)return;
-                if(ncomp>0){
-                if(nfixed>0){
-                    Order.Reorder(n,mainorderInverse,x);
-                    Order.Reorder(n,mainorderInverse,hx);
+        public void hessmullExtraForComp(double[] x, double[] hx)
+        {
+            if (makingCompQ) return;
+            if (ncomp > 0)
+            {
+                Factorise.CovMul(ncomp-nfixedComp, compQ, x, hx, wstart: ntrue, Qwstart: ntrue);
+                for (var i = 0; i < ntrue-nfixedTrue; ++i)
+                {
+                    hx[i] += BlasLike.ddot(ncomp-nfixedComp, compImplied, ntrue, x, 1, i, ntrue);
                 }
-                    var hx1=(double[])hx.Clone();
-                    Factorise.CovMul(ncomp,compQ,x,hx,wstart:ntrue,Qwstart:ntrue);
-                    for(var i=0;i<ntrue;++i){
-                        hx[i]+=BlasLike.ddot(ncomp,compImplied,ntrue,x,1,i,ntrue);
-                    }
-                    for(var i=0;i<ncomp;++i){
-                        hx[i+ntrue]+=BlasLike.ddotvec(ntrue,compImplied,x,i*ntrue);
-                    }
-                if(nfixed>0){
-                    Order.Reorder(n,mainorder,x);
-                    Order.Reorder(n,mainorder,hx);
+                for (var i = 0; i < ncomp-nfixedComp; ++i)
+                {
+                    hx[i + ntrue] += BlasLike.ddotvec(ntrue-nfixedTrue, compImplied, x, i * ntrue);
                 }
-                    }
-                }
-        public virtual void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx, int hstart = 0,int xstart=0)
+            }
+        }
+        public virtual void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx, int hstart = 0, int xstart = 0)
         {
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
-                Factorise.CovMul(ntrue, Q, x, hx, 0, xstart, hstart, 'U', nfixed);
-                BlasLike.dzerovec(nn - ntrue + nfixed, hx, ntrue - nfixed);
-                hessmullExtraForComp(x,hx);
+                Factorise.CovMul(ntrue, Q, x, hx, 0, xstart, hstart, 'U', nfixed-nfixedComp);
+                BlasLike.dzerovec(nn - ntrue + nfixed-nfixedComp, hx, ntrue - nfixed+nfixedComp);
+                hessmullExtraForComp(x, hx);
             }
             else BlasLike.dzerovec(nn, hx);
         }
-        public virtual void hessmull(int nn, double[] QQ, double[] x, double[] hx, int hstart = 0,int xstart=0)
+        public virtual void hessmull(int nn, double[] QQ, double[] x, double[] hx, int hstart = 0, int xstart = 0)
         {
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
-                Factorise.CovMul(ntrue, Q, x, hx, 0, xstart, hstart, 'U', nfixed);
-                BlasLike.dzerovec(nn - ntrue + nfixed, hx, ntrue - nfixed+hstart);
-                hessmullExtraForComp(x,hx);
+                Factorise.CovMul(ntrue, Q, x, hx, 0, xstart, hstart, 'U', nfixed-nfixedComp);
+                BlasLike.dzerovec(nn - ntrue + nfixed-nfixedComp, hx, ntrue - nfixed+nfixedComp + hstart);
+                hessmullExtraForComp(x, hx);
             }
-            else BlasLike.dzerovec(nn, hx,hstart);
+            else BlasLike.dzerovec(nn, hx, hstart);
         }
         ///<Summary>Set the upper and lower bounds to allow only the long/short and/or
         ///buy/sell value given by w</Summary>
@@ -6167,35 +6156,35 @@ for(var j=0;j<=i;j++){
                     if (names != null) Array.Resize(ref names, n);
                 }
         }
-        public override void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx, int hstart = 0,int xstart=0)
+        public override void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx, int hstart = 0, int xstart = 0)
         {
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
                 if (nfixed > 0)
                 {
-                    Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, xstart, hstart, nfixed);
+                    Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, xstart, hstart, nfixed-nfixedComp);
                 }
                 else
                     Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, xstart, hstart);
-                BlasLike.dzerovec(nn - ntrue + nfixed, hx, ntrue - nfixed + hstart);
-                hessmullExtraForComp(x,hx);
+                BlasLike.dzerovec(nn - ntrue + nfixed-nfixedComp, hx, ntrue - nfixed+nfixedComp + hstart);
+                hessmullExtraForComp(x, hx);
             }
             else BlasLike.dzerovec(nn, hx, hstart);
         }
-        public override void hessmull(int nn, double[] QQ, double[] x, double[] hx, int hstart = 0,int xstart=0)
+        public override void hessmull(int nn, double[] QQ, double[] x, double[] hx, int hstart = 0, int xstart = 0)
         {
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
                 if (nfixed > 0)
                 {
-                    Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, xstart, hstart, nfixed);
+                    Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, xstart, hstart, nfixed-nfixedComp);
                 }
                 else
-                    Factorise.FacMul(ntrue, nfac, Q, x, hx,Qwstart:hstart,wstart:xstart);
-                BlasLike.dzerovec(nn - ntrue + nfixed, hx, ntrue - nfixed+hstart);
-                hessmullExtraForComp(x,hx);
+                    Factorise.FacMul(ntrue, nfac, Q, x, hx, Qwstart: hstart, wstart: xstart);
+                BlasLike.dzerovec(nn - ntrue + nfixed-nfixedComp, hx, ntrue - nfixed +nfixedComp+ hstart);
+                hessmullExtraForComp(x, hx);
             }
             else BlasLike.dzerovec(nn, hx);
         }
@@ -6226,7 +6215,7 @@ for(var j=0;j<=i;j++){
             for (int i = 0, hstart = 0; i < n; ++i, hstart += i)
             {
                 unit[i] = 1;
-                hessmull(ntrue, 1, 1, 1, Q, unit, back, hstart:hstart);
+                hessmull(ntrue, 1, 1, 1, Q, unit, back, hstart: hstart);
                 unit[i] = 0;
             }
             return back;
