@@ -5679,9 +5679,17 @@ namespace Portfolio
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
+                if(nfixed>0){
+Order.Reorder(n,mainordertrue,x);//Need to check that n is correct
+Order.Reorder(n,mainordertrue,hx);
+                }
                 Factorise.CovMul(ntrue, Q, x, hx, 0, xstart, hstart, 'U', nfixed-nfixedComp);
-                BlasLike.dzerovec(nn - ntrue + nfixed-nfixedComp, hx, ntrue - nfixed+nfixedComp);
+                BlasLike.dzerovec(nn - ntrue + nfixed-nfixedComp, hx, ntrue - nfixed+nfixedComp+hstart);
                 hessmullExtraForComp(x, hx);
+                if(nfixed>0){
+Order.Reorder(n,mainordertrueInverse,x);//Need to check that n is correct
+Order.Reorder(n,mainordertrueInverse,hx);
+                }
             }
             else BlasLike.dzerovec(nn, hx);
         }
@@ -5690,9 +5698,17 @@ namespace Portfolio
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
+                if(nfixed>0){
+Order.Reorder(n,mainordertrue,x);//Need to check that n is correct
+Order.Reorder(n,mainordertrue,hx);
+                }
                 Factorise.CovMul(ntrue, Q, x, hx, 0, xstart, hstart, 'U', nfixed-nfixedComp);
                 BlasLike.dzerovec(nn - ntrue + nfixed-nfixedComp, hx, ntrue - nfixed+nfixedComp + hstart);
                 hessmullExtraForComp(x, hx);
+                if(nfixed>0){
+Order.Reorder(n,mainordertrueInverse,x);//Need to check that n is correct
+Order.Reorder(n,mainordertrueInverse,hx);
+                }
             }
             else BlasLike.dzerovec(nn, hx, hstart);
         }
@@ -6161,6 +6177,10 @@ namespace Portfolio
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
+                if(nfixed>0){
+Order.Reorder(n,mainordertrue,x);//Need to check that n is correct
+Order.Reorder(n,mainordertrue,hx);
+                }
                 if (nfixed > 0)
                 {
                     Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, xstart, hstart, nfixed-nfixedComp);
@@ -6169,6 +6189,10 @@ namespace Portfolio
                     Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, xstart, hstart);
                 BlasLike.dzerovec(nn - ntrue + nfixed-nfixedComp, hx, ntrue - nfixed+nfixedComp + hstart);
                 hessmullExtraForComp(x, hx);
+                if(nfixed>0){
+Order.Reorder(n,mainordertrueInverse,x);//Need to check that n is correct
+Order.Reorder(n,mainordertrueInverse,hx);
+                }
             }
             else BlasLike.dzerovec(nn, hx, hstart);
         }
@@ -6177,14 +6201,22 @@ namespace Portfolio
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
+                if(nfixed>0){
+Order.Reorder(n,mainordertrue,x);//Need to check that n is correct
+Order.Reorder(n,mainordertrue,hx);
+                }
                 if (nfixed > 0)
                 {
                     Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, xstart, hstart, nfixed-nfixedComp);
                 }
                 else
                     Factorise.FacMul(ntrue, nfac, Q, x, hx, Qwstart: hstart, wstart: xstart);
-                BlasLike.dzerovec(nn - ntrue + nfixed-nfixedComp, hx, ntrue - nfixed +nfixedComp+ hstart);
+                BlasLike.dzerovec(nn - ntrue + nfixed-nfixedComp, hx, ntrue - nfixed+nfixedComp + hstart);
                 hessmullExtraForComp(x, hx);
+                if(nfixed>0){
+Order.Reorder(n,mainordertrueInverse,x);//Need to check that n is correct
+Order.Reorder(n,mainordertrueInverse,hx);
+                }
             }
             else BlasLike.dzerovec(nn, hx);
         }

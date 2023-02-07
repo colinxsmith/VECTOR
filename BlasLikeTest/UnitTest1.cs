@@ -937,97 +937,157 @@ namespace BlasLikeTest
         [TestMethod]
         public void Test_Composite()
         {
-            var n=5;
-            var ncomp=2;
-            var ntrue=n-ncomp;
-            var nfac=2;
-            double[] compositeWeights={0.333,0.333,0.333,0.4,0.6,0};
-            double[]SV={1,2,3};
-            double[]FC={0.5,0.1,0.6};
-            double[]FL={2,3,4,     4,-1,2};
-            var port=new Portfolio.FPortfolio("");
-            port.n=n;
-            port.ntrue=ntrue;
-            port.nfac=nfac;
-            port.SV=SV;
-            port.FL=FL;
-            port.FC=FC;
-            port.nfixed=0;
-port.ncomp=ncomp;
-port.compw=compositeWeights;
-port.makeQ();
-port.makeCompQ();
-var testq=(double[])port.compQ.Clone();
-var piv=new int[ncomp];
-var back=Factorise.Factor('U',ncomp,testq,piv);
-Assert.IsFalse(back!=0,$"convQ should be positive definite! {back} is not zero");
-double[] w={0.4,0.6,0,0,-1};//A fully hedged portfolio
-var implied=(double[])w.Clone();
-port.hessmull(n,port.Q,w,implied);
-var variance=BlasLike.ddotvec(n,w,implied)*0.5;
-Assert.IsTrue(variance<=BlasLike.lm_eps,$"variance should be zero, not {variance}");
-//Now test for full covariance case. Generate covariances from risk model
-var C=new double[ntrue*(ntrue+1)/2];
-Factorise.Fac2Cov(ntrue,nfac,port.Q,C);
-var portC=new Portfolio.Portfolio("");
-portC.n=n;
-portC.ntrue=ntrue;
-portC.nfixed=0;
-portC.Q=C;
-portC.ncomp=ncomp;
-portC.compw=compositeWeights;
-portC.makeQ();
-portC.makeCompQ();
-portC.hessmull(n,port.Q,w,implied);
-variance=BlasLike.ddotvec(n,w,implied)*0.5;
-Assert.IsTrue(variance<=BlasLike.lm_eps,$"variance should be zero, not {variance}");
-int[] order={3,4,0,1,2};//correct dropping order for basket or trade number
-var inverse=(int[])order.Clone();
-for(var i=0;i<n;++i)inverse[order[i]]=i;
+            var n = 5;
+            var ncomp = 2;
+            var ntrue = n - ncomp;
+            var nfac = 2;
+            double[] compositeWeights = { 0.333, 0.333, 0.333,
+                                            0.4, 0.6, 0 };
+            double[] SV = { 1, 2, 3 };
+            double[] FC = { 0.5, 
+                            0.1, 0.6 };
+            double[] FL = { 2, 3, 4, 
+                            4, -1, 2 };
+            var port = new Portfolio.FPortfolio("");
+            port.n = n;
+            port.ntrue = ntrue;
+            port.nfac = nfac;
+            port.SV = SV;
+            port.FL = FL;
+            port.FC = FC;
+            port.nfixed = 0;
+            port.ncomp = ncomp;
+            port.compw = compositeWeights;
+            port.makeQ();
+            port.makeCompQ();
+            var testq = (double[])port.compQ.Clone();
+            var piv = new int[ncomp];
+            var back = Factorise.Factor('U', ncomp, testq, piv);
+            Assert.IsFalse(back != 0, $"compQ should be positive definite! {back} is not zero");
+            double[] w = { 0.4, 0.6, 0, 0, -1 };//A fully hedged portfolio
+            var implied = (double[])w.Clone();
+            port.hessmull(n, port.Q, w, implied);
+            var variance = BlasLike.ddotvec(n, w, implied) * 0.5;
+            Assert.IsTrue(Math.Abs(variance) <= BlasLike.lm_eps, $"variance should be zero, not {variance}");
+            //Now test for full covariance case. Generate covariances from risk model
+            var C = new double[ntrue * (ntrue + 1) / 2];
+            Factorise.Fac2Cov(ntrue, nfac, port.Q, C);
+            var portC = new Portfolio.Portfolio("");
+            portC.n = n;
+            portC.ntrue = ntrue;
+            portC.nfixed = 0;
+            portC.Q = C;
+            portC.ncomp = ncomp;
+            portC.compw = compositeWeights;
+            portC.makeQ();
+            portC.makeCompQ();
+            portC.hessmull(n, port.Q, w, implied);
+            variance = BlasLike.ddotvec(n, w, implied) * 0.5;
+            Assert.IsTrue(Math.Abs(variance) <= BlasLike.lm_eps, $"variance should be zero, not {variance}");
+            int[] order = { 2, 0, 3, 1, 4 };//correct dropping order for basket or trade number
+            var inverse = (int[])order.Clone();
+            for (var i = 0; i < n; ++i) inverse[order[i]] = i;
 
-portC.mainorder=(int[])order.Clone();
-portC.mainorderInverse=(int[])inverse.Clone();
-portC.createMainOrderTrue(n);
-Ordering.Order.Reorder(n,portC.mainorder,w);
-Ordering.Order.Reorder(n,portC.mainorderInverse,w);
-portC.hessmull(n,portC.Q,w,implied);
-Ordering.Order.Reorder(n,portC.mainorder,w);
-Ordering.Order.Reorder(n,portC.mainordertrue,w);
-Ordering.Order.Reorder(n,portC.mainordertrueInverse,w);
-var fixedW=new double[n];
-var fixedSecondOrder=new double[n];
-BlasLike.dcopyvec(n,w,fixedW);
-BlasLike.dzerovec(n-2,fixedW);
-Ordering.Order.Reorder(n,portC.mainordertrue,w);
-Ordering.Order.Reorder(n,portC.mainordertrue,fixedW);
-Ordering.Order.Reorder(n,portC.mainordertrue,order);//combined order
-//Ordering.Order.Reorder(n,portC.mainordertrueInverse,order);
-//Ordering.Order.Reorder(n,portC.mainordertrueInverse,w);
-Ordering.Order.ReorderSymm(ntrue,order,portC.Q);
-var orderPortC=new int[ncomp];
-var orderPortCInverse=new int[ncomp];
-for(var i=0;i<ncomp;++i)orderPortC[i]=order[i+ntrue]-ntrue;
-for(var i=0;i<ncomp;++i)orderPortCInverse[ orderPortC[i]]=i;
-Ordering.Order.ReorderSymm(ncomp,orderPortC,portC.compQ);
-//Need to rerder over assets and composites in compw and compImplied
-for(var i=0;i<ncomp;++i)Ordering.Order.Reorder(ntrue,order,portC.compw,i*ntrue);
-for(var i=0;i<ncomp;++i)Ordering.Order.Reorder(ntrue,order,portC.compImplied,i*ntrue);
-Ordering.Order.Reorder_gen(ncomp,orderPortC,portC.compw,ntrue,columns:true);
-Ordering.Order.Reorder_gen(ncomp,orderPortC,portC.compImplied,ntrue,columns:true);
-portC.nfixed=0;
-portC.hessmull(n,portC.Q,w,implied);
-portC.hessmull(n,portC.Q,fixedW,fixedSecondOrder);
-variance=BlasLike.ddotvec(n,w,implied)*0.5;
-Assert.IsTrue(variance<BlasLike.lm_eps,$"reordering without fixing gives non zero variance; ({variance})");
-portC.nfixed=2;
-portC.fixedW=fixedW;
-portC.nfixedComp=0;
-portC.nfixedTrue=2;
-var fixedVariance=BlasLike.ddotvec(n,fixedSecondOrder,fixedW)*0.5;
-BlasLike.dsubvec(n,w,fixedW,w);
-portC.hessmull(n,portC.Q,w,implied);
-variance=BlasLike.ddotvec(n,w,implied)*0.5+BlasLike.ddotvec(n,fixedSecondOrder,w)+BlasLike.ddotvec(n,implied,fixedW)+fixedVariance;
-Assert.IsTrue(variance<BlasLike.lm_eps,$"reordering with fixed and non-fixed combined gives non zero variance; ({variance})");
+            portC.mainorder = (int[])order.Clone();
+            portC.mainorderInverse = (int[])inverse.Clone();
+            portC.createMainOrderTrue(n);
+            Ordering.Order.Reorder(n, portC.mainorder, w);
+            Ordering.Order.Reorder(n, portC.mainorderInverse, w);
+            portC.hessmull(n, portC.Q, w, implied);
+            Ordering.Order.Reorder(n, portC.mainorder, w);
+            Ordering.Order.Reorder(n, portC.mainordertrue, w);
+            Ordering.Order.Reorder(n, portC.mainordertrueInverse, w);
+            var fixedW = new double[n];
+            var fixedSecondOrder = new double[n];
+            var nfixed = 2;
+            BlasLike.dcopyvec(n, w, fixedW);
+            BlasLike.dzerovec(n - nfixed, fixedW);
+            Ordering.Order.Reorder(n, portC.mainordertrue, w);
+            Ordering.Order.Reorder(n, portC.mainordertrue, fixedW);
+            Ordering.Order.Reorder(n, portC.mainordertrue, order);//combined order
+            Ordering.Order.ReorderSymm(ntrue, order, portC.Q);
+            var orderPortC = new int[ncomp];
+            var orderPortCInverse = new int[ncomp];
+            for (var i = 0; i < ncomp; ++i) orderPortC[i] = order[i + ntrue] - ntrue;
+            for (var i = 0; i < ncomp; ++i) orderPortCInverse[orderPortC[i]] = i;
+            Ordering.Order.ReorderSymm(ncomp, orderPortC, portC.compQ);
+            //Need to reorder over assets and composites in compw and compImplied
+            for (var i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, order, portC.compw, i * ntrue);
+            for (var i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, order, portC.compImplied, i * ntrue);
+            Ordering.Order.Reorder_gen(ncomp, orderPortC, portC.compw, ntrue, columns: true);
+            Ordering.Order.Reorder_gen(ncomp, orderPortC, portC.compImplied, ntrue, columns: true);
+            portC.nfixed = 0;
+            portC.hessmull(n, portC.Q, w, implied);
+            portC.hessmull(n, portC.Q, fixedW, fixedSecondOrder);
+            variance = BlasLike.ddotvec(n, w, implied) * 0.5;
+            Assert.IsTrue(variance < BlasLike.lm_eps, $"reordering without fixing gives non zero variance; ({variance})");
+            //When using this in optimisation w and implied have order; mainorder i.e. the fixed weights are at the bottom
+            //fixedW, fixedSecondOrder, compw and compImplied etc have order mainordertrue*mainorder since the entries must be compatible with the risk model
+            portC.nfixed = nfixed;
+            portC.fixedW = fixedW;
+            portC.nfixedComp = 1;
+            portC.nfixedTrue = 1;
+            var fixedVariance = BlasLike.ddotvec(n, fixedSecondOrder, fixedW) * 0.5;
+            //BlasLike.dsubvec(n,w,fixedW,w);
+            Ordering.Order.Reorder(n, portC.mainordertrueInverse, w);
+            Ordering.Order.Reorder(n, portC.mainordertrueInverse, implied);
+            portC.hessmull(n - nfixed, portC.Q, w, implied);
+            //Change to order with fixed assets at the end
+            Ordering.Order.Reorder(n, portC.mainordertrueInverse, fixedSecondOrder);
+            Ordering.Order.Reorder(n, portC.mainordertrueInverse, fixedW);
+            variance = BlasLike.ddotvec(n - nfixed, w, implied) * 0.5 + BlasLike.ddotvec(n - nfixed, fixedSecondOrder, w) + BlasLike.ddotvec(n, implied, fixedW) + fixedVariance;
+            Assert.IsTrue(Math.Abs(variance) <= BlasLike.lm_eps, $"reordering with fixed and non-fixed combined gives non zero variance; ({variance})");
+
+
+            Ordering.Order.Reorder(n, portC.mainordertrueInverse, order);//Reset order
+            Ordering.Order.Reorder(n, portC.mainorderInverse, w);
+
+            //Drop order
+            Ordering.Order.Reorder(n, portC.mainorder, w);
+            port.mainorder=(int[])order.Clone();
+            var orderInverse=(int[])order.Clone();
+            for(var i=0;i<n;i++)orderInverse[order[i]]=i;
+            port.mainorderInverse=(int[])orderInverse.Clone();
+            port.createMainOrderTrue(n);
+            BlasLike.dcopyvec(n, w, fixedW);
+            BlasLike.dzerovec(n - nfixed, fixedW);
+
+            //Apply to previous factor risk model in correct order
+            Ordering.Order.Reorder(n, portC.mainordertrue, w);
+            Ordering.Order.Reorder(n, portC.mainordertrue, fixedW);
+            Ordering.Order.Reorder(n, portC.mainordertrue, order);//combined order
+            
+                    Ordering.Order.Reorder(ntrue, order, port.Q);
+                    Ordering.Order.Reorder_gen(ntrue,order, port.Q, nfac, 1, astart:ntrue,columns: true);
+            orderPortC = new int[ncomp];
+            orderPortCInverse = new int[ncomp];
+            for (var i = 0; i < ncomp; ++i) orderPortC[i] = order[i + ntrue] - ntrue;
+            for (var i = 0; i < ncomp; ++i) orderPortCInverse[orderPortC[i]] = i;
+            Ordering.Order.ReorderSymm(ncomp, orderPortC, port.compQ);
+            //Need to reorder over assets and composites in compw and compImplied
+            for (var i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, order, port.compw, i * ntrue);
+            for (var i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, order, port.compImplied, i * ntrue);
+            Ordering.Order.Reorder_gen(ncomp, orderPortC, port.compw, ntrue, columns: true);
+            Ordering.Order.Reorder_gen(ncomp, orderPortC, port.compImplied, ntrue, columns: true);
+            port.nfixed=0;
+            port.hessmull(n,port.Q,fixedW,fixedSecondOrder)    ;
+
+
+
+            port.nfixed=nfixed;
+            port.nfixedComp=1;
+            port.nfixedTrue=1;
+
+            
+            //Change to order with fixed assets at the end
+            Ordering.Order.Reorder(n, port.mainordertrueInverse, w);
+            Ordering.Order.Reorder(n, port.mainordertrueInverse, implied);
+            port.hessmull(n-nfixed,port.Q,w,implied);
+            Ordering.Order.Reorder(n, port.mainordertrueInverse, fixedSecondOrder);
+            Ordering.Order.Reorder(n, port.mainordertrueInverse, fixedW);
+            variance = BlasLike.ddotvec(n - nfixed, w, implied) * 0.5 + BlasLike.ddotvec(n - nfixed, fixedSecondOrder, w) + BlasLike.ddotvec(n, implied, fixedW) + fixedVariance;
+            Assert.IsTrue(Math.Abs(variance) <= BlasLike.lm_eps, $"reordering with fixed and non-fixed combined gives non zero variance; ({variance})");
+
         }
         [TestMethod]
         public void Test_readLicence()
