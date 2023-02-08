@@ -949,7 +949,7 @@ namespace BlasLikeTest
             double[] FL = { 2, 3, 4, 
                             4, -1, 2 };
             var port = new Portfolio.FPortfolio("");
-            port.n = n;
+            //port.n = n;
             port.ntrue = ntrue;
             port.nfac = nfac;
             port.SV = SV;
@@ -973,7 +973,7 @@ namespace BlasLikeTest
             var C = new double[ntrue * (ntrue + 1) / 2];
             Factorise.Fac2Cov(ntrue, nfac, port.Q, C);
             var portC = new Portfolio.Portfolio("");
-            portC.n = n;
+           // portC.n = n;
             portC.ntrue = ntrue;
             portC.nfixed = 0;
             portC.Q = C;

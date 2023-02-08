@@ -37,6 +37,7 @@ public class Optimise
     {
         doOpt = true;
         tlen = 0;
+        delta=-1;
         maxRisk = -1;
         minRisk = -1;
         value = -1;
@@ -77,7 +78,9 @@ public class Optimise
     public int? mabs { get; set; }
     public int? n { get; set; }
     public int? m { get; set; }
+    public int? ncomp { get; set; }
     public double[]? bench { get; set; }
+    public double[]? composites { get; set; }
     public double[]? L { get; set; }
     public double[]? U { get; set; }
     public double[]? A { get; set; }
@@ -99,7 +102,7 @@ public class Optimise
     public double[][]? FLas2D { get; set; }
     public int[]? I_A { get; set; }
     public double[]? sell { get; set; }
-    public double? delta { set; get; }
+    public double delta { set; get; }
     public double? gamma { set; get; }
     public double value { set; get; }
     public double valuel { set; get; }

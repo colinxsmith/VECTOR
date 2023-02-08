@@ -231,9 +231,9 @@ public class OptimiseController : ControllerBase
     [Route("general")]
     public Object GetGen(bool? doOpt, int? round, double? min_lot, double? size_lot,
      double? Gstrength, double? LOSSmax, double? LOSSmin, double? ETLmax, double? ETLmin,
-      double? targetR, string? datafile, double? delta, double? gamma, double? maxRisk,
+      double? targetR, string? datafile, double delta, double? gamma, double? maxRisk,
       double? minRisk, double? min_holding, double? min_trade, int? basket, int? trades,
-      string? logfile, bool negdata = false)
+      string? logfile,int? ncomp, bool negdata = false)
     {
         var op = new Optimise();
         var lic = new Licensing.Licence();
@@ -245,8 +245,8 @@ public class OptimiseController : ControllerBase
         if (doOpt != null) op.doOpt = doOpt.GetValueOrDefault();
         using (var CVarData = new InputSomeData())
         {
-            CVarData.doubleFields = "alpha bench gamma initial delta buy sell kappa min_holding min_trade minRisk lambda maxRisk rmin rmax Rmin Rmax min_lot size_lot LSvalue LSvaluel value valuel mask A L U Q A_abs Abs_A Abs_U Abs_L SV FC FL DATA tail R CVarMin CVarMax CVar_averse ETLorLOSSmin ETLorLOSSmax";
-            CVarData.intFields = "n nfac m basket longbasket shortbasket trades tradebuy tradesell tradenum nabs mabs I_A round tlen number_included CVar_constraint ETLorLOSSconstraint";
+            CVarData.doubleFields = "alpha bench gamma initial delta buy sell kappa min_holding min_trade minRisk lambda maxRisk rmin rmax Rmin Rmax min_lot size_lot LSvalue LSvaluel value valuel mask A L U Q A_abs Abs_A Abs_U Abs_L SV FC FL DATA tail R CVarMin CVarMax CVar_averse ETLorLOSSmin ETLorLOSSmax Composites";
+            CVarData.intFields = "n nfac m basket longbasket shortbasket trades tradebuy tradesell tradenum nabs mabs I_A round tlen number_included CVar_constraint ETLorLOSSconstraint ncomp";
             CVarData.stringFields = "names logfile";
             op.datafile = "generalopt";
             if (datafile != null) op.datafile = datafile;
@@ -264,7 +264,7 @@ public class OptimiseController : ControllerBase
                 {
                     CVarData.Read($"../{op.datafile}");
                 }
-                catch (Exception ppp) { op.message = $"{ppp} Input file error \"{op.datafile}\""; return op; }
+                catch (Exception ppp) { op.message = $"{ppp.Message} Input file error \"{op.datafile}\""; return Problem(title: "No DATA file", detail: lic.VersionString,type:op.message); }
             }
             op.n = CVarData.mapInt["n"][0];
             try { op.nfac = CVarData.mapInt["nfac"][0]; } catch { op.nfac = -1; }
@@ -275,6 +275,8 @@ public class OptimiseController : ControllerBase
             op.L = CVarData.mapDouble["L"];
             op.U = CVarData.mapDouble["U"];
             op.alpha = CVarData.mapDouble["alpha"];
+            try { op.ncomp = CVarData.mapInt["ncomp"][0]; } catch {op.ncomp=null; }
+            try { op.composites = CVarData.mapDouble["Composites"]; } catch {op.composites=null; }
             try { op.logfile = CVarData.mapString["logfile"][0]; } catch {; }
             try { op.value = CVarData.mapDouble["value"][0]; } catch {; }
             try { op.value = CVarData.mapDouble["LSvalue"][0]; } catch {; }
@@ -298,10 +300,10 @@ public class OptimiseController : ControllerBase
             try { op.sell = CVarData.mapDouble["sell"]; } catch { op.sell = null; }
             try { op.mask = CVarData.mapDouble["mask"]; } catch { op.mask = null; }
             try { op.initial = CVarData.mapDouble["initial"]; } catch { op.initial = null; }
-            try { op.delta = CVarData.mapDouble["delta"][0]; } catch { op.delta = null; }
+            try { op.delta = CVarData.mapDouble["delta"][0]; } catch { op.delta = -1; }
             op.gamma = CVarData.mapDouble["gamma"][0];
             try { op.kappa = CVarData.mapDouble["kappa"][0]; } catch { op.kappa = -1; }
-            if (delta != null) op.delta = delta;
+       //     if (delta != null) op.delta = delta;
             if (gamma != null) op.gamma = gamma;
             try { op.maxRisk = CVarData.mapDouble["maxRisk"][0]; } catch {; }
             try { op.minRisk = CVarData.mapDouble["minRisk"][0]; } catch {; }
@@ -340,6 +342,7 @@ public class OptimiseController : ControllerBase
             if (round != null) op.round = round.GetValueOrDefault();
             try { op.tlen = CVarData.mapInt["tlen"][0]; } catch { op.tlen = 0; }
             if (logfile != null) op.logfile = logfile;
+            if(ncomp>0)op.ncomp=ncomp;
             if (op.tlen > 0)
             {
                 if (op.nfac == null) op.nfac = -1;
@@ -458,8 +461,9 @@ public class OptimiseController : ControllerBase
             if (op.names != null && op.names.Length < op.n.GetValueOrDefault()) op.names = null;
             op.w = new double[op.n.GetValueOrDefault()];
             bool CVARGLprob = false;
+            try{
             op.back = Portfolio.Portfolio.OptimiseGeneral(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.names,
-            op.w, op.m.GetValueOrDefault(), op.A, op.L, op.U, op.alpha, op.bench, op.Q, op.gamma.GetValueOrDefault(), op.initial, op.delta.GetValueOrDefault(),
+            op.w, op.m.GetValueOrDefault(), op.A, op.L, op.U, op.alpha, op.bench, op.Q, op.gamma.GetValueOrDefault(), op.initial, op.delta,
             op.buy, op.sell, op.kappa.GetValueOrDefault(), op.basket, op.trades, op.min_holding,
             op.min_trade, op.rmin, op.rmax, op.round.GetValueOrDefault(), op.min_lot, op.size_lot, op.shake, op.value,
             op.nabs.GetValueOrDefault(), op.Abs_A, op.mabs.GetValueOrDefault(), op.I_A, op.Abs_U,
@@ -467,7 +471,8 @@ public class OptimiseController : ControllerBase
             op.mask, op.longbasket.GetValueOrDefault(), op.shortbasket.GetValueOrDefault(), op.tradebuy.GetValueOrDefault(),
             op.tradesell.GetValueOrDefault(), op.valuel, op.Abs_L, breakdown, ref CVARGLprob, op.tlen, op.Gstrength.GetValueOrDefault(),
             op.DATA, op.tail, op.TargetReturn, op.ETLopt.GetValueOrDefault() || op.LOSSopt.GetValueOrDefault(), op.TargetReturn == null ? op.ETLmin.GetValueOrDefault() : op.LOSSmin.GetValueOrDefault(),
-            op.TargetReturn == null ? op.ETLmax.GetValueOrDefault() : op.LOSSmax.GetValueOrDefault(), op.logfile);
+            op.TargetReturn == null ? op.ETLmax.GetValueOrDefault() : op.LOSSmax.GetValueOrDefault(), op.logfile,ncomp:op.ncomp.GetValueOrDefault(),compw:op.composites);}
+            catch(Exception popt){ op.message = $"{popt.Message}"; return Problem(title: "Optimiser input scalar variable error", detail: lic.VersionString,type:op.message); }
 
             op.ogamma = ogamma;
             op.CVARGLprob = CVARGLprob;
@@ -685,7 +690,7 @@ public class OptimiseController : ControllerBase
             double ogamma = 0;
             bool CVARGLprob = false;
             op.back = Portfolio.Portfolio.OptimiseGeneral(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.names,
-            op.w, op.m.GetValueOrDefault(), op.A, op.L, op.U, op.alpha, op.bench, op.Q, op.gamma.GetValueOrDefault(), op.initial, op.delta.GetValueOrDefault(),
+            op.w, op.m.GetValueOrDefault(), op.A, op.L, op.U, op.alpha, op.bench, op.Q, op.gamma.GetValueOrDefault(), op.initial, op.delta,
             op.buy, op.sell, op.kappa.GetValueOrDefault(), op.basket, op.trades, op.min_holding,
             op.min_trade, op.rmin, op.rmax, op.round.GetValueOrDefault(), op.min_lot, op.size_lot, op.shake, op.value,
             op.nabs.GetValueOrDefault(), op.Abs_A, op.mabs.GetValueOrDefault(), op.I_A, op.Abs_U,
