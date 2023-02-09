@@ -6209,7 +6209,7 @@ Order.Reorder(nn+nfixed,mainordertrueInverse,hx);
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
-                if(nfixed>0){
+                if(ncomp>0&&nfixed>0){
                     var fiddlex=(double[])x.Clone();
                     Array.Resize(ref fiddlex,nn+nfixed);
                     var fiddlehx=(double[])x.Clone();
@@ -6227,7 +6227,7 @@ BlasLike.dcopyvec(nn,fiddlehx,hx);
                     Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, xstart, hstart);
                 BlasLike.dzerovec(nn - ntrue + nfixed-nfixedComp, hx, ntrue - nfixed+nfixedComp + hstart);
                 hessmullExtraForComp(x, hx);
-                if(nfixed>0){
+                if(ncomp>0&&nfixed>0){
                     var fiddlex=(double[])x.Clone();
                     Array.Resize(ref fiddlex,nn+nfixed);
                     var fiddlehx=(double[])x.Clone();
