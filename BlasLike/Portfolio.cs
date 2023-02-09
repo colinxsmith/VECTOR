@@ -44,6 +44,8 @@ namespace Portfolio
                 {
                     ww.WriteLine("n");
                     ww.WriteLine(n);
+                    ww.WriteLine("ncomp");
+                    ww.WriteLine(ncomp);
                     ww.WriteLine("m");
                     ww.WriteLine(m);
                     ww.WriteLine("nfac");
@@ -106,6 +108,7 @@ namespace Portfolio
                     printVector("A", A, ww, m);
                     printVector("L", L, ww);
                     printVector("U", U, ww);
+                    printVector("Composites",compw,ww);
                     printVector("alpha", alpha, ww);
                     printVector("bench", benchmark, ww);
                     printVector("initial", initial, ww);
@@ -4586,7 +4589,7 @@ namespace Portfolio
         double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell,
         string[] names, bool useIP = true, int nabs = 0, double[] A_abs = null, double[] L_abs = null, double[] U_abs = null,
         int mabs = 0, int[] I_a = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0, double ETLorLOSSmax = 0, int ncomp = 0, double[] compw = null)
-        {
+        {int[]orderPortC=null,orderPortCInverse=null;
             this.ncomp = ncomp; this.compw = compw;
             int back;
             if (kappa < 0) kappa = gamma;
@@ -4607,9 +4610,13 @@ namespace Portfolio
             mainorder = new int[n];
             mainorderInverse = new int[n];
             var fixedSecondOrder = new double[n];
+            nfixedComp=0;
+            nfixedTrue=0;
             for (var i = 0; i < n; ++i)
             {
-                if (L[i] == U[i]) nfixed++;
+                if (L[i] == U[i]) {nfixed++;
+                if(i<ntrue)nfixedTrue++;
+                else nfixedComp++;}
                 mainorder[i] = i;
             }
             var boundLU = new double[m];
@@ -4630,12 +4637,26 @@ namespace Portfolio
                 if (names != null) Order.Reorder(n, mainorder, names);
                 Order.Reorder_gen(n, mainorder, A, m, 1, true);
                 if (A_abs != null) Order.Reorder_gen(n, mainorder, A_abs, nabs, 1, true);
-                if (Q != null && nfac == -1) Order.ReorderSymm(n, mainorder, Q);
+                if(ncomp>0)Order.Reorder(n,mainordertrue,mainorder);
+                if (Q != null && nfac == -1) Order.ReorderSymm(ntrue, mainorder, Q);
                 else if (Q != null && nfac >= 0)
                 {
-                    Order.Reorder(n, mainorder, Q);
-                    Order.Reorder_gen(n, mainorder, Q, nfac, 1, true, n);
+                    Order.Reorder(ntrue, mainorder, Q);
+                    Order.Reorder_gen(ntrue, mainorder, Q, nfac, 1,astart: ntrue,columns: true);
                 }
+                if(ncomp>0){
+                 orderPortC = new int[ncomp];
+             orderPortCInverse = new int[ncomp];
+            for (i = 0; i < ncomp; ++i) orderPortC[i] = mainorder[i + ntrue] - ntrue;
+            for (i = 0; i < ncomp; ++i) orderPortCInverse[orderPortC[i]] = i;
+            Ordering.Order.ReorderSymm(ncomp, orderPortC, compQ);
+            //Need to reorder over assets and composites in compw and compImplied
+            for (i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, mainorder, compw, i * ntrue);
+            for (i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, mainorder, compImplied, i * ntrue);
+            Ordering.Order.Reorder_gen(ncomp, orderPortC, compw, ntrue, columns: true);
+            Ordering.Order.Reorder_gen(ncomp, orderPortC, compImplied, ntrue, columns: true);
+                }
+                if(ncomp>0)Order.Reorder(n,mainordertrueInverse,mainorder);
                 if (debugLevel == 2)
                 {
                     ActiveSet.Optimise.printV("L end before convert", L, -1, n - nfixed);
@@ -4658,6 +4679,7 @@ namespace Portfolio
                 if (debugLevel == 2) ActiveSet.Optimise.printV("U end", U, -1, n - nfixed);
                 var nfixedo = nfixed;
                 nfixed = 0;
+                if(ncomp>0)Order.Reorder(n,mainordertrue,fixedW);
                 hessmull(n, Q, fixedW, fixedSecondOrder);
                 fixedVariance = 0.5 * BlasLike.ddotvec(n, fixedW, fixedSecondOrder);
                 nfixed = nfixedo;
@@ -5264,12 +5286,22 @@ namespace Portfolio
                 if (names != null) Order.Reorder(n, mainorderInverse, names);
                 Order.Reorder_gen(n, mainorderInverse, A, m, 1, true);
                 if (A_abs != null) Order.Reorder_gen(n, mainorderInverse, A_abs, nabs, 1, true);
+                if(ncomp>0)Order.Reorder(n,mainordertrueInverse,mainorderInverse);
                 if (Q != null && nfac == -1) Order.ReorderSymm(n, mainorderInverse, Q);
                 else if (Q != null && nfac >= 0)
                 {
                     Order.Reorder(n, mainorderInverse, Q);
                     Order.Reorder_gen(n, mainorderInverse, Q, nfac, 1, true, n);
                 }
+                if(ncomp>0){int i;
+            Ordering.Order.ReorderSymm(ncomp, orderPortCInverse, compQ);
+            //Need to reorder over assets and composites in compw and compImplied
+            for (i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, mainorderInverse, compw, i * ntrue);
+            for (i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, mainorderInverse, compImplied, i * ntrue);
+            Ordering.Order.Reorder_gen(ncomp, orderPortCInverse, compw, ntrue, columns: true);
+            Ordering.Order.Reorder_gen(ncomp, orderPortCInverse, compImplied, ntrue, columns: true);
+                }
+                if(ncomp>0)Order.Reorder(n,mainordertrueInverse,mainorderInverse);
             }
             var eret = BlasLike.ddotvec(n, alpha, wback);
             var printAlphas = false;
@@ -6178,8 +6210,14 @@ Order.Reorder(nn+nfixed,mainordertrueInverse,hx);
             if (Q != null)
             {
                 if(nfixed>0){
-Order.Reorder(nn+nfixed,mainordertrue,x);//Need to check that n is correct
-Order.Reorder(nn+nfixed,mainordertrue,hx);
+                    var fiddlex=(double[])x.Clone();
+                    Array.Resize(ref fiddlex,nn+nfixed);
+                    var fiddlehx=(double[])x.Clone();
+                    Array.Resize(ref fiddlehx,nn+nfixed);
+Order.Reorder(nn+nfixed,mainordertrue,fiddlex);//Need to check that n is correct
+Order.Reorder(nn+nfixed,mainordertrue,fiddlehx);
+BlasLike.dcopyvec(nn,fiddlex,x);
+BlasLike.dcopyvec(nn,fiddlehx,hx);
                 }
                 if (nfixed > 0)
                 {
@@ -6190,8 +6228,14 @@ Order.Reorder(nn+nfixed,mainordertrue,hx);
                 BlasLike.dzerovec(nn - ntrue + nfixed-nfixedComp, hx, ntrue - nfixed+nfixedComp + hstart);
                 hessmullExtraForComp(x, hx);
                 if(nfixed>0){
-Order.Reorder(nn+nfixed,mainordertrueInverse,x);//Need to check that n is correct
-Order.Reorder(nn+nfixed,mainordertrueInverse,hx);
+                    var fiddlex=(double[])x.Clone();
+                    Array.Resize(ref fiddlex,nn+nfixed);
+                    var fiddlehx=(double[])x.Clone();
+                    Array.Resize(ref fiddlehx,nn+nfixed);
+Order.Reorder(nn+nfixed,mainordertrueInverse,fiddlex);//Need to check that n is correct
+Order.Reorder(nn+nfixed,mainordertrueInverse,fiddlehx);
+BlasLike.dcopyvec(nn,fiddlex,x);
+BlasLike.dcopyvec(nn,fiddlehx,hx);
                 }
             }
             else BlasLike.dzerovec(nn, hx, hstart);
