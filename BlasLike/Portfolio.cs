@@ -4609,7 +4609,7 @@ namespace Portfolio
             if (ncomp > 0) makeCompQ();
             mainorder = new int[n];
             mainorderInverse = new int[n];
-            var fixedSecondOrder = new double[n];
+            fixedSecondOrder = new double[n];
             nfixedComp=0;
             nfixedTrue=0;
             for (var i = 0; i < n; ++i)
@@ -5286,22 +5286,22 @@ namespace Portfolio
                 if (names != null) Order.Reorder(n, mainorderInverse, names);
                 Order.Reorder_gen(n, mainorderInverse, A, m, 1, true);
                 if (A_abs != null) Order.Reorder_gen(n, mainorderInverse, A_abs, nabs, 1, true);
-                if(ncomp>0)Order.Reorder(n,mainordertrueInverse,mainorderInverse);
-                if (Q != null && nfac == -1) Order.ReorderSymm(n, mainorderInverse, Q);
+                if(ncomp>0)Order.Reorder(n,mainorderInverse,mainordertrueInverse);
+                if (Q != null && nfac == -1) Order.ReorderSymm(ntrue, mainorderInverse, Q);
                 else if (Q != null && nfac >= 0)
                 {
-                    Order.Reorder(n, mainorderInverse, Q);
-                    Order.Reorder_gen(n, mainorderInverse, Q, nfac, 1, true, n);
+                    Order.Reorder(ntrue, mainordertrueInverse, Q);
+                    Order.Reorder_gen(ntrue, mainordertrueInverse, Q, nfac, 1, true, ntrue);
                 }
                 if(ncomp>0){int i;
             Ordering.Order.ReorderSymm(ncomp, orderPortCInverse, compQ);
             //Need to reorder over assets and composites in compw and compImplied
-            for (i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, mainorderInverse, compw, i * ntrue);
-            for (i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, mainorderInverse, compImplied, i * ntrue);
+            for (i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, mainordertrueInverse, compw, i * ntrue);
+            for (i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, mainordertrueInverse, compImplied, i * ntrue);
             Ordering.Order.Reorder_gen(ncomp, orderPortCInverse, compw, ntrue, columns: true);
             Ordering.Order.Reorder_gen(ncomp, orderPortCInverse, compImplied, ntrue, columns: true);
                 }
-                if(ncomp>0)Order.Reorder(n,mainordertrueInverse,mainorderInverse);
+                if(ncomp>0)Order.Reorder(n,mainorder,mainordertrueInverse);
             }
             var eret = BlasLike.ddotvec(n, alpha, wback);
             var printAlphas = false;
@@ -5631,6 +5631,8 @@ namespace Portfolio
         public int[] mainordertrue = null;
         public int[] mainordertrueInverse = null;
         public int[] mainorderInverse = null;
+        public double[]fixCompx=null;
+        public double[]fixComphx=null;
         public int ncomp = 0;
         public double[] compw = null;
         public double[] compQ = null;
@@ -5638,6 +5640,7 @@ namespace Portfolio
         public bool makingCompQ = false;
         public int debugLevel = 1;
         public double[] fixedW = null;
+        public double[]fixedSecondOrder=null;
         public double fixedVariance = 0;
         public int ntrue = 0;
         public int mtrue = 0;
@@ -5676,7 +5679,7 @@ namespace Portfolio
             BlasLike.dzerovec(nn, hx);
         }
         public void makeCompQ()
-        {
+        {fixCompx=new double[n];fixComphx=new double[n];
             makingCompQ = true;
             compQ = new double[ncomp * (ncomp + 1) / 2];
             compImplied = new double[ntrue * ncomp];
@@ -5711,16 +5714,27 @@ namespace Portfolio
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
-                if(nfixed>0){
-Order.Reorder(nn+nfixed,mainordertrue,x);//Need to check that n is correct
-Order.Reorder(nn+nfixed,mainordertrue,hx);
+                if (ncomp > 0 && nfixed > 0)
+                {
+                    BlasLike.dcopyvec(nn, x, fixCompx);
+                    BlasLike.dcopyvec(nn, hx, fixComphx);
+                    Order.Reorder(nn+nfixed, mainordertrue, fixCompx);//Need to check that n is correct
+                    Order.Reorder(nn+nfixed, mainordertrue, fixComphx);
+
+                    Factorise.CovMul(ntrue, Q, fixCompx, fixComphx, 0, xstart, hstart, 'U', nfixed - nfixedComp);
+                    BlasLike.dzerovec(nn - ntrue + nfixed - nfixedComp, fixComphx, ntrue - nfixed + nfixedComp + hstart);
+                    hessmullExtraForComp(fixCompx, fixComphx);
+                    Order.Reorder(nn+nfixed, mainordertrueInverse, fixCompx);//Need to check that n is correct
+                    Order.Reorder(nn+nfixed, mainordertrueInverse, fixComphx);
+                    BlasLike.dcopyvec(nn, fixCompx, x);
+                    BlasLike.dcopyvec(nn, fixComphx, hx);
                 }
-                Factorise.CovMul(ntrue, Q, x, hx, 0, xstart, hstart, 'U', nfixed-nfixedComp);
-                BlasLike.dzerovec(nn - ntrue + nfixed-nfixedComp, hx, ntrue - nfixed+nfixedComp+hstart);
-                hessmullExtraForComp(x, hx);
-                if(nfixed>0){
-Order.Reorder(nn+nfixed,mainordertrueInverse,x);//Need to check that n is correct
-Order.Reorder(nn+nfixed,mainordertrueInverse,hx);
+                else
+                {
+
+                    Factorise.CovMul(ntrue, Q, x, hx, 0, xstart, hstart, 'U', nfixed - nfixedComp);
+                    BlasLike.dzerovec(nn - ntrue + nfixed - nfixedComp, hx, ntrue - nfixed + nfixedComp + hstart);
+                    hessmullExtraForComp(x, hx);
                 }
             }
             else BlasLike.dzerovec(nn, hx);
@@ -5730,16 +5744,27 @@ Order.Reorder(nn+nfixed,mainordertrueInverse,hx);
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
-                if(nfixed>0){
-Order.Reorder(nn+nfixed,mainordertrue,x);//Need to check that n is correct
-Order.Reorder(nn+nfixed,mainordertrue,hx);
+                if (ncomp > 0 && nfixed > 0)
+                {
+                    BlasLike.dcopyvec(nn, x, fixCompx);
+                    BlasLike.dcopyvec(nn, hx, fixComphx);
+                    Order.Reorder(nn+nfixed, mainordertrue, fixCompx);//Need to check that n is correct
+                    Order.Reorder(nn+nfixed, mainordertrue, fixComphx);
+
+                    Factorise.CovMul(ntrue, Q, fixCompx, fixComphx, 0, xstart, hstart, 'U', nfixed - nfixedComp);
+                    BlasLike.dzerovec(nn - ntrue + nfixed - nfixedComp, fixComphx, ntrue - nfixed + nfixedComp + hstart);
+                    hessmullExtraForComp(fixCompx, fixComphx);
+                    Order.Reorder(nn+nfixed, mainordertrueInverse, fixCompx);//Need to check that n is correct
+                    Order.Reorder(nn+nfixed, mainordertrueInverse, fixComphx);
+                    BlasLike.dcopyvec(nn, fixCompx, x);
+                    BlasLike.dcopyvec(nn, fixComphx, hx);
                 }
-                Factorise.CovMul(ntrue, Q, x, hx, 0, xstart, hstart, 'U', nfixed-nfixedComp);
-                BlasLike.dzerovec(nn - ntrue + nfixed-nfixedComp, hx, ntrue - nfixed+nfixedComp + hstart);
-                hessmullExtraForComp(x, hx);
-                if(nfixed>0){
-Order.Reorder(nn+nfixed,mainordertrueInverse,x);//Need to check that n is correct
-Order.Reorder(nn+nfixed,mainordertrueInverse,hx);
+                else
+                {
+
+                    Factorise.CovMul(ntrue, Q, x, hx, 0, xstart, hstart, 'U', nfixed - nfixedComp);
+                    BlasLike.dzerovec(nn - ntrue + nfixed - nfixedComp, hx, ntrue - nfixed + nfixedComp + hstart);
+                    hessmullExtraForComp(x, hx);
                 }
             }
             else BlasLike.dzerovec(nn, hx, hstart);
@@ -6209,33 +6234,30 @@ Order.Reorder(nn+nfixed,mainordertrueInverse,hx);
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
-                if(ncomp>0&&nfixed>0){
-                    var fiddlex=(double[])x.Clone();
-                    Array.Resize(ref fiddlex,nn+nfixed);
-                    var fiddlehx=(double[])x.Clone();
-                    Array.Resize(ref fiddlehx,nn+nfixed);
-Order.Reorder(nn+nfixed,mainordertrue,fiddlex);//Need to check that n is correct
-Order.Reorder(nn+nfixed,mainordertrue,fiddlehx);
-BlasLike.dcopyvec(nn,fiddlex,x);
-BlasLike.dcopyvec(nn,fiddlehx,hx);
-                }
-                if (nfixed > 0)
+                if (ncomp > 0 && nfixed > 0)
                 {
-                    Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, xstart, hstart, nfixed-nfixedComp);
+                    BlasLike.dcopyvec(nn, x, fixCompx);
+                    BlasLike.dzerovec(nn, fixComphx);
+                    Order.Reorder(nn+nfixed, mainordertrue, fixCompx);//Need to check that n is correct
+                    Order.Reorder(nn+nfixed, mainordertrue, fixComphx);
+                    Factorise.FacMul(ntrue, nfac, Q, fixCompx, fixComphx, 0, xstart, hstart, nfixed - nfixedComp);
+                    BlasLike.dzerovec(nn - ntrue + nfixed - nfixedComp, fixComphx, ntrue - nfixed + nfixedComp + hstart);
+                    hessmullExtraForComp(fixCompx, fixComphx);
+                    Order.Reorder(nn+nfixed, mainordertrueInverse, fixCompx);//Need to check that n is correct
+                    Order.Reorder(nn+nfixed, mainordertrueInverse, fixComphx);
+                    BlasLike.dcopyvec(nn, fixCompx, x);
+                    BlasLike.dcopyvec(nn, fixComphx, hx);
                 }
                 else
-                    Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, xstart, hstart);
-                BlasLike.dzerovec(nn - ntrue + nfixed-nfixedComp, hx, ntrue - nfixed+nfixedComp + hstart);
-                hessmullExtraForComp(x, hx);
-                if(ncomp>0&&nfixed>0){
-                    var fiddlex=(double[])x.Clone();
-                    Array.Resize(ref fiddlex,nn+nfixed);
-                    var fiddlehx=(double[])x.Clone();
-                    Array.Resize(ref fiddlehx,nn+nfixed);
-Order.Reorder(nn+nfixed,mainordertrueInverse,fiddlex);//Need to check that n is correct
-Order.Reorder(nn+nfixed,mainordertrueInverse,fiddlehx);
-BlasLike.dcopyvec(nn,fiddlex,x);
-BlasLike.dcopyvec(nn,fiddlehx,hx);
+                {
+                    if (nfixed > 0)
+                    {
+                        Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, xstart, hstart, nfixed - nfixedComp);
+                    }
+                    else
+                        Factorise.FacMul(ntrue, nfac, Q, x, hx, Qwstart: hstart, wstart: xstart);
+                    BlasLike.dzerovec(nn - ntrue + nfixed - nfixedComp, hx, ntrue - nfixed + nfixedComp + hstart);
+                    hessmullExtraForComp(x, hx);
                 }
             }
             else BlasLike.dzerovec(nn, hx, hstart);
@@ -6245,21 +6267,30 @@ BlasLike.dcopyvec(nn,fiddlehx,hx);
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
-                if(nfixed>0){
-Order.Reorder(nn+nfixed,mainordertrue,x);//Need to check that n is correct
-Order.Reorder(nn+nfixed,mainordertrue,hx);
-                }
-                if (nfixed > 0)
+                if (ncomp > 0 && nfixed > 0)
                 {
-                    Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, xstart, hstart, nfixed-nfixedComp);
+                    BlasLike.dcopyvec(nn, x, fixCompx);
+                    BlasLike.dzerovec(nn, fixComphx);
+                    Order.Reorder(nn+nfixed, mainordertrue, fixCompx);//Need to check that n is correct
+                    Order.Reorder(nn+nfixed, mainordertrue, fixComphx);
+                    Factorise.FacMul(ntrue, nfac, Q, fixCompx, fixComphx, 0, xstart, hstart, nfixed - nfixedComp);
+                    BlasLike.dzerovec(nn - ntrue + nfixed - nfixedComp, fixComphx, ntrue - nfixed + nfixedComp + hstart);
+                    hessmullExtraForComp(fixCompx, fixComphx);
+                    Order.Reorder(nn+nfixed, mainordertrueInverse, fixCompx);//Need to check that n is correct
+                    Order.Reorder(nn+nfixed, mainordertrueInverse, fixComphx);
+                    BlasLike.dcopyvec(nn, fixCompx, x);
+                    BlasLike.dcopyvec(nn, fixComphx, hx);
                 }
                 else
-                    Factorise.FacMul(ntrue, nfac, Q, x, hx, Qwstart: hstart, wstart: xstart);
-                BlasLike.dzerovec(nn - ntrue + nfixed-nfixedComp, hx, ntrue - nfixed+nfixedComp + hstart);
-                hessmullExtraForComp(x, hx);
-                if(nfixed>0){
-Order.Reorder(nn+nfixed,mainordertrueInverse,x);//Need to check that n is correct
-Order.Reorder(nn+nfixed,mainordertrueInverse,hx);
+                {
+                    if (nfixed > 0)
+                    {
+                        Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, xstart, hstart, nfixed - nfixedComp);
+                    }
+                    else
+                        Factorise.FacMul(ntrue, nfac, Q, x, hx, Qwstart: hstart, wstart: xstart);
+                    BlasLike.dzerovec(nn - ntrue + nfixed - nfixedComp, hx, ntrue - nfixed + nfixedComp + hstart);
+                    hessmullExtraForComp(x, hx);
                 }
             }
             else BlasLike.dzerovec(nn, hx);

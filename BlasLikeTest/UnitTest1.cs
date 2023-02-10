@@ -949,7 +949,7 @@ namespace BlasLikeTest
             double[] FL = { 2, 3, 4, 
                             4, -1, 2 };
             var port = new Portfolio.FPortfolio("");
-            //port.n = n;
+            port.n = n;
             port.ntrue = ntrue;
             port.nfac = nfac;
             port.SV = SV;
@@ -973,7 +973,7 @@ namespace BlasLikeTest
             var C = new double[ntrue * (ntrue + 1) / 2];
             Factorise.Fac2Cov(ntrue, nfac, port.Q, C);
             var portC = new Portfolio.Portfolio("");
-           // portC.n = n;
+            portC.n = n;
             portC.ntrue = ntrue;
             portC.nfixed = 0;
             portC.Q = C;
@@ -1028,7 +1028,9 @@ namespace BlasLikeTest
             portC.nfixedComp = 1;
             portC.nfixedTrue = 1;
             var fixedVariance = BlasLike.ddotvec(n, fixedSecondOrder, fixedW) * 0.5;
+            portC.fixedSecondOrder=fixedSecondOrder;
             //BlasLike.dsubvec(n,w,fixedW,w);
+            BlasLike.dzerovec(n,implied);
             Ordering.Order.Reorder(n, portC.mainordertrueInverse, w);
             Ordering.Order.Reorder(n, portC.mainordertrueInverse, implied);
             portC.hessmull(n - nfixed, portC.Q, w, implied);
@@ -1071,7 +1073,8 @@ namespace BlasLikeTest
             Ordering.Order.Reorder_gen(ncomp, orderPortC, port.compImplied, ntrue, columns: true);
             port.nfixed=0;
             port.hessmull(n,port.Q,fixedW,fixedSecondOrder)    ;
-
+port.fixedW=fixedW;
+port.fixedSecondOrder=fixedSecondOrder;
 
 
             port.nfixed=nfixed;
@@ -1080,6 +1083,7 @@ namespace BlasLikeTest
 
             
             //Change to order with fixed assets at the end
+            BlasLike.dzerovec(n,implied);
             Ordering.Order.Reorder(n, port.mainordertrueInverse, w);
             Ordering.Order.Reorder(n, port.mainordertrueInverse, implied);
             port.hessmull(n-nfixed,port.Q,w,implied);
