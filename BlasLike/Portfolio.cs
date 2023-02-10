@@ -5287,7 +5287,7 @@ namespace Portfolio
                 Order.Reorder_gen(n, mainorderInverse, A, m, 1, true);
                 if (A_abs != null) Order.Reorder_gen(n, mainorderInverse, A_abs, nabs, 1, true);
                 if(ncomp>0)Order.Reorder(n,mainorderInverse,mainordertrueInverse);
-                if (Q != null && nfac == -1) Order.ReorderSymm(ntrue, mainorderInverse, Q);
+                if (Q != null && nfac == -1) Order.ReorderSymm(ntrue, mainordertrueInverse, Q);
                 else if (Q != null && nfac >= 0)
                 {
                     Order.Reorder(ntrue, mainordertrueInverse, Q);
