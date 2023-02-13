@@ -4606,7 +4606,6 @@ namespace Portfolio
             mtrue = m;
             fixedW = new double[n];
             makeQ();
-            if (ncomp > 0) makeCompQ();
             mainorder = new int[n];
             mainorderInverse = new int[n];
             fixedSecondOrder = new double[n];
@@ -5369,11 +5368,11 @@ namespace Portfolio
             nfixed = 0;
             if (Q != null)
             {
-                var implied = new double[ntrue];
+                var implied = new double[n];
                 if (bench != null)
                 {
                     hessmull(n, Q, bench, implied);
-                    for (var i = 0; i < ntrue; ++i)
+                    for (var i = 0; i < n; ++i)
                     {
                         if (U[i] != L[i])
                             benchmarkExtra -= wback[i] * implied[i];
@@ -5666,8 +5665,9 @@ namespace Portfolio
         public virtual int makeQ()
         {
             var nn = ntrue * (ntrue + 1) / 2;
-            if (Q != null && Q.Length == nn)
-                return 0;
+            if (Q != null && Q.Length == nn){
+                if(ncomp>0)makeCompQ();
+                return 0;}
             else
                 return -10;
         }
@@ -5680,7 +5680,7 @@ namespace Portfolio
             BlasLike.dzerovec(nn, hx);
         }
         public void makeCompQ()
-        {fixCompx=new double[n];fixComphx=new double[n];
+        {fixCompx=new double[ntrue+ncomp];fixComphx=new double[ntrue+ncomp];
             makingCompQ = true;
             compQ = new double[ncomp * (ncomp + 1) / 2];
             compImplied = new double[ntrue * ncomp];
@@ -5695,7 +5695,12 @@ namespace Portfolio
             makingCompQ = false;
         }
         public void hessmullExtraForComp(double[] x, double[] hx)
-        {
+        {var nfixedTrue=this.nfixedTrue;
+        var nfixedComp=this.nfixedComp;
+        if(nfixed==0){
+            nfixedComp=0;
+            nfixedTrue=0;
+        }
             if (makingCompQ) return;
             if (ncomp > 0)
             {
@@ -6306,11 +6311,14 @@ namespace Portfolio
             if (FC != null && SV != null && FL != null)
             {
                 Q = new double[nn];
-                return Factorise.FMP(ntrue, nfac, FC, SV, FL, Q);
+                var back=Factorise.FMP(ntrue, nfac, FC, SV, FL, Q);
+                if(ncomp>0)makeCompQ();
+                return back;
             }
             else
             {
                 Debug.Assert(Q.Length == nn);
+                if(ncomp>0)makeCompQ();
                 return 0;
             }
         }

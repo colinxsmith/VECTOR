@@ -959,7 +959,6 @@ namespace BlasLikeTest
             port.ncomp = ncomp;
             port.compw = compositeWeights;
             port.makeQ();
-            port.makeCompQ();
             var testq = (double[])port.compQ.Clone();
             var piv = new int[ncomp];
             var back = Factorise.Factor('U', ncomp, testq, piv);
@@ -969,6 +968,7 @@ namespace BlasLikeTest
             port.hessmull(n, port.Q, w, implied);
             var variance = BlasLike.ddotvec(n, w, implied) * 0.5;
             Assert.IsTrue(Math.Abs(variance) <= BlasLike.lm_eps, $"variance should be zero, not {variance}");
+            variance=port.Variance(w);
             //Now test for full covariance case. Generate covariances from risk model
             var C = new double[ntrue * (ntrue + 1) / 2];
             Factorise.Fac2Cov(ntrue, nfac, port.Q, C);
@@ -980,7 +980,6 @@ namespace BlasLikeTest
             portC.ncomp = ncomp;
             portC.compw = compositeWeights;
             portC.makeQ();
-            portC.makeCompQ();
             portC.hessmull(n, port.Q, w, implied);
             variance = BlasLike.ddotvec(n, w, implied) * 0.5;
             Assert.IsTrue(Math.Abs(variance) <= BlasLike.lm_eps, $"variance should be zero, not {variance}");
@@ -1091,7 +1090,21 @@ port.fixedSecondOrder=fixedSecondOrder;
             Ordering.Order.Reorder(n, port.mainordertrueInverse, fixedW);
             variance = BlasLike.ddotvec(n - nfixed, w, implied) * 0.5 + BlasLike.ddotvec(n - nfixed, fixedSecondOrder, w) + BlasLike.ddotvec(n, implied, fixedW) + fixedVariance;
             Assert.IsTrue(Math.Abs(variance) <= BlasLike.lm_eps, $"reordering with fixed and non-fixed combined gives non zero variance; ({variance})");
+Ordering.Order.Reorder(n,port.mainorderInverse,w);
+for(var i=0;i<n;++i)inverse[order[i]]=i;
+                    Ordering.Order.Reorder(ntrue, inverse, port.Q);
+                    Ordering.Order.Reorder_gen(ntrue,inverse, port.Q, nfac, 1, astart:ntrue,columns: true);
 
+
+            Ordering.Order.ReorderSymm(ncomp, orderPortC, port.compQ);
+            //Need to reorder over assets and composites in compw and compImplied
+            for (var i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, inverse, port.compw, i * ntrue);
+            for (var i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, inverse, port.compImplied, i * ntrue);
+            Ordering.Order.Reorder_gen(ncomp, orderPortCInverse, port.compw, ntrue, columns: true);
+            Ordering.Order.Reorder_gen(ncomp, orderPortCInverse, port.compImplied, ntrue, columns: true);
+            port.nfixed=0;
+            variance=port.Variance(w);
+            Assert.IsTrue(Math.Abs(variance) <= BlasLike.lm_eps, $"reordering back to start gives non zero variance; ({variance})");
         }
         [TestMethod]
         public void Test_readLicence()
