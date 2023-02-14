@@ -320,7 +320,8 @@ public class OptimiseController : ControllerBase
             try { op.I_A = CVarData.mapInt["I_A"]; } catch { op.I_A = null; }
             try { op.round = CVarData.mapInt["round"][0]; } catch { op.round = null; }
             try { op.min_lot = CVarData.mapDouble["min_lot"]; } catch { op.min_lot = null; }
-            if (min_lot != null && op.min_lot != null) { op.min_lot = new double[1]; op.min_lot[0] = min_lot.GetValueOrDefault(); }
+            if(round.GetValueOrDefault()==1){op.round=round;}
+            if (min_lot != null) { op.min_lot = new double[1]; op.min_lot[0] = min_lot.GetValueOrDefault(); }
             if (op.min_lot != null && op.min_lot.Length == 1)
             {
                 var keep = op.min_lot[0];
@@ -328,7 +329,7 @@ public class OptimiseController : ControllerBase
                 BlasLike.dsetvec(op.n.GetValueOrDefault(), keep, op.min_lot);
             }
             try { op.size_lot = CVarData.mapDouble["size_lot"]; } catch { op.size_lot = null; }
-            if (size_lot != null && op.size_lot != null) { op.size_lot = new double[1]; op.size_lot[0] = size_lot.GetValueOrDefault(); }
+            if (size_lot != null) { op.size_lot = new double[1]; op.size_lot[0] = size_lot.GetValueOrDefault(); }
             if (op.size_lot != null && op.size_lot.Length == 1)
             {
                 var keep = op.size_lot[0];
@@ -461,18 +462,20 @@ public class OptimiseController : ControllerBase
             if (op.names != null && op.names.Length < op.n.GetValueOrDefault()) op.names = null;
             op.w = new double[op.n.GetValueOrDefault()];
             bool CVARGLprob = false;
-            try{
-            op.back = Portfolio.Portfolio.OptimiseGeneral(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.names,
-            op.w, op.m.GetValueOrDefault(), op.A, op.L, op.U, op.alpha, op.bench, op.Q, op.gamma.GetValueOrDefault(), op.initial, op.delta,
-            op.buy, op.sell, op.kappa.GetValueOrDefault(), op.basket, op.trades, op.min_holding,
-            op.min_trade, op.rmin, op.rmax, op.round.GetValueOrDefault(), op.min_lot, op.size_lot, op.shake, op.value,
-            op.nabs.GetValueOrDefault(), op.Abs_A, op.mabs.GetValueOrDefault(), op.I_A, op.Abs_U,
-            op.FC, op.FL, op.SV, op.minRisk, op.maxRisk, ref ogamma,
-            op.mask, op.longbasket.GetValueOrDefault(), op.shortbasket.GetValueOrDefault(), op.tradebuy.GetValueOrDefault(),
-            op.tradesell.GetValueOrDefault(), op.valuel, op.Abs_L, breakdown, ref CVARGLprob, op.tlen, op.Gstrength.GetValueOrDefault(),
-            op.DATA, op.tail, op.TargetReturn, op.ETLopt.GetValueOrDefault() || op.LOSSopt.GetValueOrDefault(), op.TargetReturn == null ? op.ETLmin.GetValueOrDefault() : op.LOSSmin.GetValueOrDefault(),
-            op.TargetReturn == null ? op.ETLmax.GetValueOrDefault() : op.LOSSmax.GetValueOrDefault(), op.logfile,ncomp:op.ncomp.GetValueOrDefault(),compw:op.composites);}
-            catch(Exception popt){ op.message = $"{popt.Message}"; return Problem(title: "Optimiser input scalar variable error", detail: lic.VersionString,type:op.message); }
+            try
+            {
+                op.back = Portfolio.Portfolio.OptimiseGeneral(op.n.GetValueOrDefault(), op.nfac.GetValueOrDefault(), op.names,
+                op.w, op.m.GetValueOrDefault(), op.A, op.L, op.U, op.alpha, op.bench, op.Q, op.gamma.GetValueOrDefault(), op.initial, op.delta,
+                op.buy, op.sell, op.kappa.GetValueOrDefault(), op.basket, op.trades, op.min_holding,
+                op.min_trade, op.rmin, op.rmax, op.round.GetValueOrDefault(), op.min_lot, op.size_lot, op.shake, op.value,
+                op.nabs.GetValueOrDefault(), op.Abs_A, op.mabs.GetValueOrDefault(), op.I_A, op.Abs_U,
+                op.FC, op.FL, op.SV, op.minRisk, op.maxRisk, ref ogamma,
+                op.mask, op.longbasket.GetValueOrDefault(), op.shortbasket.GetValueOrDefault(), op.tradebuy.GetValueOrDefault(),
+                op.tradesell.GetValueOrDefault(), op.valuel, op.Abs_L, breakdown, ref CVARGLprob, op.tlen, op.Gstrength.GetValueOrDefault(),
+                op.DATA, op.tail, op.TargetReturn, op.ETLopt.GetValueOrDefault() || op.LOSSopt.GetValueOrDefault(), op.TargetReturn == null ? op.ETLmin.GetValueOrDefault() : op.LOSSmin.GetValueOrDefault(),
+                op.TargetReturn == null ? op.ETLmax.GetValueOrDefault() : op.LOSSmax.GetValueOrDefault(), op.logfile, ncomp: op.ncomp.GetValueOrDefault(), compw: op.composites);
+            }
+            catch (Exception popt) { op.message = $"{popt.Message}"; return Problem(title: "Optimiser input scalar variable error", detail: lic.VersionString, type: op.message); }
 
             op.ogamma = ogamma;
             op.CVARGLprob = CVARGLprob;
