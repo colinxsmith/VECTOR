@@ -45,7 +45,7 @@ namespace UseBlas
                  //   back = Portfolio.Portfolio.SOCP_LOSS_RISK_PRIMAL(n, tlen, DATA);
                  //   mess=Portfolio.Portfolio.OptMessages(back);
                  //   ColourConsole.WriteInfo(mess);
-                   return;
+                 //  return;
                 }
             }
 

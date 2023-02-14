@@ -151,6 +151,8 @@ namespace Portfolio
             op.A = A;
             op.L = L;
             op.U = U;
+            op.ncomp=ncomp;
+            op.compw=compw;
             op.bench = benchmark;
             op.buy = buy;
             op.sell = sell;
@@ -200,6 +202,8 @@ namespace Portfolio
             info.DATA = DATA;
             info.targetR = targetR;
             info.tail = tail;
+            info.ncomp=ncomp;
+            info.compw=compw;
 
             info.U = (double[])U.Clone();
             if (basket > 0 || trades > 0)
@@ -498,7 +502,7 @@ namespace Portfolio
                 if (OP.basket < 0 && OP.trades < 0 && vars.target < 0)
                 {
                     OP.back = BACK = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, OP.lower, OP.upper, gamma, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
-                                    alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR, vars.ETLorLOSSconstraint, vars.ETLorLOSSmin, vars.ETLorLOSSmax);
+                                    alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR, vars.ETLorLOSSconstraint, vars.ETLorLOSSmin, vars.ETLorLOSSmax,compw:vars.compw,ncomp:vars.ncomp);
                 }
                 else
                 {
@@ -2807,6 +2811,8 @@ namespace Portfolio
             public bool ETLorLOSSconstraint = false;
             public double ETLorLOSSmax = 0;
             public double ETLorLOSSmin = 0;
+            public int ncomp=0;
+            public double[] compw=null;
         }
         ///<summary> A function that returns risk - target risk. Use with Solve1D to do risk constraint</summary>
         ///<param name="gam">guess for gamma (for return risk utility) or (gamma and kappa for cost risk utility)</param>
@@ -2817,7 +2823,7 @@ namespace Portfolio
             var kappa = vars.kappa;
             if (kappa < 0) kappa = gam;
             vars.back = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, vars.L, vars.U, gam, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
-                     alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR, vars.ETLorLOSSconstraint, vars.ETLorLOSSmin, vars.ETLorLOSSmax);
+                     alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR, vars.ETLorLOSSconstraint, vars.ETLorLOSSmin, vars.ETLorLOSSmax,ncomp:vars.ncomp,compw:vars.compw);
             double[] www = (double[])wback.Clone();
             if (vars.bench != null) BlasLike.dsubvec(vars.n, www, vars.bench, www);
             var fix = nfixed;
@@ -2845,7 +2851,7 @@ namespace Portfolio
                 utility = PortfolioUtility(sendInput.n, gamma, kappa, sendInput.buy, sendInput.sell, sendInput.alpha, wback, gradient, ref baskethere, ref tradeshere);
                 ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
                 BACK = sendInput.back = back = Dropper(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
-                     alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax, basket, baskethere, trades, tradeshere);
+                     alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax, basket, baskethere, trades, tradeshere,ncomp:sendInput.ncomp,compw:sendInput.compw);
                 return;
             }
             var newgamma = ActiveSet.Optimise.Solve1D(CalcRisk, 0, 1, 0, sendInput);
@@ -2860,7 +2866,7 @@ namespace Portfolio
                 else ColourConsole.WriteError("INFEASIBLE");
                 sendInput.useIP = false;
                 back = BasicOptimisation(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, sendInput.kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
-                 alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax);
+                 alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax,ncomp:sendInput.ncomp,compw:sendInput.compw);
                 var w = new double[sendInput.n];
                 BlasLike.dcopyvec(sendInput.n, wback, w);
                 utility = PortfolioUtility(sendInput.n, gamma, sendInput.kappa, sendInput.buy, sendInput.sell, sendInput.alpha, w, gradient, ref baskethere, ref tradeshere);
@@ -2909,7 +2915,7 @@ namespace Portfolio
                         gamma = newgamma; if (kappa < 0) kappa = gamma;
                         sendInput.useIP = false;
                         BasicOptimisation(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
-                         alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax);
+                         alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax,ncomp:sendInput.ncomp,compw:sendInput.compw);
                         w = new double[sendInput.n];
                         gradient = new double[sendInput.n];
                         BlasLike.dcopyvec(sendInput.n, wback, w);
@@ -3002,7 +3008,7 @@ namespace Portfolio
         double gamma, double kappa, double delta, double value, double valuel,
         double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell,
         string[] names, bool useIp = true, int nabs = 0, double[] A_abs = null, double[] Abs_L = null, double[] Abs_U = null,
-        int mabs = 0, int[] I_A = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0, double ETLorLOSSmax = 0, int basket = -1, int baskethere = -1, int trades = -1, int tradeshere = -1)
+        int mabs = 0, int[] I_A = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0, double ETLorLOSSmax = 0, int basket = -1, int baskethere = -1, int trades = -1, int tradeshere = -1,int ncomp=0,double[]compw=null)
         {
             if (basket < 0) { basket = n; baskethere = n; }
             if (trades < 0) { trades = n; tradeshere = n; }
@@ -3047,7 +3053,7 @@ namespace Portfolio
                     }
                 }
                 var back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                    alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax);
+                    alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax,ncomp:ncomp,compw:compw);
                 if (back != 6)
                 {
                     BlasLike.dcopyvec(n, wback, w);
@@ -3096,7 +3102,7 @@ namespace Portfolio
                         }
                     }
                     back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                       alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax);
+                       alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax,compw:compw,ncomp:ncomp);
                     while (back == 6)
                     {
                         fast = false;
@@ -3126,7 +3132,7 @@ namespace Portfolio
                             }
                         }
                         back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                           alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax);
+                           alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax,ncomp:ncomp,compw:compw);
                         if (back != 6)
                         {
                             BlasLike.dcopyvec(n, wback, w);
@@ -3237,29 +3243,29 @@ namespace Portfolio
             {
                 Console.WriteLine($"{i,10}\t{LAMBDA[i],16:F8}");
             }*/
-            var ntrue = this.ntrue - nfixed;
-            var Ceff = new double[ntrue];
+            var nUse = ntrue+ncomp-nfixed;
+            var Ceff = new double[nUse];
             var chere = cextra == null ? c : cextra;
-            for (var i = 0; i < ntrue; ++i)
+            for (var i = 0; i < nUse; ++i)
             {
                 Ceff[i] = -BlasLike.ddot(m - mtrue, A, 1, LAMBDA, 1, mtrue + i * m, n + mtrue);
             }
             var implied = new double[n];
             if (Q != null) hessmull(n, Q, w, implied);
-            BlasLike.daddvec(ntrue, Ceff, chere, Ceff);
-            if (Q != null) BlasLike.daddvec(ntrue, Ceff, implied, Ceff);
+            BlasLike.daddvec(nUse, Ceff, chere, Ceff);
+            if (Q != null) BlasLike.daddvec(nUse, Ceff, implied, Ceff);
             var cvals = new double[mtrue];
             for (var i = 0; i < mtrue; ++i)
             {
-                cvals[i] = BlasLike.ddot(ntrue, A, m, w, 1, i);
+                cvals[i] = BlasLike.ddot(nUse, A, m, w, 1, i);
                 ColourConsole.WriteEmbeddedColourLine($"[red]LAMBDA {LAMBDA[i + n],20:f16}[/red][green] L {((L[i + n] == -BlasLike.lm_max) ? -100.0 : L[i + n]),12:F8}[/green][cyan] value {cvals[i],12:F8}[/cyan][green] U {((U[i + n] == BlasLike.lm_max) ? 100.0 : U[i + n]),12:F8}[/green]");
             }
-            var dual = BlasLike.ddotvec(ntrue, LAMBDA, w) + BlasLike.ddotvec(mtrue, LAMBDA, cvals, n) - BlasLike.ddotvec(n - ntrue, LAMBDA, w, ntrue, ntrue) - 0.5 * BlasLike.ddotvec(ntrue, w, implied);
-            var primal = BlasLike.ddotvec(ntrue, Ceff, w) - 0.5 * BlasLike.ddotvec(ntrue, w, implied);
+            var dual = BlasLike.ddotvec(nUse, LAMBDA, w) + BlasLike.ddotvec(mtrue, LAMBDA, cvals, n) - BlasLike.ddotvec(n - nUse, LAMBDA, w, nUse, nUse) - 0.5 * BlasLike.ddotvec(nUse, w, implied);
+            var primal = BlasLike.ddotvec(nUse, Ceff, w) - 0.5 * BlasLike.ddotvec(nUse, w, implied);
             var old = Console.ForegroundColor;
             ColourConsole.WriteEmbeddedColourLine($"[red]Effective model with non-linear extra part projected out[/red]");
             ColourConsole.WriteEmbeddedColourLine($"\t\t\t\t\t[green]Weight[/green]\t\t\t[cyan]Effective Utility Gradient[/cyan]");
-            for (var i = 0; i < ntrue; ++i)
+            for (var i = 0; i < nUse; ++i)
             {
                 string name = names != null ? names[i] : $"Asset {i + 1}";
                 ColourConsole.WriteEmbeddedColourLine($"[darkred]{i + 1,5}[/darkred][red]{name,30}[/red][green]{w[i],12:F8}[/green]\t\t\t[cyan]{Ceff[i],20:e12}[/cyan]");
@@ -4595,7 +4601,7 @@ namespace Portfolio
             if (kappa < 0) kappa = gamma;
             if (buy == null && sell == null && delta >= 0)
             {
-                BACK = back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, -1, value, valuel, rmin, rmax, alpha, initial, buy, sell, names, useIP, nabs, A_abs, L_abs, U_abs, mabs, I_a, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax);
+                BACK = back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, -1, value, valuel, rmin, rmax, alpha, initial, buy, sell, names, useIP, nabs, A_abs, L_abs, U_abs, mabs, I_a, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax,ncomp,compw);
                 if (back > 2) return back;
                 double turn = this.turnover(n, wback, initial);
                 if (turn <= delta) return back;
@@ -5722,18 +5728,18 @@ namespace Portfolio
             {
                 if (ncomp > 0 && nfixed > 0)
                 {
-                    BlasLike.dcopyvec(nn, x, fixCompx);
-                    BlasLike.dcopyvec(nn, hx, fixComphx);
-                    Order.Reorder(nn+nfixed, mainordertrue, fixCompx);//Need to check that n is correct
-                    Order.Reorder(nn+nfixed, mainordertrue, fixComphx);
+                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, x, fixCompx);
+                    BlasLike.dcopyvec(ntrue+ncomp, hx, fixComphx);
+                    Order.Reorder(mainordertrue.Length, mainordertrue, fixCompx);//Need to check that n is correct
+                    Order.Reorder(mainordertrue.Length, mainordertrue, fixComphx);
 
                     Factorise.CovMul(ntrue, Q, fixCompx, fixComphx, 0, xstart, hstart, 'U', nfixed - nfixedComp);
-                    BlasLike.dzerovec(nn - ntrue + nfixed - nfixedComp, fixComphx, ntrue - nfixed + nfixedComp + hstart);
+                    BlasLike.dzerovec(ncomp + nfixed - nfixedComp, fixComphx, ntrue - nfixed + nfixedComp + hstart);
                     hessmullExtraForComp(fixCompx, fixComphx);
-                    Order.Reorder(nn+nfixed, mainordertrueInverse, fixCompx);//Need to check that n is correct
-                    Order.Reorder(nn+nfixed, mainordertrueInverse, fixComphx);
-                    BlasLike.dcopyvec(nn, fixCompx, x);
-                    BlasLike.dcopyvec(nn, fixComphx, hx);
+                    Order.Reorder(mainordertrueInverse.Length, mainordertrueInverse, fixCompx);//Need to check that n is correct
+                    Order.Reorder(mainordertrueInverse.Length, mainordertrueInverse, fixComphx);
+                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, fixCompx, x);
+                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, fixComphx, hx);
                 }
                 else
                 {
@@ -5752,18 +5758,18 @@ namespace Portfolio
             {
                 if (ncomp > 0 && nfixed > 0)
                 {
-                    BlasLike.dcopyvec(nn, x, fixCompx);
-                    BlasLike.dcopyvec(nn, hx, fixComphx);
-                    Order.Reorder(nn+nfixed, mainordertrue, fixCompx);//Need to check that n is correct
-                    Order.Reorder(nn+nfixed, mainordertrue, fixComphx);
+                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, x, fixCompx);
+                    BlasLike.dcopyvec(ntrue+ncomp, hx, fixComphx);
+                    Order.Reorder(mainordertrue.Length, mainordertrue, fixCompx);//Need to check that n is correct
+                    Order.Reorder(mainordertrue.Length, mainordertrue, fixComphx);
 
                     Factorise.CovMul(ntrue, Q, fixCompx, fixComphx, 0, xstart, hstart, 'U', nfixed - nfixedComp);
-                    BlasLike.dzerovec(nn - ntrue + nfixed - nfixedComp, fixComphx, ntrue - nfixed + nfixedComp + hstart);
+                    BlasLike.dzerovec(ncomp  + nfixed - nfixedComp, fixComphx, ntrue - nfixed + nfixedComp + hstart);
                     hessmullExtraForComp(fixCompx, fixComphx);
-                    Order.Reorder(nn+nfixed, mainordertrueInverse, fixCompx);//Need to check that n is correct
-                    Order.Reorder(nn+nfixed, mainordertrueInverse, fixComphx);
-                    BlasLike.dcopyvec(nn, fixCompx, x);
-                    BlasLike.dcopyvec(nn, fixComphx, hx);
+                    Order.Reorder(mainordertrueInverse.Length, mainordertrueInverse, fixCompx);//Need to check that n is correct
+                    Order.Reorder(mainordertrueInverse.Length, mainordertrueInverse, fixComphx);
+                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, fixCompx, x);
+                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, fixComphx, hx);
                 }
                 else
                 {
@@ -6242,17 +6248,17 @@ namespace Portfolio
             {
                 if (ncomp > 0 && nfixed > 0)
                 {
-                    BlasLike.dcopyvec(nn, x, fixCompx);
-                    BlasLike.dzerovec(nn, fixComphx);
-                    Order.Reorder(nn+nfixed, mainordertrue, fixCompx);//Need to check that n is correct
-                    Order.Reorder(nn+nfixed, mainordertrue, fixComphx);
+                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, x, fixCompx);
+                    BlasLike.dzerovec(ntrue+ncomp, fixComphx);
+                    Order.Reorder(mainordertrue.Length, mainordertrue, fixCompx);//Need to check that n is correct
+                    Order.Reorder(mainordertrue.Length, mainordertrue, fixComphx);
                     Factorise.FacMul(ntrue, nfac, Q, fixCompx, fixComphx, 0, xstart, hstart, nfixed - nfixedComp);
-                    BlasLike.dzerovec(nn - ntrue + nfixed - nfixedComp, fixComphx, ntrue - nfixed + nfixedComp + hstart);
+                    BlasLike.dzerovec(ncomp + nfixed - nfixedComp, fixComphx, ntrue - nfixed + nfixedComp + hstart);
                     hessmullExtraForComp(fixCompx, fixComphx);
-                    Order.Reorder(nn+nfixed, mainordertrueInverse, fixCompx);//Need to check that n is correct
-                    Order.Reorder(nn+nfixed, mainordertrueInverse, fixComphx);
-                    BlasLike.dcopyvec(nn, fixCompx, x);
-                    BlasLike.dcopyvec(nn, fixComphx, hx);
+                    Order.Reorder(mainordertrueInverse.Length, mainordertrueInverse, fixCompx);//Need to check that n is correct
+                    Order.Reorder(mainordertrueInverse.Length, mainordertrueInverse, fixComphx);
+                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, fixCompx, x);
+                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, fixComphx, hx);
                 }
                 else
                 {
@@ -6275,17 +6281,17 @@ namespace Portfolio
             {
                 if (ncomp > 0 && nfixed > 0)
                 {
-                    BlasLike.dcopyvec(nn, x, fixCompx);
-                    BlasLike.dzerovec(nn, fixComphx);
-                    Order.Reorder(nn+nfixed, mainordertrue, fixCompx);//Need to check that n is correct
-                    Order.Reorder(nn+nfixed, mainordertrue, fixComphx);
+                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, x, fixCompx);
+                    BlasLike.dzerovec(ntrue+ncomp, fixComphx);
+                    Order.Reorder(mainordertrue.Length, mainordertrue, fixCompx);//Need to check that n is correct
+                    Order.Reorder(mainordertrue.Length, mainordertrue, fixComphx);
                     Factorise.FacMul(ntrue, nfac, Q, fixCompx, fixComphx, 0, xstart, hstart, nfixed - nfixedComp);
-                    BlasLike.dzerovec(nn - ntrue + nfixed - nfixedComp, fixComphx, ntrue - nfixed + nfixedComp + hstart);
+                    BlasLike.dzerovec(ncomp  + nfixed - nfixedComp, fixComphx, ntrue - nfixed + nfixedComp + hstart);
                     hessmullExtraForComp(fixCompx, fixComphx);
-                    Order.Reorder(nn+nfixed, mainordertrueInverse, fixCompx);//Need to check that n is correct
-                    Order.Reorder(nn+nfixed, mainordertrueInverse, fixComphx);
-                    BlasLike.dcopyvec(nn, fixCompx, x);
-                    BlasLike.dcopyvec(nn, fixComphx, hx);
+                    Order.Reorder(mainordertrueInverse.Length, mainordertrueInverse, fixCompx);//Need to check that n is correct
+                    Order.Reorder(mainordertrueInverse.Length, mainordertrueInverse, fixComphx);
+                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, fixCompx, x);
+                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, fixComphx, hx);
                 }
                 else
                 {
@@ -6295,7 +6301,7 @@ namespace Portfolio
                     }
                     else
                         Factorise.FacMul(ntrue, nfac, Q, x, hx, Qwstart: hstart, wstart: xstart);
-                    BlasLike.dzerovec(nn - ntrue + nfixed - nfixedComp, hx, ntrue - nfixed + nfixedComp + hstart);
+                    BlasLike.dzerovec(nn -ntrue + nfixed - nfixedComp, hx, ntrue - nfixed + nfixedComp + hstart);
                     hessmullExtraForComp(x, hx);
                 }
             }
