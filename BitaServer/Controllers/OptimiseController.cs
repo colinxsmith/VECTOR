@@ -686,6 +686,18 @@ public class OptimiseController : ControllerBase
             }
         }
         if (op.names != null && op.names.Length < op.n.GetValueOrDefault()) op.names = null;
+        if(op.round>0){
+            if( op.min_lot!=null&&  op.min_lot.Length==1){
+                var jj=op.min_lot[0];
+                op.min_lot=new double[op.n.GetValueOrDefault()];
+                BlasLike.dsetvec(op.n.GetValueOrDefault(),jj,op.min_lot);
+            }
+            if( op.size_lot!=null&&  op.size_lot.Length==1){
+                var jj=op.size_lot[0];
+                op.size_lot=new double[op.n.GetValueOrDefault()];
+                BlasLike.dsetvec(op.n.GetValueOrDefault(),jj,op.size_lot);
+            }
+        }
         if (op.doOpt)
         {
             if (op.SV != null && op.nfac > -1)
