@@ -3593,19 +3593,30 @@ namespace Portfolio
                 BlasLike.daxpy(n, 1, DATA, tlen, breakdown, 1, VARindex);
                 return back;
             }
-        }
-
-        public static double[][] oneD2twoD(int n, int nfac, double[] ONED, bool transpose = false)
+        }///<summary> Create a double array and populate each element with the same value
+        ///</summary>
+        ///<param name="n">Size of double array</param>
+        ///<param name="repeatValue">Each member of the array will have this value</param>
+        public static double[] one2many(int n,double repeatValue){
+                var back=new double[n];
+                BlasLike.dsetvec(n,repeatValue,back);
+                return back;}
+                ///<summary>Create a two dimensional array M[n][nfac] from a one dimensional array of size n*m</summary>
+        ///<param name="n">Two dimension array is M[n][m]</param>
+        ///<param name="m">Two dimension array is M[n][m]</param>
+        ///<param name="ONED">Double array of size n*m</param>
+        ///<param name="transpose">Transpose n and m in ONED</param>
+        public static double[][] oneD2twoD(int n, int m, double[] ONED, bool transpose = false)
         {
             double[][] TWOD = (double[][])new double[n][];
             if (transpose)
             {
                 for (var i = 0; i < n; ++i)
                 {
-                    TWOD[i] = new double[nfac];
-                    for (var j = 0; j < nfac; ++j)
+                    TWOD[i] = new double[m];
+                    for (var j = 0; j < m; ++j)
                     {
-                        TWOD[i][j] = ONED[i * nfac + j];
+                        TWOD[i][j] = ONED[i * m + j];
                     }
                 }
             }
@@ -3613,8 +3624,8 @@ namespace Portfolio
             {
                 for (var i = 0; i < n; ++i)
                 {
-                    TWOD[i] = new double[nfac];
-                    for (var j = 0; j < nfac; ++j)
+                    TWOD[i] = new double[m];
+                    for (var j = 0; j < m; ++j)
                     {
                         TWOD[i][j] = ONED[i + j * n];
                     }
@@ -3622,17 +3633,22 @@ namespace Portfolio
             }
             return TWOD;
         }
-        public static double[] twoD2oneD(int n, int nfac, double[][] TWOD, bool transpose = false)
+                ///<summary>Create a one dimensional array of size n*m from a two dimensional array TWOD[n][m]</summary>
+        ///<param name="n">Two dimension array is TWOD[n][m]</param>
+        ///<param name="m">Two dimension array is TWOD[n][m]</param>
+        ///<param name="TWOD">Double array TWOD[n][m]</param>
+        ///<param name="transpose">Transpose n and m in output array</param>
+        public static double[] twoD2oneD(int n, int m, double[][] TWOD, bool transpose = false)
         {
             Debug.Assert(n == TWOD.GetLength(0));
-            double[] ONED = new double[nfac * n];
+            double[] ONED = new double[m * n];
             if (transpose)
             {
                 for (var i = 0; i < n; ++i)
                 {
-                    for (var j = 0; j < nfac; ++j)
+                    for (var j = 0; j < m; ++j)
                     {
-                        ONED[j + i * nfac] = TWOD[i][j];
+                        ONED[j + i * m] = TWOD[i][j];
                     }
                 }
             }
@@ -3640,7 +3656,7 @@ namespace Portfolio
             {
                 for (var i = 0; i < n; ++i)
                 {
-                    for (var j = 0; j < nfac; ++j)
+                    for (var j = 0; j < m; ++j)
                     {
                         ONED[j * n + i] = TWOD[i][j];
                     }
@@ -5753,33 +5769,7 @@ namespace Portfolio
         }
         public virtual void hessmull(int nn, double[] QQ, double[] x, double[] hx, int hstart = 0, int xstart = 0)
         {
-            Debug.Assert(ntrue != 0);
-            if (Q != null)
-            {
-                if (ncomp > 0 && nfixed > 0)
-                {
-                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, x, fixCompx);
-                    BlasLike.dcopyvec(ntrue+ncomp, hx, fixComphx);
-                    Order.Reorder(mainordertrue.Length, mainordertrue, fixCompx);//Need to check that n is correct
-                    Order.Reorder(mainordertrue.Length, mainordertrue, fixComphx);
-
-                    Factorise.CovMul(ntrue, Q, fixCompx, fixComphx, 0, xstart, hstart, 'U', nfixed - nfixedComp);
-                    BlasLike.dzerovec(ncomp  + nfixed - nfixedComp, fixComphx, ntrue - nfixed + nfixedComp + hstart);
-                    hessmullExtraForComp(fixCompx, fixComphx);
-                    Order.Reorder(mainordertrueInverse.Length, mainordertrueInverse, fixCompx);//Need to check that n is correct
-                    Order.Reorder(mainordertrueInverse.Length, mainordertrueInverse, fixComphx);
-                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, fixCompx, x);
-                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, fixComphx, hx);
-                }
-                else
-                {
-
-                    Factorise.CovMul(ntrue, Q, x, hx, 0, xstart, hstart, 'U', nfixed - nfixedComp);
-                    BlasLike.dzerovec(nn - ntrue + nfixed - nfixedComp, hx, ntrue - nfixed + nfixedComp + hstart);
-                    hessmullExtraForComp(x, hx);
-                }
-            }
-            else BlasLike.dzerovec(nn, hx, hstart);
+            hessmull(nn,1,1,1,QQ,x,hx);
         }
         ///<Summary>Set the upper and lower bounds to allow only the long/short and/or
         ///buy/sell value given by w</Summary>
@@ -6276,36 +6266,7 @@ namespace Portfolio
         }
         public override void hessmull(int nn, double[] QQ, double[] x, double[] hx, int hstart = 0, int xstart = 0)
         {
-            Debug.Assert(ntrue != 0);
-            if (Q != null)
-            {
-                if (ncomp > 0 && nfixed > 0)
-                {
-                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, x, fixCompx);
-                    BlasLike.dzerovec(ntrue+ncomp, fixComphx);
-                    Order.Reorder(mainordertrue.Length, mainordertrue, fixCompx);//Need to check that n is correct
-                    Order.Reorder(mainordertrue.Length, mainordertrue, fixComphx);
-                    Factorise.FacMul(ntrue, nfac, Q, fixCompx, fixComphx, 0, xstart, hstart, nfixed - nfixedComp);
-                    BlasLike.dzerovec(ncomp  + nfixed - nfixedComp, fixComphx, ntrue - nfixed + nfixedComp + hstart);
-                    hessmullExtraForComp(fixCompx, fixComphx);
-                    Order.Reorder(mainordertrueInverse.Length, mainordertrueInverse, fixCompx);//Need to check that n is correct
-                    Order.Reorder(mainordertrueInverse.Length, mainordertrueInverse, fixComphx);
-                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, fixCompx, x);
-                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, fixComphx, hx);
-                }
-                else
-                {
-                    if (nfixed > 0)
-                    {
-                        Factorise.FacMul(ntrue, nfac, Q, x, hx, 0, xstart, hstart, nfixed - nfixedComp);
-                    }
-                    else
-                        Factorise.FacMul(ntrue, nfac, Q, x, hx, Qwstart: hstart, wstart: xstart);
-                    BlasLike.dzerovec(nn -ntrue + nfixed - nfixedComp, hx, ntrue - nfixed + nfixedComp + hstart);
-                    hessmullExtraForComp(x, hx);
-                }
-            }
-            else BlasLike.dzerovec(nn, hx);
+            hessmull(nn,1,1,1,QQ,x,hx);
         }
         public int nfac;
         public double[] FL = null;
