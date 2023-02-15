@@ -108,7 +108,7 @@ namespace Portfolio
                     printVector("A", A, ww, m);
                     printVector("L", L, ww);
                     printVector("U", U, ww);
-                    printVector("Composites",compw,ww);
+                    printVector("Composites", compw, ww);
                     printVector("alpha", alpha, ww);
                     printVector("bench", benchmark, ww);
                     printVector("initial", initial, ww);
@@ -151,8 +151,8 @@ namespace Portfolio
             op.A = A;
             op.L = L;
             op.U = U;
-            op.ncomp=ncomp;
-            op.compw=compw;
+            op.ncomp = ncomp;
+            op.compw = compw;
             op.bench = benchmark;
             op.buy = buy;
             op.sell = sell;
@@ -202,8 +202,8 @@ namespace Portfolio
             info.DATA = DATA;
             info.targetR = targetR;
             info.tail = tail;
-            info.ncomp=ncomp;
-            info.compw=compw;
+            info.ncomp = ncomp;
+            info.compw = compw;
 
             info.U = (double[])U.Clone();
             if (basket > 0 || trades > 0)
@@ -251,10 +251,8 @@ namespace Portfolio
                 //  op.BoundsSetToSign(n, Op.lower, Op.upper, initial, w);
                 Op.minholdlot = null;
                 Op.mintradelot = null;
-                var mintrade = min_trade < 0 ? null : new double[n];
-                if (mintrade != null) BlasLike.dsetvec(n, min_trade, mintrade);
-                var minhold = min_holding < 0 ? null : new double[n];
-                if (minhold != null) BlasLike.dsetvec(n, min_holding, minhold);
+                var mintrade = min_trade < 0 ? null : Portfolio.one2many(n,min_trade);
+                var minhold = min_holding < 0 ? null : Portfolio.one2many(n,min_holding);
                 var roundw = (double[])op.wback.Clone();
                 Op.x = op.wback; Op.MoreInfo = info;
                 var roundfac = 1e5;
@@ -502,7 +500,7 @@ namespace Portfolio
                 if (OP.basket < 0 && OP.trades < 0 && vars.target < 0)
                 {
                     OP.back = BACK = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, OP.lower, OP.upper, gamma, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
-                                    alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR, vars.ETLorLOSSconstraint, vars.ETLorLOSSmin, vars.ETLorLOSSmax,compw:vars.compw,ncomp:vars.ncomp);
+                                    alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR, vars.ETLorLOSSconstraint, vars.ETLorLOSSmin, vars.ETLorLOSSmax, compw: vars.compw, ncomp: vars.ncomp);
                 }
                 else
                 {
@@ -2811,8 +2809,8 @@ namespace Portfolio
             public bool ETLorLOSSconstraint = false;
             public double ETLorLOSSmax = 0;
             public double ETLorLOSSmin = 0;
-            public int ncomp=0;
-            public double[] compw=null;
+            public int ncomp = 0;
+            public double[] compw = null;
         }
         ///<summary> A function that returns risk - target risk. Use with Solve1D to do risk constraint</summary>
         ///<param name="gam">guess for gamma (for return risk utility) or (gamma and kappa for cost risk utility)</param>
@@ -2823,7 +2821,7 @@ namespace Portfolio
             var kappa = vars.kappa;
             if (kappa < 0) kappa = gam;
             vars.back = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, vars.L, vars.U, gam, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
-                     alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR, vars.ETLorLOSSconstraint, vars.ETLorLOSSmin, vars.ETLorLOSSmax,ncomp:vars.ncomp,compw:vars.compw);
+                     alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR, vars.ETLorLOSSconstraint, vars.ETLorLOSSmin, vars.ETLorLOSSmax, ncomp: vars.ncomp, compw: vars.compw);
             double[] www = (double[])wback.Clone();
             if (vars.bench != null) BlasLike.dsubvec(vars.n, www, vars.bench, www);
             var fix = nfixed;
@@ -2851,7 +2849,7 @@ namespace Portfolio
                 utility = PortfolioUtility(sendInput.n, gamma, kappa, sendInput.buy, sendInput.sell, sendInput.alpha, wback, gradient, ref baskethere, ref tradeshere);
                 ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
                 BACK = sendInput.back = back = Dropper(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
-                     alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax, basket, baskethere, trades, tradeshere,ncomp:sendInput.ncomp,compw:sendInput.compw);
+                     alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax, basket, baskethere, trades, tradeshere, ncomp: sendInput.ncomp, compw: sendInput.compw);
                 return;
             }
             var newgamma = ActiveSet.Optimise.Solve1D(CalcRisk, 0, 1, 0, sendInput);
@@ -2866,7 +2864,7 @@ namespace Portfolio
                 else ColourConsole.WriteError("INFEASIBLE");
                 sendInput.useIP = false;
                 back = BasicOptimisation(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, sendInput.kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
-                 alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax,ncomp:sendInput.ncomp,compw:sendInput.compw);
+                 alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax, ncomp: sendInput.ncomp, compw: sendInput.compw);
                 var w = new double[sendInput.n];
                 BlasLike.dcopyvec(sendInput.n, wback, w);
                 utility = PortfolioUtility(sendInput.n, gamma, sendInput.kappa, sendInput.buy, sendInput.sell, sendInput.alpha, w, gradient, ref baskethere, ref tradeshere);
@@ -2915,7 +2913,7 @@ namespace Portfolio
                         gamma = newgamma; if (kappa < 0) kappa = gamma;
                         sendInput.useIP = false;
                         BasicOptimisation(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
-                         alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax,ncomp:sendInput.ncomp,compw:sendInput.compw);
+                         alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax, ncomp: sendInput.ncomp, compw: sendInput.compw);
                         w = new double[sendInput.n];
                         gradient = new double[sendInput.n];
                         BlasLike.dcopyvec(sendInput.n, wback, w);
@@ -3008,7 +3006,7 @@ namespace Portfolio
         double gamma, double kappa, double delta, double value, double valuel,
         double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell,
         string[] names, bool useIp = true, int nabs = 0, double[] A_abs = null, double[] Abs_L = null, double[] Abs_U = null,
-        int mabs = 0, int[] I_A = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0, double ETLorLOSSmax = 0, int basket = -1, int baskethere = -1, int trades = -1, int tradeshere = -1,int ncomp=0,double[]compw=null)
+        int mabs = 0, int[] I_A = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0, double ETLorLOSSmax = 0, int basket = -1, int baskethere = -1, int trades = -1, int tradeshere = -1, int ncomp = 0, double[] compw = null)
         {
             if (basket < 0) { basket = n; baskethere = n; }
             if (trades < 0) { trades = n; tradeshere = n; }
@@ -3053,7 +3051,7 @@ namespace Portfolio
                     }
                 }
                 var back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                    alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax,ncomp:ncomp,compw:compw);
+                    alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax, ncomp: ncomp, compw: compw);
                 if (back != 6)
                 {
                     BlasLike.dcopyvec(n, wback, w);
@@ -3102,7 +3100,7 @@ namespace Portfolio
                         }
                     }
                     back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                       alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax,compw:compw,ncomp:ncomp);
+                       alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax, compw: compw, ncomp: ncomp);
                     while (back == 6)
                     {
                         fast = false;
@@ -3132,7 +3130,7 @@ namespace Portfolio
                             }
                         }
                         back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, delta, value, valuel, rmin, rmax,
-                           alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax,ncomp:ncomp,compw:compw);
+                           alpha, initial, buy, sell, names, useIp, nabs, A_abs, Abs_L, Abs_U, mabs, I_A, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax, ncomp: ncomp, compw: compw);
                         if (back != 6)
                         {
                             BlasLike.dcopyvec(n, wback, w);
@@ -3243,7 +3241,7 @@ namespace Portfolio
             {
                 Console.WriteLine($"{i,10}\t{LAMBDA[i],16:F8}");
             }*/
-            var nUse = ntrue+ncomp-nfixed;
+            var nUse = ntrue + ncomp - nfixed;
             var Ceff = new double[nUse];
             var chere = cextra == null ? c : cextra;
             for (var i = 0; i < nUse; ++i)
@@ -3594,14 +3592,16 @@ namespace Portfolio
                 return back;
             }
         }///<summary> Create a double array and populate each element with the same value
-        ///</summary>
-        ///<param name="n">Size of double array</param>
-        ///<param name="repeatValue">Each member of the array will have this value</param>
-        public static double[] one2many(int n,double repeatValue){
-                var back=new double[n];
-                BlasLike.dsetvec(n,repeatValue,back);
-                return back;}
-                ///<summary>Create a two dimensional array M[n][nfac] from a one dimensional array of size n*m</summary>
+         ///</summary>
+         ///<param name="n">Size of double array</param>
+         ///<param name="repeatValue">Each member of the array will have this value</param>
+        public static double[] one2many(int n, double repeatValue)
+        {
+            var back = new double[n];
+            BlasLike.dsetvec(n, repeatValue, back);
+            return back;
+        }
+        ///<summary>Create a two dimensional array M[n][nfac] from a one dimensional array of size n*m</summary>
         ///<param name="n">Two dimension array is M[n][m]</param>
         ///<param name="m">Two dimension array is M[n][m]</param>
         ///<param name="ONED">Double array of size n*m</param>
@@ -3633,7 +3633,7 @@ namespace Portfolio
             }
             return TWOD;
         }
-                ///<summary>Create a one dimensional array of size n*m from a two dimensional array TWOD[n][m]</summary>
+        ///<summary>Create a one dimensional array of size n*m from a two dimensional array TWOD[n][m]</summary>
         ///<param name="n">Two dimension array is TWOD[n][m]</param>
         ///<param name="m">Two dimension array is TWOD[n][m]</param>
         ///<param name="TWOD">Double array TWOD[n][m]</param>
@@ -4536,7 +4536,7 @@ namespace Portfolio
             int I, i;
             mainordertrue = new int[n]; //Transforms mainorder to correctly grouped fixed order
             mainordertrueInverse = new int[n];
-            var trueorder =mainordertrue;// trueorder = mainorder followed by mainordertrue (borrow space from mainordertrue to save unnecessary memory allocation)
+            var trueorder = mainordertrue;// trueorder = mainorder followed by mainordertrue (borrow space from mainordertrue to save unnecessary memory allocation)
             for (i = 0, I = 0; I < n; ++I) if (mainorder[I] < ntrue) trueorder[i++] = mainorder[I];
             for (I = 0; I < n; ++I) if (mainorder[I] >= ntrue) trueorder[i++] = mainorder[I];
             for (I = 0; I < n; ++I) mainordertrueInverse[trueorder[I]] = I;
@@ -4611,13 +4611,14 @@ namespace Portfolio
         double rmin, double rmax, double[] alpha, double[] initial, double[] buy, double[] sell,
         string[] names, bool useIP = true, int nabs = 0, double[] A_abs = null, double[] L_abs = null, double[] U_abs = null,
         int mabs = 0, int[] I_a = null, int tlen = 0, double DATAlambda = 1, double[] DATA = null, double tail = 0.05, double[] targetR = null, bool ETLorLOSSconstraint = false, double ETLorLOSSmin = 0, double ETLorLOSSmax = 0, int ncomp = 0, double[] compw = null)
-        {int[]orderPortC=null,orderPortCInverse=null;
+        {
+            int[] orderPortC = null, orderPortCInverse = null;
             this.ncomp = ncomp; this.compw = compw;
             int back;
             if (kappa < 0) kappa = gamma;
             if (buy == null && sell == null && delta >= 0)
             {
-                BACK = back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, -1, value, valuel, rmin, rmax, alpha, initial, buy, sell, names, useIP, nabs, A_abs, L_abs, U_abs, mabs, I_a, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax,ncomp,compw);
+                BACK = back = BasicOptimisation(n, m, nfac, A, L, U, gamma, kappa, -1, value, valuel, rmin, rmax, alpha, initial, buy, sell, names, useIP, nabs, A_abs, L_abs, U_abs, mabs, I_a, tlen, DATAlambda, DATA, tail, targetR, ETLorLOSSconstraint, ETLorLOSSmin, ETLorLOSSmax, ncomp, compw);
                 if (back > 2) return back;
                 double turn = this.turnover(n, wback, initial);
                 if (turn <= delta) return back;
@@ -4631,13 +4632,16 @@ namespace Portfolio
             mainorder = new int[n];
             mainorderInverse = new int[n];
             fixedSecondOrder = new double[n];
-            nfixedComp=0;
-            nfixedTrue=0;
+            nfixedComp = 0;
+            nfixedTrue = 0;
             for (var i = 0; i < n; ++i)
             {
-                if (L[i] == U[i]) {nfixed++;
-                if(i<ntrue)nfixedTrue++;
-                else nfixedComp++;}
+                if (L[i] == U[i])
+                {
+                    nfixed++;
+                    if (i < ntrue) nfixedTrue++;
+                    else nfixedComp++;
+                }
                 mainorder[i] = i;
             }
             var boundLU = new double[m];
@@ -4658,26 +4662,27 @@ namespace Portfolio
                 if (names != null) Order.Reorder(n, mainorder, names);
                 Order.Reorder_gen(n, mainorder, A, m, 1, true);
                 if (A_abs != null) Order.Reorder_gen(n, mainorder, A_abs, nabs, 1, true);
-                if(ncomp>0)Order.Reorder(n,mainordertrue,mainorder);
+                if (ncomp > 0) Order.Reorder(n, mainordertrue, mainorder);
                 if (Q != null && nfac == -1) Order.ReorderSymm(ntrue, mainorder, Q);
                 else if (Q != null && nfac >= 0)
                 {
                     Order.Reorder(ntrue, mainorder, Q);
-                    Order.Reorder_gen(ntrue, mainorder, Q, nfac, 1,astart: ntrue,columns: true);
+                    Order.Reorder_gen(ntrue, mainorder, Q, nfac, 1, astart: ntrue, columns: true);
                 }
-                if(ncomp>0){
-                 orderPortC = new int[ncomp];
-             orderPortCInverse = new int[ncomp];
-            for (i = 0; i < ncomp; ++i) orderPortC[i] = mainorder[i + ntrue] - ntrue;
-            for (i = 0; i < ncomp; ++i) orderPortCInverse[orderPortC[i]] = i;
-            Ordering.Order.ReorderSymm(ncomp, orderPortC, compQ);
-            //Need to reorder over assets and composites in compw and compImplied
-            for (i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, mainorder, compw, i * ntrue);
-            for (i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, mainorder, compImplied, i * ntrue);
-            Ordering.Order.Reorder_gen(ncomp, orderPortC, compw, ntrue, columns: true);
-            Ordering.Order.Reorder_gen(ncomp, orderPortC, compImplied, ntrue, columns: true);
+                if (ncomp > 0)
+                {
+                    orderPortC = new int[ncomp];
+                    orderPortCInverse = new int[ncomp];
+                    for (i = 0; i < ncomp; ++i) orderPortC[i] = mainorder[i + ntrue] - ntrue;
+                    for (i = 0; i < ncomp; ++i) orderPortCInverse[orderPortC[i]] = i;
+                    Ordering.Order.ReorderSymm(ncomp, orderPortC, compQ);
+                    //Need to reorder over assets and composites in compw and compImplied
+                    for (i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, mainorder, compw, i * ntrue);
+                    for (i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, mainorder, compImplied, i * ntrue);
+                    Ordering.Order.Reorder_gen(ncomp, orderPortC, compw, ntrue, columns: true);
+                    Ordering.Order.Reorder_gen(ncomp, orderPortC, compImplied, ntrue, columns: true);
                 }
-                if(ncomp>0)Order.Reorder(n,mainordertrueInverse,mainorder);
+                if (ncomp > 0) Order.Reorder(n, mainordertrueInverse, mainorder);
                 if (debugLevel == 2)
                 {
                     ActiveSet.Optimise.printV("L end before convert", L, -1, n - nfixed);
@@ -4700,7 +4705,7 @@ namespace Portfolio
                 if (debugLevel == 2) ActiveSet.Optimise.printV("U end", U, -1, n - nfixed);
                 var nfixedo = nfixed;
                 nfixed = 0;
-                if(ncomp>0)Order.Reorder(n,mainordertrue,fixedW);
+                if (ncomp > 0) Order.Reorder(n, mainordertrue, fixedW);
                 hessmull(n, Q, fixedW, fixedSecondOrder);
                 fixedVariance = 0.5 * BlasLike.ddotvec(n, fixedW, fixedSecondOrder);
                 nfixed = nfixedo;
@@ -5307,23 +5312,25 @@ namespace Portfolio
                 if (names != null) Order.Reorder(n, mainorderInverse, names);
                 Order.Reorder_gen(n, mainorderInverse, A, m, 1, true);
                 if (A_abs != null) Order.Reorder_gen(n, mainorderInverse, A_abs, nabs, 1, true);
-                if(ncomp>0)Order.Reorder(n,mainorderInverse,mainordertrueInverse);
-                else mainordertrueInverse=mainorderInverse;
+                if (ncomp > 0) Order.Reorder(n, mainorderInverse, mainordertrueInverse);
+                else mainordertrueInverse = mainorderInverse;
                 if (Q != null && nfac == -1) Order.ReorderSymm(ntrue, mainordertrueInverse, Q);
                 else if (Q != null && nfac >= 0)
                 {
                     Order.Reorder(ntrue, mainordertrueInverse, Q);
                     Order.Reorder_gen(ntrue, mainordertrueInverse, Q, nfac, 1, true, ntrue);
                 }
-                if(ncomp>0){int i;
-            Ordering.Order.ReorderSymm(ncomp, orderPortCInverse, compQ);
-            //Need to reorder over assets and composites in compw and compImplied
-            for (i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, mainordertrueInverse, compw, i * ntrue);
-            for (i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, mainordertrueInverse, compImplied, i * ntrue);
-            Ordering.Order.Reorder_gen(ncomp, orderPortCInverse, compw, ntrue, columns: true);
-            Ordering.Order.Reorder_gen(ncomp, orderPortCInverse, compImplied, ntrue, columns: true);
+                if (ncomp > 0)
+                {
+                    int i;
+                    Ordering.Order.ReorderSymm(ncomp, orderPortCInverse, compQ);
+                    //Need to reorder over assets and composites in compw and compImplied
+                    for (i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, mainordertrueInverse, compw, i * ntrue);
+                    for (i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, mainordertrueInverse, compImplied, i * ntrue);
+                    Ordering.Order.Reorder_gen(ncomp, orderPortCInverse, compw, ntrue, columns: true);
+                    Ordering.Order.Reorder_gen(ncomp, orderPortCInverse, compImplied, ntrue, columns: true);
                 }
-                if(ncomp>0)Order.Reorder(n,mainorder,mainordertrueInverse);
+                if (ncomp > 0) Order.Reorder(n, mainorder, mainordertrueInverse);
             }
             var eret = BlasLike.ddotvec(n, alpha, wback);
             var printAlphas = false;
@@ -5653,8 +5660,8 @@ namespace Portfolio
         public int[] mainordertrue = null;
         public int[] mainordertrueInverse = null;
         public int[] mainorderInverse = null;
-        public double[]fixCompx=null;
-        public double[]fixComphx=null;
+        public double[] fixCompx = null;
+        public double[] fixComphx = null;
         public int ncomp = 0;
         public double[] compw = null;
         public double[] compQ = null;
@@ -5662,7 +5669,7 @@ namespace Portfolio
         public bool makingCompQ = false;
         public int debugLevel = 1;
         public double[] fixedW = null;
-        public double[]fixedSecondOrder=null;
+        public double[] fixedSecondOrder = null;
         public double fixedVariance = 0;
         public int ntrue = 0;
         public int mtrue = 0;
@@ -5687,9 +5694,11 @@ namespace Portfolio
         public virtual int makeQ()
         {
             var nn = ntrue * (ntrue + 1) / 2;
-            if (Q != null && Q.Length == nn){
-                if(ncomp>0)makeCompQ();
-                return 0;}
+            if (Q != null && Q.Length == nn)
+            {
+                if (ncomp > 0) makeCompQ();
+                return 0;
+            }
             else
                 return -10;
         }
@@ -5702,7 +5711,8 @@ namespace Portfolio
             BlasLike.dzerovec(nn, hx);
         }
         public void makeCompQ()
-        {fixCompx=new double[ntrue+ncomp];fixComphx=new double[ntrue+ncomp];
+        {
+            fixCompx = new double[ntrue + ncomp]; fixComphx = new double[ntrue + ncomp];
             makingCompQ = true;
             compQ = new double[ncomp * (ncomp + 1) / 2];
             compImplied = new double[ntrue * ncomp];
@@ -5717,23 +5727,25 @@ namespace Portfolio
             makingCompQ = false;
         }
         public void hessmullExtraForComp(double[] x, double[] hx)
-        {var nfixedTrue=this.nfixedTrue;
-        var nfixedComp=this.nfixedComp;
-        if(nfixed==0){
-            nfixedComp=0;
-            nfixedTrue=0;
-        }
+        {
+            var nfixedTrue = this.nfixedTrue;
+            var nfixedComp = this.nfixedComp;
+            if (nfixed == 0)
+            {
+                nfixedComp = 0;
+                nfixedTrue = 0;
+            }
             if (makingCompQ) return;
             if (ncomp > 0)
             {
-                Factorise.CovMul(ncomp-nfixedComp, compQ, x, hx, wstart: ntrue, Qwstart: ntrue);
-                for (var i = 0; i < ntrue-nfixedTrue; ++i)
+                Factorise.CovMul(ncomp - nfixedComp, compQ, x, hx, wstart: ntrue, Qwstart: ntrue);
+                for (var i = 0; i < ntrue - nfixedTrue; ++i)
                 {
-                    hx[i] += BlasLike.ddot(ncomp-nfixedComp, compImplied, ntrue, x, 1, i, ntrue);
+                    hx[i] += BlasLike.ddot(ncomp - nfixedComp, compImplied, ntrue, x, 1, i, ntrue);
                 }
-                for (var i = 0; i < ncomp-nfixedComp; ++i)
+                for (var i = 0; i < ncomp - nfixedComp; ++i)
                 {
-                    hx[i + ntrue] += BlasLike.ddotvec(ntrue-nfixedTrue, compImplied, x, i * ntrue);
+                    hx[i + ntrue] += BlasLike.ddotvec(ntrue - nfixedTrue, compImplied, x, i * ntrue);
                 }
             }
         }
@@ -5744,8 +5756,8 @@ namespace Portfolio
             {
                 if (ncomp > 0 && nfixed > 0)
                 {
-                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, x, fixCompx);
-                    BlasLike.dcopyvec(ntrue+ncomp, hx, fixComphx);
+                    BlasLike.dcopyvec(ntrue + ncomp - nfixed, x, fixCompx);
+                    BlasLike.dcopyvec(ntrue + ncomp, hx, fixComphx);
                     Order.Reorder(mainordertrue.Length, mainordertrue, fixCompx);//Need to check that n is correct
                     Order.Reorder(mainordertrue.Length, mainordertrue, fixComphx);
 
@@ -5754,8 +5766,8 @@ namespace Portfolio
                     hessmullExtraForComp(fixCompx, fixComphx);
                     Order.Reorder(mainordertrueInverse.Length, mainordertrueInverse, fixCompx);//Need to check that n is correct
                     Order.Reorder(mainordertrueInverse.Length, mainordertrueInverse, fixComphx);
-                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, fixCompx, x);
-                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, fixComphx, hx);
+                    BlasLike.dcopyvec(ntrue + ncomp - nfixed, fixCompx, x);
+                    BlasLike.dcopyvec(ntrue + ncomp - nfixed, fixComphx, hx);
                 }
                 else
                 {
@@ -5769,7 +5781,7 @@ namespace Portfolio
         }
         public virtual void hessmull(int nn, double[] QQ, double[] x, double[] hx, int hstart = 0, int xstart = 0)
         {
-            hessmull(nn,1,1,1,QQ,x,hx);
+            hessmull(nn, 1, 1, 1, QQ, x, hx);
         }
         ///<Summary>Set the upper and lower bounds to allow only the long/short and/or
         ///buy/sell value given by w</Summary>
@@ -6238,8 +6250,8 @@ namespace Portfolio
             {
                 if (ncomp > 0 && nfixed > 0)
                 {
-                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, x, fixCompx);
-                    BlasLike.dzerovec(ntrue+ncomp, fixComphx);
+                    BlasLike.dcopyvec(ntrue + ncomp - nfixed, x, fixCompx);
+                    BlasLike.dzerovec(ntrue + ncomp, fixComphx);
                     Order.Reorder(mainordertrue.Length, mainordertrue, fixCompx);//Need to check that n is correct
                     Order.Reorder(mainordertrue.Length, mainordertrue, fixComphx);
                     Factorise.FacMul(ntrue, nfac, Q, fixCompx, fixComphx, 0, xstart, hstart, nfixed - nfixedComp);
@@ -6247,8 +6259,8 @@ namespace Portfolio
                     hessmullExtraForComp(fixCompx, fixComphx);
                     Order.Reorder(mainordertrueInverse.Length, mainordertrueInverse, fixCompx);//Need to check that n is correct
                     Order.Reorder(mainordertrueInverse.Length, mainordertrueInverse, fixComphx);
-                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, fixCompx, x);
-                    BlasLike.dcopyvec(ntrue+ncomp-nfixed, fixComphx, hx);
+                    BlasLike.dcopyvec(ntrue + ncomp - nfixed, fixCompx, x);
+                    BlasLike.dcopyvec(ntrue + ncomp - nfixed, fixComphx, hx);
                 }
                 else
                 {
@@ -6266,7 +6278,7 @@ namespace Portfolio
         }
         public override void hessmull(int nn, double[] QQ, double[] x, double[] hx, int hstart = 0, int xstart = 0)
         {
-            hessmull(nn,1,1,1,QQ,x,hx);
+            hessmull(nn, 1, 1, 1, QQ, x, hx);
         }
         public int nfac;
         public double[] FL = null;
@@ -6278,14 +6290,14 @@ namespace Portfolio
             if (FC != null && SV != null && FL != null)
             {
                 Q = new double[nn];
-                var back=Factorise.FMP(ntrue, nfac, FC, SV, FL, Q);
-                if(ncomp>0)makeCompQ();
+                var back = Factorise.FMP(ntrue, nfac, FC, SV, FL, Q);
+                if (ncomp > 0) makeCompQ();
                 return back;
             }
             else
             {
                 Debug.Assert(Q.Length == nn);
-                if(ncomp>0)makeCompQ();
+                if (ncomp > 0) makeCompQ();
                 return 0;
             }
         }
