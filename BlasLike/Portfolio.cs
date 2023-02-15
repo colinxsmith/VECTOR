@@ -4762,7 +4762,7 @@ namespace Portfolio
             double DATAmax = 0.0, DATAmin = 0.0;
             if (tlen > 0)
             {
-                BlasLike.dxminmax(tlen * n, DATA, 1, ref DATAmax, ref DATAmin);
+                BlasLike.dxminmax(tlen * (n-ncomp), DATA, 1, ref DATAmax, ref DATAmin);
                 DATAmax *= (double)n;
                 if (targetR == null)                //ETL
                     N += tlen + 1;
@@ -5104,8 +5104,14 @@ namespace Portfolio
                 for (var i = 0; i < tlen; ++i)
                 {//GAIN/LOSS   r[t] + max((Target - r[t]),0) >= Target
                  //ETL          -r[t] + max((r[t] - VAR),0) >= 0
-                    if (targetR == null) BlasLike.dsccopy(n, -1, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//ETL has minus
-                    else BlasLike.dcopy(n, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//GAIN/LOSS has plus
+                    if (targetR == null) {BlasLike.dsccopy(n-ncomp, -1, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//ETL has minus
+for(var j=0;j<ncomp;++j)
+BlasLike.dset(1,-BlasLike.ddot(n-ncomp,compw,1,DATA,tlen,j*(n-ncomp),j),AA,M,i + m + buysellI + longshortI);
+                    }
+                    else {BlasLike.dcopy(n-ncomp, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//GAIN/LOSS has plus
+for(var j=0;j<ncomp;++j)
+BlasLike.dset(1,BlasLike.ddot(n-ncomp,compw,1,DATA,tlen,j*(n-ncomp),j),AA,M,i + m + buysellI + longshortI);
+                    }
                     BlasLike.dset(1, 1, AA, M, m + buysellI + longshortI + i + M * (i + n + buysellI + longshortI));//THe positive variables
                     if (targetR == null) BlasLike.dset(1, 1, AA, M, m + buysellI + longshortI + i + M * (tlen + n + buysellI + longshortI));//Get VAR for ETL
                     if (nfixed > 0)
@@ -5438,7 +5444,7 @@ namespace Portfolio
                     var ETL2 = BlasLike.ddotvec(tlen + 1, WW, CC, n - nfixed + buysellI + longshortI, n - nfixed + buysellI + longshortI) / DATAlambda;
                     var VAR1 = 0e0;
                     int VARindex = -2;
-                    var ETL1 = ETL(n, wback, DATA, tail, ref VAR1, ref VARindex);
+                    var ETL1 = ETL(n-ncomp, wback, DATA, tail, ref VAR1, ref VARindex);
                     if (Math.Abs(ETL1 - ETL2) > BlasLike.lm_rooteps)
                         CVARGLprob = true;
                     ColourConsole.WriteEmbeddedColourLine($"ETL:\t\t\t\t[green]{ETL1,20:f16}:[/green]\t[cyan]{ETL2,20:f16}[/cyan]");
@@ -5446,7 +5452,7 @@ namespace Portfolio
                 else
                 {
                     var LOSS2 = BlasLike.ddotvec(tlen, WW, CC, n - nfixed + buysellI + longshortI, n - nfixed + buysellI + longshortI) / DATAlambda;
-                    var LOSS1 = LOSS(n, wback, DATA, targetR);
+                    var LOSS1 = LOSS(n-ncomp, wback, DATA, targetR);
                     if (Math.Abs(LOSS1 - LOSS2) > BlasLike.lm_rooteps)
                         CVARGLprob = true;
                     ColourConsole.WriteEmbeddedColourLine($"LOSS:\t\t\t\t[green]{LOSS2,20:f16}:[/green]\t[cyan]{LOSS2,20:f16}[/cyan]");
@@ -5718,7 +5724,7 @@ namespace Portfolio
             compImplied = new double[ntrue * ncomp];
             for (int ij = 0, i = 0; i < ncomp; ++i)
             {
-                hessmull(ntrue, 1, 1, 1, Q, compw, compImplied, xstart: i * ntrue, hstart: i * ntrue);
+                hessmull(ntrue, Q, compw, compImplied, xstart: i * ntrue, hstart: i * ntrue);
                 for (var j = 0; j <= i; j++)
                 {
                     compQ[ij++] = BlasLike.ddotvec(ntrue, compw, compImplied, astart: j * ntrue, bstart: i * ntrue);
@@ -5751,6 +5757,10 @@ namespace Portfolio
         }
         public virtual void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx, int hstart = 0, int xstart = 0)
         {
+            hessmull(nn,QQ,x,hx,hstart,xstart);
+        }
+        public virtual void hessmull(int nn, double[] QQ, double[] x, double[] hx, int hstart = 0, int xstart = 0)
+        {
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
@@ -5778,10 +5788,6 @@ namespace Portfolio
                 }
             }
             else BlasLike.dzerovec(nn, hx);
-        }
-        public virtual void hessmull(int nn, double[] QQ, double[] x, double[] hx, int hstart = 0, int xstart = 0)
-        {
-            hessmull(nn, 1, 1, 1, QQ, x, hx);
         }
         ///<Summary>Set the upper and lower bounds to allow only the long/short and/or
         ///buy/sell value given by w</Summary>
@@ -6245,6 +6251,10 @@ namespace Portfolio
         }
         public override void hessmull(int nn, int nrowh, int ncolh, int j, double[] QQ, double[] x, double[] hx, int hstart = 0, int xstart = 0)
         {
+            hessmull(nn,QQ,x,hx,hstart,xstart);
+        }
+        public override void hessmull(int nn, double[] QQ, double[] x, double[] hx, int hstart = 0, int xstart = 0)
+        {
             Debug.Assert(ntrue != 0);
             if (Q != null)
             {
@@ -6275,10 +6285,6 @@ namespace Portfolio
                 }
             }
             else BlasLike.dzerovec(nn, hx, hstart);
-        }
-        public override void hessmull(int nn, double[] QQ, double[] x, double[] hx, int hstart = 0, int xstart = 0)
-        {
-            hessmull(nn, 1, 1, 1, QQ, x, hx);
         }
         public int nfac;
         public double[] FL = null;
