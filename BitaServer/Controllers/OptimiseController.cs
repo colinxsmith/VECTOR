@@ -457,7 +457,7 @@ public class OptimiseController : ControllerBase
             if (op.names != null && op.names.Length < op.n.GetValueOrDefault()) op.names = null;
             op.w = new double[op.n.GetValueOrDefault()];
             bool CVARGLprob = false;
-#if USETRY
+#if !NOTUSETRY //This is defined in the .csproj file
             try
             {
 #endif
@@ -471,7 +471,7 @@ public class OptimiseController : ControllerBase
                 op.tradesell.GetValueOrDefault(), op.valuel, op.Abs_L, breakdown, ref CVARGLprob, op.tlen, op.Gstrength.GetValueOrDefault(),
                 op.DATA, op.tail, op.TargetReturn, op.ETLopt.GetValueOrDefault() || op.LOSSopt.GetValueOrDefault(), op.TargetReturn == null ? op.ETLmin.GetValueOrDefault() : op.LOSSmin.GetValueOrDefault(),
                 op.TargetReturn == null ? op.ETLmax.GetValueOrDefault() : op.LOSSmax.GetValueOrDefault(), op.logfile, ncomp: op.ncomp.GetValueOrDefault(), compw: op.composites);
-#if USETRY
+#if !NOTUSETRY
             }
             catch (Exception popt) { op.message = $"{popt.Message}"; return Problem(title: "Optimiser input scalar variable error", detail: lic.VersionString, type: op.message); }
 #endif
@@ -624,7 +624,7 @@ public class OptimiseController : ControllerBase
             }
             else
             {
-                op.result.LOSS = Portfolio.Portfolio.LOSS(op.n.GetValueOrDefault()-op.ncomp.GetValueOrDefault(), op.w, op.DATA, op.TargetReturn, breakd);
+                op.result.LOSS = Portfolio.Portfolio.LOSS(op.n.GetValueOrDefault(), op.w, op.DATA, op.TargetReturn, breakd,ncomp:op.ncomp.GetValueOrDefault(),compw:op.composites);
                 op.result.breakdown = breakd;
             }
         }
@@ -1085,7 +1085,7 @@ public class OptimiseController : ControllerBase
             }
             else
             {
-                op.result.LOSS = Portfolio.Portfolio.LOSS(op.n.GetValueOrDefault()-op.ncomp.GetValueOrDefault(), op.w, op.DATA, op.TargetReturn, breakd);
+                op.result.LOSS = Portfolio.Portfolio.LOSS(op.n.GetValueOrDefault(), op.w, op.DATA, op.TargetReturn, breakd,ncomp:op.ncomp.GetValueOrDefault(),compw:op.composites);
                 op.result.breakdown = breakd;
             }
         }

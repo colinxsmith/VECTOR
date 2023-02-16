@@ -3694,17 +3694,22 @@ namespace Portfolio
         ///Asset returns data for i'th period and j'th asset is given in DATA[i+j*tlen]
         ///LOSS = sum(max(0,target-s)) where s=DATA.w
         ///</summary>
-        ///<param name="n">Number of assets in portfolio</param>
+        ///<param name="n">Number of true assets in portfolio</param>
         ///<param name="w">Array of asset weights</param>
         ///<param name="DATA">Array of historic returns data</param>
         ///<param name="target">Array of target returns</param>
         ///<param name="breakdown">Returns a double array such that LOSS=w.breakdown</param>
         ///<param name="wstart">index to start for w</param>
-        public static double LOSS(int n, double[] w, double[] DATA, double[] target, double[] breakdown = null, int wstart = 0)
+        ///<param name="ncomp">number of composite assets</param>
+        ///<param name="compw">compw[i+(n-ncomp)*j] is the composite weight for the i'th true asset in the j'th composite</param>
+        public static double LOSS(int n, double[] w, double[] DATA, double[] target, double[] breakdown = null, int wstart = 0,int ncomp=0,double[]compw=null)
         {
-            int tlen = DATA.Length / n;
+            int tlen = DATA.Length / (n-ncomp);
             var s = new double[tlen];
-            Factorise.dmxmulv(tlen, n, DATA, w, s, 0, wstart);
+            Factorise.dmxmulv(tlen, n-ncomp, DATA, w, s, 0, wstart);
+                    for(var i=0;i<n-ncomp;++i){
+                        for(var k=0;k<ncomp;++k){var ww=compw[i+(n-ncomp)*k]*w[k+n-ncomp];
+                        BlasLike.daxpyvec(tlen,ww,DATA,s,xstart:i*tlen);}}
             if (breakdown == null)
                 return LOSS(s, target, null);
             else
@@ -3717,7 +3722,10 @@ namespace Portfolio
                     {
                         for (var j = 0; j < n; ++j)
                         {
-                            breakdown[j] += target[i] - DATA[i + j * tlen];
+                     if(j<n-ncomp)       breakdown[j] += target[i] - DATA[i + j * tlen];
+                     else {
+                        breakdown[j]+=target[i]-BlasLike.ddot(n-ncomp,DATA,tlen,compw,1,dxstart:i,  dystart:(j-n+ncomp)*ncomp);
+                     }
                         }
                     }
                 }
@@ -5106,11 +5114,12 @@ namespace Portfolio
                  //ETL          -r[t] + max((r[t] - VAR),0) >= 0
                     if (targetR == null) {BlasLike.dsccopy(n-ncomp, -1, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//ETL has minus
 for(var j=0;j<ncomp;++j)
-BlasLike.dset(1,-BlasLike.ddot(n-ncomp,compw,1,DATA,tlen,j*(n-ncomp),j),AA,M,i + m + buysellI + longshortI);
+BlasLike.dset(1,-BlasLike.ddot(ntrue,compw,1,DATA,tlen,j*ntrue,i),AA,M,i + m + buysellI + longshortI+M*(ntrue+j));
                     }
-                    else {BlasLike.dcopy(n-ncomp, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//GAIN/LOSS has plus
+                    else {BlasLike.dcopy(ntrue, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//GAIN/LOSS has plus
 for(var j=0;j<ncomp;++j)
-BlasLike.dset(1,BlasLike.ddot(n-ncomp,compw,1,DATA,tlen,j*(n-ncomp),j),AA,M,i + m + buysellI + longshortI);
+BlasLike.dset(1,
+       BlasLike.ddot(ntrue,compw,1,DATA,tlen,j*ntrue,i),AA,M,i + m + buysellI + longshortI+M*(ntrue+j));
                     }
                     BlasLike.dset(1, 1, AA, M, m + buysellI + longshortI + i + M * (i + n + buysellI + longshortI));//THe positive variables
                     if (targetR == null) BlasLike.dset(1, 1, AA, M, m + buysellI + longshortI + i + M * (tlen + n + buysellI + longshortI));//Get VAR for ETL
@@ -5452,10 +5461,10 @@ BlasLike.dset(1,BlasLike.ddot(n-ncomp,compw,1,DATA,tlen,j*(n-ncomp),j),AA,M,i + 
                 else
                 {
                     var LOSS2 = BlasLike.ddotvec(tlen, WW, CC, n - nfixed + buysellI + longshortI, n - nfixed + buysellI + longshortI) / DATAlambda;
-                    var LOSS1 = LOSS(n-ncomp, wback, DATA, targetR);
+                    var LOSS1 = LOSS(n, wback, DATA, targetR,ncomp:ncomp,compw:compw);
                     if (Math.Abs(LOSS1 - LOSS2) > BlasLike.lm_rooteps)
                         CVARGLprob = true;
-                    ColourConsole.WriteEmbeddedColourLine($"LOSS:\t\t\t\t[green]{LOSS2,20:f16}:[/green]\t[cyan]{LOSS2,20:f16}[/cyan]");
+                    ColourConsole.WriteEmbeddedColourLine($"LOSS:\t\t\t\t[green]{LOSS1,20:f16}:[/green]\t[cyan]{LOSS2,20:f16}[/cyan]");
                 }
             }
             for (var i = 0; i < m; ++i)
