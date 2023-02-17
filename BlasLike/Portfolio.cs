@@ -344,7 +344,7 @@ namespace Portfolio
             ///<param name="kk">Data for the calulation is cast from kk to an ETLpass class</param>
             double cvar(double X, object kk)
             {
-                ETLpass here = this;
+                ETLpass here =(ETLpass) kk;
                 double r = 0;
                 if (here.breakdownIndex == null)
                 {
@@ -3567,28 +3567,36 @@ namespace Portfolio
         ///<param name="VAR">The Value at risk calculated here</param>
         ///<param name="VARindex">The time interval that defines VAR</param>
         ///<param name="breakdown">Returns a double array such that ETL=w.breakdown</param>
-        public static double ETL(int n, double[] w, double[] DATA, double tail, ref double VAR, ref int VARindex, double[] breakdown = null)
+        public static double ETL(int n, double[] w, double[] DATA, double tail, ref double VAR, ref int VARindex, double[] breakdown = null,int ncomp=0,double[]compw=null)
         {
             int tlen = DATA.Length / n;
             var s = new double[tlen];
-            Factorise.dmxmulv(tlen, n, DATA, w, s);
+            Factorise.dmxmulv(tlen, n-ncomp, DATA, w, s);
+                    for(var i=0;i<n-ncomp;++i){
+                        for(var k=0;k<ncomp;++k){var ww=compw[i+(n-ncomp)*k]*w[k+n-ncomp];
+                        BlasLike.daxpyvec(tlen,ww,DATA,s,xstart:i*tlen);}}
             if (breakdown == null) return ETL(s, tail, ref VAR, ref VARindex, null);
             else
             {
                 var breakd = (bool[])new bool[tlen];
                 var back = ETL(s, tail, ref VAR, ref VARindex, breakd);
-                var vcount = 0;
                 for (var i = 0; i < tlen; ++i)
                 {
                     if (breakd[i])
                     {
-                        vcount++;
-                        BlasLike.daxpy(n, 1, DATA, tlen, breakdown, 1, i);
-                        BlasLike.daxpy(n, -1, DATA, tlen, breakdown, 1, VARindex);
+                        BlasLike.daxpy(n - ncomp, 1, DATA, tlen, breakdown, 1, i);
+                        BlasLike.daxpy(n - ncomp, -1, DATA, tlen, breakdown, 1, VARindex);
+                        for (var j = n - ncomp; j < n; ++j)
+                        {
+                            breakdown[j] += BlasLike.ddot(n - ncomp, DATA, tlen, compw, 1, dxstart: i, dystart: (j - n + ncomp) * ncomp);
+                           breakdown[j] -= BlasLike.ddot(n - ncomp, DATA, tlen, compw, 1, dxstart: VARindex, dystart: (j - n + ncomp) * ncomp);
+                        }
                     }
                 }
                 BlasLike.dscalvec(n, 1.0 / check_digit(tail * tlen), breakdown);
                 BlasLike.daxpy(n, 1, DATA, tlen, breakdown, 1, VARindex);
+                var checkETL=BlasLike.ddotvec(n,w,breakdown);
+                Debug.Assert(Math.Abs(checkETL-back)<1e-12);
                 return back;
             }
         }///<summary> Create a double array and populate each element with the same value
@@ -3721,14 +3729,17 @@ namespace Portfolio
                     if (breakdownindex[i])
                     {
                         for (var j = 0; j < n; ++j)
-                        {
-                     if(j<n-ncomp)       breakdown[j] += target[i] - DATA[i + j * tlen];
-                     else {
-                        breakdown[j]+=target[i]-BlasLike.ddot(n-ncomp,DATA,tlen,compw,1,dxstart:i,  dystart:(j-n+ncomp)*ncomp);
-                     }
+                        {breakdown[j]+=target[i];
+                            if (j < n - ncomp) breakdown[j] += - DATA[i + j * tlen];
+                            else
+                            {
+                                breakdown[j] += - BlasLike.ddot(n - ncomp, DATA, tlen, compw, 1, dxstart: i, dystart: (j - n + ncomp) * ncomp);
+                            }
                         }
                     }
                 }
+                var checkLOSS=BlasLike.ddotvec(n,w,breakdown);
+                Debug.Assert(Math.Abs(checkLOSS-back)<1e-8);
                 return back;
             }
         }
@@ -5112,14 +5123,15 @@ namespace Portfolio
                 for (var i = 0; i < tlen; ++i)
                 {//GAIN/LOSS   r[t] + max((Target - r[t]),0) >= Target
                  //ETL          -r[t] + max((r[t] - VAR),0) >= 0
-                    if (targetR == null) {BlasLike.dsccopy(n-ncomp, -1, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//ETL has minus
+                    if (targetR == null) {BlasLike.dsccopy(ntrue, -1, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//ETL has minus
 for(var j=0;j<ncomp;++j)
-BlasLike.dset(1,-BlasLike.ddot(ntrue,compw,1,DATA,tlen,j*ntrue,i),AA,M,i + m + buysellI + longshortI+M*(ntrue+j));
+BlasLike.dset(1,
+                                     -BlasLike.ddot(ntrue,compw,1,DATA,tlen,j*ntrue,i),AA,M,i + m + buysellI + longshortI+M*(ntrue+j));
                     }
                     else {BlasLike.dcopy(ntrue, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//GAIN/LOSS has plus
 for(var j=0;j<ncomp;++j)
 BlasLike.dset(1,
-       BlasLike.ddot(ntrue,compw,1,DATA,tlen,j*ntrue,i),AA,M,i + m + buysellI + longshortI+M*(ntrue+j));
+                                      BlasLike.ddot(ntrue,compw,1,DATA,tlen,j*ntrue,i),AA,M,i + m + buysellI + longshortI+M*(ntrue+j));
                     }
                     BlasLike.dset(1, 1, AA, M, m + buysellI + longshortI + i + M * (i + n + buysellI + longshortI));//THe positive variables
                     if (targetR == null) BlasLike.dset(1, 1, AA, M, m + buysellI + longshortI + i + M * (tlen + n + buysellI + longshortI));//Get VAR for ETL
@@ -5453,7 +5465,7 @@ BlasLike.dset(1,
                     var ETL2 = BlasLike.ddotvec(tlen + 1, WW, CC, n - nfixed + buysellI + longshortI, n - nfixed + buysellI + longshortI) / DATAlambda;
                     var VAR1 = 0e0;
                     int VARindex = -2;
-                    var ETL1 = ETL(n-ncomp, wback, DATA, tail, ref VAR1, ref VARindex);
+                    var ETL1 = ETL(n, wback, DATA, tail, ref VAR1, ref VARindex,ncomp:ncomp,compw:compw);
                     if (Math.Abs(ETL1 - ETL2) > BlasLike.lm_rooteps)
                         CVARGLprob = true;
                     ColourConsole.WriteEmbeddedColourLine($"ETL:\t\t\t\t[green]{ETL1,20:f16}:[/green]\t[cyan]{ETL2,20:f16}[/cyan]");

@@ -359,13 +359,15 @@ public class OptimiseController : ControllerBase
                 if (LOSSmax != null) op.LOSSmax = LOSSmax;
                 if (ETLmax != null) op.ETLmax = ETLmax;
                 if (ETLmin != null) op.ETLmin = ETLmin;
-                if (op.ETLmax != null && op.ETLmin != null) op.ETLopt = true;
+                if (op.ETLmax != null || op.ETLmin != null) op.ETLopt = true;
+                if(op.ETLopt.GetValueOrDefault() && (op.ETLmax==null||op.ETLmin==null))return Problem(detail:$"ETL max is {op.ETLmax}. ETL min is {op.ETLmin}",title:"Set both bounds for ETL");
                 var ETLopt = false;
                 try { op.ETLmin = CVarData.mapDouble["CVarMin"][0]; } catch {; }
                 try { op.ETLmax = CVarData.mapDouble["CVarMax"][0]; } catch {; }
                 try { ETLopt = CVarData.mapInt["CVar_constraint"][0] != 0 ? true : false; } catch {; }
                 if (ETLopt) op.ETLopt = ETLopt;
-                if (op.LOSSmax != null && op.LOSSmin != null) op.LOSSopt = true;
+                if (op.LOSSmax != null || op.LOSSmin != null) op.LOSSopt = true;
+                if(op.LOSSopt.GetValueOrDefault() && (op.LOSSmax==null||op.LOSSmin==null))return Problem(detail:$"Loss max is {op.LOSSmax}. Loss min is {op.LOSSmin}",title:"Set both bounds for loss");
                 if (op.alpha == null)
                 {
                     var ones = (double[])new double[op.tlen];
@@ -617,7 +619,7 @@ public class OptimiseController : ControllerBase
             {
                 var VAR = 0.0;
                 var VARindex = 0;
-                op.result.ETL = Portfolio.Portfolio.ETL(op.n.GetValueOrDefault()-op.ncomp.GetValueOrDefault(), op.w, op.DATA, op.tail, ref VAR, ref VARindex, breakd);
+                op.result.ETL = Portfolio.Portfolio.ETL(op.n.GetValueOrDefault(), op.w, op.DATA, op.tail, ref VAR, ref VARindex, breakd,ncomp:op.ncomp.GetValueOrDefault(),compw:op.composites);
                 op.result.VAR = VAR;
                 op.result.VARindex = VARindex;
                 op.result.breakdown = breakd;
@@ -1078,7 +1080,7 @@ public class OptimiseController : ControllerBase
             {
                 var VAR = 0.0;
                 var VARindex = 0;
-                op.result.ETL = Portfolio.Portfolio.ETL(op.n.GetValueOrDefault()-op.ncomp.GetValueOrDefault(), op.w, op.DATA, op.tail, ref VAR, ref VARindex, breakd);
+                op.result.ETL = Portfolio.Portfolio.ETL(op.n.GetValueOrDefault(), op.w, op.DATA, op.tail, ref VAR, ref VARindex, breakd,ncomp:op.ncomp.GetValueOrDefault(),compw:op.composites);
                 op.result.VAR = VAR;
                 op.result.VARindex = VARindex;
                 op.result.breakdown = breakd;
