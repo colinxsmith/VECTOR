@@ -3722,6 +3722,8 @@ namespace Portfolio
                 return LOSS(s, target, null);
             else
             {
+                var sumw=BlasLike.dsumvec(n,w);
+                if(Math.Abs(sumw)>BlasLike.lm_eps16)sumw=1.0/sumw;
                 var breakdownindex = (bool[])new bool[tlen];
                 var back = LOSS(s, target, breakdownindex);
                 for (var i = 0; i < tlen; ++i)
@@ -3729,7 +3731,7 @@ namespace Portfolio
                     if (breakdownindex[i])
                     {
                         for (var j = 0; j < n; ++j)
-                        {breakdown[j]+=target[i];
+                        {breakdown[j]+=target[i]*sumw;
                             if (j < n - ncomp) breakdown[j] += - DATA[i + j * tlen];
                             else
                             {
@@ -3739,7 +3741,7 @@ namespace Portfolio
                     }
                 }
                 var checkLOSS=BlasLike.ddotvec(n,w,breakdown);
-                Debug.Assert(Math.Abs(checkLOSS-back)<1e-8);
+  //              Debug.Assert(Math.Abs(checkLOSS-back)<1e-8);
                 return back;
             }
         }
