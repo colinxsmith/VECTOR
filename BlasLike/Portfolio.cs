@@ -3569,7 +3569,7 @@ namespace Portfolio
         ///<param name="breakdown">Returns a double array such that ETL=w.breakdown</param>
         public static double ETL(int n, double[] w, double[] DATA, double tail, ref double VAR, ref int VARindex, double[] breakdown = null,int ncomp=0,double[]compw=null)
         {
-            int tlen = DATA.Length / n;
+            int tlen = DATA.Length / (n-ncomp);
             var s = new double[tlen];
             Factorise.dmxmulv(tlen, n-ncomp, DATA, w, s);
                     for(var i=0;i<n-ncomp;++i){
