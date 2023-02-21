@@ -5164,26 +5164,40 @@ namespace Portfolio
                 for (var i = 0; i < tlen; ++i)
                 {//GAIN/LOSS   r[t] + max((Target - r[t]),0) >= Target
                  //ETL          -r[t] + max((r[t] - VAR),0) >= 0
-                 if(ncomp==0){
-                    if (targetR == null)
+                    if (ncomp == 0)
                     {
-                        BlasLike.dsccopy(ntrue, -1, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//ETL has minus
-                        for (var j = 0; j < ncomp; ++j)
-                            BlasLike.dset(1,
-                                                                 -BlasLike.ddot(ntrue, compw, 1, DATA, tlen, j * ntrue, i), AA, M, i + m + buysellI + longshortI + M * (ntrue + j));
+                        if (targetR == null)
+                        {
+                            BlasLike.dsccopy(ntrue, -1, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//ETL has minus
+                            for (var j = 0; j < ncomp; ++j)
+                                BlasLike.dset(1,
+                                                                     -BlasLike.ddot(ntrue, compw, 1, DATA, tlen, j * ntrue, i), AA, M, i + m + buysellI + longshortI + M * (ntrue + j));
+                        }
+                        else
+                        {
+                            BlasLike.dcopy(ntrue, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//GAIN/LOSS has plus
+                            for (var j = 0; j < ncomp; ++j)
+                                BlasLike.dset(1,
+                                                                      BlasLike.ddot(ntrue, compw, 1, DATA, tlen, j * ntrue, i), AA, M, i + m + buysellI + longshortI + M * (ntrue + j));
+                        }
                     }
                     else
                     {
-                        BlasLike.dcopy(ntrue, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//GAIN/LOSS has plus
-                        for (var j = 0; j < ncomp; ++j)
-                            BlasLike.dset(1,
-                                                                  BlasLike.ddot(ntrue, compw, 1, DATA, tlen, j * ntrue, i), AA, M, i + m + buysellI + longshortI + M * (ntrue + j));
+                        var sign = targetR == null ? -1 : 1;
+                        for (var j = 0; j < ntrue; ++j)
+                        {
+                            AA[i + m + buysellI + longshortI + j * M] = sign * DATA[i + mainordertrueInverse[j] * tlen];
+                        }
+                        for (var k = 0; k < nfixedTrue; ++k)
+                        {
+                            var dotk = 0.0;
+                            for (var j = 0; j < ntrue; ++j)
+                            {
+                                dotk += sign * compw[j + ntrue * k] * DATA[i + mainordertrueInverse[j]];
+                            }
+                            AA[i + m + buysellI + longshortI + ntrue + k * M] = sign * dotk;
+                        }
                     }
-                 }else{
-                    for(var j=0;j<ntrue;++j){
-                        AA[i + M*(m + buysellI + longshortI+j)]=DATA[i+  mainordertrueInverse  [j]*tlen];
-                    }
-                 }
                     BlasLike.dset(1, 1, AA, M, m + buysellI + longshortI + i + M * (i + n + buysellI + longshortI));//THe positive variables
                     if (targetR == null) BlasLike.dset(1, 1, AA, M, m + buysellI + longshortI + i + M * (tlen + n + buysellI + longshortI));//Get VAR for ETL
                     if (nfixed > 0)
