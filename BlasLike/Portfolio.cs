@@ -3689,8 +3689,8 @@ namespace Portfolio
         public static double LOSS(double[] s, double[] target, bool[] breakdownIndex = null)
         {
             double back = 0;
-            for(var i=0;i<s.Length;++i)if(Math.Abs(target[i]-s[i])<=BlasLike.lm_eps16){s[i]=target[i];}
-            
+            for (var i = 0; i < s.Length; ++i) if (Math.Abs(target[i] - s[i]) <= BlasLike.lm_eps16) { s[i] = target[i]; }
+
             if (breakdownIndex == null)
             {
                 for (var i = 0; i < s.Length; ++i)
@@ -3740,13 +3740,14 @@ namespace Portfolio
             {
                 var breakdownindex = (bool[])new bool[tlen];
                 var back = LOSS(s, target, breakdownindex);
-                var prLOSS=0.0;
+                var prLOSS = 0.0;
                 for (var i = 0; i < tlen; ++i)
                 {
                     if (breakdownindex[i])
                     {
-                        prLOSS+=target[i];
-                    }}
+                        prLOSS += target[i];
+                    }
+                }
                 for (var i = 0; i < tlen; ++i)
                 {
                     if (breakdownindex[i])
@@ -3758,7 +3759,7 @@ namespace Portfolio
                         }
                     }
                 }
-                var checkLOSS = BlasLike.ddotvec(n, w, breakdown)+prLOSS;
+                var checkLOSS = BlasLike.ddotvec(n, w, breakdown) + prLOSS;
                 return back;
             }
         }
@@ -4734,31 +4735,32 @@ namespace Portfolio
                 BlasLike.dcopyvec(nfixed, L, fixedW, n - nfixed, n - nfixed);
                 if (ncomp > 0)
                 {
-                    var dothere = 0.0;
                     for (i = 0; i < tlen; ++i)
                     {
+                        var dothere = 0.0;
                         for (var j = 0; j < nfixedTrue; ++j)
                         {
-                            dothere += DATA[i + (mainordertrueInverse[ntrue - nfixedTrue + j])*tlen] * fixedW[n - nfixed + j];
+                            dothere += DATA[i + mainordertrueInverse[(n - nfixed + j)] * tlen] * fixedW[n - nfixed + j];
                         }
                         for (var j = 0; j < nfixedComp; ++j)
                         {
                             var inner = 0.0;
                             for (var k = 0; k < ntrue; ++k)
                             {
-                                inner += DATA[i + tlen*mainordertrueInverse[k]] * compw[k + ntrue * (j + ntrue + nfixedTrue)];
+                                inner += DATA[i + tlen * k] * compw[k + ntrue * (j + ntrue + nfixedTrue)];
                             }
-                            dothere += inner * fixedW[n-nfixedComp + j];
-                        }if (targetR == null) fixedGLETL[i] =-dothere;
-                        else  fixedGLETL[i] =dothere;
+                            dothere += inner * fixedW[n - nfixedComp + j];
+                        }
+                        if (targetR == null) fixedGLETL[i] = -dothere;
+                        else fixedGLETL[i] = dothere;
                     }
                 }
                 else
-                for (i = 0; i < tlen; ++i)
-                {
-                    if (targetR == null) fixedGLETL[i] = -BlasLike.ddot(nfixed, DATA, tlen, fixedW, 1, i + tlen * (n - nfixed), n - nfixed);
-                    else fixedGLETL[i] = BlasLike.ddot(nfixed, DATA, tlen, fixedW, 1, i + tlen * (n - nfixed), n - nfixed);
-                }
+                    for (i = 0; i < tlen; ++i)
+                    {
+                        if (targetR == null) fixedGLETL[i] = -BlasLike.ddot(nfixed, DATA, tlen, fixedW, 1, i + tlen * (n - nfixed), n - nfixed);
+                        else fixedGLETL[i] = BlasLike.ddot(nfixed, DATA, tlen, fixedW, 1, i + tlen * (n - nfixed), n - nfixed);
+                    }
                 Order.bound_reorganise(1, n, n - nfixed, m, L);
                 if (debugLevel == 2) ActiveSet.Optimise.printV("L end", L, -1, n - nfixed);
                 Order.bound_reorganise(1, n, n - nfixed, m, U);
@@ -5160,44 +5162,16 @@ namespace Portfolio
                 if (targetR == null) BlasLike.dsetvec(tlen, 0, LL, N + m + buysellI + longshortI);
                 else BlasLike.dcopyvec(tlen, targetR, LL, 0, N + m + buysellI + longshortI);
                 BlasLike.dsetvec(tlen, useIP ? BlasLike.lm_max : DATAmax, UU, N + m + buysellI + longshortI);
-
+                var sign = targetR == null ? -1.0 : 1.0;
                 for (var i = 0; i < tlen; ++i)
                 {//GAIN/LOSS   r[t] + max((Target - r[t]),0) >= Target
                  //ETL          -r[t] + max((r[t] - VAR),0) >= 0
-                    if (ncomp == 0)
-                    {
-                        if (targetR == null)
-                        {
-                            BlasLike.dsccopy(ntrue, -1, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//ETL has minus
-                            for (var j = 0; j < ncomp; ++j)
-                                BlasLike.dset(1,
-                                                                     -BlasLike.ddot(ntrue, compw, 1, DATA, tlen, j * ntrue, i), AA, M, i + m + buysellI + longshortI + M * (ntrue + j));
-                        }
-                        else
-                        {
-                            BlasLike.dcopy(ntrue, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//GAIN/LOSS has plus
-                            for (var j = 0; j < ncomp; ++j)
-                                BlasLike.dset(1,
-                                                                      BlasLike.ddot(ntrue, compw, 1, DATA, tlen, j * ntrue, i), AA, M, i + m + buysellI + longshortI + M * (ntrue + j));
-                        }
-                    }
-                    else
-                    {
-                        var sign = targetR == null ? -1 : 1;
-                        for (var j = 0; j < ntrue; ++j)
-                        {
-                            AA[i + m + buysellI + longshortI + j * M] = sign * DATA[i + mainordertrueInverse[j] * tlen];
-                        }
-                        for (var k = 0; k < nfixedTrue; ++k)
-                        {
-                            var dotk = 0.0;
-                            for (var j = 0; j < ntrue; ++j)
-                            {
-                                dotk += sign * compw[j + ntrue * k] * DATA[i + mainordertrueInverse[j]];
-                            }
-                            AA[i + m + buysellI + longshortI + ntrue + k * M] = sign * dotk;
-                        }
-                    }
+
+                    BlasLike.dsccopy(ntrue - nfixedTrue, sign, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//GAIN/LOSS has plus
+ //Need something extra when there are fixed composites
+
+
+
                     BlasLike.dset(1, 1, AA, M, m + buysellI + longshortI + i + M * (i + n + buysellI + longshortI));//THe positive variables
                     if (targetR == null) BlasLike.dset(1, 1, AA, M, m + buysellI + longshortI + i + M * (tlen + n + buysellI + longshortI));//Get VAR for ETL
                     if (nfixed > 0)
@@ -5392,7 +5366,7 @@ namespace Portfolio
                 if (debugLevel == 2) ActiveSet.Optimise.printV("U end", U, -1, n - nfixed);
                 BlasLike.dcopyvec(nfixed, L, wback, n - nfixed, n - nfixed);
                 alphaFixed = BlasLike.ddotvec(nfixed, alpha, wback, n - nfixed, n - nfixed);
-                Order.Reorder(n, mainorderInverse, wback);
+                Order.Reorder(n, mainorderInverse, wback);//This is wrong when ncomp>0 and nfixed>0
                 Order.Reorder(n, mainorderInverse, L);
                 Order.Reorder(n, mainorderInverse, U);
                 Order.Reorder(n, mainorderInverse, alpha);
@@ -5405,7 +5379,7 @@ namespace Portfolio
                 if (A_abs != null) Order.Reorder_gen(n, mainorderInverse, A_abs, nabs, 1, true);
                 if (ncomp > 0) Order.Reorder(n, mainorderInverse, mainordertrueInverse);
                 else mainordertrueInverse = mainorderInverse;
-                if (DATA != null) Order.Reorder_gen(ntrue, mainorderInverse, DATA, tlen, 1, true);
+                if (DATA != null) Order.Reorder_gen(ntrue, mainordertrueInverse, DATA, tlen, 1, true);
                 if (Q != null && nfac == -1) Order.ReorderSymm(ntrue, mainordertrueInverse, Q);
                 else if (Q != null && nfac >= 0)
                 {
