@@ -4770,6 +4770,7 @@ namespace Portfolio
                 if (ncomp > 0) Order.Reorder(n, mainordertrue, fixedW);
                 hessmull(n, Q, fixedW, fixedSecondOrder);
                 fixedVariance = 0.5 * BlasLike.ddotvec(n, fixedW, fixedSecondOrder);
+                if (ncomp > 0) Order.Reorder(n, mainordertrueInverse, fixedW);
                 nfixed = nfixedo;
                 n -= nfixed;
                 BlasLike.dsubvec(m, L, boundLU, L, n, 0, n);
@@ -5366,7 +5367,8 @@ namespace Portfolio
                 if (debugLevel == 2) ActiveSet.Optimise.printV("U end", U, -1, n - nfixed);
                 BlasLike.dcopyvec(nfixed, L, wback, n - nfixed, n - nfixed);
                 alphaFixed = BlasLike.ddotvec(nfixed, alpha, wback, n - nfixed, n - nfixed);
-                Order.Reorder(n, mainorderInverse, wback);//This is wrong when ncomp>0 and nfixed>0
+                if(ncomp>0)Order.Reorder(n, mainordertrueInverse, wback);//This is wrong when ncomp>0 and nfixed>0
+                else Order.Reorder(n, mainorderInverse, wback);//This is wrong when ncomp>0 and nfixed>0
                 Order.Reorder(n, mainorderInverse, L);
                 Order.Reorder(n, mainorderInverse, U);
                 Order.Reorder(n, mainorderInverse, alpha);
