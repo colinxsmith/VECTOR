@@ -5933,8 +5933,8 @@ namespace Portfolio
                 if (bench != null) BlasLike.daddvec(w.Length, w, bench, w);
             }
         }
-        public double Variance(double[] w)
-        {
+        public double Variance(double[] w,bool useClone=false)
+        {if(useClone)w=(double[])w.Clone();
             var Qx = new double[w.Length];
             hessmull(w.Length, Q, w, Qx);
             return BlasLike.ddotvec(w.Length, w, Qx);
