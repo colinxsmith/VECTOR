@@ -5373,7 +5373,7 @@ inner+=DATA[i+k*tlen]*compw[k+j*ntrue];
                 if (debugLevel == 2) ActiveSet.Optimise.printV("U end", U, -1, n - nfixed);
                 BlasLike.dcopyvec(nfixed, L, wback, n - nfixed, n - nfixed);
                 alphaFixed = BlasLike.ddotvec(nfixed, alpha, wback, n - nfixed, n - nfixed);
-                if(ncomp>0)Order.Reorder(n, mainordertrueInverse, wback);
+                if(ncomp>0&&tlen>0)Order.Reorder(n, mainordertrueInverse, wback);
                 else Order.Reorder(n, mainorderInverse, wback);
                 Order.Reorder(n, mainorderInverse, L);
                 Order.Reorder(n, mainorderInverse, U);
