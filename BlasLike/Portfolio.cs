@@ -4770,6 +4770,7 @@ namespace Portfolio
                 if (ncomp > 0) Order.Reorder(n, mainordertrue, fixedW);
                 hessmull(n, Q, fixedW, fixedSecondOrder);
                 fixedVariance = 0.5 * BlasLike.ddotvec(n, fixedW, fixedSecondOrder);
+                if (ncomp > 0) Order.Reorder(n, mainordertrueInverse, fixedW);
                 nfixed = nfixedo;
                 n -= nfixed;
                 BlasLike.dsubvec(m, L, boundLU, L, n, 0, n);
