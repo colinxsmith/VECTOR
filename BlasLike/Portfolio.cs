@@ -4747,7 +4747,7 @@ namespace Portfolio
                             var inner = 0.0;
                             for (var k = 0; k < ntrue; ++k)
                             {
-                                inner += DATA[i + tlen * k] * compw[k + ntrue * (j + ntrue + nfixedTrue)];
+                                inner += DATA[i + tlen * k] * compw[k + ntrue * (j + ncomp-nfixedComp)];
                             }
                             dothere += inner * fixedW[n - nfixedComp + j];
                         }
@@ -5168,7 +5168,14 @@ namespace Portfolio
                  //ETL          -r[t] + max((r[t] - VAR),0) >= 0
 
                     BlasLike.dsccopy(ntrue - nfixedTrue, sign, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//GAIN/LOSS has plus
- //Need something extra when there are fixed composites
+
+                    for(var j=0;j<ncomp-nfixedComp;++j){
+                        var inner=0.0;
+                        for(var k=0;k<ntrue;++k){
+inner+=DATA[i+k*tlen]*compw[k+j*ntrue];
+                        }
+                        BlasLike.dset(1,sign*inner,AA,M,i + m + buysellI + longshortI+(ntrue-nfixedTrue+j)*M);
+                    }
 
 
 
@@ -5366,7 +5373,8 @@ namespace Portfolio
                 if (debugLevel == 2) ActiveSet.Optimise.printV("U end", U, -1, n - nfixed);
                 BlasLike.dcopyvec(nfixed, L, wback, n - nfixed, n - nfixed);
                 alphaFixed = BlasLike.ddotvec(nfixed, alpha, wback, n - nfixed, n - nfixed);
-                Order.Reorder(n, mainorderInverse, wback);//This is wrong when ncomp>0 and nfixed>0
+                if(ncomp>0)Order.Reorder(n, mainordertrueInverse, wback);
+                else Order.Reorder(n, mainorderInverse, wback);
                 Order.Reorder(n, mainorderInverse, L);
                 Order.Reorder(n, mainorderInverse, U);
                 Order.Reorder(n, mainorderInverse, alpha);
