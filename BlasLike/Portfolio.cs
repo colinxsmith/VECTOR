@@ -5169,16 +5169,19 @@ namespace Portfolio
                 {//GAIN/LOSS   r[t] + max((Target - r[t]),0) >= Target
                  //ETL          -r[t] + max((r[t] - VAR),0) >= 0
 
-                    BlasLike.dsccopy(ntrue - nfixedTrue, sign, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//GAIN/LOSS has plus
-
-                    for(var j=0;j<ncomp-nfixedComp;++j){
-                        var inner=0.0;
-                        for(var k=0;k<ntrue;++k){
-inner+=DATA[i+k*tlen]*compw[k+j*ntrue];
+                    if(ncomp==0||nfixed==0){BlasLike.dsccopy(ntrue - nfixedTrue, sign, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//GAIN/LOSS has plus
+                   for (var j = 0; j < ncomp - nfixedComp; ++j)BlasLike.dset(1, sign * BlasLike.ddot(ntrue, compw, 1, DATA, tlen, j * ntrue, i), AA, M, i + m + buysellI + longshortI + (ntrue - nfixedTrue + j) * M);} 
+                    else{
+                        for(var j=0;j<ntrue;++j){
+                            var jj=mainordertrue[j];
+                            if(jj<ntrue-nfixedTrue)
+                            AA[i + m + buysellI + longshortI+jj*M]=DATA[i+j*tlen];
                         }
-                        BlasLike.dset(1,sign*inner,AA,M,i + m + buysellI + longshortI+(ntrue-nfixedTrue+j)*M);
+                    for (var j = 0; j < ncomp - nfixedComp; ++j)//THe order in compw and DATA is compatible
+                        {var jj=mainordertrueInverse[ntrue+j];
+                        Debug.Assert(jj>=ntrue-nfixedTrue);
+                            BlasLike.dset(1, sign * BlasLike.ddot(ntrue, compw, 1, DATA, tlen,dxstart: j * ntrue,dystart: i), AA, M, i + m + buysellI + longshortI + jj* M);}
                     }
-
 
 
                     BlasLike.dset(1, 1, AA, M, m + buysellI + longshortI + i + M * (i + n + buysellI + longshortI));//THe positive variables
@@ -5375,8 +5378,9 @@ inner+=DATA[i+k*tlen]*compw[k+j*ntrue];
                 if (debugLevel == 2) ActiveSet.Optimise.printV("U end", U, -1, n - nfixed);
                 BlasLike.dcopyvec(nfixed, L, wback, n - nfixed, n - nfixed);
                 alphaFixed = BlasLike.ddotvec(nfixed, alpha, wback, n - nfixed, n - nfixed);
-                if(ncomp>0&&tlen>0)Order.Reorder(n, mainordertrueInverse, wback);
-                else Order.Reorder(n, mainorderInverse, wback);
+                Order.Reorder(n, mainorderInverse, wback);
+                //if(ncomp>0&&tlen>0)Order.Reorder(n, mainordertrueInverse, wback);
+                //else Order.Reorder(n, mainorderInverse, wback);
                 Order.Reorder(n, mainorderInverse, L);
                 Order.Reorder(n, mainorderInverse, U);
                 Order.Reorder(n, mainorderInverse, alpha);
