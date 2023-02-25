@@ -5179,7 +5179,7 @@ namespace Portfolio
                         for (var j = 0; j < ntrue-nfixedTrue; ++j)
                         {
                             var jj = mainordertrue[j];
-                                AA[i + m + buysellI + longshortI + j * M] = DATA[i + jj * tlen];
+                                AA[i + m + buysellI + longshortI + j * M] = sign*DATA[i + jj * tlen];
                         }
                         for (var j = 0; j < ncomp - nfixedComp; ++j)//THe order in compw and DATA is compatible
                         {
