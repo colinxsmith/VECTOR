@@ -4740,16 +4740,13 @@ namespace Portfolio
                         var dothere = 0.0;
                         for (var j = 0; j < nfixedTrue; ++j)
                         {
-                            dothere += DATA[i + mainordertrueInverse[(n - nfixed + j)] * tlen] * fixedW[n - nfixed + j];
+                            var jj = mainordertrue[n - nfixed + j];
+                            dothere += DATA[i + jj * tlen] * fixedW[n - nfixed + j];
                         }
                         for (var j = 0; j < nfixedComp; ++j)
                         {
-                            var inner = 0.0;
-                            for (var k = 0; k < ntrue; ++k)
-                            {
-                                inner += DATA[i + tlen * k] * compw[k + ntrue * (j + ncomp-nfixedComp)];
-                            }
-                            dothere += inner * fixedW[n - nfixedComp + j];
+                            var jj = mainordertrue[n - nfixedComp + j];
+                            dothere += fixedW[n - nfixedComp + j] * BlasLike.ddot(ntrue, compw, 1, DATA, tlen, dxstart: jj * ntrue, dystart: i);
                         }
                         if (targetR == null) fixedGLETL[i] = -dothere;
                         else fixedGLETL[i] = dothere;
@@ -4770,8 +4767,11 @@ namespace Portfolio
                 if (ncomp > 0) Order.Reorder(n, mainordertrue, fixedW);
                 hessmull(n, Q, fixedW, fixedSecondOrder);
                 fixedVariance = 0.5 * BlasLike.ddotvec(n, fixedW, fixedSecondOrder);
-                if (ncomp > 0) {Order.Reorder(n, mainordertrueInverse, fixedW);
-                Order.Reorder(n, mainordertrueInverse, fixedSecondOrder);}
+                if (ncomp > 0)
+                {
+                    Order.Reorder(n, mainordertrueInverse, fixedW);
+                    Order.Reorder(n, mainordertrueInverse, fixedSecondOrder);
+                }
                 nfixed = nfixedo;
                 n -= nfixed;
                 BlasLike.dsubvec(m, L, boundLU, L, n, 0, n);
@@ -5169,18 +5169,23 @@ namespace Portfolio
                 {//GAIN/LOSS   r[t] + max((Target - r[t]),0) >= Target
                  //ETL          -r[t] + max((r[t] - VAR),0) >= 0
 
-                    if(ncomp==0||nfixed==0){BlasLike.dsccopy(ntrue - nfixedTrue, sign, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//GAIN/LOSS has plus
-                   for (var j = 0; j < ncomp - nfixedComp; ++j)BlasLike.dset(1, sign * BlasLike.ddot(ntrue, compw, 1, DATA, tlen, j * ntrue, i), AA, M, i + m + buysellI + longshortI + (ntrue - nfixedTrue + j) * M);} 
-                    else{
-                        for(var j=0;j<ntrue;++j){
-                            var jj=mainordertrue[j];
-                            if(jj<ntrue-nfixedTrue)
-                            AA[i + m + buysellI + longshortI+jj*M]=DATA[i+j*tlen];
+                    if (ncomp == 0 || nfixed == 0)
+                    {
+                        BlasLike.dsccopy(ntrue - nfixedTrue, sign, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//GAIN/LOSS has plus
+                        for (var j = 0; j < ncomp - nfixedComp; ++j) BlasLike.dset(1, sign * BlasLike.ddot(ntrue, compw, 1, DATA, tlen, j * ntrue, i), AA, M, i + m + buysellI + longshortI + (ntrue - nfixedTrue + j) * M);
+                    }
+                    else
+                    {
+                        for (var j = 0; j < ntrue-nfixedTrue; ++j)
+                        {
+                            var jj = mainordertrue[j];
+                                AA[i + m + buysellI + longshortI + j * M] = DATA[i + jj * tlen];
                         }
-                    for (var j = 0; j < ncomp - nfixedComp; ++j)//THe order in compw and DATA is compatible
-                        {var jj=mainordertrueInverse[ntrue+j];
-                        Debug.Assert(jj>=ntrue-nfixedTrue);
-                            BlasLike.dset(1, sign * BlasLike.ddot(ntrue, compw, 1, DATA, tlen,dxstart: j * ntrue,dystart: i), AA, M, i + m + buysellI + longshortI + jj* M);}
+                        for (var j = 0; j < ncomp - nfixedComp; ++j)//THe order in compw and DATA is compatible
+                        {
+                            var jj = mainordertrue[ntrue-nfixedTrue + j]-ntrue;
+                            BlasLike.dset(1, sign * BlasLike.ddot(ntrue, compw, 1, DATA, tlen, dxstart: jj * ntrue, dystart: i), AA, M, i + m + buysellI + longshortI + (j+ntrue-nfixedTrue)* M);
+                        }
                     }
 
 
@@ -5947,8 +5952,9 @@ namespace Portfolio
                 if (bench != null) BlasLike.daddvec(w.Length, w, bench, w);
             }
         }
-        public double Variance(double[] w,bool useClone=false)
-        {if(useClone)w=(double[])w.Clone();
+        public double Variance(double[] w, bool useClone = false)
+        {
+            if (useClone) w = (double[])w.Clone();
             var Qx = new double[w.Length];
             hessmull(w.Length, Q, w, Qx);
             return BlasLike.ddotvec(w.Length, w, Qx);
