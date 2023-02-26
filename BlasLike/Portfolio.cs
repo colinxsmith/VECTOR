@@ -5192,7 +5192,7 @@ namespace Portfolio
                     }
                     else
                     {
-                        for (var j = 0; j < ntrue-nfixedTrue; ++j)
+                        for (var j = 0; j < n-nfixed; ++j)
                         {
                             var jj = mainordertrueInverse[j];
                             if(jj<ntrue)
@@ -5200,11 +5200,11 @@ namespace Portfolio
                                 else
                                 AA[i + m + buysellI + longshortI + j * M] =sign*BlasLike.ddot(ntrue,compw,1,DATA,tlen,(jj-ntrue)*ntrue,i);
                         }
-                        for (var j = 0; j < ncomp - nfixedComp; ++j)//THe order in compw and DATA is compatible
+                  /*      for (var j = 0; j < ncomp - nfixedComp; ++j)//THe order in compw and DATA is compatible
                         {
                             var jj = mainordertrueInverse[ntrue-nfixedTrue + j]-ntrue;
                             BlasLike.dset(1, sign * BlasLike.ddot(ntrue, compw, 1, DATA, tlen, dxstart: jj * ntrue, dystart: i), AA, M, i + m + buysellI + longshortI + (j+ntrue-nfixedTrue)* M);
-                        }
+                        }*/
                     }
 
 
