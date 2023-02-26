@@ -4734,24 +4734,7 @@ namespace Portfolio
                 BlasLike.dzerovec(n - nfixed, fixedW);
                 BlasLike.dcopyvec(nfixed, L, fixedW, n - nfixed, n - nfixed);
                 if (ncomp > 0)
-                {
-                    for (i = 0; i < tlen; ++i)
-                    {
-                        var dothere = 0.0;
-                        for (var j = 0; j < nfixedTrue; ++j)
-                        {var jj=mainordertrueInverse[n-nfixed+j];
-                            dothere += DATA[i + jj * tlen] * fixedW[n - nfixed + j];
-                        }
-                        for (var j = 0; j < nfixedComp; ++j)
-                        {
-                            dothere += fixedW[ntrue+ncomp - nfixedComp + j] * BlasLike.ddot(ntrue, compw, 1, DATA, tlen, dxstart: j * ntrue, dystart: i);
-                        }
-                        if (targetR == null) fixedGLETL[i] = -dothere;
-                        else fixedGLETL[i] = dothere;
-                    }
-                }
-
- /*              {Order.Reorder(n, mainordertrue, fixedW);
+                      {Order.Reorder(n, mainordertrue, fixedW);
                     for (i = 0; i < tlen; ++i)
                     {
                         var dothere = 0.0;
@@ -4767,7 +4750,7 @@ namespace Portfolio
                         else fixedGLETL[i] = dothere;
                     }Order.Reorder(n, mainordertrueInverse, fixedW);
                 }
-*/
+
                 else
                     for (i = 0; i < tlen; ++i)
                     {
