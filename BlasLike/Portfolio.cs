@@ -4735,6 +4735,7 @@ namespace Portfolio
                 BlasLike.dcopyvec(nfixed, L, fixedW, n - nfixed, n - nfixed);
                 if (ncomp > 0)
                       {Order.Reorder(n, mainordertrue, fixedW);
+                      var sign=(targetR==null)?-1.0:1.0;
                     for (i = 0; i < tlen; ++i)
                     {
                         var dothere = 0.0;
@@ -4746,8 +4747,7 @@ namespace Portfolio
                         {var jj=ntrue+ncomp - nfixedComp + j;
                             dothere += fixedW[jj] * BlasLike.ddot(ntrue, compw, 1, DATA, tlen, dxstart: jj * ntrue, dystart: i);
                         }
-                        if (targetR == null) fixedGLETL[i] = -dothere;
-                        else fixedGLETL[i] = dothere;
+                        fixedGLETL[i] += sign*dothere;
                     }Order.Reorder(n, mainordertrueInverse, fixedW);
                 }
 
@@ -5175,7 +5175,7 @@ namespace Portfolio
                     }
                     else
                     {
-                        for (var j = 0; j < n-nfixed; ++j)
+                        for (var j = 0; j < ntrue-nfixedTrue; ++j)
                         {
                             var jj = mainordertrueInverse[j];
                             if(jj<ntrue)
@@ -5183,11 +5183,13 @@ namespace Portfolio
                                 else
                                 AA[i + m + buysellI + longshortI + j * M] =sign*BlasLike.ddot(ntrue,compw,1,DATA,tlen,(jj-ntrue)*ntrue,i);
                         }
-                  /*      for (var j = 0; j < ncomp - nfixedComp; ++j)//THe order in compw and DATA is compatible
-                        {
-                            var jj = mainordertrueInverse[ntrue-nfixedTrue + j]-ntrue;
-                            BlasLike.dset(1, sign * BlasLike.ddot(ntrue, compw, 1, DATA, tlen, dxstart: jj * ntrue, dystart: i), AA, M, i + m + buysellI + longshortI + (j+ntrue-nfixedTrue)* M);
-                        }*/
+                        for(var j=0;j<ncomp-nfixedComp;++j){
+                            var jj=mainordertrueInverse[ntrue-nfixedTrue+j];
+                            if(jj<ntrue)
+                            AA[i + m + buysellI + longshortI + (ntrue-nfixedTrue+j) * M]=sign*DATA[i + jj * tlen];
+                            else
+                            AA[i + m + buysellI + longshortI + j * M] =sign*BlasLike.ddot(ntrue,compw,1,DATA,tlen,(jj-ntrue)*ntrue,i);
+                        }
                     }
 
 
