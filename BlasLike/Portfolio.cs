@@ -4734,27 +4734,23 @@ namespace Portfolio
                 BlasLike.dzerovec(n - nfixed, fixedW);
                 BlasLike.dcopyvec(nfixed, L, fixedW, n - nfixed, n - nfixed);
                 if (ncomp > 0)
-                {
+                      {Order.Reorder(n, mainordertrue, fixedW);
+                      var sign=(targetR==null)?-1.0:1.0;
                     for (i = 0; i < tlen; ++i)
                     {
                         var dothere = 0.0;
                         for (var j = 0; j < nfixedTrue; ++j)
-                        {
-                            dothere += DATA[i + mainordertrueInverse[(n - nfixed + j)] * tlen] * fixedW[n - nfixed + j];
+                        {var jj=ntrue-nfixedTrue+j;
+                            dothere += DATA[i + jj * tlen] * fixedW[jj];
                         }
                         for (var j = 0; j < nfixedComp; ++j)
-                        {
-                            var inner = 0.0;
-                            for (var k = 0; k < ntrue; ++k)
-                            {
-                                inner += DATA[i + tlen * k] * compw[k + ntrue * (j + ncomp-nfixedComp)];
-                            }
-                            dothere += inner * fixedW[n - nfixedComp + j];
+                        {var jj=ntrue+ncomp - nfixedComp + j;
+                            dothere += fixedW[jj] * BlasLike.ddot(ntrue, compw, 1, DATA, tlen, dxstart: jj * ntrue, dystart: i);
                         }
-                        if (targetR == null) fixedGLETL[i] = -dothere;
-                        else fixedGLETL[i] = dothere;
-                    }
+                        fixedGLETL[i] += sign*dothere;
+                    }Order.Reorder(n, mainordertrueInverse, fixedW);
                 }
+
                 else
                     for (i = 0; i < tlen; ++i)
                     {
@@ -4770,8 +4766,11 @@ namespace Portfolio
                 if (ncomp > 0) Order.Reorder(n, mainordertrue, fixedW);
                 hessmull(n, Q, fixedW, fixedSecondOrder);
                 fixedVariance = 0.5 * BlasLike.ddotvec(n, fixedW, fixedSecondOrder);
-                if (ncomp > 0) {Order.Reorder(n, mainordertrueInverse, fixedW);
-                Order.Reorder(n, mainordertrueInverse, fixedSecondOrder);}
+                if (ncomp > 0)
+                {
+                    Order.Reorder(n, mainordertrueInverse, fixedW);
+                    Order.Reorder(n, mainordertrueInverse, fixedSecondOrder);
+                }
                 nfixed = nfixedo;
                 n -= nfixed;
                 BlasLike.dsubvec(m, L, boundLU, L, n, 0, n);
@@ -5169,18 +5168,28 @@ namespace Portfolio
                 {//GAIN/LOSS   r[t] + max((Target - r[t]),0) >= Target
                  //ETL          -r[t] + max((r[t] - VAR),0) >= 0
 
-                    if(ncomp==0||nfixed==0){BlasLike.dsccopy(ntrue - nfixedTrue, sign, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//GAIN/LOSS has plus
-                   for (var j = 0; j < ncomp - nfixedComp; ++j)BlasLike.dset(1, sign * BlasLike.ddot(ntrue, compw, 1, DATA, tlen, j * ntrue, i), AA, M, i + m + buysellI + longshortI + (ntrue - nfixedTrue + j) * M);} 
-                    else{
-                        for(var j=0;j<ntrue;++j){
-                            var jj=mainordertrue[j];
-                            if(jj<ntrue-nfixedTrue)
-                            AA[i + m + buysellI + longshortI+jj*M]=DATA[i+j*tlen];
+                    if (ncomp == 0 || nfixed == 0)
+                    {
+                        BlasLike.dsccopy(ntrue - nfixedTrue, sign, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//GAIN/LOSS has plus
+                        for (var j = 0; j < ncomp - nfixedComp; ++j) BlasLike.dset(1, sign * BlasLike.ddot(ntrue, compw, 1, DATA, tlen, j * ntrue, i), AA, M, i + m + buysellI + longshortI + (ntrue - nfixedTrue + j) * M);
+                    }
+                    else
+                    {
+                        for (var j = 0; j < ntrue-nfixedTrue; ++j)
+                        {
+                            var jj = mainordertrueInverse[j];
+                            if(jj<ntrue)
+                                AA[i + m + buysellI + longshortI + j * M] = sign*DATA[i + jj * tlen];
+                                else
+                                AA[i + m + buysellI + longshortI + j * M] =sign*BlasLike.ddot(ntrue,compw,1,DATA,tlen,(jj-ntrue)*ntrue,i);
                         }
-                    for (var j = 0; j < ncomp - nfixedComp; ++j)//THe order in compw and DATA is compatible
-                        {var jj=mainordertrueInverse[ntrue+j];
-                        Debug.Assert(jj>=ntrue-nfixedTrue);
-                            BlasLike.dset(1, sign * BlasLike.ddot(ntrue, compw, 1, DATA, tlen,dxstart: j * ntrue,dystart: i), AA, M, i + m + buysellI + longshortI + jj* M);}
+                        for(var j=0;j<ncomp-nfixedComp;++j){
+                            var jj=mainordertrueInverse[ntrue-nfixedTrue+j];
+                            if(jj<ntrue)
+                            AA[i + m + buysellI + longshortI + (ntrue-nfixedTrue+j) * M]=sign*DATA[i + jj * tlen];
+                            else
+                            AA[i + m + buysellI + longshortI + j * M] =sign*BlasLike.ddot(ntrue,compw,1,DATA,tlen,(jj-ntrue)*ntrue,i);
+                        }
                     }
 
 
@@ -5947,8 +5956,9 @@ namespace Portfolio
                 if (bench != null) BlasLike.daddvec(w.Length, w, bench, w);
             }
         }
-        public double Variance(double[] w,bool useClone=false)
-        {if(useClone)w=(double[])w.Clone();
+        public double Variance(double[] w, bool useClone = false)
+        {
+            if (useClone) w = (double[])w.Clone();
             var Qx = new double[w.Length];
             hessmull(w.Length, Q, w, Qx);
             return BlasLike.ddotvec(w.Length, w, Qx);
