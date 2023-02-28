@@ -5174,7 +5174,7 @@ namespace Portfolio
                 var sign = targetR == null ? -1.0 : 1.0;
                 for (var i = 0; i < tlen; ++i)
                 {//GAIN/LOSS   r[t] + max((Target - r[t]),0) >= Target
-                 //ETL          -r[t] + max((r[t] - VAR),0) >= 0
+                 //ETL          -r[t] + max((r[t] - VAR),0)+VAR >= 0
                     if (ncomp == 0 || nfixed == 0)
                     {
                         BlasLike.dsccopy(ntrue - nfixedTrue, sign, DATA, tlen, AA, M, i, i + m + buysellI + longshortI);//GAIN/LOSS has plus
