@@ -4735,34 +4735,36 @@ namespace Portfolio
                 }
                 BlasLike.dzerovec(n - nfixed, fixedW);
                 BlasLike.dcopyvec(nfixed, L, fixedW, n - nfixed, n - nfixed);
-                if(tlen>0){if (ncomp > 0)
+                if (tlen > 0)
                 {
-                    Order.Reorder(n, mainordertrue, fixedW);
-                    var sign = (targetR == null) ? -1.0 : 1.0;
-                    for (i = 0; i < tlen; ++i)
+                    if (ncomp > 0)
                     {
-                        var dothere = 0.0;
-                        for (var j = 0; j < nfixedTrue; ++j)
+                        Order.Reorder(n, mainordertrue, fixedW);
+                        var sign = (targetR == null) ? -1.0 : 1.0;
+                        for (i = 0; i < tlen; ++i)
                         {
-                            var jj = ntrue - nfixedTrue + j;
-                            dothere += DATA[i + jj * tlen] * fixedW[jj];
+                            var dothere = 0.0;
+                            for (var j = 0; j < nfixedTrue; ++j)
+                            {
+                                var jj = ntrue - nfixedTrue + j;
+                                dothere += DATA[i + jj * tlen] * fixedW[jj];
+                            }
+                            for (var j = 0; j < nfixedComp; ++j)
+                            {
+                                var jj = ntrue + ncomp - nfixedComp + j;
+                                dothere += fixedW[jj] * BlasLike.ddot(ntrue, compw, 1, DATA, tlen, dxstart: jj * ntrue, dystart: i);
+                            }
+                            fixedGLETL[i] += sign * dothere;
                         }
-                        for (var j = 0; j < nfixedComp; ++j)
-                        {
-                            var jj = ntrue + ncomp - nfixedComp + j;
-                            dothere += fixedW[jj] * BlasLike.ddot(ntrue, compw, 1, DATA, tlen, dxstart: jj * ntrue, dystart: i);
-                        }
-                        fixedGLETL[i] += sign * dothere;
+                        Order.Reorder(n, mainordertrueInverse, fixedW);
                     }
-                    Order.Reorder(n, mainordertrueInverse, fixedW);
+                    else
+                        for (i = 0; i < tlen; ++i)
+                        {
+                            if (targetR == null) fixedGLETL[i] = -BlasLike.ddot(nfixed, DATA, tlen, fixedW, 1, i + tlen * (n - nfixed), n - nfixed);
+                            else fixedGLETL[i] = BlasLike.ddot(nfixed, DATA, tlen, fixedW, 1, i + tlen * (n - nfixed), n - nfixed);
+                        }
                 }
-
-                else
-                    for (i = 0; i < tlen; ++i)
-                    {
-                        if (targetR == null) fixedGLETL[i] = -BlasLike.ddot(nfixed, DATA, tlen, fixedW, 1, i + tlen * (n - nfixed), n - nfixed);
-                        else fixedGLETL[i] = BlasLike.ddot(nfixed, DATA, tlen, fixedW, 1, i + tlen * (n - nfixed), n - nfixed);
-                    }}
                 Order.bound_reorganise(1, n, n - nfixed, m, L);
                 if (debugLevel == 2) ActiveSet.Optimise.printV("L end", L, -1, n - nfixed);
                 Order.bound_reorganise(1, n, n - nfixed, m, U);
@@ -5261,6 +5263,9 @@ namespace Portfolio
                 {
                     var ind = longshortIndex[i];
                     WW[i + n + buysellI] = 0;
+                }
+                for(var i=0;i<tlen;++i){
+                    WW[i+n+buysellI+longshortI]=BlasLike.lm_max;
                 }
                 this.w = WW;
                 // WriteInputs("./optinput2");

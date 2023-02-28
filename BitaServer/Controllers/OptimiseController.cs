@@ -229,8 +229,8 @@ public class OptimiseController : ControllerBase
     }
     [HttpGet]
     [Route("general")]
-    public Object GetGen(bool? doOpt, int? round, double? min_lot, double? size_lot,
-     double? Gstrength, double? LOSSmax, double? LOSSmin, double? ETLmax, double? ETLmin,
+    public Object GetGen(bool? doOpt, int? round, double? min_lot, double? size_lot,double?value,double?valuel,
+     double? Gstrength, double? LOSSmax, double? LOSSmin, double? ETLmax, double? ETLmin,double?tail,
       double? targetR, string? datafile, double delta, double? gamma, double? maxRisk,
       double? minRisk, double? min_holding, double? min_trade, int? basket, int? trades,
       string? logfile,int? ncomp, bool negdata = false)
@@ -337,6 +337,8 @@ public class OptimiseController : ControllerBase
             try { op.tlen = CVarData.mapInt["tlen"][0]; } catch { op.tlen = 0; }
             if (logfile != null) op.logfile = logfile;
             if(ncomp>0)op.ncomp=ncomp;
+            if(value!=null)op.value=value.GetValueOrDefault();
+            if(valuel!=null)op.valuel=valuel.GetValueOrDefault();
             if (op.tlen > 0)
             {
                 if (op.nfac == null) op.nfac = -1;
@@ -353,6 +355,7 @@ public class OptimiseController : ControllerBase
                     }
                     catch { op.tail = 0.02; }
                 }
+            if(tail!=null)op.tail=tail.GetValueOrDefault();
                 if (targetR == null) try { targetR = CVarData.mapDouble["R"][0]; } catch { targetR = null; }
                 if (Gstrength != null) op.Gstrength = Gstrength.GetValueOrDefault();
                 if (LOSSmin != null) op.LOSSmin = LOSSmin;
