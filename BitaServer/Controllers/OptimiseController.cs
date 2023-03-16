@@ -231,7 +231,7 @@ public class OptimiseController : ControllerBase
     [Route("general")]
     public Object GetGen(bool? doOpt, int? round, double? min_lot, double? size_lot,double?value,double?valuel,
      double? Gstrength, double? LOSSmax, double? LOSSmin, double? ETLmax, double? ETLmin,double?tail,
-      double? targetR, string? datafile, double delta, double? gamma, double? maxRisk,
+      double? targetR, string? datafile, double ?delta, double? gamma, double? maxRisk,
       double? minRisk, double? min_holding, double? min_trade, int? basket, int? trades,
       string? logfile,int? ncomp, bool negdata = false)
     {
@@ -303,7 +303,7 @@ public class OptimiseController : ControllerBase
             try { op.delta = CVarData.mapDouble["delta"][0]; } catch { op.delta = -1; }
             op.gamma = CVarData.mapDouble["gamma"][0];
             try { op.kappa = CVarData.mapDouble["kappa"][0]; } catch { op.kappa = -1; }
-       //     if (delta != null) op.delta = delta;
+            if (delta != null) op.delta = delta.GetValueOrDefault();
             if (gamma != null) op.gamma = gamma;
             try { op.maxRisk = CVarData.mapDouble["maxRisk"][0]; } catch {; }
             try { op.minRisk = CVarData.mapDouble["minRisk"][0]; } catch {; }
