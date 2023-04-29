@@ -93,3 +93,4 @@ sudo systemctl start BitaServer
 sudo systemctl enable BitaServer (to make it start at system up)
 sudo systemctl status BitaServer
 journalctl -u BitaServer
+Trust server on LINUX using https://github.com/BorisWilhelms/create-dotnet-devcert.git
