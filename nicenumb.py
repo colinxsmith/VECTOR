@@ -3,8 +3,8 @@ def nicenumb(a,ticks=4):
     delt=abs(a/ticks)
     mul=1
     if delt>1:
-        while delt>ticks:
-            delt/=ticks
+        while delt>10:
+            delt/=10
             mul-=1
         delt=round(delt)
         while mul<1:
@@ -13,7 +13,7 @@ def nicenumb(a,ticks=4):
         return delt
     else:
         while delt<1:
-            delt*=ticks
+            delt*=10
             mul+=1
         delt=round(delt)
         while mul>1:
