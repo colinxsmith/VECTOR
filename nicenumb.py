@@ -11,22 +11,22 @@ def nicenumb(a):
     mul=1
     if delt>1:
         while delt>10:
-            delt/=10
+            delt/=10.
             mul-=1
         delt=round(delt)
         delt=betterdelt(delt)
         while mul<1:
-            delt*=10
+            delt*=10.
             mul+=1
         return delt
     else:
         while delt<1:
-            delt*=10
+            delt*=10.
             mul+=1
         delt=round(delt)
         delt=betterdelt(delt)
         while mul>1:
-            delt/=10
+            delt/=10.
             mul-=1
         return delt
 k=-0.0857326569979281
