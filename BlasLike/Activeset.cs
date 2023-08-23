@@ -72,7 +72,9 @@ namespace ActiveSet
                     {
                         ColourConsole.WriteEmbeddedColourLine($"[red]Problem with the 1d function shape (many valued or not continuous) error[/red] [yellow]g1={b} f({b})={fb} g2={c} f({c})={fc}[/yellow]");
                     }
-                    return gamma_opt;
+                    //It used to be: return gamma_opt
+			if (signk == 1)return b;
+			else return (gammatop - b) + gammabot;
                 }
                 if (Math.Abs(e) >= tol1 && Math.Abs(fa) > Math.Abs(fb))
                 {
