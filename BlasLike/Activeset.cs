@@ -22,6 +22,7 @@ namespace ActiveSet
                                        double gammatop = 1.0, double tol = 0, object info = null)
         {
             if (tol == 0) { tol = BlasLike.lm_rooteps;  }
+            if (gammatop == 1.0) { gammatop = 1-BlasLike.lm_eps;  }
             int iter, itmax = 200;
             short signk = 1;
             double c = 0, d = 0, e = 0, min1, min2, fc, p, q, r, s, tol1, xm;
