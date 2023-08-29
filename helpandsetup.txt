@@ -27,6 +27,12 @@ dotnet add BitaServer/BitaServer.csproj reference BlasLike/BlasLike.csproj
 
 To trust for https localhost
 dotnet dev-certs https --trust
+(If after a year this stops working, 
+remove C:\Users{USER}\AppData\Roaming\ASP.NET\Https folder
+dotnet dev-certs https --clean
+dotnet dev-certs https --trust
+dotnet dev-certs https --trust --check
+seems to work)
 
 To test the server use:
 (dotnet tool install -g Microsoft.dotnet-httprepl
