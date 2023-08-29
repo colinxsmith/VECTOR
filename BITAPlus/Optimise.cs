@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Hosting.WindowsServices;
 namespace BITAPlus;
 
 public class Optimise
@@ -28,13 +29,15 @@ public class Optimise
         public double[]? FX { get; set; }
         public double? facrisk { get; set; }
         public double? specrisk { get; set; }
+        public double? portBETA { get; set; }
+        public double[]? BETA { set; get; }
     }
 
     public Optimise()
     {
         doOpt = true;
         tlen = 0;
-        tail = 0.05;
+        delta=-1;
         maxRisk = -1;
         minRisk = -1;
         value = -1;
@@ -49,9 +52,13 @@ public class Optimise
         tradesell = -1;
         min_holding = -1;
         min_trade = -1;
+        basedirectory = AppContext.BaseDirectory;
+        transposeLinearConstraintArray = false;
     }
     public string? VersionString { get; set; }
+    public bool? isLicensed { get; set; }
     public bool doOpt { get; set; }
+    public string? getmethod { get; set; }
     public checkv? result { get; set; }
     public int? back { set; get; }
     public string? message { set; get; }
@@ -71,10 +78,13 @@ public class Optimise
     public int? mabs { get; set; }
     public int? n { get; set; }
     public int? m { get; set; }
+    public int? ncomp { get; set; }
     public double[]? bench { get; set; }
+    public double[]? composites { get; set; }
     public double[]? L { get; set; }
     public double[]? U { get; set; }
     public double[]? A { get; set; }
+    public double[][]? Aas2D { get; set; }
     public double[]? DATA { get; set; }
     public double[]? buy { get; set; }
     public double[]? Abs_A { get; set; }
@@ -89,9 +99,10 @@ public class Optimise
     public double[]? SV { get; set; }
     public double[]? FC { get; set; }
     public double[]? FL { get; set; }
+    public double[][]? FLas2D { get; set; }
     public int[]? I_A { get; set; }
     public double[]? sell { get; set; }
-    public double? delta { set; get; }
+    public double delta { set; get; }
     public double? gamma { set; get; }
     public double value { set; get; }
     public double valuel { set; get; }
@@ -116,4 +127,68 @@ public class Optimise
     public double? LOSSmax { set; get; }
     public int? round { get; set; }
     public string? datafile { get; set; }
+    public string basedirectory { get; }
+    public bool transposeLinearConstraintArray { set; get; }
+}
+public class FactorModelProcess
+{
+    public string? VersionString { get; set; }
+    public bool? isLicensed { get; set; }
+    public double[]? QMATRIX { get; set; }
+    // public double[][]?FLbacktest{get;set;}
+}
+
+public class FactorModelProcessInverse
+{
+    public string? VersionString { get; set; }
+    public bool? isLicensed { get; set; }
+    public double[]? QMATRIX { get; set; }
+    public double[]? QMATRIXinverse { get; set; }
+    // public double[][]?FLbacktest{get;set;}
+}
+public class Factor2COV
+{
+    public string? VersionString { get; set; }
+    public bool? isLicensed { get; set; }
+    public double[]? COV { get; set; }
+}
+public class Factor2VAR
+{
+    public string? VersionString { get; set; }
+    public bool? isLicensed { get; set; }
+    public double[]? VAR { get; set; }
+}public class OptimiseInternal{
+    public string? VersionString { get; set; }
+    public bool? isLicensed { get; set; }
+    public double[]?w{get;set;}
+    public int[]?shake{get;set;}
+    public int? back { set; get; }
+    public string? message { set; get; }
+}
+public class RiskProperties
+{
+    public string? VersionString { get; set; }
+    public bool? isLicensed { get; set; }
+    public double? activeRisk { get; set; }
+    public double? totalRisk { get; set; }
+    public double? residualRisk { get; set; }
+    public double? benchmarkRisk { get; set; }
+    public double? portfolioBeta { get; set; }
+    public double[]? assetBetas { get; set; }
+    public double[]? marginalContributionToActiveRisk { get; set; }
+    public double[]? marginalContributionToTotalRisk { get; set; }
+    public double[]? marginalContributionToResidualRisk { get; set; }
+    public double[]? marginalContributionToBenchmarkRisk { get; set; }
+}
+
+
+public class Risks
+{
+    public string? VersionString { get; set; }
+    public bool? isLicensed { get; set; }
+    public double? activeRisk { get; set; }
+    public double? totalRisk { get; set; }
+    public double? residualRisk { get; set; }
+    public double? benchmarkRisk { get; set; }
+    public double? portfolioBeta { get; set; }
 }

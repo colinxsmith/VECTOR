@@ -213,6 +213,7 @@ namespace Portfolio
             }
             if (back <= 1 && maxRisk >= -BlasLike.lm_eps && minRisk >= -BlasLike.lm_eps)
             {
+                op.RiskBreakdown(w, op.bench, breakdown);
                 var riskhere = BlasLike.ddotvec(n, w, breakdown);
                 if (benchmark != null) riskhere -= BlasLike.ddotvec(n, breakdown, benchmark);
                 if (!(riskhere <= maxRisk && riskhere >= minRisk))
@@ -2801,6 +2802,8 @@ namespace Portfolio
             public double[] bench;
             public double target;
             public int back = -1;
+            public int basket = -1;
+            public int trades = -1;
             public int tlen = 0;
             public double DATAlambda = 1;
             public double[] DATA = null;
@@ -2822,6 +2825,17 @@ namespace Portfolio
             if (kappa < 0) kappa = gam;
             vars.back = BasicOptimisation(vars.n, vars.m, vars.nfac, vars.A, vars.L, vars.U, gam, kappa, vars.delta, vars.value, vars.valuel, vars.rmin, vars.rmax, vars.
                      alpha, vars.initial, vars.buy, vars.sell, vars.names, vars.useIP, vars.nabs, vars.A_abs, vars.L_abs, vars.U_abs, vars.mabs, vars.I_a, vars.tlen, vars.DATAlambda, vars.DATA, vars.tail, vars.targetR, vars.ETLorLOSSconstraint, vars.ETLorLOSSmin, vars.ETLorLOSSmax, ncomp: vars.ncomp, compw: vars.compw);
+            if (vars.basket > -1 || vars.trades > -1)
+            {
+                INFO sendInput = vars;
+
+                int baskethere = -1, tradeshere = -1;
+                double[] gradient = new double[vars.n];
+                double utility = PortfolioUtility(sendInput.n, gamma, kappa, sendInput.buy, sendInput.sell, sendInput.alpha, wback, gradient, ref baskethere, ref tradeshere);
+                ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
+                vars.back = Dropper(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
+         alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax, vars.basket, baskethere, vars.trades, tradeshere, ncomp: sendInput.ncomp, compw: sendInput.compw);
+            }
             double[] www = (double[])wback.Clone();
             if (vars.bench != null) BlasLike.dsubvec(vars.n, www, vars.bench, www);
             var fix = nfixed;
@@ -2843,6 +2857,8 @@ namespace Portfolio
             var back = -23;
             var tradeshere = 0;
             var sendInput = (Portfolio.INFO)info;
+            sendInput.basket=basket;
+            sendInput.trades=trades;
             var gradient = new double[sendInput.n];
             if (targetRisk < 0)
             {
@@ -2855,7 +2871,7 @@ namespace Portfolio
             var newgamma = ActiveSet.Optimise.Solve1D(CalcRisk, 0, 1, 0, sendInput);
             back = sendInput.back;
             if (newgamma > 10 || sendInput.back == 6) ColourConsole.WriteError("Infeasible target risk");
-            else
+            else if(false)
             {
                 gamma = newgamma; kappa = sendInput.kappa;
                 var riskh = CalcRisk(gamma, sendInput) + targetRisk;
@@ -5264,8 +5280,9 @@ namespace Portfolio
                     var ind = longshortIndex[i];
                     WW[i + n + buysellI] = 0;
                 }
-                for(var i=0;i<tlen;++i){
-                    WW[i+n+buysellI+longshortI]=BlasLike.lm_max;
+                for (var i = 0; i < tlen; ++i)
+                {
+                    WW[i + n + buysellI + longshortI] = BlasLike.lm_max;
                 }
                 this.w = WW;
                 // WriteInputs("./optinput2");
