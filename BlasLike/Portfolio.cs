@@ -33,6 +33,7 @@ namespace Portfolio
                                         double ETLorLOSSmax = 0, string logfile = "", int revise = 0, int ncomp = 0, double[] compw = null)
         {
             if (DATAlambda == 0) { DATA = null; tlen = 0; ETLorLOSSconstraint = false; } //This allows us to leave out LOSS or ETL from the optimisation but still calculate it in results
+            if(gamma==1){gamma=1-BlasLike.lm_eps;}
             ColourConsole.print = !(WindowsServiceHelpers.IsWindowsService());
             var rootPath = AppContext.BaseDirectory;
 #if DEBUG
