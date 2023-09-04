@@ -26,7 +26,7 @@ span {
 
 ul {
     border-radius: 12px;
-    border-color: bisque;
+    border-color: #BBC8CE;
     border-block-style: inherit;
     border-width: thick;
     background-color: gold;
@@ -43,7 +43,7 @@ input[type=text] {
     width: 50%;
     padding: 1px 2px;
     margin: 8px 0;
-    background-color:#BBC8CE;
+    background-color: #BBC8CE;
 }
 
 form {
@@ -55,7 +55,7 @@ form {
 }
 
 form.over {
- /*   background-color: #ffd8f7;*/
+    /*   background-color: #ffd8f7;*/
     background-image: linear-gradient(rgb(255, 81, 0), rgb(140, 0, 255));
     border-radius: 75%;
     width: 80%;
