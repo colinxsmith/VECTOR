@@ -4,7 +4,7 @@ using Solver;
 using System.Diagnostics;
 namespace ActiveSet
 {
-    public delegate void hessmull(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx,int hstart=0,int xstart=0);
+    public delegate void hessmull(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx, int hstart = 0, int xstart = 0);
     public class Optimise
     {
         static void shifter<S>(ref S a, ref S b, ref S c, ref S d)
@@ -21,8 +21,9 @@ namespace ActiveSet
         public static double Solve1D(OneD OneDimensionalFunction, double gammabot = 0,
                                        double gammatop = 1.0, double tol = 0, object info = null)
         {
-            if (tol == 0) { tol = BlasLike.lm_rooteps;  }
-            if (gammatop == 1.0) { gammatop = 1-BlasLike.lm_eps;  }
+            //Numerical Recipes Pages 361-362   9.3 VanWijngaarden–Dekker–BrentMethod
+            if (tol == 0) { tol = BlasLike.lm_rooteps; }
+            if (gammatop == 1.0) { gammatop = 1 - BlasLike.lm_eps; }
             int iter, itmax = 200;
             short signk = 1;
             double c = 0, d = 0, e = 0, min1, min2, fc, p, q, r, s, tol1, xm;
@@ -74,8 +75,8 @@ namespace ActiveSet
                         ColourConsole.WriteEmbeddedColourLine($"[red]Problem with the 1d function shape (many valued or not continuous) error[/red] [yellow]g1={b} f({b})={fb} g2={c} f({c})={fc}[/yellow]");
                     }
                     //It used to be: return gamma_opt
-			if (signk == 1)return b;
-			else return (gammatop - b) + gammabot;
+                    if (signk == 1) return b;
+                    else return (gammatop - b) + gammabot;
                 }
                 if (Math.Abs(e) >= tol1 && Math.Abs(fa) > Math.Abs(fb))
                 {
@@ -117,13 +118,13 @@ namespace ActiveSet
                 b += (Math.Abs(d) > tol1) ? d : (xm > 0 ? Math.Abs(tol1) : -Math.Abs(tol1));
                 if (signk == 1)
                 {
-                    fb = OneDimensionalFunction(b,info);
+                    fb = OneDimensionalFunction(b, info);
                     gamma_opt = b;
                 }
                 else
                 {
                     double new_b = (gammatop - b) + gammabot;
-                    fb = OneDimensionalFunction(new_b,info);
+                    fb = OneDimensionalFunction(new_b, info);
                     gamma_opt = new_b;
                 }
             }
@@ -139,7 +140,7 @@ namespace ActiveSet
         public static double PathMin(OneD OneDimensionalFunction, double gammabot,
                                        double gammatop, double tol, int stopifpos, object info = null)
         {
-            //	Based on routine in "Numerical Recipes in C" page 301.
+            //Numerical Recipes page 402-405 10.2 Parabolic Interpolation and Brent’s Method in one dimension
             double ax = gammabot, bx = 0.5, cx = gammatop, ret_val;
             double a, b, d = 1e34, etemp, fu, fv, fw, fx, p, q, r, tol1, tol2, u, v, w, x, xm, e = 0.0, basek;
             int error = 0;
@@ -4244,13 +4245,13 @@ namespace ActiveSet
                 WRK[i] = 0.0;
             }
         }
-        void qphess(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx,int hstart=0,int xstart=0)
+        void qphess(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx, int hstart = 0, int xstart = 0)
         {
-            h(n, nrowh, ncolh, j, hess, wrk, hx,hstart:hstart,xstart:xstart);
+            h(n, nrowh, ncolh, j, hess, wrk, hx, hstart: hstart, xstart: xstart);
         }
-        public void qphess1(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx,int hstart=0,int xstart=0)
+        public void qphess1(int n, int nrowh, int ncolh, int j, double[] hess, double[] wrk, double[] hx, int hstart = 0, int xstart = 0)
         {
-            Solver.Factorise.dsmxmulv(n, hess, wrk, hx,ystart:hstart,xstart:xstart);
+            Solver.Factorise.dsmxmulv(n, hess, wrk, hx, ystart: hstart, xstart: xstart);
         }
         void dqpcore(int orthog, ref int inform, ref int iter, int itmax, int n, int nclin, int nctotl, int nrowh, int ncolh, int nactiv, int nfree, ref double objqp, double[] xnorm)
         {
