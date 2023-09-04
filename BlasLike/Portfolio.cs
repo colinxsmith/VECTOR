@@ -2872,7 +2872,7 @@ namespace Portfolio
             var newgamma = ActiveSet.Optimise.Solve1D(CalcRisk, 0, 1, 0, sendInput);
             back = sendInput.back;
             if (newgamma > 10 || sendInput.back == 6) ColourConsole.WriteError("Infeasible target risk");
-            else if(false)
+            else if(true)
             {
                 gamma = newgamma; kappa = sendInput.kappa;
                 var riskh = CalcRisk(gamma, sendInput) + targetRisk;
