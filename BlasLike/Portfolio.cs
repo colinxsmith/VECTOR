@@ -403,6 +403,8 @@ namespace Portfolio
             public double[] first;
             public double utility;
             public bool print;
+            public double gamma=-1;
+            public double kappa=-1;
             public KeepBest(int n, int back = -1, int nround = 0, double util = 0, int stage = 0)
             {
                 if (util == 0) util = BlasLike.lm_max;
@@ -417,13 +419,15 @@ namespace Portfolio
                 stuck = 0;
                 print = true;
             }
-            public void Setw(double[] w, int back, int nround, double utility, int stage)
+            public void Setw(double[] w, int back, int nround, double utility, int stage,double gamma,double kappa)
             {
                 BlasLike.dcopyvec(n, w, this.w);
                 this.back = back;
                 this.utility = utility;
                 this.nround = nround;
                 this.stage = stage;
+                this.kappa=kappa;
+                this.gamma=gamma;
             }
             public void Message()
             {
@@ -1698,12 +1702,12 @@ namespace Portfolio
                     KB.stuck++;
                 if (KB.nround < nround)
                 {
-                    KB.Setw(OP.x, OP.back, nround, utility, stage);
+                    KB.Setw(OP.x, OP.back, nround, utility, stage,gamma,kappa);
                     KB.Message(); KB.stuck = 0;
                 }
                 else if (KB.nround == nround && utility < KB.utility)
                 {
-                    KB.Setw(OP.x, OP.back, nround, utility, stage);
+                    KB.Setw(OP.x, OP.back, nround, utility, stage,gamma,kappa);
                     KB.Message(); KB.stuck = 0;
                 }
 
@@ -2227,6 +2231,8 @@ namespace Portfolio
             KeepBest KB = new KeepBest(n);
 
             BlasLike.dcopyvec(n, OP.x, KB.w);
+            KB.gamma=gamma;
+            KB.kappa=kappa;
             BlasLike.dcopyvec(n + m, lower, Lkeep);
             BlasLike.dcopyvec(n + m, upper, Ukeep);
             bool changed = false;
@@ -2417,11 +2423,15 @@ namespace Portfolio
                     {
                         if (treestart(OP, true, initial, minlot, null, KB.w)) { OP.back = 0; }
                         BlasLike.dcopyvec(n, KB.w, roundw);
+            gamma=KB.gamma;
+            kappa=KB.kappa;
                     }
                     else
                     {
                         threshopt(OP, KB, lower, upper, Lkeep, Ukeep, initial, minlot, 0, naive, minlot1);
                         BlasLike.dcopyvec(n, KB.w, roundw);
+            gamma=KB.gamma;
+            kappa=KB.kappa;
                         BlasLike.dcopyvec(n, KB.w, OP.x);//To get U1 correct!
                                                          //				if(treestart(OP,true,initial,minlot,0,KB.w,minlot1)){OP.back=0;}
                                                          //				dcopyvec(n,KB.w,roundw);
@@ -2478,12 +2488,16 @@ namespace Portfolio
                         nround = thresh_check(n, KB.w, initial, Lkeep, Ukeep, minlot, minlot1, rounderror);
                         if (nround != n) OP.back = 2;//Infeasible
                         BlasLike.dcopyvec(n, KB.w, OP.x);//To get U2 correct!
+            gamma=KB.gamma;
+            kappa=KB.kappa;
                         double U2 = OP.UtilityFunc(info);
                         ColourConsole.WriteEmbeddedColourLine($"Start from initial back={OP.back} U={U2}");
                         if (U2 > U1 || OP.back > 1)
                         {
                             BlasLike.dcopyvec(n, roundw, OP.x);
                             BlasLike.dcopyvec(n, roundw, KB.w);
+            KB.gamma=gamma;
+            KB.kappa=kappa;
                             OP.back = 0;
                         }
                         else
@@ -2496,6 +2510,8 @@ namespace Portfolio
                         OP.back = back;
                         BlasLike.dcopyvec(n, roundw, OP.x);
                         BlasLike.dcopyvec(n, roundw, KB.w);
+            KB.gamma=gamma;
+            KB.kappa=kappa;
                         bad = false;
                     }
                 }
@@ -2516,6 +2532,8 @@ namespace Portfolio
             }
             if (KB.back != -1) KB.Message();
             BlasLike.dcopyvec(n, KB.w, roundw);
+            gamma=KB.gamma;
+            kappa=KB.kappa;
             if (OP.back == 25) OP.back = 0;
             if (OP.back < 2)
             {
@@ -2871,7 +2889,7 @@ namespace Portfolio
             }
             var newgamma = ActiveSet.Optimise.Solve1D(CalcRisk, 0, 1, 0, sendInput);
             back = sendInput.back;
-            if (newgamma > 10 || sendInput.back == 6) ColourConsole.WriteError("Infeasible target risk");
+            if (newgamma > 10 || sendInput.back == 6) {ColourConsole.WriteError("Infeasible target risk");gamma=newgamma;}
             else if(true)
             {
                 gamma = newgamma; kappa = sendInput.kappa;

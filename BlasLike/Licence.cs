@@ -121,7 +121,8 @@ namespace Licensing
     }
     public class Licence
     {
-        int bitaopt = 23;
+        readonly int bitaopt = 23;
+        readonly string version="1.0";
         public string VersionString = "";
         public Licence()
         {
@@ -488,7 +489,6 @@ namespace Licensing
         {
             var rootPath = AppContext.BaseDirectory;
             DateTime fileTime = File.GetLastWriteTime(rootPath + "BlasLike.dll");
-            const string version = "1.0";
             var back = $"BITA Plus ASP.NET Core Portfolio Optimiser Version {version} made {fileTime}";
             var pass = false;
             var vid = VolId(usefile);
