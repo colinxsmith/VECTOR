@@ -266,11 +266,13 @@ namespace Portfolio
                         //roundw[iw] = check_digit(roundw[iw] * roundfac) / roundfac;
                         roundw[iw] = digitRound(roundw[iw], roundfac);
                     }
+                    ogamma=gamma;
                     op.roundcheck(n, roundw, revise == 1 ? initial : null, min_lot, size_lot, shake);
                 }
                 else
                 {
                     op.Thresh(Op, mintrade == null ? null : initial, mintrade == null ? minhold : mintrade, roundw, mintrade == null ? null : minhold);
+                    ogamma=Op.ogamma;
                     for (var iw = 0; iw < n; ++iw)
                     {
                         roundw[iw] = digitRound(roundw[iw], roundfac);
@@ -479,18 +481,21 @@ namespace Portfolio
                 double[] w = new double[vars.n];
                 Thresh(OP, vars.initial, mintradelot, w, minholdlot); vars.back = (OP.back == 2 ? 6 : OP.back);
                 BlasLike.dcopyvec(vars.n, w, wback);
+                gamma=OP.ogamma;
             }
             else if (minholdlot != null)
             {
                 double[] w = new double[vars.n];
                 Thresh(OP, null, minholdlot, w, null); vars.back = (OP.back == 2 ? 6 : OP.back);
                 BlasLike.dcopyvec(vars.n, w, wback);
+                gamma=OP.ogamma;
             }
             else if (mintradelot != null)
             {
                 double[] w = new double[vars.n];
                 Thresh(OP, vars.initial, mintradelot, w, null); vars.back = (OP.back == 2 ? 6 : OP.back);
                 BlasLike.dcopyvec(vars.n, w, wback);
+                gamma=OP.ogamma;
             }
             else
             {
@@ -518,6 +523,7 @@ namespace Portfolio
                     vars.L = LKEEP;
                     vars.U = UKEEP;
                     OP.back = BACK = vars.back;
+                    OP.ogamma=gamma;
                 }
             }
             OP.minholdlot = minholdlot;
@@ -545,6 +551,7 @@ namespace Portfolio
         public class OptParamRound
         {
             public int n;
+            public double ogamma;
             public int m;
             public double[] x;
             public double[] grad;
@@ -2228,7 +2235,7 @@ namespace Portfolio
             double[] Lkeep = new double[n + m], Ukeep = new double[n + m], naive = new double[n];
             double[] LL = new double[0];
             double[] UU = new double[0];
-            KeepBest KB = new KeepBest(n);
+            KeepBest KB = new(n);
 
             BlasLike.dcopyvec(n, OP.x, KB.w);
             KB.gamma=gamma;
@@ -2415,6 +2422,7 @@ namespace Portfolio
             {
                 OP.OptFunc(info);
                 back = OP.back;
+                OP.ogamma=gamma;
                 if (back < 2)
                 {
                     if (wback != OP.x)
@@ -2423,14 +2431,14 @@ namespace Portfolio
                     {
                         if (treestart(OP, true, initial, minlot, null, KB.w)) { OP.back = 0; }
                         BlasLike.dcopyvec(n, KB.w, roundw);
-            gamma=KB.gamma;
+            OP.ogamma=gamma=KB.gamma;
             kappa=KB.kappa;
                     }
                     else
                     {
                         threshopt(OP, KB, lower, upper, Lkeep, Ukeep, initial, minlot, 0, naive, minlot1);
                         BlasLike.dcopyvec(n, KB.w, roundw);
-            gamma=KB.gamma;
+            OP.ogamma=gamma=KB.gamma;
             kappa=KB.kappa;
                         BlasLike.dcopyvec(n, KB.w, OP.x);//To get U1 correct!
                                                          //				if(treestart(OP,true,initial,minlot,0,KB.w,minlot1)){OP.back=0;}
@@ -2488,7 +2496,7 @@ namespace Portfolio
                         nround = thresh_check(n, KB.w, initial, Lkeep, Ukeep, minlot, minlot1, rounderror);
                         if (nround != n) OP.back = 2;//Infeasible
                         BlasLike.dcopyvec(n, KB.w, OP.x);//To get U2 correct!
-            gamma=KB.gamma;
+            OP.ogamma=gamma=KB.gamma;
             kappa=KB.kappa;
                         double U2 = OP.UtilityFunc(info);
                         ColourConsole.WriteEmbeddedColourLine($"Start from initial back={OP.back} U={U2}");
@@ -2496,7 +2504,7 @@ namespace Portfolio
                         {
                             BlasLike.dcopyvec(n, roundw, OP.x);
                             BlasLike.dcopyvec(n, roundw, KB.w);
-            KB.gamma=gamma;
+            OP.ogamma=KB.gamma=gamma;
             KB.kappa=kappa;
                             OP.back = 0;
                         }
@@ -2532,7 +2540,7 @@ namespace Portfolio
             }
             if (KB.back != -1) KB.Message();
             BlasLike.dcopyvec(n, KB.w, roundw);
-            gamma=KB.gamma;
+            OP.ogamma=gamma=KB.gamma;
             kappa=KB.kappa;
             if (OP.back == 25) OP.back = 0;
             if (OP.back < 2)
@@ -5551,7 +5559,7 @@ namespace Portfolio
             }
             var utility = -eret * gamma / (1 - gamma) + kappa / (1 - kappa) * (cost + initbase) + 0.5 * variance + benchmarkExtra + alphaFixed * gamma / (1 - gamma) - fixedCost * kappa / (1 - kappa) - fixedVariance;
             var utilityA = -BlasLike.ddotvec(n - nfixed, fixedSecondOrder, WW) + BlasLike.ddotvec(N, CC, WW) + 0.5 * variance + benchmarkExtra - fixedVariance;
-            ColourConsole.WriteEmbeddedColourLine($"Utility:\t\t\t[green]{utility,20:f16}:[/green]\t[cyan] {utilityA,20:f16}[/cyan]");
+            ColourConsole.WriteEmbeddedColourLine($"Utility:\t\t\t[green]{utility,20:f16}:[/green]\t[cyan]{utilityA,20:f16}[/cyan]");
             ColourConsole.WriteEmbeddedColourLine($"Turnover:\t\t\t[green]{turnover * 0.5,20:f16}:[/green]\t[cyan]{turn2,20:f16}[/cyan]");
             ColourConsole.WriteEmbeddedColourLine($"Cost:\t\t\t\t[green]{cost,20:f16}:[/green]\t[cyan]{cost2,20:f16}[/cyan]");
             CVARGLprob = false;
