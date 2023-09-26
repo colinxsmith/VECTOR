@@ -227,9 +227,9 @@ namespace Portfolio
                     if (basket < 0 && trades < 0)
                     {
                         if (info.target == minRisk)
-                            ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk, gammabot: gamma, gammatop: 1 - BlasLike.lm_eps8, tol: BlasLike.lm_eps16, info: info);
+                            ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk, gammabot: gamma, gammatop: 1 - BlasLike.lm_eps8, tol: BlasLike.lm_rooteps, info: info);
                         else
-                            ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk, gammabot: 0, gammatop: gamma, tol: BlasLike.lm_eps16, info: info);
+                            ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk, gammabot: 0, gammatop: gamma, tol: BlasLike.lm_rooteps, info: info);
                     }
                     else { op.DropRisk(basket, trades, info.target, info); ogamma = gamma = op.gamma; }
                     BlasLike.dcopyvec(n, op.wback, w);
@@ -1368,7 +1368,7 @@ namespace Portfolio
             // else updateAllIfInfeasible=true;
             //   updateAllIfInfeasible=true;
             i6limit = n;
-            i6 = i6 % n;
+            i6 %= n;
             if (stuck > 10 || next.count > 40) { rstep.util = info.UtilityFunc(info); return; }
             if (bestround >= n - 4 && next.count > maxstage /*&& rstep.back <= 1*/) { rstep.util = info.UtilityFunc(info); return; }
             if (rstep.nround == n && next.count == 2 && rstep.back <= 1) { rstep.util = info.UtilityFunc(info); return; }
@@ -2859,7 +2859,7 @@ namespace Portfolio
                 int baskethere = -1, tradeshere = -1;
                 double[] gradient = new double[vars.n];
                 double utility = PortfolioUtility(sendInput.n, gamma, kappa, sendInput.buy, sendInput.sell, sendInput.alpha, wback, gradient, ref baskethere, ref tradeshere);
-                ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
+                ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green] [yellow]gamma {gam,20:e12}[/yellow]");
                 vars.back = Dropper(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
          alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax, vars.basket, baskethere, vars.trades, tradeshere, ncomp: sendInput.ncomp, compw: sendInput.compw);
             }
@@ -2890,12 +2890,12 @@ namespace Portfolio
             if (targetRisk < 0)
             {
                 utility = PortfolioUtility(sendInput.n, gamma, kappa, sendInput.buy, sendInput.sell, sendInput.alpha, wback, gradient, ref baskethere, ref tradeshere);
-                ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
+                ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green] [yellow]gamma {gamma,20:e12}[/yellow]");
                 BACK = sendInput.back = back = Dropper(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
                      alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax, basket, baskethere, trades, tradeshere, ncomp: sendInput.ncomp, compw: sendInput.compw);
                 return;
             }
-            var newgamma = ActiveSet.Optimise.Solve1D(CalcRisk, 0, 1, 0, sendInput);
+            var newgamma = ActiveSet.Optimise.Solve1D(CalcRisk, 0, 1,  info:sendInput,tol : BlasLike.lm_rooteps);
             back = sendInput.back;
             if (newgamma > 10 || sendInput.back == 6) {ColourConsole.WriteError("Infeasible target risk");gamma=newgamma;}
             else if(true)
@@ -2911,7 +2911,7 @@ namespace Portfolio
                 var w = new double[sendInput.n];
                 BlasLike.dcopyvec(sendInput.n, wback, w);
                 utility = PortfolioUtility(sendInput.n, gamma, sendInput.kappa, sendInput.buy, sendInput.sell, sendInput.alpha, w, gradient, ref baskethere, ref tradeshere);
-                ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
+                ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green] [yellow]gamma {gamma,20:e12}[/yellow]");
                 if (back != 6) back = Dropper(sendInput.n, sendInput.m, sendInput.nfac, sendInput.A, sendInput.L, sendInput.U, gamma, sendInput.kappa, sendInput.delta, sendInput.value, sendInput.valuel, sendInput.rmin, sendInput.rmax, sendInput.
                      alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax, basket, baskethere, trades, tradeshere);
                 var gammakeep = gamma;
@@ -2941,7 +2941,7 @@ namespace Portfolio
                         }
                     }
                     //Try to get the risk constraint correct if possible
-                    newgamma = ActiveSet.Optimise.Solve1D(CalcRisk, 0, 1, 0, sendInput);
+                    newgamma = ActiveSet.Optimise.Solve1D(CalcRisk, 0, 1,  info:sendInput,tol : BlasLike.lm_rooteps);
                     if (newgamma > 10 || sendInput.back == 6) { ColourConsole.WriteError("Infeasible target risk"); gamma = gammakeep; }
                     else
                     {
@@ -2961,7 +2961,7 @@ namespace Portfolio
                         gradient = new double[sendInput.n];
                         BlasLike.dcopyvec(sendInput.n, wback, w);
                         utility = PortfolioUtility(sendInput.n, gamma, kappa, sendInput.buy, sendInput.sell, sendInput.alpha, w, gradient, ref baskethere, ref tradeshere);
-                        ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
+                        ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green] [yellow]gamma {gamma,20:e12}[/yellow]");
                     }
                     BlasLike.dcopyvec(sendInput.n, oldl, sendInput.L);
                     BlasLike.dcopyvec(sendInput.n, oldu, sendInput.U);
@@ -3099,7 +3099,7 @@ namespace Portfolio
                 {
                     BlasLike.dcopyvec(n, wback, w);
                     utility = PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref basketnow, ref tradesnow, false);
-                    ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
+                    ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green] [yellow]gamma {gamma,20:e12}[/yellow]");
                 }
                 BlasLike.dcopyvec(L.Length, oldL, L);
                 BlasLike.dcopyvec(U.Length, oldU, U);
@@ -3178,7 +3178,7 @@ namespace Portfolio
                         {
                             BlasLike.dcopyvec(n, wback, w);
                             utility = PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref basketnow, ref tradesnow, false);
-                            ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
+                            ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green] [yellow]gamma {gamma,20:e12}[/yellow]");
                         }
                         if (basketnow > basket)
                         {
@@ -3212,7 +3212,7 @@ namespace Portfolio
                     if (back == 6) break;
                     BlasLike.dcopyvec(n, wback, w);
                     utility = PortfolioUtility(n, gamma, kappa, buy, sell, alpha, w, gradient, ref basketnow, ref tradesnow, false);
-                    ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green]");
+                    ColourConsole.WriteEmbeddedColourLine($"[magenta]Portfolio Utility (standard form):\t[/magenta][green]{utility,20:e12}[/green] [yellow]gamma {gamma,20:e12}[/yellow]");
                     BlasLike.dcopyvec(L.Length, oldL, L);
                     BlasLike.dcopyvec(U.Length, oldU, U);
                     if (fast) interimBasket = (int)Math.Floor(basketnow * scale + (1.0 - scale) * basket);
