@@ -122,8 +122,8 @@ namespace Licensing
     public class Licence
     {
         readonly int bitaopt = 23;
-        readonly int version=1;
-        readonly int revision=0;
+        public readonly int version=1;
+		public readonly int revision=1;
         public string VersionString = "";
         public Licence()
         {

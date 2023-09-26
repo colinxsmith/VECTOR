@@ -747,48 +747,49 @@ namespace BlasLikeTest
             Assert.IsTrue(back != 6 && Math.Abs(x[n - 1] - 1) < 1e-8, $"util = {util}; cone check{x[n - 1] - 1}; back={back}");
         }
         [TestMethod]
-        public void Test_TwoDimensionalMatrix(){
+        public void Test_TwoDimensionalMatrix()
+        {
             //This shows how 2 dimension matrices in BITA20 are converted
             //to 1 dimensional arrays for use in the optimiser
-            var n=3;
-            var nf=2;
-            double[] FL={ 1, 3, 4, 
+            var n = 3;
+            var nf = 2;
+            double[] FL ={ 1, 3, 4,
                           3, 4, 7 };
-            double[] f1={1,3,4};
-            double[] f2={3,4,7};
-            double[] s1={1,3};
-            double[] s2={3,4};
-            double[] s3={4,7};
-            var FLas2D=Portfolio.Portfolio.oneD2twoD(n,nf,FL);
-            Assert.IsTrue(s1[0]==FLas2D[0][0] && s1[1]==FLas2D[0][1]);
-            Assert.IsTrue(s2[0]==FLas2D[1][0] && s2[1]==FLas2D[1][1]);
-            Assert.IsTrue(s3[0]==FLas2D[2][0] && s3[1]==FLas2D[2][1]);
-            Assert.IsTrue(f1[0]==FLas2D[0][0] && f1[1]==FLas2D[1][0] &&f1[2]==FLas2D[2][0]);
-            Assert.IsTrue(f2[0]==FLas2D[0][1] && f2[1]==FLas2D[1][1] &&f2[2]==FLas2D[2][1]);
-            var FLback=Portfolio.Portfolio.twoD2oneD(n,nf,FLas2D);
-            BlasLike.dsubvec(n*nf,FL,FLback,FLback);
-            var test = BlasLike.ddotvec(n*nf,FLback,FLback);
-            Assert.IsTrue(test<=BlasLike.lm_eps,$"test = {test}");
-            n=5;
-            var m=2;
-            double[] a1={1,1,1,1,1};
-            double[] a2={1,2,3,4,5};
-            double[][] Aas2D={a1,a2};
-            var A=Portfolio.Portfolio.twoD2oneD(m,n,Aas2D);
-            var Aas2Dback=Portfolio.Portfolio.oneD2twoD(m,n,A);
-            BlasLike.dsubvec(n,Aas2D[0],Aas2Dback[0],Aas2Dback[0]);
-            BlasLike.dsubvec(n,Aas2D[1],Aas2Dback[1],Aas2Dback[1]);
-            test=BlasLike.ddotvec(n,Aas2Dback[0],Aas2Dback[0])+BlasLike.ddotvec(n,Aas2Dback[1],Aas2Dback[1]);
-            Assert.IsTrue(test<=2*BlasLike.lm_eps,$"test = {test}");
+            double[] f1 = { 1, 3, 4 };
+            double[] f2 = { 3, 4, 7 };
+            double[] s1 = { 1, 3 };
+            double[] s2 = { 3, 4 };
+            double[] s3 = { 4, 7 };
+            var FLas2D = Portfolio.Portfolio.oneD2twoD(n, nf, FL);
+            Assert.IsTrue(s1[0] == FLas2D[0][0] && s1[1] == FLas2D[0][1]);
+            Assert.IsTrue(s2[0] == FLas2D[1][0] && s2[1] == FLas2D[1][1]);
+            Assert.IsTrue(s3[0] == FLas2D[2][0] && s3[1] == FLas2D[2][1]);
+            Assert.IsTrue(f1[0] == FLas2D[0][0] && f1[1] == FLas2D[1][0] && f1[2] == FLas2D[2][0]);
+            Assert.IsTrue(f2[0] == FLas2D[0][1] && f2[1] == FLas2D[1][1] && f2[2] == FLas2D[2][1]);
+            var FLback = Portfolio.Portfolio.twoD2oneD(n, nf, FLas2D);
+            BlasLike.dsubvec(n * nf, FL, FLback, FLback);
+            var test = BlasLike.ddotvec(n * nf, FLback, FLback);
+            Assert.IsTrue(test <= BlasLike.lm_eps, $"test = {test}");
+            n = 5;
+            var m = 2;
+            double[] a1 = { 1, 1, 1, 1, 1 };
+            double[] a2 = { 1, 2, 3, 4, 5 };
+            double[][] Aas2D = { a1, a2 };
+            var A = Portfolio.Portfolio.twoD2oneD(m, n, Aas2D);
+            var Aas2Dback = Portfolio.Portfolio.oneD2twoD(m, n, A);
+            BlasLike.dsubvec(n, Aas2D[0], Aas2Dback[0], Aas2Dback[0]);
+            BlasLike.dsubvec(n, Aas2D[1], Aas2Dback[1], Aas2Dback[1]);
+            test = BlasLike.ddotvec(n, Aas2Dback[0], Aas2Dback[0]) + BlasLike.ddotvec(n, Aas2Dback[1], Aas2Dback[1]);
+            Assert.IsTrue(test <= 2 * BlasLike.lm_eps, $"test = {test}");
             //A bit of overkill to show that the transpose option works;
             //if we transpose in twoD2oneD then we must transpose back somewhere else
-            A=Portfolio.Portfolio.twoD2oneD(m,n,Aas2D,transpose:true);
-            Factorise.dmx_transpose(n,m,A,A);
-            Aas2Dback=Portfolio.Portfolio.oneD2twoD(m,n,A);
-            BlasLike.dsubvec(n,Aas2D[0],Aas2Dback[0],Aas2Dback[0]);
-            BlasLike.dsubvec(n,Aas2D[1],Aas2Dback[1],Aas2Dback[1]);
-            test=BlasLike.ddotvec(n,Aas2Dback[0],Aas2Dback[0])+BlasLike.ddotvec(n,Aas2Dback[1],Aas2Dback[1]);
-            Assert.IsTrue(test<=2*BlasLike.lm_eps,$"test = {test}");
+            A = Portfolio.Portfolio.twoD2oneD(m, n, Aas2D, transpose: true);
+            Factorise.dmx_transpose(n, m, A, A);
+            Aas2Dback = Portfolio.Portfolio.oneD2twoD(m, n, A);
+            BlasLike.dsubvec(n, Aas2D[0], Aas2Dback[0], Aas2Dback[0]);
+            BlasLike.dsubvec(n, Aas2D[1], Aas2Dback[1], Aas2Dback[1]);
+            test = BlasLike.ddotvec(n, Aas2Dback[0], Aas2Dback[0]) + BlasLike.ddotvec(n, Aas2Dback[1], Aas2Dback[1]);
+            Assert.IsTrue(test <= 2 * BlasLike.lm_eps, $"test = {test}");
         }
         [TestMethod]
         public void Test_FMP()
@@ -802,7 +803,7 @@ namespace BlasLikeTest
                                 1, 3 };
             double[] FL = { 1, 0, 1,
                             0, 1, 1 }; //Factors by assets
-                            var uplow='L';
+            var uplow = 'L';
             var back = Factorise.FMP(n, nfac, FC, SV, FL, Q, uplow);
             double[] correct = { 2, 1, 3, 1, 3, 4, 3, 4, 7 };
             var result = new double[n * n];
@@ -824,18 +825,18 @@ namespace BlasLikeTest
             BlasLike.dsubvec(n, Qw, result, Qw);
             test = BlasLike.ddotvec(n, Qw, Qw);
             Assert.IsTrue(Math.Abs(test) < BlasLike.lm_eps2, $"test={test}");
-            var Qinv=(double[])Q.Clone();
+            var Qinv = (double[])Q.Clone();
             //Invert the factorised risk model
-            back=Factorise.FMPinverse(n,nfac,Qinv,uplow);
-              var Qwback = new double[n];
-              w[0]=1;
-              w[1]=2;
-              w[2]=3;
+            back = Factorise.FMPinverse(n, nfac, Qinv, uplow);
+            var Qwback = new double[n];
+            w[0] = 1;
+            w[1] = 2;
+            w[2] = 3;
             Factorise.FacMul(n, nfac, Q, w, Qw);
             Factorise.FacMul(n, nfac, Qinv, Qw, Qwback, inverse: true);
-            BlasLike.dsubvec(n,w,Qwback,Qwback);
-            test=BlasLike.ddotvec(n,Qwback,Qwback);
-            Assert.IsTrue(back == 0 && test <= BlasLike.lm_eps,$"Inverse test check {test}");
+            BlasLike.dsubvec(n, w, Qwback, Qwback);
+            test = BlasLike.ddotvec(n, Qwback, Qwback);
+            Assert.IsTrue(back == 0 && test <= BlasLike.lm_eps, $"Inverse test check {test}");
         }
         [TestMethod]
         public void Test_digit()
@@ -944,12 +945,12 @@ namespace BlasLikeTest
             double[] compositeWeights = { 0.333, 0.333, 0.333,
                                             0.4, 0.6, 0 };
             double[] SV = { 1, 2, 3 };
-            double[] FC = { 0.5, 
+            double[] FC = { 0.5,
                             0.1, 0.6 };
-            double[] FL = { 2, 3, 4, 
+            double[] FL = { 2, 3, 4,
                             4, -1, 2 };
             var port = new Portfolio.FPortfolio("");
-    //        port.n = n;
+            //        port.n = n;
             port.ntrue = ntrue;
             port.nfac = nfac;
             port.SV = SV;
@@ -968,12 +969,12 @@ namespace BlasLikeTest
             port.hessmull(n, port.Q, w, implied);
             var variance = BlasLike.ddotvec(n, w, implied) * 0.5;
             Assert.IsTrue(Math.Abs(variance) <= BlasLike.lm_eps, $"variance should be zero, not {variance}");
-            variance=port.Variance(w);
+            variance = port.Variance(w);
             //Now test for full covariance case. Generate covariances from risk model
             var C = new double[ntrue * (ntrue + 1) / 2];
             Factorise.Fac2Cov(ntrue, nfac, port.Q, C);
             var portC = new Portfolio.Portfolio("");
-    //        portC.n = n;
+            //        portC.n = n;
             portC.ntrue = ntrue;
             portC.nfixed = 0;
             portC.Q = C;
@@ -1027,9 +1028,9 @@ namespace BlasLikeTest
             portC.nfixedComp = 1;
             portC.nfixedTrue = 1;
             var fixedVariance = BlasLike.ddotvec(n, fixedSecondOrder, fixedW) * 0.5;
-            portC.fixedSecondOrder=fixedSecondOrder;
+            portC.fixedSecondOrder = fixedSecondOrder;
             //BlasLike.dsubvec(n,w,fixedW,w);
-            BlasLike.dzerovec(n,implied);
+            BlasLike.dzerovec(n, implied);
             Ordering.Order.Reorder(n, portC.mainordertrueInverse, w);
             Ordering.Order.Reorder(n, portC.mainordertrueInverse, implied);
             portC.hessmull(n - nfixed, portC.Q, w, implied);
@@ -1045,10 +1046,10 @@ namespace BlasLikeTest
 
             //Drop order
             Ordering.Order.Reorder(n, portC.mainorder, w);
-            port.mainorder=(int[])order.Clone();
-            var orderInverse=(int[])order.Clone();
-            for(var i=0;i<n;i++)orderInverse[order[i]]=i;
-            port.mainorderInverse=(int[])orderInverse.Clone();
+            port.mainorder = (int[])order.Clone();
+            var orderInverse = (int[])order.Clone();
+            for (var i = 0; i < n; i++) orderInverse[order[i]] = i;
+            port.mainorderInverse = (int[])orderInverse.Clone();
             port.createMainOrderTrue(n);
             BlasLike.dcopyvec(n, w, fixedW);
             BlasLike.dzerovec(n - nfixed, fixedW);
@@ -1057,9 +1058,9 @@ namespace BlasLikeTest
             Ordering.Order.Reorder(n, portC.mainordertrue, w);
             Ordering.Order.Reorder(n, portC.mainordertrue, fixedW);
             Ordering.Order.Reorder(n, portC.mainordertrue, order);//combined order
-            
-                    Ordering.Order.Reorder(ntrue, order, port.Q);
-                    Ordering.Order.Reorder_gen(ntrue,order, port.Q, nfac, 1, astart:ntrue,columns: true);
+
+            Ordering.Order.Reorder(ntrue, order, port.Q);
+            Ordering.Order.Reorder_gen(ntrue, order, port.Q, nfac, 1, astart: ntrue, columns: true);
             orderPortC = new int[ncomp];
             orderPortCInverse = new int[ncomp];
             for (var i = 0; i < ncomp; ++i) orderPortC[i] = order[i + ntrue] - ntrue;
@@ -1070,30 +1071,30 @@ namespace BlasLikeTest
             for (var i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, order, port.compImplied, i * ntrue);
             Ordering.Order.Reorder_gen(ncomp, orderPortC, port.compw, ntrue, columns: true);
             Ordering.Order.Reorder_gen(ncomp, orderPortC, port.compImplied, ntrue, columns: true);
-            port.nfixed=0;
-            port.hessmull(n,port.Q,fixedW,fixedSecondOrder)    ;
-port.fixedW=fixedW;
-port.fixedSecondOrder=fixedSecondOrder;
+            port.nfixed = 0;
+            port.hessmull(n, port.Q, fixedW, fixedSecondOrder);
+            port.fixedW = fixedW;
+            port.fixedSecondOrder = fixedSecondOrder;
 
 
-            port.nfixed=nfixed;
-            port.nfixedComp=1;
-            port.nfixedTrue=1;
+            port.nfixed = nfixed;
+            port.nfixedComp = 1;
+            port.nfixedTrue = 1;
 
-            
+
             //Change to order with fixed assets at the end
-            BlasLike.dzerovec(n,implied);
+            BlasLike.dzerovec(n, implied);
             Ordering.Order.Reorder(n, port.mainordertrueInverse, w);
             Ordering.Order.Reorder(n, port.mainordertrueInverse, implied);
-            port.hessmull(n-nfixed,port.Q,w,implied);
+            port.hessmull(n - nfixed, port.Q, w, implied);
             Ordering.Order.Reorder(n, port.mainordertrueInverse, fixedSecondOrder);
             Ordering.Order.Reorder(n, port.mainordertrueInverse, fixedW);
             variance = BlasLike.ddotvec(n - nfixed, w, implied) * 0.5 + BlasLike.ddotvec(n - nfixed, fixedSecondOrder, w) + BlasLike.ddotvec(n, implied, fixedW) + fixedVariance;
             Assert.IsTrue(Math.Abs(variance) <= BlasLike.lm_eps, $"reordering with fixed and non-fixed combined gives non zero variance; ({variance})");
-Ordering.Order.Reorder(n,port.mainorderInverse,w);
-for(var i=0;i<n;++i)inverse[order[i]]=i;
-                    Ordering.Order.Reorder(ntrue, inverse, port.Q);
-                    Ordering.Order.Reorder_gen(ntrue,inverse, port.Q, nfac, 1, astart:ntrue,columns: true);
+            Ordering.Order.Reorder(n, port.mainorderInverse, w);
+            for (var i = 0; i < n; ++i) inverse[order[i]] = i;
+            Ordering.Order.Reorder(ntrue, inverse, port.Q);
+            Ordering.Order.Reorder_gen(ntrue, inverse, port.Q, nfac, 1, astart: ntrue, columns: true);
 
 
             Ordering.Order.ReorderSymm(ncomp, orderPortC, port.compQ);
@@ -1102,8 +1103,8 @@ for(var i=0;i<n;++i)inverse[order[i]]=i;
             for (var i = 0; i < ncomp; ++i) Ordering.Order.Reorder(ntrue, inverse, port.compImplied, i * ntrue);
             Ordering.Order.Reorder_gen(ncomp, orderPortCInverse, port.compw, ntrue, columns: true);
             Ordering.Order.Reorder_gen(ncomp, orderPortCInverse, port.compImplied, ntrue, columns: true);
-            port.nfixed=0;
-            variance=port.Variance(w);
+            port.nfixed = 0;
+            variance = port.Variance(w);
             Assert.IsTrue(Math.Abs(variance) <= BlasLike.lm_eps, $"reordering back to start gives non zero variance; ({variance})");
         }
         [TestMethod]
@@ -1223,6 +1224,15 @@ for(var i=0;i<n;++i)inverse[order[i]]=i;
             licence.licenceByteValue[19] = curveKeys.byte4;
             licence.convert(licence.licenceByteValue, ref hid, ref start, ref stop);
             Assert.IsTrue(licence.toRegistry(false));
+        }
+        [TestMethod]
+        public void Test_Version()
+        {
+            var lic = new Licensing.Licence();
+            var version = lic.version;
+            var revision = lic.revision;
+            var vers = lic.CheckLicence(true);
+            Assert.IsTrue(vers, $"Licence is invalid; version is {version}: revision {revision}");
         }
     }
 }
