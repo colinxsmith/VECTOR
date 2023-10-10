@@ -23,7 +23,7 @@ namespace ActiveSet
         {
             //Numerical Recipes Pages 361-362   9.3 VanWijngaarden–Dekker–BrentMethod
             if (tol == 0) { tol = BlasLike.lm_eps; }
-            tol=3e-8; // This is the recommened value in Numericl Recipes, I'm hardcoding this in.
+            tol=3e-8; // This is the recommended value in Numericl Recipes, I'm hardcoding this in.
             if (gammatop == 1.0) { gammatop = 1 - BlasLike.lm_eps; }
             int iter, itmax = 200;
             short signk = 1;

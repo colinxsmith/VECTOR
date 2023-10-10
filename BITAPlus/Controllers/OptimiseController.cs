@@ -482,6 +482,7 @@ public class OptimiseController : ControllerBase
 #endif
 
             op.ogamma = ogamma;
+            op.gamma=ogamma;
             op.CVARGLprob = CVARGLprob;
             op.message = Portfolio.Portfolio.OptMessages(op.back.GetValueOrDefault());
             for (var i = 0; i < op.n.GetValueOrDefault(); ++i)
@@ -726,6 +727,7 @@ public class OptimiseController : ControllerBase
 
             op.CVARGLprob = CVARGLprob;
             op.ogamma = ogamma;
+            op.gamma=ogamma;
             op.message = Portfolio.Portfolio.OptMessages(op.back.GetValueOrDefault());
             for (var i = 0; i < op.n.GetValueOrDefault(); ++i)
             {
