@@ -522,8 +522,11 @@ namespace Portfolio
                     DropRisk(OP.basket, OP.trades, vars.target, vars);
                     vars.L = LKEEP;
                     vars.U = UKEEP;
-                    OP.back = BACK = vars.back;
                     OP.ogamma=gamma;
+                    if(gamma<1.01)
+                    OP.back = BACK = vars.back;
+                    else
+                    OP.back=BACK=6;
                 }
             }
             OP.minholdlot = minholdlot;

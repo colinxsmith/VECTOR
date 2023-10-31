@@ -1200,6 +1200,15 @@ namespace BlasLikeTest
             Assert.IsTrue(vers);
         }
         [TestMethod]
+        public void Test_Version()
+        {
+            var lic = new Licensing.Licence();
+            var version = lic.version;
+            var revision = lic.revision;
+            var vers = lic.CheckLicence(true);
+            Assert.IsTrue(vers, $"Licence is invalid; version is {version}: revision {revision}");
+        }
+        [TestMethod]
         public void Test_DeleteKey()
         {
             var licence = new Licensing.Licence();
@@ -1224,15 +1233,6 @@ namespace BlasLikeTest
             licence.licenceByteValue[19] = curveKeys.byte4;
             licence.convert(licence.licenceByteValue, ref hid, ref start, ref stop);
             Assert.IsTrue(licence.toRegistry(false));
-        }
-        [TestMethod]
-        public void Test_Version()
-        {
-            var lic = new Licensing.Licence();
-            var version = lic.version;
-            var revision = lic.revision;
-            var vers = lic.CheckLicence(true);
-            Assert.IsTrue(vers, $"Licence is invalid; version is {version}: revision {revision}");
         }
     }
 }
