@@ -39,7 +39,7 @@
             <td *ngIf="opt.gamma!=undefined">
                 <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
                     <li>
-                        Set gamma: <br><input class="step g" style="width:5em" [min]="0" [max]="1" [value]="(opt.ogamma!=undefined&&   opt.ogamma<1.1)?opt.ogamma:opt.gamma">
+                        Set gamma: <br><input class="step g" style="width:5em" [min]="0" [max]="1" [value]="(opt.ogamma!=undefined)?opt.ogamma:opt.gamma">
                     </li>
                 </ul>
             </td>
