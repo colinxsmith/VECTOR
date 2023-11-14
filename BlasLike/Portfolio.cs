@@ -231,7 +231,7 @@ namespace Portfolio
                         else
                             ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk, gammabot: 0, gammatop: gamma, tol: BlasLike.lm_rooteps, info: info);
                     }
-                    else { op.DropRisk(basket, trades, info.target, info); ogamma = gamma = op.gamma; }
+                    else { op.DropRisk(basket, trades, info.target, info); ogamma /* = gamma*/ = op.gamma; }
                     BlasLike.dcopyvec(n, op.wback, w);
                     if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
                 }
@@ -524,9 +524,9 @@ namespace Portfolio
                     vars.U = UKEEP;
                     OP.ogamma = gamma;
                     if (gamma < 1.01)
-                        {OP.back = BACK = vars.back;}
+                    { OP.back = BACK = vars.back; }
                     else
-                        {OP.back = BACK = 6;}
+                    { OP.back = BACK = 6; }
                 }
             }
             OP.minholdlot = minholdlot;
@@ -794,10 +794,10 @@ namespace Portfolio
                                 double[] sizelot, bool passedfromthresh = false, double[] thresh = null)
         {
             OptParamRound info = rstep.info;
-            int maxstage = 20;
+            int maxstage = 5;
             int n = info.n;
             int m = info.m;
-            int firstlim = (n < 100) ? n : n, roundy = n;
+            int firstlim = (n < 100) ? n : 10, roundy = n;
             double[] bound_error = new double[n];
 
             if (rstep.prev != null)
@@ -2236,8 +2236,8 @@ namespace Portfolio
             double[] lower = OP.lower;
             double[] upper = OP.upper;
             double[] Lkeep = new double[n + m], Ukeep = new double[n + m], naive = new double[n];
-            double[] LL = new double[0];
-            double[] UU = new double[0];
+            double[] LL = Array.Empty<double>();
+            double[] UU = Array.Empty<double>();
             KeepBest KB = new(n);
 
             BlasLike.dcopyvec(n, OP.x, KB.w);
@@ -2901,7 +2901,7 @@ namespace Portfolio
             var newgamma = ActiveSet.Optimise.Solve1D(CalcRisk, 0, 1, info: sendInput, tol: BlasLike.lm_rooteps);
             back = sendInput.back;
             if (newgamma > 10 || sendInput.back == 6) { ColourConsole.WriteError("Infeasible target risk"); gamma = newgamma; }
-            else if (false)
+            else if (sendInput.n <= 20)
             {
                 gamma = newgamma; kappa = sendInput.kappa;
                 var riskh = CalcRisk(gamma, sendInput) + targetRisk;
