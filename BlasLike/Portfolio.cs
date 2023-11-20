@@ -226,12 +226,21 @@ namespace Portfolio
                     //  op.BoundsSetToSign(n, info.L, info.U, initial, w);
                     if (basket < 0 && trades < 0)
                     {
-                        if (info.target == minRisk)
-                            ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk, gammabot: gamma, gammatop: 1 - BlasLike.lm_eps8, tol: BlasLike.lm_rooteps, info: info);
-                        else
-                            ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk, gammabot: 0, gammatop: gamma, tol: BlasLike.lm_rooteps, info: info);
+                        if (Math.Abs(riskhere - info.target) / info.target > 1e-4)
+                        {
+                            if (info.target == minRisk)
+                                ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk, gammabot: gamma, gammatop: 1 - BlasLike.lm_eps8, tol: BlasLike.lm_rooteps, info: info);
+                            else
+                                ogamma = ActiveSet.Optimise.Solve1D(op.CalcRisk, gammabot: 0, gammatop: gamma, tol: BlasLike.lm_rooteps, info: info);
+                        }
+                        else ogamma = gamma;
                     }
-                    else { op.DropRisk(basket, trades, info.target, info); ogamma /* = gamma*/ = op.gamma; }
+                    else
+                    {
+                        if (Math.Abs(riskhere - info.target) / info.target > 1e-4)
+                            op.DropRisk(basket, trades, info.target, info);
+                        ogamma /* = gamma*/ = op.gamma;
+                    }
                     BlasLike.dcopyvec(n, op.wback, w);
                     if (breakdown != null) op.RiskBreakdown(w, op.bench, breakdown);
                 }
@@ -1371,6 +1380,7 @@ namespace Portfolio
             // else updateAllIfInfeasible=true;
             //   updateAllIfInfeasible=true;
             i6limit = n;
+
             i6 %= n;
             if (stuck > 10 || next.count > 40) { rstep.util = info.UtilityFunc(info); return; }
             if (bestround >= n - 4 && next.count > maxstage /*&& rstep.back <= 1*/) { rstep.util = info.UtilityFunc(info); return; }
@@ -2898,7 +2908,16 @@ namespace Portfolio
                      alpha, sendInput.initial, sendInput.buy, sendInput.sell, sendInput.names, sendInput.useIP, sendInput.nabs, sendInput.A_abs, sendInput.L_abs, sendInput.U_abs, sendInput.mabs, sendInput.I_a, sendInput.tlen, sendInput.DATAlambda, sendInput.DATA, sendInput.tail, sendInput.targetR, sendInput.ETLorLOSSconstraint, sendInput.ETLorLOSSmin, sendInput.ETLorLOSSmax, basket, baskethere, trades, tradeshere, ncomp: sendInput.ncomp, compw: sendInput.compw);
                 return;
             }
-            var newgamma = ActiveSet.Optimise.Solve1D(CalcRisk, 0, 1, info: sendInput, tol: BlasLike.lm_rooteps);
+            var oldgamma = gamma;
+            var wkeep = new double[sendInput.n];
+            BlasLike.dcopyvec(sendInput.n, wback, wkeep);
+            var newgamma1 = ActiveSet.Optimise.Solve1D(CalcRisk, 0, gamma, info: sendInput, tol: BlasLike.lm_rooteps);
+            var newgamma = newgamma1 > 1.01 ? oldgamma : newgamma1;
+            if (newgamma1 > 1.01)
+            {
+                gamma = oldgamma;//The weights below are wrong we need optimal weights from oldgamma with this set of bounds (which may not be the same as those used before)
+                BlasLike.dcopyvec(sendInput.n, wkeep, wback);
+            }
             back = sendInput.back;
             if (newgamma > 10 || sendInput.back == 6) { ColourConsole.WriteError("Infeasible target risk"); gamma = newgamma; }
             else if (sendInput.n <= 20)
