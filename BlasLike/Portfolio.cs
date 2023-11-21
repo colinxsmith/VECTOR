@@ -217,11 +217,15 @@ namespace Portfolio
                 op.RiskBreakdown(w, op.bench, breakdown);
                 var riskhere = BlasLike.ddotvec(n, w, breakdown);
                 if (benchmark != null) riskhere -= BlasLike.ddotvec(n, breakdown, benchmark);
+                if (maxRisk > -1 && minRisk > -1)
+                {
+                    info.target = maxRisk;
+                    if (maxRisk < riskhere) info.target = maxRisk;
+                    else if (minRisk >= riskhere) {info.target = minRisk;info.setLower=true;}
+                }
+
                 if (!(riskhere <= maxRisk && riskhere >= minRisk))
                 {
-                    if (maxRisk == minRisk) info.target = maxRisk;
-                    else if (maxRisk < riskhere) info.target = maxRisk;
-                    else if (minRisk > riskhere) info.target = minRisk;
                     // op.CalcRisk(gamma, info);
                     //  op.BoundsSetToSign(n, info.L, info.U, initial, w);
                     if (basket < 0 && trades < 0)
@@ -803,7 +807,7 @@ namespace Portfolio
                                 double[] sizelot, bool passedfromthresh = false, double[] thresh = null)
         {
             OptParamRound info = rstep.info;
-            int maxstage = 5;
+            int maxstage = 20;
             int n = info.n;
             int m = info.m;
             int firstlim = (n < 100) ? n : 10, roundy = n;
@@ -2841,6 +2845,7 @@ namespace Portfolio
             public double kappa = 0.5;
             public double[] bench;
             public double target;
+            public bool setLower=false;
             public int back = -1;
             public int basket = -1;
             public int trades = -1;
@@ -2909,17 +2914,14 @@ namespace Portfolio
                 return;
             }
             var oldgamma = gamma;
-            var wkeep = new double[sendInput.n];
-            BlasLike.dcopyvec(sendInput.n, wback, wkeep);
-            var newgamma1 = ActiveSet.Optimise.Solve1D(CalcRisk, 0, gamma, info: sendInput, tol: BlasLike.lm_rooteps);
+            var newgamma1 = ActiveSet.Optimise.Solve1D(CalcRisk,sendInput.setLower?gamma:0,sendInput.setLower?1:gamma, info: sendInput, tol: BlasLike.lm_rooteps);
             var newgamma = newgamma1 > 1.01 ? oldgamma : newgamma1;
             if (newgamma1 > 1.01)
             {
-                gamma = oldgamma;//The weights below are wrong we need optimal weights from oldgamma with this set of bounds (which may not be the same as those used before)
-                BlasLike.dcopyvec(sendInput.n, wkeep, wback);
+                gamma = oldgamma;//       BlasLike.dcopyvec(sendInput.n, wkeep, wback);
             }
             back = sendInput.back;
-            if (newgamma > 10 || sendInput.back == 6) { ColourConsole.WriteError("Infeasible target risk"); gamma = newgamma; }
+            if (newgamma1 > 10 || sendInput.back == 6) { ColourConsole.WriteError("Infeasible target risk");}
             else if (sendInput.n <= 20)
             {
                 gamma = newgamma; kappa = sendInput.kappa;
@@ -2963,7 +2965,7 @@ namespace Portfolio
                         }
                     }
                     //Try to get the risk constraint correct if possible
-                    newgamma = ActiveSet.Optimise.Solve1D(CalcRisk, 0, 1, info: sendInput, tol: BlasLike.lm_rooteps);
+                    newgamma = ActiveSet.Optimise.Solve1D(CalcRisk,sendInput.setLower?gamma:0,sendInput.setLower?1:gamma, info: sendInput, tol: BlasLike.lm_rooteps);
                     if (newgamma > 10 || sendInput.back == 6) { ColourConsole.WriteError("Infeasible target risk"); gamma = gammakeep; }
                     else
                     {

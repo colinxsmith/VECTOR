@@ -21,14 +21,16 @@ namespace ActiveSet
         public static double Solve1D(OneD OneDimensionalFunction, double gammabot = 0,
                                        double gammatop = 1.0, double tol = 0, object info = null)
         {
+            var swapGammas = (gammatop != 1 && gammabot == 0);//||(gammatop==1&&gammabot!=0);
             //Numerical Recipes Pages 361-362   9.3 VanWijngaarden–Dekker–BrentMethod
             if (tol == 0) { tol = BlasLike.lm_eps; }
-            tol=3e-8; // This is the recommended value in Numericl Recipes, I'm hardcoding this in.
+            tol = 3e-8; // This is the recommended value in Numericl Recipes, I'm hardcoding this in.
             if (gammatop == 1.0) { gammatop = 1 - BlasLike.lm_eps; }
             int iter, itmax = 200;
             short signk = 1;
             double c = 0, d = 0, e = 0, min1, min2, fc, p, q, r, s, tol1, xm;
             double gamma_opt, a = gammatop, b = gammabot;
+            if (swapGammas) Ordering.Order.swap(ref a, ref b);
             double fa = OneDimensionalFunction(a, info);
             if (Math.Abs(fa) < BlasLike.lm_rooteps)
                 return a;
@@ -38,6 +40,11 @@ namespace ActiveSet
             double scalelimit = Math.Max(((Math.Abs(fa) + Math.Abs(fb)) * .5), 1.0);
             if (tol == 0)
                 tol = BlasLike.lm_eps;
+            if (swapGammas)
+            {
+                Ordering.Order.swap(ref a, ref b);
+                Ordering.Order.swap(ref fa, ref fb);
+            }
             if (fa * fb > 0)
             {
                 return 1e+10;
