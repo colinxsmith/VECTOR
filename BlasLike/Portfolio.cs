@@ -220,8 +220,10 @@ namespace Portfolio
                 if (maxRisk > -1 && minRisk > -1)
                 {
                     info.target = maxRisk;
+                    info.maxRisk = maxRisk;
+                    info.minRisk = minRisk;
                     if (maxRisk < riskhere) info.target = maxRisk;
-                    else if (minRisk >= riskhere) {info.target = minRisk;info.setLower=true;}
+                    else if (minRisk >= riskhere) { info.target = minRisk; info.setLower = true; }
                 }
 
                 if (!(riskhere <= maxRisk && riskhere >= minRisk))
@@ -2845,7 +2847,10 @@ namespace Portfolio
             public double kappa = 0.5;
             public double[] bench;
             public double target;
-            public bool setLower=false;
+            public double maxRisk;
+            public double minRisk;
+            public double targetDifference;
+            public bool setLower = false;
             public int back = -1;
             public int basket = -1;
             public int trades = -1;
@@ -2886,6 +2891,7 @@ namespace Portfolio
             var fix = nfixed;
             nfixed = 0;
             var backr = Math.Sqrt(Variance(www)) - vars.target;
+            vars.targetDifference = backr;
             nfixed = fix;
             return backr;
         }
@@ -2914,14 +2920,18 @@ namespace Portfolio
                 return;
             }
             var oldgamma = gamma;
-            var newgamma1 = ActiveSet.Optimise.Solve1D(CalcRisk,sendInput.setLower?gamma:0,sendInput.setLower?1:gamma, info: sendInput, tol: BlasLike.lm_rooteps);
+            var newgamma1 = ActiveSet.Optimise.Solve1D(CalcRisk, sendInput.setLower ? gamma : 0, sendInput.setLower ? 1 : gamma, info: sendInput, tol: BlasLike.lm_rooteps);
             var newgamma = newgamma1 > 1.01 ? oldgamma : newgamma1;
             if (newgamma1 > 1.01)
             {
-                gamma = oldgamma;//       BlasLike.dcopyvec(sendInput.n, wkeep, wback);
+                double risk = sendInput.targetDifference + sendInput.target;
+                if (!((risk - sendInput.minRisk) / sendInput.minRisk < -1e-4 || (risk - sendInput.maxRisk) / sendInput.maxRisk > 1e-4))
+                    gamma = oldgamma;
+                else{
+                    newgamma = newgamma1;sendInput.back=6;}
             }
             back = sendInput.back;
-            if (newgamma1 > 10 || sendInput.back == 6) { ColourConsole.WriteError("Infeasible target risk");}
+            if (newgamma1 > 10 || sendInput.back == 6) { ColourConsole.WriteError("Infeasible target risk"); }
             else if (sendInput.n <= 20)
             {
                 gamma = newgamma; kappa = sendInput.kappa;
@@ -2965,7 +2975,7 @@ namespace Portfolio
                         }
                     }
                     //Try to get the risk constraint correct if possible
-                    newgamma = ActiveSet.Optimise.Solve1D(CalcRisk,sendInput.setLower?gamma:0,sendInput.setLower?1:gamma, info: sendInput, tol: BlasLike.lm_rooteps);
+                    newgamma = ActiveSet.Optimise.Solve1D(CalcRisk, sendInput.setLower ? gamma : 0, sendInput.setLower ? 1 : gamma, info: sendInput, tol: BlasLike.lm_rooteps);
                     if (newgamma > 10 || sendInput.back == 6) { ColourConsole.WriteError("Infeasible target risk"); gamma = gammakeep; }
                     else
                     {

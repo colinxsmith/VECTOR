@@ -22,6 +22,7 @@ namespace ActiveSet
                                        double gammatop = 1.0, double tol = 0, object info = null)
         {
             var swapGammas = (gammatop != 1 && gammabot == 0);//||(gammatop==1&&gammabot!=0);
+            if (gammatop < gammabot) swapGammas = !swapGammas;
             //Numerical Recipes Pages 361-362   9.3 VanWijngaarden–Dekker–BrentMethod
             if (tol == 0) { tol = BlasLike.lm_eps; }
             tol = 3e-8; // This is the recommended value in Numericl Recipes, I'm hardcoding this in.

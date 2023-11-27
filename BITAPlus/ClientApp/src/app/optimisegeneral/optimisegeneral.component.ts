@@ -25,7 +25,7 @@ export const digitRound = (x: number, ff = 1e5) => {
 export class OptimisegeneralComponent implements OnInit {
   width = 1100;//width and height for weight graph
   height = 300;
-  generalfile = "GLdist";
+  generalfile = "holdtest.log";
   filterzero = false;
   shortside = false;
   format = d3.format('0.6f')
