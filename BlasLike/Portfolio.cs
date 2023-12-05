@@ -260,16 +260,18 @@ namespace Portfolio
             if (min_holding > 0 || min_trade > 0 || round == 1)
             {
                 // op.BoundsSetToSign(n, info.L, info.U, initial, w);
-                var Op = new Portfolio.OptParamRound();
-                Op.basket = basket;
-                Op.trades = trades;
-                Op.lower = L;
-                Op.m = m;
-                Op.n = n;
-                Op.upper = U;
-                //  op.BoundsSetToSign(n, Op.lower, Op.upper, initial, w);
-                Op.minholdlot = null;
-                Op.mintradelot = null;
+                Portfolio.OptParamRound Op = new()
+                {
+                    basket = basket,
+                    trades = trades,
+                    lower = L,
+                    m = m,
+                    n = n,
+                    upper = U,
+                    //  op.BoundsSetToSign(n, Op.lower, Op.upper, initial, w);
+                    minholdlot = null,
+                    mintradelot = null
+                };
                 var mintrade = min_trade < 0 ? null : Portfolio.one2many(n, min_trade);
                 var minhold = min_holding < 0 ? null : Portfolio.one2many(n, min_holding);
                 var roundw = (double[])op.wback.Clone();
@@ -283,7 +285,7 @@ namespace Portfolio
                         //roundw[iw] = check_digit(roundw[iw] * roundfac) / roundfac;
                         roundw[iw] = digitRound(roundw[iw], roundfac);
                     }
-                    ogamma = gamma;
+                    ogamma = op.gamma;
                     op.roundcheck(n, roundw, revise == 1 ? initial : null, min_lot, size_lot, shake);
                 }
                 else
@@ -1413,7 +1415,7 @@ namespace Portfolio
             int i;
             int n = info.n;
             int m = info.m;
-            roundstep next = new roundstep();
+            roundstep next = new();
             roundstep start, prev;
             next.can_repeat = new int[n];
             set_repeat(n, 3, next.can_repeat);
@@ -2596,20 +2598,22 @@ namespace Portfolio
         public void Rounding(int basket, int trades, double[] initial, double[] minlot,
                                 double[] sizelot, double[] roundw, double[] minholdlot, double[] mintradelot, object info)
         {
-            OptParamRound Op = new OptParamRound();
-            Op.MoreInfo = info;
-            Op.basket = basket;
-            Op.trades = trades;
-            Op.lower = (double[])((INFO)info).L.Clone();
-            Op.m = ((INFO)info).m;
-            Op.n = ((INFO)info).n;
-            Op.OptFunc = RoundInnerOpt;
-            Op.upper = (double[])((INFO)info).U.Clone();
-            Op.UtilityFunc = RoundInnerUtil;
-            Op.x = wback;// (double[])wback.Clone();
-            Op.minholdlot = minholdlot;
-            Op.mintradelot = mintradelot;
-            Op.initial = initial;
+            OptParamRound Op = new()
+            {
+                MoreInfo = info,
+                basket = basket,
+                trades = trades,
+                lower = (double[])((INFO)info).L.Clone(),
+                m = ((INFO)info).m,
+                n = ((INFO)info).n,
+                OptFunc = RoundInnerOpt,
+                upper = (double[])((INFO)info).U.Clone(),
+                UtilityFunc = RoundInnerUtil,
+                x = wback,// (double[])wback.Clone();
+                minholdlot = minholdlot,
+                mintradelot = mintradelot,
+                initial = initial
+            };
             var ffi = 0;
             for (var i = 0; i < Op.n; ++i)
             {
