@@ -603,7 +603,7 @@ public class OptimiseController : ControllerBase
             foreach (var ww in op.w)
             {
                 op.result.turnover += Math.Abs(ww);
-                if (Math.Abs(ww) > BlasLike.lm_eps8)
+                if (Math.Abs(ww) > 1e-8)
                 {
                     op.result.trades++;
                     if (op.L != null && op.U != null && op.L[iii] != op.U[iii]) op.result.mintrade = Math.Min(Math.Abs(ww), op.result.mintrade.GetValueOrDefault());
@@ -1064,7 +1064,7 @@ public class OptimiseController : ControllerBase
             foreach (var ww in op.w)
             {
                 op.result.turnover += Math.Abs(ww);
-                if (Math.Abs(ww) > BlasLike.lm_eps8)
+                if (Math.Abs(ww) > 1e-8)
                 {
                     op.result.trades++;
                     if (op.L != null && op.U != null && op.L[iii] != op.U[iii]) op.result.mintrade = Math.Min(Math.Abs(ww), op.result.mintrade.GetValueOrDefault());
