@@ -280,11 +280,11 @@ namespace Portfolio
                 if (round == 1)
                 {
                     op.Rounding(basket, trades, revise == 1 ? initial : null, min_lot, size_lot, roundw, minhold, mintrade, info);
-                    for (var iw = 0; iw < n; ++iw)
+                /*    for (var iw = 0; iw < n; ++iw)
                     {
                         //roundw[iw] = check_digit(roundw[iw] * roundfac) / roundfac;
                         roundw[iw] = digitRound(roundw[iw], roundfac);
-                    }
+                    }*/
                     ogamma = op.gamma;
                     op.roundcheck(n, roundw, revise == 1 ? initial : null, min_lot, size_lot, shake);
                 }
@@ -830,6 +830,7 @@ namespace Portfolio
                 else if (info.back < 2) infeaseCount = 0;
                 ColourConsole.WriteEmbeddedColourLine($"[red]infeaseCount=[/red][cyan]{infeaseCount}[/cyan]");
                 //	rstep.util=info.utility_base(n,x,c,H);
+                if (info.x != wback) BlasLike.dcopyvec(n, wback, info.x);
                 rstep.util = info.UtilityFunc(info);
                 if (info.back == 66) info.back = 6;
                 if (info.back == 10)
@@ -843,7 +844,6 @@ namespace Portfolio
                     }
                 }
                 rstep.back = info.back;
-                if (info.x != wback) BlasLike.dcopyvec(n, wback, info.x);
                 BlasLike.dcopyvec(n, info.x, rstep.w);
                 BlasLike.dcopyvec(m + n, rstep.kL, info.lower);
                 BlasLike.dcopyvec(m + n, rstep.kU, info.upper);
@@ -1055,6 +1055,7 @@ namespace Portfolio
                 if (info.back == 16) info.back = 6;
                 if (info.back < 2) infeaseCount = 0;
                 ColourConsole.WriteEmbeddedColourLine($"[red]infeaseCount=[/red][cyan]{infeaseCount}[/cyan]");
+                if (info.x != wback) BlasLike.dcopyvec(n, wback, info.x);
                 rstep.util = info.UtilityFunc(info);
                 if (info.back == 66) info.back = 6;
                 if (info.back == 10)
@@ -3049,7 +3050,7 @@ namespace Portfolio
         ///<param name="gradient">gradient[i] is the gradient for i'th asset</param>
         ///<param name="print">print output if true</param>
         ///<param name="thresh">less than thresh means zero</param>
-        public double PortfolioUtility(int n, double gamma, double kappa, double[] buy, double[] sell, double[] alpha, double[] w, double[] gradient, ref int basket, ref int trades, bool print = false, double thresh = 1e-14)
+        public double PortfolioUtility(int n, double gamma, double kappa, double[] buy, double[] sell, double[] alpha, double[] w, double[] gradient, ref int basket, ref int trades, bool print = false, double thresh = 1e-8)
         {
             var nfixedo = nfixed; if (kappa < 0) kappa = gamma;
             nfixed = 0;//Must set this here
