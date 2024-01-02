@@ -123,7 +123,7 @@ namespace Licensing
     {
         readonly int bitaopt = 23;
         public readonly int version=1;
-		public readonly int revision=1;
+		public readonly int revision=2;
         public string VersionString = "";
         public Licence()
         {
