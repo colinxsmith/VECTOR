@@ -562,7 +562,7 @@ namespace Portfolio
                 }
             }
             //      Debug.Assert(OP.x == wback);
-            if (OP.x != wback) BlasLike.dcopyvec(vars.n, wback, OP.x);
+            if (OP.x != wback && BACK<2) BlasLike.dcopyvec(vars.n, wback, OP.x);
             return BACK;
         }
         public delegate double UFUNC(int n, double gamma, double kappa, double[] buy, double[] sell, double[] alpha, double[] w, double[] gradient, ref int basket, ref int trades, bool print = true, double thresh = 1E-14);
@@ -830,7 +830,7 @@ namespace Portfolio
                 else if (info.back < 2) infeaseCount = 0;
                 ColourConsole.WriteEmbeddedColourLine($"[red]infeaseCount=[/red][cyan]{infeaseCount}[/cyan]");
                 //	rstep.util=info.utility_base(n,x,c,H);
-                if (info.x != wback) BlasLike.dcopyvec(n, wback, info.x);
+                if (info.x != wback &&info.back<2) BlasLike.dcopyvec(n, wback, info.x);
                 rstep.util = info.UtilityFunc(info);
                 if (info.back == 66) info.back = 6;
                 if (info.back == 10)
