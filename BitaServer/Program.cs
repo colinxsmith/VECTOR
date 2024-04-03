@@ -1,10 +1,8 @@
 using Microsoft.Extensions.Hosting.WindowsServices;
-using Microsoft.Extensions.Hosting.Systemd;
-using Microsoft.Extensions.Logging.EventLog;
 var options = new WebApplicationOptions
 {
     Args = args,
-    ContentRootPath = (WindowsServiceHelpers.IsWindowsService() ) ? AppContext.BaseDirectory : default
+    ContentRootPath = (WindowsServiceHelpers.IsWindowsService()) ? AppContext.BaseDirectory : default
 };
 var builder = WebApplication.CreateBuilder(options);
 // Add services to the container.
@@ -16,19 +14,24 @@ if (OperatingSystem.IsWindows())
 {
     builder.Host
     .UseWindowsService()
-    .ConfigureLogging((_, logging) => logging.AddEventLog())
-    .ConfigureLogging(logging =>
-    {
-        logging.ClearProviders();
-        logging.AddConsole();
-    });//Seems not to work for getting log info
-    builder.Services.Configure<EventLogSettings>(conf =>
-    {
-        conf.LogName = "BitaServer";
-        conf.SourceName = "Optimiser Server";
-        conf.MachineName = null;
-    });
-}else if(OperatingSystem.IsLinux()){
+    /* .ConfigureLogging((_, logging) => logging.AddEventLog())
+
+     .ConfigureLogging(logging =>
+     {
+         logging.ClearProviders();
+         logging.AddConsole();
+     })//Seems not to work for getting log info
+     */
+    ;
+    /*   builder.Services.Configure<EventLogSettings>(conf =>
+       {
+           conf.LogName = "BitaServer";
+           conf.SourceName = "Optimiser Server";
+           conf.MachineName = null;
+       });*/
+}
+else if (OperatingSystem.IsLinux())
+{
     builder.Host.UseSystemd();
 }
 //builder.WebHost.UseUrls("http://*:7779"); //Don't do this

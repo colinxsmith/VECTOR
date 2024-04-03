@@ -11,7 +11,7 @@
         "request": "launch",
         "preLaunchTask": "build",
         "requireExactSource":false,
-        "program": "${workspaceFolder}/BitaServer/bin/Debug/net6.0/BitaServer.dll",
+        "program": "${workspaceFolder}/BitaServer/bin/Debug/net8.0/BitaServer.dll",
         "args": [],
         "cwd": "${workspaceFolder}/BitaServer",
         "console": "integratedTerminal",
@@ -33,7 +33,7 @@
         "request": "launch",
         "preLaunchTask": "build",
         "requireExactSource":false,
-        "program": "${workspaceFolder}/BITAPlus/bin/Debug/net6.0/BITAPlus.dll",
+        "program": "${workspaceFolder}/BITAPlus/bin/Debug/net8.0/BITAPlus.dll",
         "args": [],
         "cwd": "${workspaceFolder}/BITAPlus",
         "console": "integratedTerminal",
@@ -55,7 +55,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/UseBlas/bin/Debug/net6.0/UseBlas.dll",
+            "program": "${workspaceFolder}/UseBlas/bin/Debug/net8.0/UseBlas.dll",
             "args": [],
             "cwd": "${workspaceFolder}/UseBlas",
             // For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console

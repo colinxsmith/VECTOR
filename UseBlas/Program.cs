@@ -95,12 +95,12 @@ namespace UseBlas
                 var cx = BlasLike.ddotvec(c.Length, c, truex);
                 Console.WriteLine($"Linear {cx}");
                 Console.WriteLine($"SOCP x check {Math.Sqrt(BlasLike.ddotvec(x.Length - 1 - 2 * tlen - 1, x, x))} {x[x.Length - 1 - 2 * tlen - 1]}");
-            }
+          }
             {//How to make a file licence
                 var licence = new Licensing.Licence();
                 var now = new DateTimeOffset(DateTime.Now);
                 var extra = now.Month >= 10 ? 1 : 0;
-                var later = new DateTimeOffset(new DateTime(now.Year + extra, 10, 26, 12, 0, 0));
+                var later = new DateTimeOffset(new DateTime(now.Year + extra, 10, 26, 12, 21, 12));
                 var testlicence = licence.licenceByteValue = new byte[20];
                 var hid = 0x13101955;
                 var timenow = now.ToUnixTimeSeconds();
@@ -117,7 +117,7 @@ namespace UseBlas
                 licence.toRegistry(true);
                 licence.toRegistry(false);//At this stage hid is 0x13101955, and licence file is ready for deploying on linux
                                           //    licence.CheckLicence(true, true);
-            }
+return;            }
             {
                 var a = 4.0;
                 double[] x = { 1, 2, 3 };
