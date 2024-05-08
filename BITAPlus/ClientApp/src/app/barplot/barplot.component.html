@@ -17,6 +17,7 @@
       <line [attr.y1]="0" [attr.y2]="height" [attr.x1]="scaleX(0)" [attr.x2]="scaleX(0)"></line>
       <g [attr.transform]="translatehack(scaleX(0),0)" *ngFor="let y of scaleY.domain()">
           <text class="lab" x="-0.5em" [attr.y]="scaleY(y)">{{formatL(y)}}</text>
+          <line [attr.y1]="scaleY(y)" [attr.y2]="scaleY(y)" [attr.x1]="0" [attr.x2]="10"></line>
       </g>
       <g *ngFor="let x of FDATA;let i=index;">
           <rect  [attr.class]="x>=0?'ongraph plus':'ongraph minus'" (mouseleave)="info($event, i, x)"
