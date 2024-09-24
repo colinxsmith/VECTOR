@@ -40,7 +40,7 @@ RUN locale-gen
 RUN useradd -m -N -s/bin/bash -u 1000 -p "aaTUg7pzsFzvk" colin && usermod -aG sudo colin
 #BitaServer is configured to serve on port 7777 so we must expose it here,
 #then when running use -p 1234:7777 to map 7777 onto an external port eg. 1234
-EXPOSE 7777
+#EXPOSE 7777
 
 WORKDIR /home/colin
 COPY --from=build /app ./
