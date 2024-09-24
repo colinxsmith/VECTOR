@@ -17,7 +17,7 @@ RUN dotnet publish -c release -o /app
 #get address from python -c "print(hex(0x13101955 + 0b1001))"
 #I ran  future -b 0x1310195e 01/10/2001 24/10/2024 to get licence_base_n
 COPY licence_base_n /app/licence
-COPY generalopt /app
+COPY generalopt /app/
 
 #FROM alpine AS runtime
 #RUN apk add aspnetcore-runtime-8.0
