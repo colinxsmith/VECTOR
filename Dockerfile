@@ -30,7 +30,8 @@ COPY generalopt /app
 # Showing how to run as colin and set up password copied from COR stuff. Edit in properly sometime
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 #curl wget and ping are not necessary but helpful when testing
-RUN apt update && apt upgrade -y && apt install -y curl wget inetutils-ping sudo
+RUN apt update && apt upgrade -y && apt install -y curl wget inetutils-ping sudo locales
+RUN locale-gen
 #Show how to run as user. Set up the the usual sudo that would be available on linux debian-like
 #run passwd from the linux prompt to set user password
 #RUN useradd -m -N -s/bin/bash -u 1000 -p "" colin && usermod -aG sudo colin
@@ -47,5 +48,9 @@ COPY --from=build /app ./
 RUN chown -R colin /home/colin
 USER colin
 WORKDIR /home/colin
-ENV PATH=/usr/bin:/bin:/home/colin
+ENV PATH=/usr/bin:/bin:/home/colin \
+    TZ=Europe/London \
+    LANG=en_GB.UTF-8 \
+    LANGUAGE=en_GB:en \
+    LC_ALL=en_GB.UTF-8
 ENTRYPOINT ["BitaServer"]
