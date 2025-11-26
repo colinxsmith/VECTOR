@@ -1,120 +1,151 @@
 <h1 style="text-align: center;" id="tableLabel">
     General Optimisation
 </h1>
-<div>
-    <form class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
-        <h4> Get data from log file: <input type="text" class="filer" (change)="file($event)" value=""></h4>
-        <h4> Filter zero in graph: <input type="checkbox" class="checkzero" (change)="zerooff($event)"></h4>
-    </form>
-</div>
-<div class="maindiv" *ngIf="opt">
-    <button (mouseover)="over($event,true)" (mouseleave)="over($event)" (click)="sendStep()">Send New Optimisation Parameters</button>
-    <h5 style="color:brown; text-align:justify">{{opt.versionString}}</h5>
-    <table>
-        <tr>
-            <td *ngIf="opt.back==0" style="color:rgb(47, 255, 89); text-align:justify">{{opt.message}}</td>
-            <td *ngIf="opt.back==1" style="color:rgb(255, 234, 0); text-align:justify">{{opt.message}}</td>
-            <td *ngIf="opt.cvargLprob!=undefined&&opt.cvargLprob" style="color:rgb(255, 234, 0); text-align:justify">{{opt.message}}</td>
-            <td *ngIf="opt.back==6" style="color:crimson; text-align:justify">{{opt.message}}</td>
-            <td *ngIf="opt.back==10" style="color:crimson; text-align:justify">{{opt.message}}</td>
-            <td *ngIf="opt.back>6&&opt.back<10" style="color:crimson; text-align:justify">{{opt.message}}</td>
-            <td *ngIf="opt.back>10" style="color:crimson; text-align:justify">{{opt.message}}</td>
-            <td *ngIf="opt.back>1&&opt.back<6" style="color:crimson; text-align:justify">{{opt.message}}</td>
-            <td *ngIf="opt.result!=undefined&&opt.result.expreturn!=undefined">Return: {{format(opt.result.expreturn)}}</td>
-            <td *ngIf="opt.result!=undefined&&opt.result.risk!=undefined">Risk: {{format(opt.result.risk)}}</td>
-            <td *ngIf="opt.result!=undefined&&opt.result.etl!=undefined">ETL: {{format(opt.result.etl)}}</td>
-            <td *ngIf="opt.result!=undefined&&opt.result.loss!=undefined">LOSS: {{format(opt.result.loss)}}</td>
-            <td *ngIf="opt.result!=undefined&&opt.result.turnover!=undefined">turnover: {{format(opt.result.turnover)}}</td>
-            <td *ngIf="opt.result!=undefined&&opt.result.basket!=undefined">basket: {{format(opt.result.basket)}}</td>
-            <td *ngIf="opt.result!=undefined&&opt.result.trades!=undefined">number of trades: {{format(opt.result.trades)}}</td>
-            <td *ngIf="opt.result!=undefined&&opt.result.minhold!=undefined">min. holding: {{format(opt.result.minhold)}}</td>
-        </tr>
-        <tr>
-            <td *ngIf="opt.result!=undefined&&opt.result.mintrade!=undefined">min. trade: {{format(opt.result.mintrade)}}</td>
-            <td *ngIf="opt.result!=undefined&&opt.result.longvalue!=undefined">Long Value: {{format(opt.result.longvalue)}}</td>
+<div class="whole">
+    <div>
+        <form class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+            <h4> Get data from log file: <input type="text" class="filer" (change)="file($event)" value=""></h4>
+            <h4> Filter zero in graph: <input type="checkbox" class="checkzero" (change)="zerooff($event)"></h4>
+        </form>
+    </div>
+    <div class="maindiv" *ngIf="opt">
+        <button (mouseover)="over($event,true)" (mouseleave)="over($event)" (click)="sendStep()">Send New Optimisation
+            Parameters</button>
+        <h5 style="color:brown; text-align:justify">{{opt.versionString}}</h5>
+        <table>
+            <tr>
+                <td *ngIf="opt.back==0" style="color:rgb(47, 255, 89); text-align:justify">{{opt.message}}</td>
+                <td *ngIf="opt.back==1" style="color:rgb(255, 234, 0); text-align:justify">{{opt.message}}</td>
+                <td *ngIf="opt.cvargLprob!=undefined&&opt.cvargLprob"
+                    style="color:rgb(255, 234, 0); text-align:justify">{{opt.message}}</td>
+                <td *ngIf="opt.back==6" style="color:crimson; text-align:justify">{{opt.message}}</td>
+                <td *ngIf="opt.back==10" style="color:crimson; text-align:justify">{{opt.message}}</td>
+                <td *ngIf="opt.back>6&&opt.back<10" style="color:crimson; text-align:justify">{{opt.message}}</td>
+                <td *ngIf="opt.back>10" style="color:crimson; text-align:justify">{{opt.message}}</td>
+                <td *ngIf="opt.back>1&&opt.back<6" style="color:crimson; text-align:justify">{{opt.message}}</td>
+                <td *ngIf="opt.result!=undefined&&opt.result.expreturn!=undefined">Return:
+                    {{format(opt.result.expreturn)}}</td>
+                <td *ngIf="opt.result!=undefined&&opt.result.risk!=undefined">Risk: {{format(opt.result.risk)}}</td>
+                <td *ngIf="opt.result!=undefined&&opt.result.etl!=undefined">ETL: {{format(opt.result.etl)}}</td>
+                <td *ngIf="opt.result!=undefined&&opt.result.loss!=undefined">LOSS: {{format(opt.result.loss)}}</td>
+                <td *ngIf="opt.result!=undefined&&opt.result.turnover!=undefined">turnover:
+                    {{format(opt.result.turnover)}}</td>
+                <td *ngIf="opt.result!=undefined&&opt.result.basket!=undefined">basket: {{format(opt.result.basket)}}
+                </td>
+                <td *ngIf="opt.result!=undefined&&opt.result.trades!=undefined">number of trades:
+                    {{format(opt.result.trades)}}</td>
+                <td *ngIf="opt.result!=undefined&&opt.result.minhold!=undefined">min. holding:
+                    {{format(opt.result.minhold)}}</td>
+            </tr>
+            <tr>
+                <td *ngIf="opt.result!=undefined&&opt.result.mintrade!=undefined">min. trade:
+                    {{format(opt.result.mintrade)}}</td>
+                <td *ngIf="opt.result!=undefined&&opt.result.longvalue!=undefined">Long Value:
+                    {{format(opt.result.longvalue)}}</td>
 
-            <td *ngIf="opt.result!=undefined&&opt.result.shortoverlong!=undefined">Short / Long: {{format(opt.result.shortoverlong)}}</td>
-        </tr>
-        <tr>
-            <td *ngIf="opt.gamma!=undefined">
-                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
-                    <li>
-                        Set gamma: <br><input class="step g" style="width:5em" [min]="0" [max]="1" [value]="(opt.ogamma!=undefined)?opt.ogamma:opt.gamma">
-                    </li>
-                </ul>
-            </td>
-            <td *ngIf="opt.round!=undefined&&opt.min_lot!=undefined&&opt.size_lot!=undefined">
-                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
-                    <li>
-                        Set round: <br><input class="step round" style="width:5em" [min]="0" [max]="1" [value]="opt.round">
-                    </li>
-                </ul>
-            </td>
-            <td *ngIf="opt.delta!=undefined">
-                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
-                    <li>Set Turnover: <br>max: <input class="step delt" style="width:5em" [min]="0" [max]="1" [value]="opt.delta"></li>
-                </ul>
-            </td>
-            <td *ngIf="opt.min_holding!=undefined">
-                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
-                    <li>Set Min. Holding: <br>max: <input class="step minhold" style="width:5em" [min]="0" [max]="1" [value]="opt.min_holding"></li>
-                </ul>
-            </td>
-            <td *ngIf="opt.min_trade!=undefined">
-                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
-                    <li>Set Min. Trade: <br>max: <input class="step mintrade" style="width:5em" [min]="0" [max]="1" [value]="opt.min_trade"></li>
-                </ul>
-            </td>
-            <td *ngIf="opt.basket!=undefined">
-                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
-                    <li>Set basket: <br>max: <input class="step basket" style="width:5em" [min]="0" [max]="1" [value]="opt.basket"></li>
-                </ul>
-            </td>
-            <td *ngIf="opt.trades!=undefined">
-                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
-                    <li>Set trade number: <br>max: <input class="step trades" style="width:5em" [min]="0" [max]="1" [value]="opt.trades"></li>
-                </ul>
-            </td>
-            <td *ngIf="opt.losSmax!=undefined&&opt.losSmin!=undefined">
-                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
-                    <li>Set LOSS: <br>max: <input class="step LU" style="width:5em" [min]="0" [max]="1" [value]="opt.losSmax"></li>
-                    <li><br>min: <input class="step LL" style="width:5em" [min]="0" [max]="1" [value]="opt.losSmin"></li>
-                </ul>
-            </td>
-            <td *ngIf="opt.gstrength!=undefined">
-                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
-                    <li>Set LOSS or ETL strength: <input class="step gstrength" style="width:5em" [min]="0" [max]="1" [value]="opt.gstrength"></li>
-                </ul>
-            </td>
-        </tr>
-        <tr>
-            <td *ngIf="opt.minRisk!=undefined&&opt.maxRisk!=undefined">
-                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
-                    <li>Set RISK: <br>max: <input class="step RU" style="width:5em" [min]="0" [max]="1" [value]="opt.maxRisk"></li>
-                    <li><br>min: <input class="step RL" style="width:5em" [min]="0" [max]="1" [value]="opt.minRisk"></li>
-                </ul>
-            </td>
-            <td *ngIf="opt.etLmin!=undefined&&opt.etLmax!=undefined">
-                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
-                    <li>Set ETL: <br>max: <input class="step EU" style="width:5em" [min]="0" [max]="1" [value]="opt.etLmax"></li>
-                    <li><br>min: <input class="step EL" style="width:5em" [min]="0" [max]="1" [value]="opt.etLmin"></li>
-                </ul>
-            </td>
-            <td *ngIf="shortside&&opt.value!=undefined&&opt.valuel!=undefined">
-                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
-                    <li>Set Long Value: <br>max: <input class="step VU" style="width:5em" [min]="0" [max]="1" [value]="opt.value"></li>
-                    <li><br>min: <input class="step VL" style="width:5em" [min]="0" [max]="1" [value]="opt.valuel"></li>
-                </ul>
-            </td>
-            <td *ngIf="shortside&&opt.rmax!=undefined&&opt.rmin!=undefined">
-                <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
-                    <li>Set Short/Long: <br>max: <input class="step RMU" style="width:5em" [min]="0" [max]="1" [value]="opt.rmax"></li>
-                    <li><br>min: <input class="step RML" style="width:5em" [min]="0" [max]="1" [value]="opt.rmin"></li>
-                </ul>
-            </td>
-        </tr>
-    </table>
-    <app-barplot *ngIf="opt.w" [filterzero]="filterzero" [caller]="element.nativeElement" [title]="'Portfolio weights'" [height]="height" [width]="width" [DATA]="opt.w"></app-barplot>
+                <td *ngIf="opt.result!=undefined&&opt.result.shortoverlong!=undefined">Short / Long:
+                    {{format(opt.result.shortoverlong)}}</td>
+            </tr>
+            <tr>
+                <td *ngIf="opt.gamma!=undefined">
+                    <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                        <li>
+                            Set gamma: <br><input class="step g" style="width:5em" [min]="0" [max]="1"
+                                [value]="(opt.ogamma!=undefined)?opt.ogamma:opt.gamma">
+                        </li>
+                    </ul>
+                </td>
+                <td *ngIf="opt.round!=undefined&&opt.min_lot!=undefined&&opt.size_lot!=undefined">
+                    <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                        <li>
+                            Set round: <br><input class="step round" style="width:5em" [min]="0" [max]="1"
+                                [value]="opt.round">
+                        </li>
+                    </ul>
+                </td>
+                <td *ngIf="opt.delta!=undefined">
+                    <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                        <li>Set Turnover: <br>max: <input class="step delt" style="width:5em" [min]="0" [max]="1"
+                                [value]="opt.delta"></li>
+                    </ul>
+                </td>
+                <td *ngIf="opt.min_holding!=undefined">
+                    <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                        <li>Set Min. Holding: <br>max: <input class="step minhold" style="width:5em" [min]="0" [max]="1"
+                                [value]="opt.min_holding"></li>
+                    </ul>
+                </td>
+                <td *ngIf="opt.min_trade!=undefined">
+                    <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                        <li>Set Min. Trade: <br>max: <input class="step mintrade" style="width:5em" [min]="0" [max]="1"
+                                [value]="opt.min_trade"></li>
+                    </ul>
+                </td>
+                <td *ngIf="opt.basket!=undefined">
+                    <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                        <li>Set basket: <br>max: <input class="step basket" style="width:5em" [min]="0" [max]="1"
+                                [value]="opt.basket"></li>
+                    </ul>
+                </td>
+                <td *ngIf="opt.trades!=undefined">
+                    <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                        <li>Set trade number: <br>max: <input class="step trades" style="width:5em" [min]="0" [max]="1"
+                                [value]="opt.trades"></li>
+                    </ul>
+                </td>
+                <td *ngIf="opt.losSmax!=undefined&&opt.losSmin!=undefined">
+                    <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                        <li>Set LOSS: <br>max: <input class="step LU" style="width:5em" [min]="0" [max]="1"
+                                [value]="opt.losSmax"></li>
+                        <li><br>min: <input class="step LL" style="width:5em" [min]="0" [max]="1" [value]="opt.losSmin">
+                        </li>
+                    </ul>
+                </td>
+                <td *ngIf="opt.gstrength!=undefined">
+                    <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                        <li>Set LOSS or ETL strength: <input class="step gstrength" style="width:5em" [min]="0"
+                                [max]="1" [value]="opt.gstrength"></li>
+                    </ul>
+                </td>
+            </tr>
+            <tr>
+                <td *ngIf="opt.minRisk!=undefined&&opt.maxRisk!=undefined">
+                    <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                        <li>Set RISK: <br>max: <input class="step RU" style="width:5em" [min]="0" [max]="1"
+                                [value]="opt.maxRisk"></li>
+                        <li><br>min: <input class="step RL" style="width:5em" [min]="0" [max]="1" [value]="opt.minRisk">
+                        </li>
+                    </ul>
+                </td>
+                <td *ngIf="opt.etLmin!=undefined&&opt.etLmax!=undefined">
+                    <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                        <li>Set ETL: <br>max: <input class="step EU" style="width:5em" [min]="0" [max]="1"
+                                [value]="opt.etLmax"></li>
+                        <li><br>min: <input class="step EL" style="width:5em" [min]="0" [max]="1" [value]="opt.etLmin">
+                        </li>
+                    </ul>
+                </td>
+                <td *ngIf="shortside&&opt.value!=undefined&&opt.valuel!=undefined">
+                    <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                        <li>Set Long Value: <br>max: <input class="step VU" style="width:5em" [min]="0" [max]="1"
+                                [value]="opt.value"></li>
+                        <li><br>min: <input class="step VL" style="width:5em" [min]="0" [max]="1" [value]="opt.valuel">
+                        </li>
+                    </ul>
+                </td>
+                <td *ngIf="shortside&&opt.rmax!=undefined&&opt.rmin!=undefined">
+                    <ul class="" (mouseover)="over($event,true)" (mouseleave)="over($event)">
+                        <li>Set Short/Long: <br>max: <input class="step RMU" style="width:5em" [min]="0" [max]="1"
+                                [value]="opt.rmax"></li>
+                        <li><br>min: <input class="step RML" style="width:5em" [min]="0" [max]="1" [value]="opt.rmin">
+                        </li>
+                    </ul>
+                </td>
+            </tr>
+        </table>
+        <app-barplot *ngIf="opt.w" [filterzero]="filterzero" [caller]="element.nativeElement"
+            [title]="'Portfolio weights'" [height]="height" [width]="width" [DATA]="opt.w"></app-barplot>
+    </div>
 </div>
 <div style="text-align:end;">
     <button class="pdfbutton" (click)="newpdf()">Make PDF</button>

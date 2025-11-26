@@ -53,7 +53,7 @@ export class OptimisegeneralComponent implements OnInit {
 
   async newpdf(): Promise<void> {
     try {
-      const divElement = d3.select(this.element.nativeElement).select('div.maindiv').node() as HTMLElement | null;
+      const divElement = d3.select(this.element.nativeElement).select('div.whole').node() as HTMLElement | null;
       console.log(divElement);
       await this.pdfsave.exportToPdf(divElement, 'page.pdf', 10, 300)
     }
