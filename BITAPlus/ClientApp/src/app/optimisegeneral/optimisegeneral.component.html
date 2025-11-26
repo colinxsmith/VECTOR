@@ -116,3 +116,6 @@
     </table>
     <app-barplot *ngIf="opt.w" [filterzero]="filterzero" [caller]="element.nativeElement" [title]="'Portfolio weights'" [height]="height" [width]="width" [DATA]="opt.w"></app-barplot>
 </div>
+<div style="text-align:end;">
+    <button class="pdfbutton" (click)="newpdf()">Make PDF</button>
+</div>

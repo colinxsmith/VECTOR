@@ -1,6 +1,8 @@
 import { Component, Inject, ElementRef, OnInit } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import * as d3 from 'd3';
+import { PdfSave } from 'src/services/pdfsave';
+
 
 export const digitRound = (x: number, ff = 1e5) => {
   const xff = x * ff;
@@ -30,7 +32,9 @@ export class OptimisegeneralComponent implements OnInit {
   shortside = false;
   format = d3.format('0.6f')
   opt: Optimise = {} as Optimise;
-  constructor(private http: HttpClient, @Inject('BASE_URL') private baseUrl: string, public element: ElementRef) {
+  constructor(private http: HttpClient,
+    @Inject('BASE_URL') private baseUrl: string,
+    public element: ElementRef, private pdfsave: PdfSave) {
     http.get<Optimise>(baseUrl + 'optimise/general?doOpt=false&datafile=' + this.generalfile).subscribe(result => {
       this.opt = result;
       d3.select(this.element.nativeElement).select('input.checkzero').attr('value', this.filterzero);
@@ -45,6 +49,17 @@ export class OptimisegeneralComponent implements OnInit {
   over(e: MouseEvent, inout = false) {
     d3.select(e.target as HTMLInputElement & EventTarget).classed('over', inout);
     //console.log(e.target);
+  }
+
+  async newpdf(): Promise<void> {
+    try {
+      const divElement = d3.select(this.element.nativeElement).select('div.maindiv').node() as HTMLElement | null;
+      console.log(divElement);
+      await this.pdfsave.exportToPdf(divElement, 'page.pdf', 10, 300)
+    }
+    catch (err) {
+      console.error('Error generating PDF file:', err);
+    }
   }
   ngOnInit(): void {
     d3.select(this.element.nativeElement).select('input.checkzero').attr('value', this.filterzero);

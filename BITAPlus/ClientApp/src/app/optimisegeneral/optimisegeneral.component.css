@@ -61,3 +61,16 @@ form.over {
     width: 80%;
     text-align: center;
 }
+.pdfbutton {
+    color: darkorange;
+    font-size: 40px;
+    padding: 16px 30px;
+    border: 3px solid red;
+    border-radius: 10px;
+    cursor: pointer;
+    margin: 4px 2px;
+}
+
+.pdfbutton:hover {
+    background-color: #45a049;
+}
