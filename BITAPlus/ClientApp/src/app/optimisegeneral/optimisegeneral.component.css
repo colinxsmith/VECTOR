@@ -16,7 +16,7 @@ button {
     background-image: linear-gradient(brown, cyan);
 }
 
-button.over {
+button:hover {
     background-image: linear-gradient(yellow, blue);
 }
 
@@ -35,7 +35,7 @@ ul {
     padding: 1px;
 }
 
-ul.over {
+ul:hover {
     background-color: aqua;
 }
 
@@ -54,7 +54,7 @@ form {
     font-size: x-large;
 }
 
-form.over {
+form:hover {
     /*   background-color: #ffd8f7;*/
     background-image: linear-gradient(rgb(255, 81, 0), rgb(140, 0, 255));
     border-radius: 75%;
@@ -66,11 +66,13 @@ form.over {
     font-size: 40px;
     padding: 16px 30px;
     border: 3px solid red;
-    border-radius: 10px;
+    border-radius: 50px;
     cursor: pointer;
     margin: 4px 2px;
+    background-image: linear-gradient(brown, blue);
 }
 
 .pdfbutton:hover {
+    background-image: none;
     background-color: #45a049;
 }
